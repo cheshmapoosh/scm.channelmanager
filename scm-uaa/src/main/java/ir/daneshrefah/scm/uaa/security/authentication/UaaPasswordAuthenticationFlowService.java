@@ -15,6 +15,7 @@ import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.Pwa
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -38,7 +39,7 @@ public class UaaPasswordAuthenticationFlowService {
     private final UserDetailsService userDetailsService;
     private final OAuth2AuthenticationRequestTokenGenerator authenticationTokenGenerator;
     private final AuthenticationManager authenticationManager;
-    private final PwaAuthenticationService pwaAuthenticationService;
+    private final ObjectProvider<PwaAuthenticationService> pwaAuthenticationServiceProvider;
     private final ClientAuthenticationPolicy clientAuthenticationPolicy;
     private final ClientIpPolicy clientIpPolicy;
     private final ClientVersionPolicy clientVersionPolicy;
@@ -66,7 +67,10 @@ public class UaaPasswordAuthenticationFlowService {
         );
 
         if (preAuthenticationToken.hasDefaultGrantPreAuthToken()) {
-            pwaAuthenticationService.preAuthenticateCheck(preAuthenticationToken);
+            PwaAuthenticationService pwaAuthenticationService = pwaAuthenticationServiceProvider.getIfAvailable();
+            if (pwaAuthenticationService != null) {
+                pwaAuthenticationService.preAuthenticateCheck(preAuthenticationToken);
+            }
         }
 
         UserLoginAuthenticationToken authenticationToken = createAuthenticationToken(

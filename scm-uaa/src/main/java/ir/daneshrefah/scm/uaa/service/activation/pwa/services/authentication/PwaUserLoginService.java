@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.uaa.repository.activation.domain.PwaLoginEntity;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.services.activation.PwaNotificationCenter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.OAUTH2_ERROR_CODE_LO
 
 @RequiredArgsConstructor
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 @Slf4j
 public class PwaUserLoginService {
 

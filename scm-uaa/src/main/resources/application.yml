@@ -1,53 +1,89 @@
+server:
+  port: ${SERVER_PORT:8000}
+
 spring:
-  profiles:
-    active: default
   application:
     name: scm-uaa
+  cloud:
+    config:
+      enabled: false
+  jpa:
+    show-sql: ${SCM_UAA_JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: ${SCM_UAA_HIBERNATE_FORMAT_SQL:false}
+
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    path: /public/index.html
+  api-docs:
+    path: /public/v3/api-docs
+
+logging:
+  level:
+    org.hibernate.SQL: ${SCM_UAA_LOG_LEVEL_HIBERNATE_SQL:WARN}
+    org.hibernate.type.descriptor.sql: ${SCM_UAA_LOG_LEVEL_HIBERNATE_SQL_BIND:WARN}
+    org.hibernate.orm.jdbc.bind: ${SCM_UAA_LOG_LEVEL_HIBERNATE_JDBC_BIND:WARN}
+
+service:
+  shahkar:
+    baseUrl: ${SCM_SHAHKAR_BASE_URL:http://localhost:8088}
+    tokenPath: ${SCM_SHAHKAR_TOKEN_PATH:/connect/token}
+    inquiryPath: ${SCM_SHAHKAR_INQUIRY_PATH:/gov/1.0/ShahkarService}
+    clientId: ${SCM_SHAHKAR_CLIENT_ID:}
+    clientSecret: ${SCM_SHAHKAR_CLIENT_SECRET:}
+    grant_Type: ${SCM_SHAHKAR_GRANT_TYPE:client_credentials}
+
 scm:
   application:
-    version: 8.3.0
-    build:  0728T1230
-  observation:
-    enabled: true
-    http:
-      server:
-        span-name: uaa.http.request
-    log:
-      enabled: true
-      file:
-        enabled: true
-        format: jsonl
-        file-name: ${SCM_OBSERVATION_LOG_FILE_NAME:scm-uaa.jsonl}
-      rolling:
-        max-file-size: ${SCM_OBSERVATION_LOG_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBSERVATION_LOG_MAX_HISTORY:30}
-        total-size-cap: ${SCM_OBSERVATION_LOG_TOTAL_SIZE_CAP:10GB}
-        clean-history-on-start: ${SCM_OBSERVATION_LOG_CLEAN_HISTORY_ON_START:false}
-    trace:
-      enabled: true
-      file:
-        enabled: true
-        format: jsonl
-        file-name: ${SCM_OBSERVATION_TRACE_FILE_NAME:scm-uaa-trace.jsonl}
-      rolling:
-        max-file-size: ${SCM_OBSERVATION_TRACE_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBSERVATION_TRACE_MAX_HISTORY:30}
-        total-size-cap: ${SCM_OBSERVATION_TRACE_TOTAL_SIZE_CAP:10GB}
-        clean-history-on-start: ${SCM_OBSERVATION_TRACE_CLEAN_HISTORY_ON_START:false}
-      async:
-        enabled: ${SCM_OBSERVATION_TRACE_ASYNC_ENABLED:false}
-        queue-size: ${SCM_OBSERVATION_TRACE_QUEUE_SIZE:8192}
-        discarding-threshold: ${SCM_OBSERVATION_TRACE_DISCARDING_THRESHOLD:0}
-        never-block: ${SCM_OBSERVATION_TRACE_NEVER_BLOCK:false}
-    audit:
-      enabled: false
-      file:
-        enabled: true
-        format: jsonl
-        file-name: ${SCM_OBSERVATION_AUDIT_FILE_NAME:scm-uaa-audit.jsonl}
-    metric:
-      enabled: true
+    version: ${SCM_APPLICATION_VERSION:8.3.0}
+    build: ${SCM_APPLICATION_BUILD:local}
+
+  cif:
+    url: ${SCM_CIF_URL:http://localhost:8080/Service/}
+
+  security:
+    client:
+      default-role: ${SCM_UAA_DEFAULT_CLIENT_ROLE:ROLE_CLIENT}
+    key-store:
+      name: ${SCM_UAA_JWT_KEY_STORE:config/keystore.p12}
+      password: ${SCM_UAA_JWT_KEY_STORE_PASSWORD:}
+      alias: ${SCM_UAA_JWT_KEY_ALIAS:selfsigned}
+    oauth:
+      config:
+        pwa:
+          white-list-enabled: ${SCM_UAA_PWA_WHITE_LIST_ENABLED:false}
+          activation:
+            check-registry-token: ${SCM_UAA_PWA_CHECK_REGISTRY_TOKEN:true}
+            otp-code-trails-count: ${SCM_UAA_PWA_OTP_CODE_TRIALS_COUNT:5}
+            otp-code-expiration-minutes: ${SCM_UAA_PWA_OTP_CODE_EXPIRATION_MINUTES:2}
+            rate-limit-count: ${SCM_UAA_PWA_ACTIVATION_RATE_LIMIT_COUNT:5}
+            rate-limit-blocked-time-minutes: ${SCM_UAA_PWA_ACTIVATION_BLOCKED_MINUTES:10}
+          login:
+            rate-limit-count: ${SCM_UAA_PWA_LOGIN_RATE_LIMIT_COUNT:5}
+            rate-limit-blocked-time-minutes: ${SCM_UAA_PWA_LOGIN_BLOCKED_MINUTES:10}
+            token-change-warn-period-days: ${SCM_UAA_PWA_TOKEN_CHANGE_WARN_DAYS:31}
+
   uaa:
+    datasource:
+      main:
+        enabled: true
+        url: ${SCM_UAA_MAIN_DB_URL:jdbc:db2://localhost:50000/SCM}
+        username: ${SCM_UAA_MAIN_DB_USERNAME:scm}
+        password: ${SCM_UAA_MAIN_DB_PASSWORD:}
+        driver-class-name: ${SCM_UAA_MAIN_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+        max-connection: ${SCM_UAA_MAIN_DB_MAX_CONNECTION:10}
+        default-schema: ${SCM_UAA_MAIN_DB_SCHEMA:REF}
+      activation:
+        enabled: ${SCM_UAA_ACTIVATION_DB_ENABLED:true}
+        url: ${SCM_UAA_ACTIVATION_DB_URL:jdbc:db2://localhost:50000/SCM}
+        username: ${SCM_UAA_ACTIVATION_DB_USERNAME:scm}
+        password: ${SCM_UAA_ACTIVATION_DB_PASSWORD:}
+        driver-class-name: ${SCM_UAA_ACTIVATION_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+        max-connection: ${SCM_UAA_ACTIVATION_DB_MAX_CONNECTION:10}
+        default-schema: ${SCM_UAA_ACTIVATION_DB_SCHEMA:MBUAA}
+
     legacy:
       enabled: ${SCM_UAA_LEGACY_ENABLED:true}
       client-resolution:
@@ -64,6 +100,7 @@ scm:
           http-only: ${SCM_UAA_LEGACY_PWA_COOKIE_HTTP_ONLY:true}
           same-site: ${SCM_UAA_LEGACY_PWA_COOKIE_SAME_SITE:Lax}
           path: ${SCM_UAA_LEGACY_PWA_COOKIE_PATH:/}
+
     login:
       theme:
         default-theme: default
@@ -77,12 +114,38 @@ scm:
             display-name: NIB
             css-class: theme-nib
             css-path: /assets/css/nib.css
+
     cors:
-      allowed-origin-patterns: ${SCM_UAA_CORS_ALLOWED_ORIGIN_PATTERNS:*}
-      allowed-methods: ${SCM_UAA_CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
-      allowed-headers: ${SCM_UAA_CORS_ALLOWED_HEADERS:*}
+      enabled: ${SCM_UAA_CORS_ENABLED:true}
       allow-credentials: ${SCM_UAA_CORS_ALLOW_CREDENTIALS:true}
-      path-patterns: ${SCM_UAA_CORS_PATH_PATTERNS:/api/**}
+      allowed-origin-patterns: ${SCM_UAA_CORS_ALLOWED_ORIGIN_PATTERNS:}
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowed-headers:
+        - Authorization
+        - Content-Type
+        - X-Correlation-Id
+        - AppVersion
+        - Appversion
+        - app_version
+        - app-version
+        - APP_VERSION
+        - APPVERSION
+        - x-otp-code
+        - AccessParameter
+        - Signature
+        - RegistryToken
+      exposed-headers:
+        - Set-Cookie
+        - X-Correlation-Id
+      path-patterns:
+        - "/**"
+
     log:
       level:
         root: ${SCM_UAA_LOG_LEVEL_ROOT:INFO}
@@ -92,3 +155,127 @@ scm:
         hibernate: ${SCM_UAA_LOG_LEVEL_HIBERNATE:WARN}
         hikari: ${SCM_UAA_LOG_LEVEL_HIKARI:INFO}
         ibm-mq: ${SCM_UAA_LOG_LEVEL_IBM_MQ:WARN}
+
+  cache:
+    client:
+      distributed: ${SCM_CACHE_DISTRIBUTED:false}
+
+  otp:
+    time-to-live-minutes: ${SCM_OTP_TTL_MINUTES:1}
+    channel:
+      id: ${SCM_OTP_CHANNEL_ID:1}
+      channelCode: ${SCM_OTP_CHANNEL_CODE:OTP}
+      jcaAlgorithm: ${SCM_OTP_JCA_ALGORITHM:RSA}
+      storeKey: ${SCM_OTP_STORE_KEY:storeKey-test}
+      password: ${SCM_OTP_STORE_PASSWORD:}
+
+  notification:
+    enabled: ${SCM_NOTIFICATION_ENABLED:false}
+    sms:
+      enabled: ${SCM_NOTIFICATION_SMS_ENABLED:false}
+      ibm-mq:
+        queue-manager: ${SCM_NOTIFICATION_MQ_QUEUE_MANAGER:}
+        channel: ${SCM_NOTIFICATION_MQ_CHANNEL:}
+        username: ${SCM_NOTIFICATION_MQ_USERNAME:}
+        password: ${SCM_NOTIFICATION_MQ_PASSWORD:}
+        port: ${SCM_NOTIFICATION_MQ_PORT:1414}
+        host: ${SCM_NOTIFICATION_MQ_HOST:localhost}
+
+  captcha:
+    border:
+      enabled: true
+      color: '200,200,200'
+      thickness: 1
+    noise:
+      color: '124,133,174'
+    items:
+      login:
+        path: /public/login/captcha
+        session:
+          key: loginCaptchaKey
+          date: loginCaptchaDate
+        background:
+          color-from: '81,89,130'
+          color-to: '81,89,130'
+        text-producer:
+          font:
+            color: '255,255,255'
+
+  jms:
+    logout:
+      enabled: ${SCM_LOGOUT_JMS_ENABLED:false}
+      host: ${SCM_LOGOUT_JMS_HOST:localhost}
+      port: ${SCM_LOGOUT_JMS_PORT:1414}
+      channel: ${SCM_LOGOUT_JMS_CHANNEL:}
+      queueManager: ${SCM_LOGOUT_JMS_QUEUE_MANAGER:}
+      username: ${SCM_LOGOUT_JMS_USERNAME:}
+      password: ${SCM_LOGOUT_JMS_PASSWORD:}
+      topic: ${SCM_LOGOUT_JMS_TOPIC:SUA/LOGOUT}
+
+  super-app:
+    session-ttl: ${SCM_SUPER_APP_SESSION_TTL:3600000}
+
+  log:
+    app:
+      file-directory: ${SCM_APP_LOG_DIRECTORY:${user.home}/scm/log/app}
+      rolling-archive-directory: ${SCM_APP_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/log/app/archive}
+
+  observation:
+    enabled: ${SCM_OBSERVATION_ENABLED:true}
+    http:
+      server:
+        span-name: uaa.http.request
+    log:
+      enabled: ${SCM_OBSERVATION_LOG_ENABLED:true}
+      console:
+        enabled: ${SCM_OBSERVATION_LOG_CONSOLE_ENABLED:true}
+        format: simple
+      file:
+        enabled: ${SCM_OBSERVATION_LOG_FILE_ENABLED:true}
+        format: jsonl
+        directory: ${SCM_OBSERVATION_LOG_FILE_DIRECTORY:${user.home}/scm/obs/log}
+        file-name: ${SCM_OBSERVATION_LOG_FILE_NAME:scm-uaa.jsonl}
+        archive-directory: ${SCM_OBSERVATION_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/obs/log/archive}
+      rolling:
+        max-file-size: ${SCM_OBSERVATION_LOG_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBSERVATION_LOG_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBSERVATION_LOG_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBSERVATION_LOG_CLEAN_HISTORY_ON_START:false}
+    trace:
+      enabled: ${SCM_OBSERVATION_TRACE_ENABLED:true}
+      file:
+        enabled: ${SCM_OBSERVATION_TRACE_FILE_ENABLED:true}
+        format: jsonl
+        directory: ${SCM_OBSERVATION_TRACE_FILE_DIRECTORY:${user.home}/scm/obs/trace}
+        file-name: ${SCM_OBSERVATION_TRACE_FILE_NAME:scm-uaa-trace.jsonl}
+        archive-directory: ${SCM_OBSERVATION_TRACE_ARCHIVE_DIRECTORY:${user.home}/scm/obs/trace/archive}
+      rolling:
+        max-file-size: ${SCM_OBSERVATION_TRACE_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBSERVATION_TRACE_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBSERVATION_TRACE_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBSERVATION_TRACE_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBSERVATION_TRACE_ASYNC_ENABLED:true}
+        queue-size: ${SCM_OBSERVATION_TRACE_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBSERVATION_TRACE_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBSERVATION_TRACE_NEVER_BLOCK:false}
+    audit:
+      enabled: ${SCM_OBSERVATION_AUDIT_ENABLED:true}
+      file:
+        enabled: ${SCM_OBSERVATION_AUDIT_FILE_ENABLED:true}
+        format: jsonl
+        directory: ${SCM_OBSERVATION_AUDIT_FILE_DIRECTORY:${user.home}/scm/obs/audit}
+        file-name: ${SCM_OBSERVATION_AUDIT_FILE_NAME:scm-uaa-audit.jsonl}
+        archive-directory: ${SCM_OBSERVATION_AUDIT_ARCHIVE_DIRECTORY:${user.home}/scm/obs/audit/archive}
+      rolling:
+        max-file-size: ${SCM_OBSERVATION_AUDIT_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBSERVATION_AUDIT_MAX_HISTORY:90}
+        total-size-cap: ${SCM_OBSERVATION_AUDIT_TOTAL_SIZE_CAP:20GB}
+        clean-history-on-start: ${SCM_OBSERVATION_AUDIT_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBSERVATION_AUDIT_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBSERVATION_AUDIT_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBSERVATION_AUDIT_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBSERVATION_AUDIT_NEVER_BLOCK:false}
+    metric:
+      enabled: ${SCM_OBSERVATION_METRIC_ENABLED:true}

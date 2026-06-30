@@ -37,11 +37,13 @@
         </root>
     </springProfile>
 
+    <!-- No profile is the documented local fallback: console plus all three NDJSON files. -->
     <springProfile name="!dev &amp; !test &amp; !pilot &amp; !prod">
         <root level="${ROOT_LEVEL}">
             <appender-ref ref="SCM_FILE_JSONL"/>
             <appender-ref ref="SCM_TRACE_JSONL"/>
             <appender-ref ref="SCM_AUDIT_JSONL"/>
+            <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
         </root>
     </springProfile>
 </configuration>

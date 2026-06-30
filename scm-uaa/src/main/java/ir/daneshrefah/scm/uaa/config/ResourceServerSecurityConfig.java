@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.uaa.security.resource.JtiValidatingBearerAuthenticatio
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,7 +44,6 @@ import java.util.List;
 public class ResourceServerSecurityConfig {
     private static final String LOGIN_PROCESS_URI = "/login";
 
-    private final CorsConfigurationSource configurationSource;
     private final LogoutSuccessHandler LogoutSuccessHandlerConfiguration;
     private final LogoutService logoutService;
     private final CacheManager cacheManager;
@@ -54,7 +54,8 @@ public class ResourceServerSecurityConfig {
     public SecurityFilterChain defaultSecurityFilterChain(
             HttpSecurity http,
             JwtDecoder jwtDecoder,
-            UaaFormLoginAuthenticationProvider formLoginAuthenticationProvider
+            UaaFormLoginAuthenticationProvider formLoginAuthenticationProvider,
+            @Qualifier("uaaCorsConfigurationSource") CorsConfigurationSource corsConfigurationSource
     ) throws Exception {
         AuthenticationFailureHandler failureHandler = failureHandler();
         JtiValidatingBearerAuthenticationProvider bearerAuthenticationProvider = new JtiValidatingBearerAuthenticationProvider(
@@ -96,7 +97,7 @@ public class ResourceServerSecurityConfig {
                         )
                 )
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/**"))
-                .cors(cors -> cors.configurationSource(configurationSource))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .logout(logout -> {
                     logout.logoutRequestMatcher(PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/logout"));
                     logout.logoutSuccessHandler(LogoutSuccessHandlerConfiguration);

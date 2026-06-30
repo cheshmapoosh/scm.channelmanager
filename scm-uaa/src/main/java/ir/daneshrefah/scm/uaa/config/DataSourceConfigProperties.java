@@ -7,17 +7,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "scm.security")
+@ConfigurationProperties(prefix = "scm.uaa.datasource")
 public class DataSourceConfigProperties {
 
-    private DatasourceProperties authenticationDatasource = new DatasourceProperties();
+    private DatasourceProperties main = new DatasourceProperties();
 
-    private DatasourceProperties activationDatasource = new DatasourceProperties();
+    private DatasourceProperties activation = new DatasourceProperties();
 
     @Getter
     @Setter
     public static class DatasourceProperties extends DataSourceProperties {
-        private int maxConnection;
+        private boolean enabled = true;
+        private int maxConnection = 10;
         private String defaultSchema;
     }
 

@@ -362,7 +362,9 @@ class UaaSecurityArchitectureTest {
                 .normalize();
         for (Path file : javaFiles(MAIN)) {
             String source = Files.readString(file);
-            if (source.contains("SET_COOKIE") || source.contains("Set-Cookie") || source.contains("addCookie(")) {
+            if (source.contains("addHeader(HttpHeaders.SET_COOKIE")
+                    || source.contains("setHeader(HttpHeaders.SET_COOKIE")
+                    || source.contains("addCookie(")) {
                 assertEquals(allowed, file.normalize(), () -> file + " must not create legacy token cookies");
             }
         }

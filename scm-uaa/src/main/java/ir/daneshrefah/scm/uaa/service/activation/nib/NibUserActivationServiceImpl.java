@@ -15,6 +15,7 @@ import ir.daneshrefah.scm.uaa.repository.authentication.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@ConditionalOnBean(name = "activationDataSource")
 @RequiredArgsConstructor
 public class NibUserActivationServiceImpl implements UserActivationService {
 

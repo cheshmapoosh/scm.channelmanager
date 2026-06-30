@@ -1,5 +1,14 @@
 # راهنمای Authentication در `scm-uaa`
 
+## Runtime configuration
+
+- `application.yml` contains shared defaults and is the no-profile local fallback. `application-dev.yml` is the local developer template; neither connects to `scm-config`.
+- `application-test.yml`, `application-pilot.yml`, and `application-prod.yml` are Kubernetes profiles and import `scm-config`. Database credentials and allowed CORS origins must come from config server or environment variables.
+- UAA has one required `mainDataSource` and one optional legacy `activationDataSource`. Disabling `scm.uaa.datasource.activation.enabled` removes the legacy MB/PWA activation repositories, services, controllers, and adapters without disabling normal login or token handling. The activation datasource will be deprecated after legacy migration.
+- UAA security explicitly selects `uaaCorsConfigurationSource`; it does not use `@Primary` to resolve CORS beans. Credentialed CORS rejects a wildcard, and the Kubernetes profiles also reject an empty origin list.
+- The dev profile supports HTTPS through `SCM_UAA_SSL_*`. Realistic cross-site cookie tests normally require `SameSite=None; Secure`; `Secure` requires HTTPS except for browser localhost exceptions. A `__Host-` cookie also requires `Path=/` and no `Domain` attribute.
+- Log, trace, and audit use separate NDJSON files. Dev and the no-profile local fallback also log to the console. Test, pilot, and prod default to files under `/var/log/app`.
+
 هدف این است که بدانید هر مسیر لاگین از کجا وارد می‌شود، کدام کلاس‌ها مسئول چه کاری هستند، کجا باید کد اضافه کنید، و چطور خروجی‌های JSONL برای LOG و TRACE تولید می‌شوند.
 
 ## ۱. لاگین قدیمی NIB - صفحه لاگین در فرانت NIB و دریافت توکن به صورت back-to-back

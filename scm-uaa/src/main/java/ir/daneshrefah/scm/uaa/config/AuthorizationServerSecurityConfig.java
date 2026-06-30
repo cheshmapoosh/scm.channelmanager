@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenti
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.utils.Urls;
 import ir.daneshrefah.scm.uaa.web.login.ClientLoginThemeProperties;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -22,6 +23,7 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.List;
 
@@ -42,7 +44,8 @@ public class AuthorizationServerSecurityConfig {
             LegacyPasswordGrantAuthenticationConverter legacyPasswordGrantAuthenticationConverter,
             LegacyPasswordGrantAuthenticationProvider legacyPasswordGrantAuthenticationProvider,
             ShahkarGrantAuthenticationConverter shahkarGrantAuthenticationConverter,
-            ShahkarGrantAuthenticationProvider shahkarGrantAuthenticationProvider
+            ShahkarGrantAuthenticationProvider shahkarGrantAuthenticationProvider,
+            @Qualifier("uaaCorsConfigurationSource") CorsConfigurationSource corsConfigurationSource
     ) throws Exception {
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
         RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
@@ -60,6 +63,7 @@ public class AuthorizationServerSecurityConfig {
 
         http
                 .addFilterBefore(new MissingGrantTypeFallbackFilter(), BasicAuthenticationFilter.class)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .securityMatcher(endpointsMatcher)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(Urls.OAUTH2_TOKEN).permitAll()

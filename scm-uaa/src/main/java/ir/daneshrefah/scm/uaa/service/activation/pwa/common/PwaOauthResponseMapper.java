@@ -7,9 +7,11 @@ import ir.daneshrefah.scm.uaa.service.activation.pwa.model.ActivationResponse;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnBean(name = "activationDataSource")
 @RequiredArgsConstructor
 @Slf4j
 public class PwaOauthResponseMapper {

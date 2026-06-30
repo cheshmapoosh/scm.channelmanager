@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Component;
 
@@ -38,6 +39,7 @@ import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_I
  * No new feature should be added here unless strictly required for migration safety.
  */
 @Component
+@ConditionalOnBean(name = "activationDataSource")
 @Slf4j
 @RequiredArgsConstructor
 @Deprecated(since = "9.0.0", forRemoval = true)
