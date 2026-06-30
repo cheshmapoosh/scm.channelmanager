@@ -6,8 +6,8 @@ import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalWebA
 import ir.daneshrefah.scm.uaa.exception.UnknownAuthenticationException;
 import ir.daneshrefah.scm.uaa.security.authentication.UaaPasswordAuthenticationFlowService;
 import ir.daneshrefah.scm.uaa.security.oauth2.error.OAuth2AuthenticationErrorMapper;
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -30,9 +30,9 @@ public class UaaFormLoginAuthenticationProvider implements AuthenticationProvide
         try {
             UaaPasswordAuthenticationFlowService.AuthenticationResult result =
                     authenticationService.authenticate(toPreAuthenticationToken(authentication));
-            PostAuthenticationToken.AuthenticationStatus status =
-                    ((PostAuthenticationToken) result.authentication()).getAuthenticationStatus();
-            if (PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(status)) {
+            AuthenticationOutcomeToken.AuthenticationStatus status =
+                    ((AuthenticationOutcomeToken) result.authentication()).getAuthenticationStatus();
+            if (AuthenticationOutcomeToken.AuthenticationStatus.INCOMPLETE.equals(status)) {
                 throw new TwoStepAuthenticationRequiredException(result.authentication());
             }
             return result.authentication();

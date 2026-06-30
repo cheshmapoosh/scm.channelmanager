@@ -280,8 +280,6 @@ public class UserService {
         Optional<Terminal> terminal = terminalService.findTerminalByCode(terminalCode);
         ValidationUtils.checkEmptyOptional(terminal, () -> new InvalidInputException("terminalCode"));
 
-        //TODO verify shahkar
-
         GeneralRealPersonEntity personEntity = findIndividualPersonByNationalCode(nationalCode);
         if (Objects.isNull(personEntity)) {
             personEntity = new IndividualPersonEntity();

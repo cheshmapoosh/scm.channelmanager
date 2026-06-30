@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.uaa.exception.ClientCodeRequiredException;
 import ir.daneshrefah.scm.uaa.exception.ClientVersionRequiredException;
 import ir.daneshrefah.scm.uaa.exception.InvalidClientSignatureException;
 import ir.daneshrefah.scm.uaa.exception.InvalidClientVersionException;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;

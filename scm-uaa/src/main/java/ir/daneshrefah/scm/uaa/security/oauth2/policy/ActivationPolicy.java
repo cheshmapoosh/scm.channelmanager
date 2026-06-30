@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.uaa.security.oauth2.policy;
 import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.uaa.exception.activation.InvalidActivationTerminalCodeException;
 import ir.daneshrefah.scm.uaa.exception.activation.UserActivatedBeforeException;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationAuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

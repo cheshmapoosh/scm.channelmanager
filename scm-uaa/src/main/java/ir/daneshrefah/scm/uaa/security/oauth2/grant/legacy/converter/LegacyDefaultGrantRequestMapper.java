@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.converter;
 
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyPasswordGrantAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.DefaultGrantPreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.DefaultGrantPreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;

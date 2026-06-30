@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.security.oauth2.error;
 
 import ir.daneshrefah.scm.uaa.common.exception.TwoStepAuthenticationRequiredException;
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
 import ir.daneshrefah.scm.uaa.service.otp.dto.OtpSendResponse;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -34,7 +34,7 @@ public class LegacyOAuth2ErrorMapper {
             return null;
         }
         if (exception instanceof TwoStepAuthenticationRequiredException twoStepException) {
-            if (!(twoStepException.getAuthentication() instanceof PostAuthenticationToken authenticationToken)) {
+            if (!(twoStepException.getAuthentication() instanceof AuthenticationOutcomeToken authenticationToken)) {
                 return null;
             }
             String code = authenticationToken.getPrincipal().getUser().getLoginAuthenticationMethod().getCode();

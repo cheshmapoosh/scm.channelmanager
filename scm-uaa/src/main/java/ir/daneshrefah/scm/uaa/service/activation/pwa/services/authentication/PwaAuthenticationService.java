@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication;
 
 import ir.daneshrefah.scm.common.model.message.TokenType;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.model.PwaOAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 

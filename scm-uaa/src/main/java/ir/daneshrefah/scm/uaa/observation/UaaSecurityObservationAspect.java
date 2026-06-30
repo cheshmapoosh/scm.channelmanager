@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.observation;
 
 import ir.daneshrefah.scm.observation.ObservationScope;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -70,7 +70,7 @@ public class UaaSecurityObservationAspect {
         }
     }
 
-    @Around("execution(public * ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationResponseTokenGenerator.getAccessToken(..))")
+    @Around("execution(public * ir.daneshrefah.scm.uaa.security.oauth2.token.AuthenticationResponseTokenGenerator.getAccessToken(..))")
     public Object observeJwtIssue(ProceedingJoinPoint joinPoint) throws Throwable {
         UaaObservation.JwtContext ctx = new UaaObservation.JwtContext(false, "access_token", null,
                 safeName(firstAuthentication(joinPoint)), safeName(firstAuthentication(joinPoint)), null, null);
@@ -92,7 +92,7 @@ public class UaaSecurityObservationAspect {
         }
     }
 
-    @Around("execution(public * ir.daneshrefah.scm.uaa.security.token.generator..*.generateToken(..))")
+    @Around("execution(public * ir.daneshrefah.scm.uaa.security.oauth2.token..*.generateToken(..))")
     public Object observePreAuthTokenCreation(ProceedingJoinPoint joinPoint) throws Throwable {
         return observeOperation(joinPoint, "uaa.auth.pre_auth.convert", "uaa.auth", "pre_auth.token.create");
     }

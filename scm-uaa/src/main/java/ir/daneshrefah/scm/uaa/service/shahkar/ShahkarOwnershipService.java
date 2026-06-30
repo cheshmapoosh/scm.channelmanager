@@ -31,7 +31,7 @@ public class ShahkarOwnershipService {
             Future<ShahkarStatus> f = shahkarVirtualThreadExecutor.submit(() -> doCheck(nationalId, mobile));
             return f.get();
         } catch (Exception e) {
-            log.warn("Shahkar ownership check failed (FAIL). nationalId={}, mobile={}", mask(nationalId), maskMobile(mobile), e);
+            log.warn("Shahkar ownership check failed. errorType={}", e.getClass().getSimpleName());
             return ShahkarStatus.FAIL;
         }
     }
@@ -42,17 +42,14 @@ public class ShahkarOwnershipService {
 
             ShahkarInquiryRequest req = new ShahkarInquiryRequest(nationalId, mobileNo,"0");
             ShahkarInquiryResponse resp = apiClient.inquiryOwnership(token, req);
-            if(log.isDebugEnabled()){
-                log.debug("Shahkr response is:{}",resp);
-            }
+            log.debug("Shahkar ownership response received");
             return mapToStatus(resp);
 
         } catch (RestClientResponseException e) {
-            // HTTP error from Shahkar
-            log.warn("Shahkar HTTP error. status={}, body={}", e.getStatusCode(), safeBody(e.getResponseBodyAsString()), e);
+            log.warn("Shahkar HTTP error. status={}", e.getStatusCode());
             return ShahkarStatus.FAIL;
         } catch (Exception e) {
-            log.warn("Shahkar error (FAIL).", e);
+            log.warn("Shahkar request failed. errorType={}", e.getClass().getSimpleName());
             return ShahkarStatus.FAIL;
         }
     }
@@ -61,7 +58,7 @@ public class ShahkarOwnershipService {
         // Placeholder mapping:
         // later: map real API fields/codes
         if (resp == null || !resp.done() ){
-            log.error(" SHAHKAR-SERVICE Failed. response is:{}",resp);
+            log.error("Shahkar returned an incomplete ownership response");
             return ShahkarStatus.FAIL;
         }
 
@@ -74,18 +71,4 @@ public class ShahkarOwnershipService {
 
     }
 
-    private static String mask(String s) {
-        if (s == null || s.length() < 4) return "***";
-        return "***" + s.substring(s.length() - 4);
-    }
-
-    private static String maskMobile(String s) {
-        if (s == null || s.length() < 4) return "***";
-        return "****" + s.substring(s.length() - 4);
-    }
-
-    private static String safeBody(String body) {
-        if (body == null) return "";
-        return body.length() > 500 ? body.substring(0, 500) + "..." : body;
-    }
 }

@@ -12,9 +12,9 @@ import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalUserDetails;
 import ir.daneshrefah.scm.uaa.domain.client.Client;
-import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.oauth2.token.AbstractOAuth2GrantAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.client.ClientService;
 import ir.daneshrefah.scm.utils.date.DateUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -91,18 +91,18 @@ public class JWTConfig {
     public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer(ClientService clientService) {
         return context -> {
             JwtClaimsSet.Builder claims = context.getClaims();
-            if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
-                PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
-                PostAuthenticationToken principal = context.getPrincipal();
+            if (AuthenticationOutcomeToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
+                AuthenticationOutcomeToken.AuthenticationStatus.INCOMPLETE.equals(((AuthenticationOutcomeToken) context.getPrincipal()).getAuthenticationStatus())) {
+                AuthenticationOutcomeToken principal = context.getPrincipal();
                 User user = principal.getPrincipal().getUser();
                 String terminalCode = user.getTerminalCode();
                 claims.claim(CLAIM_KEY_TERMINAL, terminalCode);
                 claims.claim(CLAIM_KEY_LOGIN_AUTH_METHOD, user.getLoginAuthenticationMethod().getCode());
                 claims.claim(CLAIM_KEY_PERSON_PHONE_NUMBER, getPersonMaskedPhoneNumber(user.getPerson()));
                 addTokenLifeTimeClaims(principal, claims);
-            } else if (PostAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
-                       PostAuthenticationToken.AuthenticationStatus.AUTHENTICATED.equals(((PostAuthenticationToken) context.getPrincipal()).getAuthenticationStatus())) {
-                PostAuthenticationToken principal = context.getPrincipal();
+            } else if (AuthenticationOutcomeToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
+                       AuthenticationOutcomeToken.AuthenticationStatus.AUTHENTICATED.equals(((AuthenticationOutcomeToken) context.getPrincipal()).getAuthenticationStatus())) {
+                AuthenticationOutcomeToken principal = context.getPrincipal();
                 User user = principal.getPrincipal().getUser();
                 putJtiToCache(user, claims, context);
                 String terminalCode = user.getTerminalCode();
@@ -171,9 +171,9 @@ public class JWTConfig {
                 authorities.add(ROLE_PERSON_TYPE_CLIENT);
                 claims.claim(CLAIM_KEY_AUTHORITIES, authorities);
                 addTokenLifeTimeClaims(principal, claims);
-            } else if (AbstractAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
+            } else if (AbstractOAuth2GrantAuthenticationToken.class.isAssignableFrom(context.getPrincipal().getClass()) &&
                        context.getPrincipal().isAuthenticated()) {
-                AbstractAuthenticationToken authenticationToken = context.getPrincipal();
+                AbstractOAuth2GrantAuthenticationToken authenticationToken = context.getPrincipal();
                 User user = ((TerminalUserDetails) authenticationToken.getPrincipal()).getUser();
 
                 claims.claim(CLAIM_KEY_TERMINAL, user.getTerminalCode());
@@ -306,7 +306,7 @@ public class JWTConfig {
         return keyPair;
     }
 
-    private void addTokenLifeTimeClaims(PostAuthenticationToken principal, JwtClaimsSet.Builder claims) {
+    private void addTokenLifeTimeClaims(AuthenticationOutcomeToken principal, JwtClaimsSet.Builder claims) {
         long timeToLiveMinutes = DateUtils.InstantTools.calculateMinutesBetween(principal.getIssuedAt(), principal.getExpiresAt());
         claims.claim(CLAIM_KEY_TIME_TO_LIVE, timeToLiveMinutes);
         claims.claim(CLAIM_KEY_MAX_IDLE_TIME, timeToLiveMinutes);
@@ -317,7 +317,7 @@ public class JWTConfig {
         addTokenByRegisteredClient(registeredClient, claims);
     }
 
-    private void addTokenLifeTimeClaims(AbstractAuthenticationToken principal, JwtClaimsSet.Builder claims) {
+    private void addTokenLifeTimeClaims(AbstractOAuth2GrantAuthenticationToken principal, JwtClaimsSet.Builder claims) {
         RegisteredClient registeredClient = principal.getRegisteredClient();
         addTokenByRegisteredClient(registeredClient, claims);
     }

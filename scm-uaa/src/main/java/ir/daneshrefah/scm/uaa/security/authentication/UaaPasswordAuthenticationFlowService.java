@@ -6,10 +6,10 @@ import ir.daneshrefah.scm.uaa.security.oauth2.policy.ActivationPolicy;
 import ir.daneshrefah.scm.uaa.security.oauth2.policy.ClientAuthenticationPolicy;
 import ir.daneshrefah.scm.uaa.security.oauth2.policy.ClientIpPolicy;
 import ir.daneshrefah.scm.uaa.security.oauth2.policy.ClientVersionPolicy;
-import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.generator.OAuth2AuthenticationRequestTokenGenerator;
+import ir.daneshrefah.scm.uaa.security.authentication.token.UserLoginAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.oauth2.token.OAuth2AuthenticationRequestTokenGenerator;
 import ir.daneshrefah.scm.uaa.security.userDetails.UserDetailsService;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.services.authentication.PwaAuthenticationService;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -69,22 +69,22 @@ public class UaaPasswordAuthenticationFlowService {
             pwaAuthenticationService.preAuthenticateCheck(preAuthenticationToken);
         }
 
-        GeneralAuthenticationToken authenticationToken = createAuthenticationToken(
+        UserLoginAuthenticationToken authenticationToken = createAuthenticationToken(
                 preAuthenticationToken,
                 (TerminalUserDetails) userDetails
         );
         authenticationToken.setSessionRequired(preAuthenticationToken.getScopes().contains(OAUTH2_SCOPE_NAME_SESSION));
         authenticationToken.setNotificationRequired(preAuthenticationToken.getGrantType().isSupportNotification());
 
-        GeneralAuthenticationToken authenticatedToken = authenticateMethod(authenticationToken);
+        UserLoginAuthenticationToken authenticatedToken = authenticateMethod(authenticationToken);
         return new AuthenticationResult(preAuthenticationToken, authenticatedToken);
     }
 
-    private GeneralAuthenticationToken createAuthenticationToken(
+    private UserLoginAuthenticationToken createAuthenticationToken(
             PreAuthenticationToken preAuthenticationToken,
             TerminalUserDetails userDetails
     ) {
-        GeneralAuthenticationToken token;
+        UserLoginAuthenticationToken token;
         try {
             token = authenticationTokenGenerator.generateToken(preAuthenticationToken, userDetails);
         } catch (Exception exception) {
@@ -97,11 +97,11 @@ public class UaaPasswordAuthenticationFlowService {
         return token;
     }
 
-    private GeneralAuthenticationToken authenticateMethod(GeneralAuthenticationToken authenticationToken) {
+    private UserLoginAuthenticationToken authenticateMethod(UserLoginAuthenticationToken authenticationToken) {
         try {
-            GeneralAuthenticationToken authenticatedToken =
-                    (GeneralAuthenticationToken) authenticationManager.authenticate(authenticationToken);
-            Exception exception = authenticatedToken instanceof PostAuthenticationToken postAuthenticationToken
+            UserLoginAuthenticationToken authenticatedToken =
+                    (UserLoginAuthenticationToken) authenticationManager.authenticate(authenticationToken);
+            Exception exception = authenticatedToken instanceof AuthenticationOutcomeToken postAuthenticationToken
                     ? postAuthenticationToken.getException()
                     : null;
             if (authenticatedToken == null || !authenticatedToken.isAuthenticated()) {
@@ -166,7 +166,7 @@ public class UaaPasswordAuthenticationFlowService {
 
     public record AuthenticationResult(
             PreAuthenticationToken preAuthenticationToken,
-            GeneralAuthenticationToken authentication
+            UserLoginAuthenticationToken authentication
     ) {
     }
 }

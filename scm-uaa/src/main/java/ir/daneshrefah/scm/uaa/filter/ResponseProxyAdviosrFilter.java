@@ -1,45 +1,30 @@
 package ir.daneshrefah.scm.uaa.filter;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import ir.daneshrefah.scm.uaa.security.token.OAuth2ShahkarAuthenticationToken;
 import ir.daneshrefah.scm.uaa.service.proxy.spec.ResponseProxy;
 import ir.daneshrefah.scm.uaa.service.proxy.spec.ResponseProxyAdvisor;
-import ir.daneshrefah.scm.uaa.utils.CachedAccessToken;
 import ir.daneshrefah.scm.utils.functional.safe.SafeProcess;
-import ir.daneshrefah.scm.utils.string.StringUtils;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.connector.RequestFacade;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 @RequiredArgsConstructor
 @Slf4j
 public class ResponseProxyAdviosrFilter implements Filter {
 
-    private final HazelcastInstance hazelcast;
     private final BeanFactory beanFactory;
     private static final Map<String, ResponseProxyAdvisor> allResponseProxyAdvisors = new HashMap<>();
     private ObjectMapper objectMapper;
-    private final static String tokenCacheMap = "scm-uaa:refresh:token-cache";
-    private static IMap<String, CachedAccessToken<OAuth2ShahkarAuthenticationToken>> map;
-    private final Long sessionTTL; //is set from yml  inside @Bean
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -49,7 +34,6 @@ public class ResponseProxyAdviosrFilter implements Filter {
         allResponseProxyAdvisors.putAll(injectedResponseProxyAdvisors);
         allResponseProxyAdvisors.values().forEach(p -> log.info("response proxy advisor initialized. type={}",
                 p.getClass().getSimpleName()));
-        map = hazelcast.getMap(tokenCacheMap);
     }
 
     @Override
@@ -77,19 +61,6 @@ public class ResponseProxyAdviosrFilter implements Filter {
                 }).onFailure(exception -> {
                     log.error("response proxy failed: {}", safeMessage(exception));
                 }));
-
-
-        if((request.getAttribute("Verify") !=null && (Boolean) request.getAttribute("Verify")) || ((RequestFacade) request).getRequestURI().equals("/auth/refresh") ){
-            JsonNode jsonNode = objectMapper.readTree( new String(responseWrapper.getContentAsByteArray(), StandardCharsets.UTF_8));
-            long now = System.currentTimeMillis();
-            String refreshToken =jsonNode.get("refresh_token").asText();
-            if(StringUtils.isNotEmpty(refreshToken)) {
-                CachedAccessToken<OAuth2ShahkarAuthenticationToken> cachedAccessToken = new CachedAccessToken<>((OAuth2ShahkarAuthenticationToken) request.getAttribute("preAuthenticationInstance"),now+sessionTTL);
-                map.set(refreshToken,cachedAccessToken , now+sessionTTL, TimeUnit.MILLISECONDS);
-            }
-        }else if(request.getAttribute("Verify") !=null && !(Boolean) request.getAttribute("Verify")) {
-            responseWrapper.reset();
-        }
         responseWrapper.copyBodyToResponse();
     }
 

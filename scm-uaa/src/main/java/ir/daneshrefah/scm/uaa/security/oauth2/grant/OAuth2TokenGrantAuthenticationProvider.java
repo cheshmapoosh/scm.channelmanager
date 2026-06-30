@@ -4,7 +4,7 @@ import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
 import ir.daneshrefah.scm.uaa.mapper.AuthorizationGrantTypeMapper;
-import ir.daneshrefah.scm.uaa.security.token.AbstractAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.oauth2.token.AbstractOAuth2GrantAuthenticationToken;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class OAuth2TokenGrantAuthenticationProvider<T extends AbstractAuthenticationToken> implements AuthenticationProvider {
+public abstract class OAuth2TokenGrantAuthenticationProvider<T extends AbstractOAuth2GrantAuthenticationToken> implements AuthenticationProvider {
     private final RegisteredClientRepository registeredClientRepository;
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
 
@@ -102,6 +102,7 @@ public abstract class OAuth2TokenGrantAuthenticationProvider<T extends AbstractA
             }
         }
         log.trace("Authenticated token request");
+        onTokensGenerated(authenticationToken, accessToken, refreshToken);
         return new OAuth2AccessTokenAuthenticationToken(
                 registeredClient,
                 authenticationToken.getClientPrincipal(),
@@ -113,4 +114,11 @@ public abstract class OAuth2TokenGrantAuthenticationProvider<T extends AbstractA
     protected abstract AuthorizationGrantType grantType();
 
     protected abstract T authenticateToken(T authenticationToken);
+
+    protected void onTokensGenerated(
+            T authenticationToken,
+            OAuth2AccessToken accessToken,
+            OAuth2RefreshToken refreshToken
+    ) {
+    }
 }

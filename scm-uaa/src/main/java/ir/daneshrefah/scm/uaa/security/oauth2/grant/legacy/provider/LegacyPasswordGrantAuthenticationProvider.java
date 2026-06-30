@@ -9,10 +9,10 @@ import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyAppVersi
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
 import ir.daneshrefah.scm.uaa.security.oauth2.error.LegacyOAuth2ErrorMapper;
 import ir.daneshrefah.scm.uaa.security.oauth2.policy.RegisteredClientLegacyPolicy;
-import ir.daneshrefah.scm.uaa.security.token.GeneralAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.PreAuthenticationToken;
-import ir.daneshrefah.scm.uaa.security.token.generator.AuthenticationResponseTokenGenerator;
+import ir.daneshrefah.scm.uaa.security.authentication.token.UserLoginAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.oauth2.token.AuthenticationResponseTokenGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
@@ -81,10 +81,10 @@ public class LegacyPasswordGrantAuthenticationProvider implements Authentication
     private Authentication buildResponse(
             Authentication requestAuthentication,
             PreAuthenticationToken preAuthenticationToken,
-            GeneralAuthenticationToken authentication
+            UserLoginAuthenticationToken authentication
     ) {
-        PostAuthenticationToken.AuthenticationStatus status = ((PostAuthenticationToken) authentication).getAuthenticationStatus();
-        if (PostAuthenticationToken.AuthenticationStatus.INCOMPLETE.equals(status)) {
+        AuthenticationOutcomeToken.AuthenticationStatus status = ((AuthenticationOutcomeToken) authentication).getAuthenticationStatus();
+        if (AuthenticationOutcomeToken.AuthenticationStatus.INCOMPLETE.equals(status)) {
             throw new TwoStepAuthenticationRequiredException(authentication);
         }
         return responseTokenGenerator.getAccessToken(

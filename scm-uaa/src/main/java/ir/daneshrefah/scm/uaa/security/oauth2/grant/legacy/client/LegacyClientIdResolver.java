@@ -59,6 +59,38 @@ public class LegacyClientIdResolver {
         return null;
     }
 
+    public String resolveShahkar(
+            Authentication clientPrincipal,
+            LegacyRequestParameters parameters,
+            LegacyAppVersion appVersion
+    ) {
+        LegacyAppVersion effectiveAppVersion = appVersion == null ? new LegacyAppVersion(null) : appVersion;
+        validate(effectiveAppVersion);
+        if (effectiveAppVersion.isPresent() && !effectiveAppVersion.isSuperApp()) {
+            throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+        }
+
+        String authenticatedClientId = authenticatedClientId(clientPrincipal);
+        if (StringUtils.hasText(authenticatedClientId)) {
+            return authenticatedClientId;
+        }
+
+        String explicitClientId = parameters.firstParameter(OAuth2ParameterNames.CLIENT_ID)
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .orElse(null);
+        if (StringUtils.hasText(explicitClientId)) {
+            return explicitClientId;
+        }
+
+        if (effectiveAppVersion.isSuperApp()) {
+            return requireClientId(properties.getClientResolution().getSuperAppClientId());
+        }
+
+        throwError(OAuth2ErrorCodes.INVALID_CLIENT, OAuth2ParameterNames.CLIENT_ID);
+        return null;
+    }
+
     private void validate(LegacyAppVersion appVersion) {
         if (appVersion.isPresent() && !appVersion.isKnown()) {
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_APP_VERSION, Constants.APP_VERSION_HEADER);

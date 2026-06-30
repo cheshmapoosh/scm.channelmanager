@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.security.listener;
 
-import ir.daneshrefah.scm.uaa.security.token.PostAuthenticationToken;
+import ir.daneshrefah.scm.uaa.security.authentication.token.AuthenticationOutcomeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
@@ -21,13 +21,13 @@ public abstract class BaseAuthenticationListener implements ApplicationListener<
     @Override
     public void onApplicationEvent(AuthenticationSuccessEvent event) {
         Authentication authentication = event.getAuthentication();
-        if (null == authentication || !PostAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
+        if (null == authentication || !AuthenticationOutcomeToken.class.isAssignableFrom(authentication.getClass())) {
             return;
         }
-        PostAuthenticationToken postAuthenticationToken = (PostAuthenticationToken) authentication;
+        AuthenticationOutcomeToken postAuthenticationToken = (AuthenticationOutcomeToken) authentication;
         onSuccessAuthenticationEvent(postAuthenticationToken);
     }
 
-    protected abstract void onSuccessAuthenticationEvent(PostAuthenticationToken authentication);
+    protected abstract void onSuccessAuthenticationEvent(AuthenticationOutcomeToken authentication);
 
 }

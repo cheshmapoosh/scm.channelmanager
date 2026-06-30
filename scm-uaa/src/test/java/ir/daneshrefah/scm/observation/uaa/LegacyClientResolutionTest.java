@@ -347,6 +347,63 @@ class LegacyClientResolutionTest {
         ));
     }
 
+    @Test
+    void shahkarMapsSaAppVersionToConfiguredSuperAppClient() {
+        LegacyClientIdResolver resolver = new LegacyClientIdResolver(configuredProperties());
+        MockHttpServletRequest request = requestWithAppVersion("AppVersion", "SA-4.2.0");
+        LegacyRequestParameters parameters = new LegacyRequestParameters(request);
+
+        assertEquals("configured-sa", resolver.resolveShahkar(
+                null,
+                parameters,
+                new LegacyAppVersion(parameters.appVersion().orElse(null))
+        ));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PWA-1.0.0", "MB-2.0.0"})
+    void shahkarRejectsPwaAndMbAppVersions(String rawAppVersion) {
+        LegacyClientIdResolver resolver = new LegacyClientIdResolver(configuredProperties());
+        MockHttpServletRequest request = requestWithAppVersion("app_version", rawAppVersion);
+        LegacyRequestParameters parameters = new LegacyRequestParameters(request);
+
+        OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () ->
+                resolver.resolveShahkar(
+                        null,
+                        parameters,
+                        new LegacyAppVersion(parameters.appVersion().orElse(null))
+                ));
+
+        assertEquals("invalid_client", exception.getError().getErrorCode());
+    }
+
+    @Test
+    void shahkarRejectsUnknownAppVersion() {
+        LegacyClientIdResolver resolver = new LegacyClientIdResolver(configuredProperties());
+        MockHttpServletRequest request = requestWithAppVersion("app-version", "WEB-1.0.0");
+        LegacyRequestParameters parameters = new LegacyRequestParameters(request);
+
+        OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () ->
+                resolver.resolveShahkar(
+                        null,
+                        parameters,
+                        new LegacyAppVersion(parameters.appVersion().orElse(null))
+                ));
+
+        assertEquals(Constants.OAUTH2_ERROR_CODE_INVALID_APP_VERSION, exception.getError().getErrorCode());
+    }
+
+    @Test
+    void shahkarRequiresClientSourceWhenAppVersionIsMissing() {
+        LegacyClientIdResolver resolver = new LegacyClientIdResolver(configuredProperties());
+        LegacyRequestParameters parameters = new LegacyRequestParameters(new MockHttpServletRequest());
+
+        OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () ->
+                resolver.resolveShahkar(null, parameters, new LegacyAppVersion(null)));
+
+        assertEquals("invalid_client", exception.getError().getErrorCode());
+    }
+
     private MockHttpServletRequest requestWithAppVersion(String name, String value) {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(name, value);
