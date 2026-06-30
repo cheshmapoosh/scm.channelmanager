@@ -2,12 +2,14 @@ package ir.daneshrefah.scm.uaa.security.oauth2.policy;
 
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyAuthProperties;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Central place for client-aware legacy grant enablement decisions.
@@ -17,7 +19,7 @@ import java.util.Locale;
 @SuppressWarnings("removal")
 public class RegisteredClientLegacyPolicy {
     public static final String SETTING_LEGACY_ENABLED = "scm.uaa.legacy.enabled";
-    public static final String SETTING_LEGACY_CLIENT_TYPE = "scm.uaa.legacy.client.type";
+    public static final String SETTING_LEGACY_CLIENT_TYPE = LegacyClientTypeResolver.SETTING_LEGACY_CLIENT_TYPE;
     public static final String SETTING_LEGACY_PWA_COOKIE_ENABLED = "scm.uaa.legacy.pwa.cookie.enabled";
     public static final String SETTING_LEGACY_NIB_BACK_TO_BACK_ENABLED = "scm.uaa.legacy.nib.back-to-back.enabled";
 
@@ -64,9 +66,9 @@ public class RegisteredClientLegacyPolicy {
     }
 
     private boolean clientMatches(RegisteredClient registeredClient, LegacyClientType clientType) {
-        LegacyClientType configuredType = configuredClientType(registeredClient);
-        if (configuredType != null) {
-            return configuredType == clientType;
+        ConfiguredClientType configuredType = configuredClientType(registeredClient);
+        if (configuredType.present()) {
+            return configuredType.value() == clientType;
         }
         String clientId = registeredClient.getClientId();
         if (!StringUtils.hasText(clientId)) {
@@ -74,29 +76,43 @@ public class RegisteredClientLegacyPolicy {
         }
         String normalized = clientId.trim().toUpperCase(Locale.ROOT);
         return switch (clientType) {
-            case PWA -> normalized.startsWith("PWA");
-            case MB -> normalized.startsWith("MB");
-            case NIB -> normalized.startsWith("NIB");
+            case PWA -> matchesConfiguredClientId(clientId, properties.getClientResolution().getPwaClientId())
+                    || normalized.startsWith("PWA");
+            case MB -> matchesConfiguredClientId(clientId, properties.getClientResolution().getMbClientId())
+                    || normalized.startsWith("MB");
+            case SA -> matchesConfiguredClientId(clientId, properties.getClientResolution().getSuperAppClientId())
+                    || normalized.startsWith("SA");
+            case NIB -> matchesConfiguredClientId(clientId, properties.getClientResolution().getNibClientId())
+                    || normalized.startsWith("NIB");
         };
     }
 
-    private LegacyClientType configuredClientType(RegisteredClient registeredClient) {
+    private ConfiguredClientType configuredClientType(RegisteredClient registeredClient) {
         if (registeredClient.getClientSettings() == null) {
-            return null;
+            return ConfiguredClientType.absent();
         }
-        Object setting = registeredClient.getClientSettings().getSettings().get(SETTING_LEGACY_CLIENT_TYPE);
-        if (setting == null) {
-            return null;
+        Map<String, Object> settings = registeredClient.getClientSettings().getSettings();
+        if (!settings.containsKey(SETTING_LEGACY_CLIENT_TYPE)) {
+            return ConfiguredClientType.absent();
+        }
+        Object setting = settings.get(SETTING_LEGACY_CLIENT_TYPE);
+        if (setting == null || !StringUtils.hasText(String.valueOf(setting))) {
+            return ConfiguredClientType.absent();
         }
         String text = String.valueOf(setting).trim();
-        if (!StringUtils.hasText(text)) {
-            return null;
+        String normalized = text.toUpperCase(Locale.ROOT);
+        if ("SUPER_APP".equals(normalized) || "SUPER-APP".equals(normalized)) {
+            return new ConfiguredClientType(true, LegacyClientType.SA);
         }
         try {
-            return LegacyClientType.valueOf(text.toUpperCase(Locale.ROOT));
+            return new ConfiguredClientType(true, LegacyClientType.valueOf(normalized));
         } catch (IllegalArgumentException ignored) {
-            return null;
+            return new ConfiguredClientType(true, null);
         }
+    }
+
+    private boolean matchesConfiguredClientId(String actual, String configured) {
+        return StringUtils.hasText(configured) && actual.trim().equalsIgnoreCase(configured.trim());
     }
 
     private boolean setting(RegisteredClient registeredClient, String key, boolean defaultValue) {
@@ -111,5 +127,11 @@ public class RegisteredClientLegacyPolicy {
             return bool;
         }
         return Boolean.parseBoolean(String.valueOf(value));
+    }
+
+    private record ConfiguredClientType(boolean present, LegacyClientType value) {
+        private static ConfiguredClientType absent() {
+            return new ConfiguredClientType(false, null);
+        }
     }
 }

@@ -1,6 +1,6 @@
 # راهنمای Authentication در `scm-uaa`
 
-این فایل برای توسعه‌دهنده‌های تازه‌وارد نوشته شده است. هدف این است که بدانید هر مسیر لاگین از کجا وارد می‌شود، کدام کلاس‌ها مسئول چه کاری هستند، کجا باید کد اضافه کنید، و چطور خروجی‌های JSONL برای LOG و TRACE تولید می‌شوند.
+هدف این است که بدانید هر مسیر لاگین از کجا وارد می‌شود، کدام کلاس‌ها مسئول چه کاری هستند، کجا باید کد اضافه کنید، و چطور خروجی‌های JSONL برای LOG و TRACE تولید می‌شوند.
 
 ## ۱. لاگین قدیمی NIB - صفحه لاگین در فرانت NIB و دریافت توکن به صورت back-to-back
 
@@ -176,6 +176,30 @@ TRACE/LOG مهم:
 - وقتی مرتبط است، attributeای مثل `cookie.created=false` باید قابل مشاهده باشد.
 - برای MB نباید `Set-Cookie` ساخته شود.
 - هیچ مقدار خام حساس نباید وارد JSONL شود.
+
+## Legacy app_version و انتخاب client_id
+
+کلاینت‌های قدیمی PWA، اپلیکیشن MB و Super App ممکن است نسخه برنامه را با نام‌های متفاوتی در header بفرستند. UAA این aliasها را مستقیما در کد تشخیص می‌دهد:
+
+- `AppVersion`
+- `Appversion`
+- `app_version`
+- `app-version`
+- `APP_VERSION`
+- `APPVERSION`
+
+نام این aliasها قابل تنظیم نیست. فقط `client_id` نهایی قابل تنظیم است:
+
+- `scm.uaa.legacy.client-resolution.pwa-client-id`
+- `scm.uaa.legacy.client-resolution.mb-client-id`
+- `scm.uaa.legacy.client-resolution.super-app-client-id`
+- `scm.uaa.legacy.client-resolution.nib-client-id`
+
+در grant قدیمی `default`، اگر نسخه با `PWA` شروع شود به `client_id` تنظیم‌شده PWA، اگر با `MB` شروع شود به `client_id` تنظیم‌شده MB، و اگر با `SA` شروع شود به `client_id` تنظیم‌شده Super App نگاشت می‌شود. مقدارهای پیش‌فرض سازگار با رفتار قدیمی به‌ترتیب `PWA`، `MB` و `SA` هستند.
+
+این نگاشت فقط برای سازگاری مسیر legacy/default است. کلاینت‌های استاندارد OAuth2 باید `client_id` عادی خود را ارسال کنند. مقدار `app_version` فقط یک compatibility hint است و اختیار امنیتی ایجاد نمی‌کند؛ policy ثبت‌شده کلاینت منبع نهایی تصمیم است.
+
+نسخه ناشناخته مثل `WEB-1.0.0` با خطای `invalid_app_version` رد می‌شود. نسخه ناشناخته هرگز به PWA تبدیل نمی‌شود. اگر principal احراز هویت‌شده OAuth2 و پارامتر صریح `client_id` وجود نداشته باشد، نبودن `app_version` با `invalid_client` رد می‌شود و آن هم نباید به‌صورت ضمنی PWA انتخاب شود.
 
 ## قانون طلایی امنیتی
 

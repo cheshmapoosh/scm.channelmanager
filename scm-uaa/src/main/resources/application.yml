@@ -50,6 +50,11 @@ scm:
   uaa:
     legacy:
       enabled: ${SCM_UAA_LEGACY_ENABLED:true}
+      client-resolution:
+        pwa-client-id: ${SCM_UAA_LEGACY_PWA_CLIENT_ID:PWA}
+        mb-client-id: ${SCM_UAA_LEGACY_MB_CLIENT_ID:MB}
+        super-app-client-id: ${SCM_UAA_LEGACY_SUPER_APP_CLIENT_ID:SA}
+        nib-client-id: ${SCM_UAA_LEGACY_NIB_CLIENT_ID:NIB}
       pwa:
         cookie:
           enabled: ${SCM_UAA_LEGACY_PWA_COOKIE_ENABLED:true}

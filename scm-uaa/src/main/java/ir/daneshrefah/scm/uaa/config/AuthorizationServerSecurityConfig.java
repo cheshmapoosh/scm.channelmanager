@@ -3,9 +3,7 @@ package ir.daneshrefah.scm.uaa.config;
 import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.uaa.security.filter.MissingGrantTypeFallbackFilter;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyAuthProperties;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.converter.LegacyPasswordGrantAuthenticationConverter;
-import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.converter.LegacyPasswordGrantRequestMapper;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.provider.LegacyPasswordGrantAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenticationConverter;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenticationProvider;
@@ -48,7 +46,6 @@ public class AuthorizationServerSecurityConfig {
 
     private final OtpUserService otpUserService;
     private final ShahkarOwnershipService shahkarOwnershipService;
-    private final LegacyClientTypeResolver legacyClientTypeResolver;
 
     @Qualifier("hazelcastClient")
     private final HazelcastInstance hazelcastInstance;
@@ -60,6 +57,7 @@ public class AuthorizationServerSecurityConfig {
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(
             HttpSecurity http,
+            LegacyPasswordGrantAuthenticationConverter legacyPasswordGrantAuthenticationConverter,
             LegacyPasswordGrantAuthenticationProvider legacyPasswordGrantAuthenticationProvider,
             SmsOtpGrantAuthenticationProvider smsOtpGrantAuthenticationProvider,
             ShahkarGrantAuthenticationProvider shahkarGrantAuthenticationProvider
@@ -70,9 +68,7 @@ public class AuthorizationServerSecurityConfig {
                 .authorizationEndpoint(authorizationEndpoint -> authorizationEndpoint.consentPage("/consent"))
                 .tokenEndpoint(tokenEndpoint -> tokenEndpoint
                         .accessTokenRequestConverters(converters -> converters.addAll(Arrays.asList(
-                                new LegacyPasswordGrantAuthenticationConverter(
-                                        new LegacyPasswordGrantRequestMapper(legacyClientTypeResolver)
-                                ),
+                                legacyPasswordGrantAuthenticationConverter,
                                 new SmsOtpGrantAuthenticationConverter(),
                                 new ShahkarGrantAuthenticationConverter(
                                         otpUserService,

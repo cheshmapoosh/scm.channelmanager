@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.observation.uaa;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyAuthProperties;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.LegacyClientType;
+import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyAppVersion;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.legacy.client.LegacyClientTypeResolver;
 import ir.daneshrefah.scm.uaa.security.oauth2.policy.LegacyCookiePolicy;
 import ir.daneshrefah.scm.uaa.security.oauth2.policy.RegisteredClientLegacyPolicy;
@@ -105,8 +106,11 @@ class UaaSecurityArchitectureTest {
 
         assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/converter/LegacyPasswordGrantAuthenticationConverter.java");
         assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/converter/LegacyPasswordGrantRequestMapper.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/converter/LegacyRequestParameters.java");
         assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/converter/LegacyDefaultGrantRequestMapper.java");
         assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/provider/LegacyPasswordGrantAuthenticationProvider.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/client/LegacyAppVersion.java");
+        assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/client/LegacyClientIdResolver.java");
         assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/client/LegacyClientTypeResolver.java");
         assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/delivery/LegacyTokenDeliveryContext.java");
         assertJavaFileExists("ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/delivery/LegacyTokenDeliveryStrategy.java");
@@ -149,6 +153,8 @@ class UaaSecurityArchitectureTest {
         assertTrue(source.contains("SmsOtpGrantAuthenticationProvider"));
         assertTrue(source.contains("ShahkarGrantAuthenticationConverter"));
         assertTrue(source.contains("ShahkarGrantAuthenticationProvider"));
+        assertFalse(source.contains("new LegacyPasswordGrantAuthenticationConverter"));
+        assertFalse(source.contains("new LegacyPasswordGrantRequestMapper"));
         assertFalse(source.contains("SecondPassword" + "GrantAuthenticationConverter"));
         assertFalse(source.contains("AuthorizationGrantType." + "SECOND_PASSWORD"));
     }
@@ -163,11 +169,17 @@ class UaaSecurityArchitectureTest {
 
     @Test
     void requestHintAloneCannotForcePwaCookieForNonPwaClient() {
-        LegacyClientTypeResolver resolver = new LegacyClientTypeResolver();
-        RegisteredClientLegacyPolicy registeredPolicy = new RegisteredClientLegacyPolicy(enabledLegacyProperties(true));
+        LegacyAuthProperties properties = enabledLegacyProperties(true);
+        LegacyClientTypeResolver resolver = new LegacyClientTypeResolver(properties);
+        RegisteredClientLegacyPolicy registeredPolicy = new RegisteredClientLegacyPolicy(properties);
         LegacyCookiePolicy cookiePolicy = new LegacyCookiePolicy(registeredPolicy);
 
-        LegacyClientType resolved = resolver.resolve("MB", "PWA-REQUEST-HINT", AuthorizationGrantType.DEFAULT);
+        LegacyClientType resolved = resolver.resolve(
+                registeredClient("MB", LegacyClientType.MB),
+                "MB",
+                new LegacyAppVersion("PWA-REQUEST-HINT"),
+                AuthorizationGrantType.DEFAULT
+        );
 
         assertEquals(LegacyClientType.MB, resolved);
         assertFalse(cookiePolicy.canCreateCookie(registeredClient("MB", LegacyClientType.MB), resolved));
@@ -175,11 +187,20 @@ class UaaSecurityArchitectureTest {
 
     @Test
     void mbNeverReceivesCookie() {
-        RegisteredClientLegacyPolicy registeredPolicy = new RegisteredClientLegacyPolicy(enabledLegacyProperties(true));
+        LegacyAuthProperties properties = enabledLegacyProperties(true);
+        LegacyClientTypeResolver resolver = new LegacyClientTypeResolver(properties);
+        RegisteredClientLegacyPolicy registeredPolicy = new RegisteredClientLegacyPolicy(properties);
         LegacyCookiePolicy cookiePolicy = new LegacyCookiePolicy(registeredPolicy);
+        LegacyClientType resolved = resolver.resolve(
+                registeredClient("MB", LegacyClientType.MB),
+                "MB",
+                new LegacyAppVersion("MB-ANDROID-1.0.0"),
+                AuthorizationGrantType.DEFAULT
+        );
 
-        assertTrue(registeredPolicy.isMbHeaderOnly(registeredClient("MB", LegacyClientType.MB), LegacyClientType.MB));
-        assertFalse(cookiePolicy.canCreateCookie(registeredClient("MB", LegacyClientType.MB), LegacyClientType.MB));
+        assertEquals(LegacyClientType.MB, resolved);
+        assertTrue(registeredPolicy.isMbHeaderOnly(registeredClient("MB", LegacyClientType.MB), resolved));
+        assertFalse(cookiePolicy.canCreateCookie(registeredClient("MB", LegacyClientType.MB), resolved));
     }
 
     @Test
@@ -220,6 +241,16 @@ class UaaSecurityArchitectureTest {
                 assertEquals(allowed, file.normalize(), () -> file + " must not create legacy token cookies");
             }
         }
+    }
+
+    @Test
+    void legacyPasswordMapperDoesNotOwnClientFallbackPolicy() throws Exception {
+        String source = Files.readString(MAIN.resolve(
+                "ir/daneshrefah/scm/uaa/security/oauth2/grant/legacy/converter/LegacyPasswordGrantRequestMapper.java"
+        ));
+
+        assertFalse(source.contains("defaultClientId"));
+        assertFalse(source.contains("return \"PWA\""));
     }
 
     @Test
