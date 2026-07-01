@@ -22,17 +22,17 @@ scm:
     datasource:
       main:
         enabled: true
-        url: ${SCM_UAA_MAIN_DB_URL:jdbc:db2://localhost:50000/SCM}
-        username: ${SCM_UAA_MAIN_DB_USERNAME:scm}
-        password: ${SCM_UAA_MAIN_DB_PASSWORD:}
+        url: ${SCM_UAA_MAIN_DB_URL:jdbc:db2://10.15.27.82:446/DSNALOC}
+        username: ${SCM_UAA_MAIN_DB_USERNAME:casadm}
+        password: ${SCM_UAA_MAIN_DB_PASSWORD:a}
         driver-class-name: ${SCM_UAA_MAIN_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
         max-connection: ${SCM_UAA_MAIN_DB_MAX_CONNECTION:10}
         default-schema: ${SCM_UAA_MAIN_DB_SCHEMA:REF}
       activation:
         enabled: ${SCM_UAA_ACTIVATION_DB_ENABLED:true}
-        url: ${SCM_UAA_ACTIVATION_DB_URL:jdbc:db2://localhost:50000/SCM}
-        username: ${SCM_UAA_ACTIVATION_DB_USERNAME:scm}
-        password: ${SCM_UAA_ACTIVATION_DB_PASSWORD:}
+        url: ${SCM_UAA_ACTIVATION_DB_URL:jdbc:db2://10.15.1.197:50000/DBREFSW}
+        username: ${SCM_UAA_ACTIVATION_DB_USERNAME:mbusr}
+        password: ${SCM_UAA_ACTIVATION_DB_PASSWORD:mbusr}
         driver-class-name: ${SCM_UAA_ACTIVATION_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
         max-connection: ${SCM_UAA_ACTIVATION_DB_MAX_CONNECTION:10}
         default-schema: ${SCM_UAA_ACTIVATION_DB_SCHEMA:MBUAA}
@@ -43,6 +43,52 @@ scm:
         - "http://127.0.0.1:*"
         - "https://127.0.0.1:*"
         - "https://*.local.test:*"
+
+  otp:
+    time-to-live-minutes: 1
+    jms:
+      avacas:
+        hostName: 10.15.1.185
+        port: 1717
+        channel: SYSTEM.ADMIN.SVRCONN
+        queueManager: CSQ1
+        username: Administrator
+        password:
+        sendQueueName: AVACAS2CM_R
+        receiverQueueName: AVACAS2CM_L
+
+  jms:
+    logout:
+      enabled: true
+      host: 10.15.1.185
+      port: 1818
+      channel: SYSTEM.ADMIN.SVRCONN
+      queueManager: CSQ2
+      username:
+      password:
+      topic: SUA/LOGOUT
+
+
+  cache:
+    client:
+      distributed: true
+      config:
+        cluster-name: dev3
+        network-config:
+          addresses:
+            - '10.10.8.66:5701'
+
+  notification:
+    enabled: true
+    sms:
+      enabled: true
+      ibm-mq:
+        queue-manager: CSQ1
+        channel: SYSTEM.ADMIN.SVRCONN
+        username: Administrator
+        password: " "
+        port: 1717
+        host: 10.15.1.185
 
   log:
     app:

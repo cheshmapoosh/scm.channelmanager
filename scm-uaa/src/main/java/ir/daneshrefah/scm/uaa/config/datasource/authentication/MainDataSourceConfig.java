@@ -33,7 +33,11 @@ import java.util.Objects;
 @EnableTransactionManagement
 @EnableConfigurationProperties(DataSourceConfigProperties.class)
 @EnableJpaRepositories(
-        basePackages = "ir.daneshrefah.scm.uaa.repository.authentication",
+        basePackages = {
+                "ir.daneshrefah.scm.uaa.repository.authentication",
+                "ir.daneshrefah.scm.common.data.repository",
+                "ir.daneshrefah.scm.notification.client.repository",
+        },
         entityManagerFactoryRef = "mainEntityManagerFactory",
         transactionManagerRef = "mainTransactionManager"
 )
@@ -91,7 +95,8 @@ public class MainDataSourceConfig {
                 .dataSource(dataSource)
                 .packages(
                         "ir.daneshrefah.scm.uaa.repository.authentication",
-                        "ir.daneshrefah.scm.common.data.entity"
+                        "ir.daneshrefah.scm.common.data.entity",
+                        "ir.daneshrefah.scm.notification.client.repository.entity"
                 )
                 .properties(jpaProperties)
                 .build();

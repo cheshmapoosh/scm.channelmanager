@@ -9,7 +9,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 @Repository
-public interface ResourceBundleRepository extends JpaRepository<ResourceBundleEntity,String> {
+public interface ResourceBundleRepository extends JpaRepository<ResourceBundleEntity,Long> {
 
     Optional<ResourceBundleEntity> findByLocaleAndKey(Locale locale,String key);
 

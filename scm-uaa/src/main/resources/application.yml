@@ -48,7 +48,7 @@ scm:
       default-role: ${SCM_UAA_DEFAULT_CLIENT_ROLE:ROLE_CLIENT}
     key-store:
       name: ${SCM_UAA_JWT_KEY_STORE:config/keystore.p12}
-      password: ${SCM_UAA_JWT_KEY_STORE_PASSWORD:}
+      password: ${SCM_UAA_JWT_KEY_STORE_PASSWORD:password}
       alias: ${SCM_UAA_JWT_KEY_ALIAS:selfsigned}
     oauth:
       config:
