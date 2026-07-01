@@ -90,7 +90,10 @@ public class ActivationDataSourceConfig {
 
         return builder
                 .dataSource(dataSource)
-                .packages("ir.daneshrefah.scm.uaa.repository.activation")
+                .packages(
+                        "ir.daneshrefah.scm.uaa.repository.activation.domain",
+                        "ir.daneshrefah.scm.common.data.entity"
+                )
                 .properties(jpaProperties)
                 .build();
     }

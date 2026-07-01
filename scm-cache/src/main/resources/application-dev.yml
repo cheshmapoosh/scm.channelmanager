@@ -120,8 +120,8 @@ scm:
               enabled: false
             tcp-ip-config:
               enabled: false
-              required-member: 10.10.4.125
-              members: 10.10.4.125
+              required-member: 10.10.8.66
+              members: 10.10.8.66
               connection-timeout-seconds: 5
         flake-id-generator-configs:
           default:
