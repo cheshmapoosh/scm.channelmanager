@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
+import ir.daneshrefah.scm.core.config.SensitiveChannelFilterConfig;
 import ir.daneshrefah.scm.core.config.SensitiveDataDecryptConfig;
 import ir.daneshrefah.scm.core.config.SensitiveFieldConfig;
 import ir.daneshrefah.scm.core.services.crypto.SensitiveDataDecryptService;
@@ -53,6 +54,12 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
             return;
         }
 
+        Message message = exchange.getMessage();
+
+        if (!isAllowedChannel(message, config)) {
+            return;
+        }
+
         List<SensitiveFieldConfig> fields = config.getFields();
 
         if (fields == null || fields.isEmpty()) {
@@ -60,13 +67,39 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
             return;
         }
 
-        Message message = exchange.getMessage();
-
         for (SensitiveFieldConfig field : fields) {
             decryptField(message, field, config);
         }
 
 
+    }
+
+    private boolean isAllowedChannel(Message message, SensitiveDataDecryptConfig config) {
+        SensitiveChannelFilterConfig channelFilter = config.getChannelFilter();
+
+        if (channelFilter == null || !channelFilter.isEnabled()) {
+            return true;
+        }
+
+        String channelValue = findFirstValue(message, channelFilter.getSources());
+
+        if (StringUtils.isBlank(channelValue)) {
+            log.debug("SensitiveDataDecryptPlugin skipped because no channel value found");
+            return false;
+        }
+
+        boolean allowed = channelFilter.getAllowedValues() != null
+                && channelFilter.getAllowedValues().stream()
+                .filter(StringUtils::isNotBlank)
+                .anyMatch(allowedValue -> allowedValue.equalsIgnoreCase(channelValue));
+
+        if (allowed) {
+            log.debug("SensitiveDataDecryptPlugin matched channel value channel={}", channelValue);
+            return true;
+        }
+
+        log.debug("SensitiveDataDecryptPlugin skipped because channelFilter did not match channel={}", channelValue);
+        return false;
     }
 
     private SensitiveDataDecryptConfig resolveConfig(PluginDetail pluginDetail) {

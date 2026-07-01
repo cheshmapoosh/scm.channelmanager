@@ -9,5 +9,6 @@ import java.util.List;
 public  class SensitiveDataDecryptConfig {
     private boolean enabled = true;
     private boolean failOnDecryptError = true;
+    private SensitiveChannelFilterConfig channelFilter;
     private List<SensitiveFieldConfig> fields = new ArrayList<>();
 }
