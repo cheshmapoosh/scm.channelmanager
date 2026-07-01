@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 /**
  * Description of the class or purpose of the file.
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
  */
 @Getter
 @NoArgsConstructor
+@Accessors(chain = true)
 public class Error {
 
     /**

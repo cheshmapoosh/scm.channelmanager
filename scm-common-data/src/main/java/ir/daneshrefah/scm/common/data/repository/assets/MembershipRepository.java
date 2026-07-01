@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.common.data.repository.assets;
 
 
 import ir.daneshrefah.scm.common.data.entity.asset.MembershipEntity;
+import ir.daneshrefah.scm.common.model.membership.MembershipType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,6 +32,9 @@ public interface MembershipRepository extends JpaRepository<MembershipEntity, Lo
 
     @Query("SELECT O FROM MembershipEntity O WHERE O.person.id = :userId")
     List<MembershipEntity> findMembershipListByUserId(@Param("userId") Integer userId);
+
+    @Query("SELECT O FROM MembershipEntity O WHERE O.person.id = :userId and o.membershipType = :membershipType and o.customerNo = :customerNo")
+    Optional<MembershipEntity> findMembershipListByUserIdAndTypeAndCustomerNo(@Param("userId") Integer userId, @Param("membershipType")MembershipType membershipType, @Param("customerNo") String customerNo);
 
     interface MembershipSpecs {
 

@@ -1,5 +1,7 @@
 package transformers
 
+import ir.daneshrefah.scm.common.model.person.GeneralPerson
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson
 import ir.daneshrefah.scm.uaa.common.model.user.User
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils
 
@@ -12,14 +14,24 @@ def transactionNumber = body['pageSize'];
 if (transactionNumber < 0 || transactionNumber > 400) {
     transactionNumber = 400;
 }
-def creditDebit = body['creditDebit'];
-if (creditDebit == "WITHDRAWAL") {
-    creditDebit = "1";
-} else if (creditDebit == "DEPOSIT") {
-    creditDebit = "2";
+def transType = body['transType']
+if (transType == "WITHDRAW") {
+    transType = "1";
+} else if (transType == "DEPOSIT") {
+    transType = "2";
 } else {
-    creditDebit = "0";
+    transType = "0";
 }
+
+def creditDebit = body['creditDebit'];
+if(creditDebit == "DEBIT"){
+    creditDebit = "1"
+}else if(creditDebit == "CREDIT"){
+    creditDebit = "2"
+}else {
+    creditDebit = "0"
+}
+
 def bankIdentificationNumber;
 if (header['acquirerInstitutionID'] != null) {
     bankIdentificationNumber = header['acquirerInstitutionID'];
@@ -59,12 +71,13 @@ if (iban == null || iban.toString().isEmpty() || iban.toString().length() != 26)
     iban = "";
 }
 
-//def person = header['person']
-def loggedInUser = AuthenticationUtils.getLoggedInUser()
-def person = Objects.requireNonNull(loggedInUser).getPerson();
-def nationalId = "0047672064"
-//def nationalId = Objects.requireNonNull(person).nationalCode
-//println("nationalllllll :"+ nationalId)
+def person = AuthenticationUtils.getLoggedInUser().getPerson()
+
+String nationalId = ""
+if (person instanceof GeneralPerson) {
+    nationalId = ((GeneralRealPerson) person).getNationalCode()
+}
+
 
 def filter = body['filter'];
 
@@ -97,7 +110,7 @@ def nabRequest = [
                 "transactionNumber"       : transactionNumber,
                 "startDate"               : body.startDate,
                 "endDate"                 : body.endDate,
-                "transType"               : body.transType,
+                "transType"               : transType,
                 "creditDebit"             : creditDebit,
                 "bankIdentificationNumber": bankIdentificationNumber,
                 "extCode"                 : extCode,
@@ -136,7 +149,6 @@ def nabRequest = [
         ],
         "response": [
                 "fields": [
-//                        ["name": "actionCode", "length": 5],
                         ["name": "command", "length": 2],
                         ["name": "service", "length": 2],
                         ["name": "date", "length": 8],
@@ -164,7 +176,7 @@ def nabRequest = [
                         ["name": "sourceCardNo", "length": 20],
                         ["name": "destCardNo", "length": 20],
                         ["name": "otherSideIban", "length": 26],
-                        ["name": "reference", "length": 30],
+                        ["name": "reference", "length": 30]
                 ]
         ]
 ]

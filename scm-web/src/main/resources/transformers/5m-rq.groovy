@@ -1,12 +1,21 @@
 package transformers
 
-def body = exchange.in.body
-def header = exchange.in.headers
-def person = header['person']
-println "groovy person $person"
-def nationalIdRaw = "0047672064"// person.nationalCode //"0047672064"
+import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson
+import ir.daneshrefah.scm.common.model.person.GeneralPerson
+import ir.daneshrefah.scm.common.model.person.GeneralRealPerson
+import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils
+
+
+def loggedInUser = AuthenticationUtils.getLoggedInUser();
+def person = Objects.requireNonNull(loggedInUser).getPerson()
+String nationalId = ""
+
+if(person instanceof GeneralPerson){
+        nationalId = ((GeneralRealPerson) person).getNationalCode()
+}
+
+def nationalIdRaw = nationalId //"0047672064"
 if(!nationalIdRaw){throw new IllegalArgumentException("nationalId not found")}
-def nationalId=nationalIdRaw.toString()
 
 def nabRequest = [
         "command" : [
@@ -23,7 +32,6 @@ def nabRequest = [
         ],
         "response": [
                 "fields": [
-//                        ["name": "actionCode", "length": 5],
                         ["name": "command", "length": 2],
                         ["name": "service", "length": 2],
                         ["name": "date", "length": 8],

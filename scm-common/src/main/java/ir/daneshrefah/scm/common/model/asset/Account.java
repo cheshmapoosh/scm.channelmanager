@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.model.asset;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.daneshrefah.scm.common.AbstractAuditableModel;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,8 @@ public class Account extends AbstractAuditableModel<Long> {
     private AccountType accountType;
     private AssetProvider assetProvider;
     private Integer close;
+
+    @JsonIgnore
     private LocalDateTime closeDate;
     private Integer reasonClose;
 

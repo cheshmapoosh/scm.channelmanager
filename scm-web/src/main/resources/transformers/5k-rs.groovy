@@ -67,10 +67,10 @@ for (def body in bodyRawList) {
         permitServices << "atm"
     }
     if(permitServiceId[1..1] == "1"){
-        permitServices << "ib"
+        permitServices << "mb"
     }
     if(permitServiceId[2..2] == "1"){
-        permitServices << "mb"
+        permitServices << "ib"
     }
 
     def item = [
