@@ -95,7 +95,7 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
             membershipEntity.setMembershipType(MembershipType.DELEGATOR);
             membershipEntity.setCustomerAccount(savesCustomerAccount);
         } else {
-            Optional<MembershipEntity> entity = membershipRepository.findMembershipListByUserIdAndTypeAndCustomerNo(person.getId(), MembershipType.DELEGATOR, customerNo);
+            Optional<MembershipEntity> entity = membershipRepository.findMembershipListByUserIdAndMembershipTypeAndCustomerNo(person.getId(), MembershipType.DELEGATOR, customerNo);
             if (entity.isPresent()) {
                 log.info("deActive delegator karpardaz membership");
                 membershipEntity = entity.get();

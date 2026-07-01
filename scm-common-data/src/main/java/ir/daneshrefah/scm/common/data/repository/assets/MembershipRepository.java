@@ -22,7 +22,7 @@ public interface MembershipRepository extends JpaRepository<MembershipEntity, Lo
     List<MembershipEntity> findAllByPersonUsername(@Param("username") String username);
 
     @Query("SELECT o FROM MembershipEntity o where o.customerAccount.account.accountNo = :accountNo and o.person.username = :username")
-    Optional<MembershipEntity> findAccountMembershipByAccountNoAndUsername(@Param("accountNo") String accountNo,@Param("username") String username);
+    Optional<MembershipEntity> findAccountMembershipByAccountNoAndUsername(@Param("accountNo") String accountNo, @Param("username") String username);
 
     @Query("SELECT O FROM MembershipEntity O WHERE O.id = :membershipId")
     Optional<MembershipEntity> findAccountMembershipById(@Param("membershipId") Long membershipId);
@@ -33,8 +33,8 @@ public interface MembershipRepository extends JpaRepository<MembershipEntity, Lo
     @Query("SELECT O FROM MembershipEntity O WHERE O.person.id = :userId")
     List<MembershipEntity> findMembershipListByUserId(@Param("userId") Integer userId);
 
-    @Query("SELECT O FROM MembershipEntity O WHERE O.person.id = :userId and o.membershipType = :membershipType and o.customerNo = :customerNo")
-    Optional<MembershipEntity> findMembershipListByUserIdAndTypeAndCustomerNo(@Param("userId") Integer userId, @Param("membershipType")MembershipType membershipType, @Param("customerNo") String customerNo);
+    @Query("SELECT O FROM MembershipEntity O WHERE O.person.id = :userId and O.membershipType = :membershipType and O.customerNo = :customerNo")
+    Optional<MembershipEntity> findMembershipListByUserIdAndMembershipTypeAndCustomerNo(@Param("userId") Integer userId, @Param("membershipType") MembershipType membershipType, @Param("customerNo") String customerNo);
 
     interface MembershipSpecs {
 
