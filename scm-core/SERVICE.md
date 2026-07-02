@@ -157,7 +157,7 @@ Service layer مسئول pipeline داخلی سرویس است.
 - audit plugin
 - metrics plugin
 - tracing/logging service-level
-- اجرای routing strategy مثل FIRST, FAIL_OVER, MULTI_OPERATION
+- اجرای routing strategy مثل FIRST، FAIL_OVER و CHAIN_ON_APPROVE
 - اتصال به operation/provider
 ```
 
@@ -451,7 +451,8 @@ Metrics مربوط به pluginهای service باید شامل count, duration �
 اگر خواستی routing strategy یا provider call را تغییر بدهی:
 
 ```text
-برو سراغ ServiceTargetRouter یا provider module.
+برو سراغ package مربوط به service routing یا provider module.
+ServiceTargetRouter فقط dispatcher است و business rule نباید داخل آن قرار بگیرد.
 Gateway را تغییر نده.
 ```
 
@@ -490,12 +491,10 @@ CHAIN_ON_APPROVE  -> operationهای فعال را به ترتیب اجرا می
 - `ServiceTargetRoutingRegistry` handler مناسب را پیدا می‌کند و handler تکراری، strategy خالی یا strategy پشتیبانی‌نشده را رد می‌کند.
 - هر پیاده‌سازی `ServiceTargetRoutingHandler` مسئول یک strategy است.
 - `ChainOnApproveRoutePlanFactory` هنگام ساخته‌شدن Camel route، operationهای فعال را به یک plan تغییرناپذیر تبدیل می‌کند.
-- هر `ChainOnApproveStepPlan` از قبل operation، `executionOrder`، آدرس endpoint، bean مربوط به `OperationApprovalPolicy` و `Definition` همان مرحله را نگه می‌دارد.
-- `ChainOnApproveStepConfigExtractor` تنظیمات هر مرحله را از JSON موجود در `ServiceOperation.definition.details` می‌خواند.
-- برای هر service-operation فعال در `CHAIN_ON_APPROVE` وجود `Definition` و `Definition.details` الزامی است.
-- فیلد `executionOrder` الزامی است، باید integer باشد، و ترتیب اجرای stepها را مشخص می‌کند.
-- فیلد `approvalPolicyCode` اختیاری است. نبودن یا blank بودن آن یعنی policy پیش‌فرض `DEFAULT`.
-- اگر JSON نامعتبر باشد، `executionOrder` معتبر نباشد، مقدار `executionOrder` در یک chain تکراری باشد، یا `approvalPolicyCode` به policy ثبت‌شده‌ای اشاره نکند، ساخت route همان موقع fail می‌شود.
+- هر `ChainOnApproveStepPlan` از قبل operation، آدرس endpoint، bean مربوط به `OperationApprovalPolicy` و `Definition` همان مرحله را نگه می‌دارد.
+- `OperationApprovalPolicyCodeExtractor` مقدار `approvalPolicyCode` را از JSON موجود در `ServiceOperation.definition.details` استخراج می‌کند و `OperationApprovalPolicyPlanFactory` bean متناظر را از `OperationApprovalPolicyRegistry` پیدا می‌کند.
+- اگر definition وجود نداشته باشد، `details` خالی باشد، یا `approvalPolicyCode` وجود نداشته یا خالی باشد، `DefaultOperationApprovalPolicy` انتخاب می‌شود.
+- اگر JSON نامعتبر باشد یا `approvalPolicyCode` به policy ثبت‌شده‌ای اشاره نکند، ساخت route همان موقع fail می‌شود.
 - `ChainOnApproveServiceTargetRoutingHandler` با plan آماده route را می‌سازد. قبل از هر فراخوانی، propertyهای `Message.SERVICE_OPERATION` و `Message.OPERATION_NAME` تنظیم می‌شوند.
 
 ### startup و runtime
@@ -509,21 +508,20 @@ DB -> Service + ServiceOperation + Definition
    -> Camel route
 ```
 
-در زمان اجرای request، برنامه فقط operation فعلی را اجرا می‌کند و policy از قبل resolveشده در همان step را صدا می‌زند. در این مسیر نه query دیتابیس انجام می‌شود و نه JSON موجود در definition دوباره parse می‌شود.
+در زمان اجرای request، برنامه فقط operation فعلی را اجرا می‌کند و policy از قبل resolveشده در همان step را صدا می‌زند. در این مسیر نه query دیتابیس انجام می‌شود و نه policy code دوباره از definition استخراج می‌شود.
 
 بنابراین تغییر `TBL_SCM_DEFINITION` یا اتصال definition به service-operation بعد از startup روی route موجود اثر ندارد. تا وقتی قابلیت route reload اضافه نشده است، برای اعمال این تغییرها application باید restart شود.
 
-ترتیب stepها فقط از `executionOrder` داخل `TBL_SCM_DEFINITION.DETAILS` می‌آید. قبل از ساخت route، همه stepها بر اساس `executionOrder` مرتب می‌شوند. اگر دو step فعال در یک service chain مقدار `executionOrder` یکسان داشته باشند، application هنگام startup/ساخت route fail می‌شود.
+ترتیب stepها از ترتیب لیست `serviceOperations` بارگذاری‌شده از `TBL_SCM_SERVICE_OPERATION` می‌آید. مدل فعلی `ServiceOperation` فیلد order ندارد. بنابراین chain همین ترتیب لیست را حفظ می‌کند. اگر ترتیب business باید از database قابل تنظیم و تضمین‌شده باشد، باید در آینده یک فیلد order صریح به مدل و query دیتابیس اضافه شود.
 
 ### approved همیشه مساوی success نیست
 
 `DefaultOperationApprovalPolicy` فقط `Message.isSuccessful()` را approved می‌داند.
 
-ممکن است یک خطای business مثل duplicate data برای ادامه chain قابل قبول باشد. برای این رفتار باید یک bean جدید از `OperationApprovalPolicy` با `code()` مشخص ساخته شود و همان code در JSON فیلد `Definition.details` مرحله قرار بگیرد. `executionOrder` همچنان برای همان مرحله الزامی است:
+ممکن است یک خطای business مثل duplicate data برای ادامه chain قابل قبول باشد. برای این رفتار باید یک bean جدید از `OperationApprovalPolicy` با `code()` مشخص ساخته شود و همان code در JSON فیلد `Definition.details` مرحله قرار بگیرد:
 
 ```json
 {
-  "executionOrder": 10,
   "approvalPolicyCode": "DUPLICATE_DATA_APPROVED"
 }
 ```
@@ -547,29 +545,16 @@ C not approved  -> chain تمام می‌شود
 - `REF.EB_SERVICE.ROUTING_STRATEGY` strategy سرویس را مشخص می‌کند و برای این حالت باید دقیقا `CHAIN_ON_APPROVE` باشد.
 - `REF.TBL_SCM_SERVICE_OPERATION` operationهای سرویس و اتصال هر مرحله به definition را نگه می‌دارد. فقط رکوردهای active وارد plan می‌شوند.
 - `REF.TBL_SCM_SERVICE_OPERATION.DEFINITION_ID` به `REF.TBL_SCM_DEFINITION` اشاره می‌کند.
-- `REF.TBL_SCM_DEFINITION.DETAILS` تنظیمات step را به شکل JSON نگه می‌دارد.
-- هر service-operation فعال باید یک definition با `DETAILS` معتبر داشته باشد.
-- فیلد `executionOrder` الزامی است و باید integer باشد.
-- فیلد `approvalPolicyCode` اختیاری است و وقتی مقدار داشته باشد باید با `OperationApprovalPolicy.code()` یک Spring bean برابر باشد.
-- نبودن یا blank بودن `approvalPolicyCode` در JSON معتبر یعنی policy پیش‌فرض `DEFAULT`.
-- `DEFAULT` یعنی chain فقط وقتی ادامه پیدا می‌کند که `Message.isSuccessful()` مقدار true داشته باشد.
-- نبودن definition، null/blank بودن `DETAILS`، JSON نامعتبر، `executionOrder` نامعتبر یا تکراری، یا `approvalPolicyCode` ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
-
-فرمت `DETAILS` برای هر step:
-
-```json
-{
-  "executionOrder": 10,
-  "approvalPolicyCode": "DUPLICATE_DATA_APPROVED"
-}
-```
+- `REF.TBL_SCM_DEFINITION.DETAILS` تنظیمات approval policy را به شکل JSON نگه می‌دارد و `approvalPolicyCode` باید با `OperationApprovalPolicy.code()` یک Spring bean برابر باشد.
+- نبودن definition یا null/blank بودن `DETAILS` یعنی policy پیش‌فرض `DEFAULT`.
+- نبودن یا blank بودن `approvalPolicyCode` در JSON معتبر نیز یعنی policy پیش‌فرض `DEFAULT`.
+- JSON نامعتبر یا `approvalPolicyCode` ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
 
 مسیر resolve شدن policy:
 
 ```text
 TBL_SCM_SERVICE_OPERATION.DEFINITION_ID
   -> TBL_SCM_DEFINITION.DETAILS
-  -> executionOrder
   -> approvalPolicyCode
   -> OperationApprovalPolicyRegistry
   -> OperationApprovalPolicy bean
@@ -599,17 +584,17 @@ EB_SERVICE.ROUTING_STRATEGY = CHAIN_ON_APPROVE
 
 Step 1:
   operation = create-customer
-  definition.details = {"executionOrder":10,"approvalPolicyCode":"DUPLICATE_DATA_APPROVED"}
+  definition.details = {"approvalPolicyCode":"DUPLICATE_DATA_APPROVED"}
 
 Step 2:
   operation = create-account
-  definition.details = {"executionOrder":20}
+  definition.details = {"approvalPolicyCode":"DEFAULT"}
 ```
 
 معنی مثال:
 
-- `create-customer` اول اجرا می‌شود و از custom approval با کد `DUPLICATE_DATA_APPROVED` استفاده می‌کند.
-- `create-account` دوم اجرا می‌شود و از رفتار پیش‌فرض `DEFAULT` استفاده می‌کند.
+- `create-customer` در success ادامه می‌دهد و اگر bean با کد `DUPLICATE_DATA_APPROVED` آن پاسخ را تایید کند، روی duplicate data هم ادامه می‌دهد.
+- `create-account` از رفتار پیش‌فرض استفاده می‌کند.
 - policy هر service-operation مستقل است؛ دو مرحله یک سرویس می‌توانند policy متفاوت داشته باشند.
 - اگر bean مربوط به `DUPLICATE_DATA_APPROVED` وجود نداشته باشد، application هنگام ساخت route fail می‌شود، نه هنگام اولین request.
 
