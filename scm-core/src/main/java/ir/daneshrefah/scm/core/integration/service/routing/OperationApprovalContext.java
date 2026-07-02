@@ -10,7 +10,6 @@ public record OperationApprovalContext(
         Service service,
         ServiceOperation serviceOperation,
         Definition approvalDefinition,
-        JsonNode payload
-//        Message message
+        Message message
 ) {
 }
