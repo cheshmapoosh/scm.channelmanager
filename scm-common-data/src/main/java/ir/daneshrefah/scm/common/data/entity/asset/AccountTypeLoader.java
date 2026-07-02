@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 public class AccountTypeLoader {
     private final AccountTypeRepository accountTypeRepository;

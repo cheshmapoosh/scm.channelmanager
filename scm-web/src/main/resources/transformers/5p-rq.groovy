@@ -10,9 +10,9 @@ def header = exchange.in.headers
 
 def f = { value, len -> value = value?.toString() ?: ''; value.length() > len ? value[0..<len] : value.padRight(len, ' ') };
 
-def transactionNumber = body['pageSize'];
-if (transactionNumber < 0 || transactionNumber > 400) {
-    transactionNumber = 400;
+def pageSize = body['pageSize'];
+if (pageSize < 0 || pageSize > 400) {
+    pageSize = 400;
 }
 def transType = body['transType']
 if (transType == "WITHDRAW") {
@@ -24,11 +24,11 @@ if (transType == "WITHDRAW") {
 }
 
 def creditDebit = body['creditDebit'];
-if(creditDebit == "DEBIT"){
+if (creditDebit == "DEBIT") {
     creditDebit = "1"
-}else if(creditDebit == "CREDIT"){
+} else if (creditDebit == "CREDIT") {
     creditDebit = "2"
-}else {
+} else {
     creditDebit = "0"
 }
 
@@ -76,13 +76,14 @@ def person = AuthenticationUtils.getLoggedInUser().getPerson()
 String nationalId = ""
 if (person instanceof GeneralPerson) {
     nationalId = ((GeneralRealPerson) person).getNationalCode()
+    println("5p nationalId : "+ nationalId)
 }
 
 
 def filter = body['filter'];
 
 //def request = f(body.accountNo, 18) +
-//        f(transactionNumber, 3) +
+//        f(pageSize, 3) +
 //        f(body.startDate, 8) +
 //        f(body.endDate, 8) +
 //        f(body.transType, 1) +
@@ -107,7 +108,7 @@ def nabRequest = [
         ],
         "data"    : [
                 "accountNo"               : body.accountNo,
-                "transactionNumber"       : transactionNumber,
+                "pageSize"                : pageSize,
                 "startDate"               : body.startDate,
                 "endDate"                 : body.endDate,
                 "transType"               : transType,
@@ -128,7 +129,7 @@ def nabRequest = [
         "request" : [
                 "fields": [
                         ["name": "accountNo", "length": 18, "required": true],
-                        ["name": "transactionNumber", "length": 3, "required": true],
+                        ["name": "pageSize", "length": 3, "required": true],
                         ["name": "startDate", "length": 8, "required": false],
                         ["name": "endDate", "length": 8, "required": false],
                         ["name": "transType", "length": 1, "required": false],
@@ -174,7 +175,7 @@ def nabRequest = [
                         ["name": "billId", "length": 18],
                         ["name": "paymentId", "length": 18],
                         ["name": "sourceCardNo", "length": 20],
-                        ["name": "destCardNo", "length": 20],
+                        ["name": "destinationAccountNo", "length": 20],
                         ["name": "otherSideIban", "length": 26],
                         ["name": "reference", "length": 30]
                 ]
