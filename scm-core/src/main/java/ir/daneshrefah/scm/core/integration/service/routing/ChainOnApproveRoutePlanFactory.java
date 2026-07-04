@@ -34,7 +34,7 @@ public class ChainOnApproveRoutePlanFactory {
                 serviceOperation,
                 stepConfig.executionOrder(),
                 endpointResolver.resolve(serviceOperation.getOperationName()),
-                approvalPolicyPlanFactory.resolvePolicy(service, serviceOperation),
+                approvalPolicyPlanFactory.resolvePolicy(service, serviceOperation, stepConfig),
                 serviceOperation.getDefinition()
         );
     }
