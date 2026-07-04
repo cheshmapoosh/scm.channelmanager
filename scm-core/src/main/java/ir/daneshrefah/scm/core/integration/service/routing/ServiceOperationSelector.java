@@ -34,7 +34,6 @@ public class ServiceOperationSelector {
         if (service == null || service.getServiceOperations() == null) {
             return List.of();
         }
-        // TODO Add an explicit DB order field if operation ordering must become business-configurable.
         return service.getServiceOperations().stream()
                 .filter(operation -> operation != null && Boolean.TRUE.equals(operation.getActive()))
                 .toList();

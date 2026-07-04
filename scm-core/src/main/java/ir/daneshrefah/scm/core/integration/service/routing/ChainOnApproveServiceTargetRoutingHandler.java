@@ -54,6 +54,10 @@ public class ChainOnApproveServiceTargetRoutingHandler implements ServiceTargetR
             ChainOnApproveStepPlan step
     ) {
         Message message = exchange.getMessage().getBody(Message.class);
+        if (message == null) {
+            throw new IllegalStateException("CHAIN_ON_APPROVE requires Message body after operation "
+                    + step.serviceOperation().getOperationName());
+        }
         return step.approvalPolicy().isApproved(new OperationApprovalContext(
                 plan.service(),
                 step.serviceOperation(),

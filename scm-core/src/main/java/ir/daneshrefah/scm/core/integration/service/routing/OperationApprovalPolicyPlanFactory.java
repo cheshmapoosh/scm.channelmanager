@@ -12,20 +12,34 @@ import org.springframework.stereotype.Component;
 public class OperationApprovalPolicyPlanFactory {
     private final OperationApprovalPolicyRegistry policyRegistry;
     private final DefaultOperationApprovalPolicy defaultPolicy;
-    private final OperationApprovalPolicyCodeExtractor policyCodeExtractor;
 
-    public OperationApprovalPolicy resolvePolicy(Service service, ServiceOperation serviceOperation) {
-        Definition definition = serviceOperation.getDefinition();
+    public OperationApprovalPolicy resolvePolicy(
+            Service service,
+            ServiceOperation serviceOperation,
+            ChainOnApproveStepConfig stepConfig
+    ) {
+        Definition definition = serviceOperation == null ? null : serviceOperation.getDefinition();
+        if (stepConfig == null) {
+            throw new IllegalStateException("Cannot build CHAIN_ON_APPROVE route for serviceCode="
+                    + serviceCode(service) + ", operationName=" + operationName(serviceOperation)
+                    + ", definitionId=" + definitionId(definition)
+                    + ", definitionName=" + definitionName(definition)
+                    + ", field=details: extracted step config must not be null");
+        }
+
+        String policyCode = stepConfig.approvalPolicyCode();
+        if (StringUtils.isBlank(policyCode)) {
+            return defaultPolicy;
+        }
+
         try {
-            String policyCode = policyCodeExtractor.extract(definition);
-            if (StringUtils.isBlank(policyCode)) {
-                return defaultPolicy;
-            }
             return policyRegistry.getRequired(policyCode);
-        } catch (IllegalStateException exception) {
-            throw new IllegalStateException("Cannot build CHAIN_ON_APPROVE route for service "
-                    + serviceCode(service) + ", operation " + serviceOperation.getOperationName()
-                    + ": " + exception.getMessage(), exception);
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            throw new IllegalStateException("Cannot build CHAIN_ON_APPROVE route for serviceCode="
+                    + serviceCode(service) + ", operationName=" + operationName(serviceOperation)
+                    + ", definitionId=" + definitionId(definition)
+                    + ", definitionName=" + definitionName(definition)
+                    + ", field=approvalPolicyCode: " + exception.getMessage(), exception);
         }
     }
 
