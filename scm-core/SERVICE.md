@@ -470,6 +470,151 @@ Gateway را تغییر نده.
 
 ---
 
+## CHAIN_ON_APPROVE Routing Strategy
+
+### چه مشکلی را حل می‌کند؟
+
+گاهی یک `Service` به چند `ServiceOperation` فعال وصل است و operationها باید به ترتیب اجرا شوند. در این حالت operation بعدی فقط وقتی اجرا می‌شود که نتیجه operation قبلی از نظر business قابل قبول یا **approved** باشد.
+
+تفاوت strategyها:
+
+```text
+FIRST             -> دقیقا یک operation فعال را اجرا می‌کند.
+FAIL_OVER         -> رفتار failover فعلی را برای operationهای فعال حفظ می‌کند.
+CHAIN_ON_APPROVE  -> operationهای فعال را به ترتیب اجرا می‌کند و قبل از رفتن به مرحله بعد approval را می‌سنجد.
+```
+
+### در کد چگونه کار می‌کند؟
+
+- `ServiceTargetRouter` فقط `RoutingStrategy` را به registry می‌دهد و هیچ `if/else` یا `switch` مربوط به strategy ندارد.
+- `ServiceTargetRoutingRegistry` handler مناسب را پیدا می‌کند و handler تکراری، strategy خالی یا strategy پشتیبانی‌نشده را رد می‌کند.
+- هر پیاده‌سازی `ServiceTargetRoutingHandler` مسئول یک strategy است.
+- `ChainOnApproveRoutePlanFactory` هنگام ساخته‌شدن Camel route، operationهای فعال را به یک plan تغییرناپذیر تبدیل می‌کند.
+- هر `ChainOnApproveStepPlan` از قبل operation، `executionOrder`، آدرس endpoint، bean مربوط به `OperationApprovalPolicy` و `Definition` همان مرحله را نگه می‌دارد.
+- `ChainOnApproveStepConfigExtractor` تنظیمات هر مرحله را از JSON موجود در `ServiceOperation.definition.details` می‌خواند.
+- برای هر service-operation فعال در `CHAIN_ON_APPROVE` وجود `Definition` و `Definition.details` الزامی است.
+- فیلد `executionOrder` الزامی است، باید integer باشد، و ترتیب اجرای stepها را مشخص می‌کند.
+- فیلد `approvalPolicyCode` اختیاری است. نبودن یا blank بودن آن یعنی policy پیش‌فرض `DEFAULT`.
+- اگر JSON نامعتبر باشد، `executionOrder` معتبر نباشد، مقدار `executionOrder` در یک chain تکراری باشد، یا `approvalPolicyCode` به policy ثبت‌شده‌ای اشاره نکند، ساخت route همان موقع fail می‌شود.
+- `ChainOnApproveServiceTargetRoutingHandler` با plan آماده route را می‌سازد. قبل از هر فراخوانی، propertyهای `Message.SERVICE_OPERATION` و `Message.OPERATION_NAME` تنظیم می‌شوند.
+
+### startup و runtime
+
+این strategy در startup و هنگام ساخت Camel route آماده می‌شود:
+
+```text
+DB -> Service + ServiceOperation + Definition
+   -> ChainOnApproveRoutePlanFactory
+   -> ChainOnApproveRoutePlan با stepهای آماده
+   -> Camel route
+```
+
+در زمان اجرای request، برنامه فقط operation فعلی را اجرا می‌کند و policy از قبل resolveشده در همان step را صدا می‌زند. در این مسیر نه query دیتابیس انجام می‌شود و نه JSON موجود در definition دوباره parse می‌شود.
+
+بنابراین تغییر `TBL_SCM_DEFINITION` یا اتصال definition به service-operation بعد از startup روی route موجود اثر ندارد. تا وقتی قابلیت route reload اضافه نشده است، برای اعمال این تغییرها application باید restart شود.
+
+ترتیب stepها فقط از `executionOrder` داخل `TBL_SCM_DEFINITION.DETAILS` می‌آید. قبل از ساخت route، همه stepها بر اساس `executionOrder` مرتب می‌شوند. اگر دو step فعال در یک service chain مقدار `executionOrder` یکسان داشته باشند، application هنگام startup/ساخت route fail می‌شود.
+
+### approved همیشه مساوی success نیست
+
+`DefaultOperationApprovalPolicy` فقط `Message.isSuccessful()` را approved می‌داند.
+
+ممکن است یک خطای business مثل duplicate data برای ادامه chain قابل قبول باشد. برای این رفتار باید یک bean جدید از `OperationApprovalPolicy` با `code()` مشخص ساخته شود و همان code در JSON فیلد `Definition.details` مرحله قرار بگیرد. `executionOrder` همچنان برای همان مرحله الزامی است:
+
+```json
+{
+  "executionOrder": 10,
+  "approvalPolicyCode": "DUPLICATE_DATA_APPROVED"
+}
+```
+
+کل `Definition` از طریق `OperationApprovalContext` به policy می‌رسد. هیچ error code مربوط به duplicate داخل router hard-code نشده است و `Definition.name` فقط metadata هویتی/نمایشی است.
+
+### مثال
+
+فرض کن سرویس سه operation فعال `A`، `B` و `C` دارد:
+
+```text
+A approved      -> B اجرا می‌شود
+B approved      -> C اجرا می‌شود
+C not approved  -> chain تمام می‌شود
+```
+
+اگر پاسخ `A` از نظر فنی error باشد ولی policy آن error را approved بداند، `B` همچنان اجرا می‌شود.
+
+### تنظیم database
+
+- `REF.EB_SERVICE.ROUTING_STRATEGY` strategy سرویس را مشخص می‌کند و برای این حالت باید دقیقا `CHAIN_ON_APPROVE` باشد.
+- `REF.TBL_SCM_SERVICE_OPERATION` operationهای سرویس و اتصال هر مرحله به definition را نگه می‌دارد. فقط رکوردهای active وارد plan می‌شوند.
+- `REF.TBL_SCM_SERVICE_OPERATION.DEFINITION_ID` به `REF.TBL_SCM_DEFINITION` اشاره می‌کند.
+- `REF.TBL_SCM_DEFINITION.DETAILS` تنظیمات step را به شکل JSON نگه می‌دارد.
+- هر service-operation فعال باید یک definition با `DETAILS` معتبر داشته باشد.
+- فیلد `executionOrder` الزامی است و باید integer باشد.
+- فیلد `approvalPolicyCode` اختیاری است و وقتی مقدار داشته باشد باید با `OperationApprovalPolicy.code()` یک Spring bean برابر باشد.
+- نبودن یا blank بودن `approvalPolicyCode` در JSON معتبر یعنی policy پیش‌فرض `DEFAULT`.
+- `DEFAULT` یعنی chain فقط وقتی ادامه پیدا می‌کند که `Message.isSuccessful()` مقدار true داشته باشد.
+- نبودن definition، null/blank بودن `DETAILS`، JSON نامعتبر، `executionOrder` نامعتبر یا تکراری، یا `approvalPolicyCode` ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
+
+فرمت `DETAILS` برای هر step:
+
+```json
+{
+  "executionOrder": 10,
+  "approvalPolicyCode": "DUPLICATE_DATA_APPROVED"
+}
+```
+
+مسیر resolve شدن policy:
+
+```text
+TBL_SCM_SERVICE_OPERATION.DEFINITION_ID
+  -> TBL_SCM_DEFINITION.DETAILS
+  -> executionOrder
+  -> approvalPolicyCode
+  -> OperationApprovalPolicyRegistry
+  -> OperationApprovalPolicy bean
+  -> ChainOnApproveStepPlan
+```
+
+فیلد `ServiceEntity.routingStrategy` با `EnumType.STRING` ذخیره می‌شود. مقدار database:
+
+```text
+CHAIN_ON_APPROVE
+```
+
+مثال:
+
+```sql
+UPDATE REF.EB_SERVICE
+SET ROUTING_STRATEGY = 'CHAIN_ON_APPROVE'
+WHERE CODE = 'YOUR_SERVICE_CODE';
+```
+
+طول این مقدار از محدودیت فعلی ستون (`20`) کمتر است. چون enum به شکل string ذخیره می‌شود و seed/migration محدودکننده‌ای برای لیست strategyها در repository وجود ندارد، برای اضافه شدن این مقدار migration جدا لازم نیست.
+
+مثال تنظیم دو مرحله:
+
+```text
+EB_SERVICE.ROUTING_STRATEGY = CHAIN_ON_APPROVE
+
+Step 1:
+  operation = create-customer
+  definition.details = {"executionOrder":10,"approvalPolicyCode":"DUPLICATE_DATA_APPROVED"}
+
+Step 2:
+  operation = create-account
+  definition.details = {"executionOrder":20}
+```
+
+معنی مثال:
+
+- `create-customer` اول اجرا می‌شود و از custom approval با کد `DUPLICATE_DATA_APPROVED` استفاده می‌کند.
+- `create-account` دوم اجرا می‌شود و از رفتار پیش‌فرض `DEFAULT` استفاده می‌کند.
+- policy هر service-operation مستقل است؛ دو مرحله یک سرویس می‌توانند policy متفاوت داشته باشند.
+- اگر bean مربوط به `DUPLICATE_DATA_APPROVED` وجود نداشته باشد، application هنگام ساخت route fail می‌شود، نه هنگام اولین request.
+
+---
+
 ## CMNEW-119 Runtime Clarifications
 
 - New deployments should use `scm.runtime.gateway-name` as the runtime key. `scm.app-name` is still read only as a legacy fallback.
