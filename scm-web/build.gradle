@@ -34,6 +34,7 @@ tasks.withType(JavaCompile).configureEach {
 dependencies {
 //    implementation 'org.springframework.boot:spring-boot-starter'
     implementation project(':scm-gateway')
+    implementation project(':scm-uaa-starter')
     implementation project(':scm-observation-starter')
     implementation project(':scm-docs-starter')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

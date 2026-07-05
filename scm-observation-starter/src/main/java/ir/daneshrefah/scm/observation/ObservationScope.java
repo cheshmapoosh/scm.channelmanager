@@ -7,9 +7,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ObservationScope implements AutoCloseable {
+    private static final ThreadLocal<ObservationScope> CURRENT = new ThreadLocal<>();
+
     private final TraceObservationHandle traceHandle;
     private final AutoCloseable contextScope;
     private final Map<String, Object> attributes = new LinkedHashMap<>();
+    private final ObservationScope previousScope;
     private String outcome;
     private Throwable throwable;
     private boolean closed;
@@ -21,6 +24,13 @@ public class ObservationScope implements AutoCloseable {
     ObservationScope(TraceObservationHandle traceHandle, AutoCloseable contextScope) {
         this.traceHandle = traceHandle == null ? TraceObservationHandle.NOOP : traceHandle;
         this.contextScope = contextScope;
+        this.previousScope = CURRENT.get();
+        CURRENT.set(this);
+    }
+
+    public static ObservationScope current() {
+        ObservationScope scope = CURRENT.get();
+        return scope == null || scope.closed ? null : scope;
     }
 
     public ObservationScope success() {
@@ -71,6 +81,13 @@ public class ObservationScope implements AutoCloseable {
         return this;
     }
 
+    public ObservationScope event(String name, Map<String, ?> attributes) {
+        if (!closed && name != null && !name.isBlank()) {
+            traceHandle.event(name.trim(), attributes);
+        }
+        return this;
+    }
+
     @Override
     public void close() {
         if (!closed) {
@@ -78,8 +95,17 @@ public class ObservationScope implements AutoCloseable {
             try {
                 traceHandle.finish(outcome, attributes, throwable);
             } finally {
+                restorePreviousScope();
                 closeContextScope();
             }
+        }
+    }
+
+    private void restorePreviousScope() {
+        if (previousScope == null) {
+            CURRENT.remove();
+        } else {
+            CURRENT.set(previousScope);
         }
     }
 

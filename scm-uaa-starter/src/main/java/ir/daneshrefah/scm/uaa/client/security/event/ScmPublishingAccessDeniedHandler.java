@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.uaa.client.properties.ScmResourceServerProperties;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -12,6 +13,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import java.io.IOException;
 import java.util.Map;
 
+@Slf4j
 public class ScmPublishingAccessDeniedHandler implements AccessDeniedHandler {
     private final AccessDeniedHandler delegate = new BearerTokenAccessDeniedHandler();
     private final ScmEventPublisher eventPublisher;
@@ -43,6 +45,16 @@ public class ScmPublishingAccessDeniedHandler implements AccessDeniedHandler {
         ScmSecurityEventAttributes.put(attributes, "security.failure.reason", ScmSecurityEventType.ACCESS_DENIED.code());
         ScmSecurityEventAttributes.put(attributes, "error.code", "access_denied");
         ScmSecurityEventAttributes.put(attributes, "error.message", ScmSecurityEventAttributes.safeMessage(exception));
-        eventPublisher.publish(ScmSecurityEvent.of(ScmSecurityEventType.ACCESS_DENIED, attributes));
+        safePublish(ScmSecurityEvent.of(ScmSecurityEventType.ACCESS_DENIED, attributes));
+    }
+
+    private void safePublish(ScmSecurityEvent event) {
+        try {
+            eventPublisher.publish(event);
+        } catch (RuntimeException ex) {
+            log.warn("event=SCM_SECURITY_EVENT_PUBLISH_FAILED outcome=ignored failureType={} failureMessage={}",
+                    ex.getClass().getSimpleName(),
+                    ScmSecurityEventAttributes.safeMessage(ex));
+        }
     }
 }

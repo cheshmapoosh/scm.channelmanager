@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.client.security.event;
 
+import ir.daneshrefah.scm.common.event.ScmSafeEventAttributes;
 import ir.daneshrefah.scm.uaa.client.properties.ScmResourceServerProperties;
 import ir.daneshrefah.scm.uaa.client.security.ScmPrincipal;
 import jakarta.servlet.http.Cookie;
@@ -70,11 +71,7 @@ final class ScmSecurityEventAttributes {
         if (exception == null || exception.getMessage() == null) {
             return "";
         }
-        String message = exception.getMessage()
-                .replace('\r', ' ')
-                .replace('\n', ' ')
-                .replaceAll("(?i)(bearer|token|authorization|cookie|password|secret)\\s+\\S+", "$1 ***")
-                .trim();
+        String message = ScmSafeEventAttributes.sanitizeMessage(exception.getMessage());
         return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
@@ -174,7 +171,7 @@ final class ScmSecurityEventAttributes {
         }
     }
 
-    private static boolean hasBearerCredential(
+    static boolean hasBearerCredential(
             HttpServletRequest request,
             ScmResourceServerProperties properties
     ) {
@@ -182,7 +179,8 @@ final class ScmSecurityEventAttributes {
             return false;
         }
         String authorization = request.getHeader(AUTHORIZATION);
-        if (authorization != null && authorization.trim().startsWith(BEARER_PREFIX)) {
+        if (authorization != null
+                && authorization.trim().regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
             return true;
         }
         if (properties == null || !properties.getToken().isCookieEnabled() || request.getCookies() == null) {
@@ -196,6 +194,38 @@ final class ScmSecurityEventAttributes {
             if (cookie != null && cookieName.equals(cookie.getName()) && StringUtils.hasText(cookie.getValue())) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    static boolean isPublicEndpoint(HttpServletRequest request, ScmResourceServerProperties properties) {
+        if (request == null || properties == null || properties.getPublicPaths() == null) {
+            return false;
+        }
+        String requestUri = request.getRequestURI();
+        String servletPath = request.getServletPath();
+        for (String publicPath : properties.getPublicPaths()) {
+            if (!StringUtils.hasText(publicPath)) {
+                continue;
+            }
+            String pattern = publicPath.trim();
+            if (matchesPublicPath(requestUri, pattern) || matchesPublicPath(servletPath, pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesPublicPath(String path, String pattern) {
+        if (!StringUtils.hasText(path) || !StringUtils.hasText(pattern)) {
+            return false;
+        }
+        if (path.equals(pattern)) {
+            return true;
+        }
+        if (pattern.endsWith("/**")) {
+            String prefix = pattern.substring(0, pattern.length() - 3);
+            return path.equals(prefix) || path.startsWith(prefix + "/");
         }
         return false;
     }

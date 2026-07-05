@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.observation.trace;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.sdk.trace.data.EventData;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import ir.daneshrefah.scm.observation.ObsTargetIndexResolver;
 import ir.daneshrefah.scm.observation.CorrelationType;
@@ -19,6 +20,9 @@ import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -65,6 +69,7 @@ public class ScmSpanDataMapper {
         builder.put(CommonTraceAttributes.SPAN_END_TIME, endTime.toString());
         builder.put(CommonTraceAttributes.SPAN_DURATION_MS, Math.max(0L, Duration.between(startTime, endTime).toMillis()));
         putSpanAttributes(builder, spanData);
+        putSpanEvents(builder, spanData);
         Map<String, Object> document = builder.build();
         recordValidator.validate(ObservationStream.TRACE, ObservationRecordKind.EVENT, false, document);
         return document;
@@ -89,6 +94,30 @@ public class ScmSpanDataMapper {
             return;
         }
         builder.put(fieldName, value);
+    }
+
+    private void putSpanEvents(ObservationDocumentBuilder builder, SpanData spanData) {
+        List<Map<String, Object>> events = new ArrayList<>();
+        for (EventData eventData : spanData.getEvents()) {
+            Map<String, Object> event = new LinkedHashMap<>();
+            event.put("name", textOrDefault(eventData.getName(), "span.event"));
+            event.put("timestamp", instant(eventData.getEpochNanos()).toString());
+            Map<String, Object> attributes = new LinkedHashMap<>();
+            eventData.getAttributes().forEach((attributeKey, value) -> {
+                if (attributeKey != null && value != null && TraceAttributeSecurity.isAllowed(attributeKey.getKey())) {
+                    Object sanitized = sanitizer == null ? value : sanitizer.sanitize(attributeKey.getKey(), value);
+                    if (sanitized != null) {
+                        attributes.put(attributeKey.getKey(), sanitized);
+                    }
+                }
+            });
+            event.put("attributes", attributes);
+            events.add(event);
+        }
+        events.addAll(TraceObservationSpanEventRegistry.drain(spanData.getTraceId(), spanData.getSpanId()));
+        if (!events.isEmpty()) {
+            builder.put("span.events", events);
+        }
     }
 
     private String stringAttribute(SpanData spanData, String fieldName, String fallback) {

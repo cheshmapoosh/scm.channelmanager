@@ -5,9 +5,11 @@ import ir.daneshrefah.scm.uaa.client.security.event.ScmSecurityEvent;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationEvent;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationTraceEventAdapter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+@ConditionalOnBean(ScmObservation.class)
 @Component
 @Slf4j
 public class ScmWebSecurityObservationListener {

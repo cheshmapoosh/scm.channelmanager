@@ -6,11 +6,13 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Map;
 
+@Slf4j
 public class ScmSecurityEventPublishingFilter extends OncePerRequestFilter {
     private final ScmEventPublisher eventPublisher;
     private final ScmResourceServerProperties properties;
@@ -29,7 +31,9 @@ public class ScmSecurityEventPublishingFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        publish(ScmSecurityEventType.AUTHENTICATION_STARTED, request);
+        if (shouldPublishAuthenticationStarted(request)) {
+            publish(ScmSecurityEventType.AUTHENTICATION_STARTED, request);
+        }
         filterChain.doFilter(request, response);
     }
 
@@ -38,7 +42,21 @@ public class ScmSecurityEventPublishingFilter extends OncePerRequestFilter {
             return;
         }
         Map<String, Object> attributes = ScmSecurityEventAttributes.base(request, properties);
-        eventPublisher.publish(ScmSecurityEvent.of(type, attributes));
+        safePublish(ScmSecurityEvent.of(type, attributes));
     }
 
+    private boolean shouldPublishAuthenticationStarted(HttpServletRequest request) {
+        return !ScmSecurityEventAttributes.isPublicEndpoint(request, properties)
+                || ScmSecurityEventAttributes.hasBearerCredential(request, properties);
+    }
+
+    private void safePublish(ScmSecurityEvent event) {
+        try {
+            eventPublisher.publish(event);
+        } catch (RuntimeException ex) {
+            log.warn("event=SCM_SECURITY_EVENT_PUBLISH_FAILED outcome=ignored failureType={} failureMessage={}",
+                    ex.getClass().getSimpleName(),
+                    ScmSecurityEventAttributes.safeMessage(ex));
+        }
+    }
 }

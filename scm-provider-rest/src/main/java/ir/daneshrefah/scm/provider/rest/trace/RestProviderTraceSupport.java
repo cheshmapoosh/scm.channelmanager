@@ -1,25 +1,32 @@
 package ir.daneshrefah.scm.provider.rest.trace;
 
+import ir.daneshrefah.scm.common.event.ScmEventPublisher;
+import ir.daneshrefah.scm.common.event.provider.ScmProviderEvent;
+import ir.daneshrefah.scm.common.event.provider.ScmProviderEventType;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
-import ir.daneshrefah.scm.observation.ObservationScope;
-import ir.daneshrefah.scm.observation.ScmObservation;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderResolvedConfig;
 import ir.daneshrefah.scm.provider.rest.customizer.RestAuthUrlProviderMessageCustomizerConfig;
 import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestSpec;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Component
+@Slf4j
 public class RestProviderTraceSupport {
-    private final ObjectProvider<ScmObservation> observationProvider;
+    private final ObjectProvider<ScmEventPublisher> eventPublisherProvider;
 
-    public RestProviderTraceSupport(ObjectProvider<ScmObservation> observationProvider) {
-        this.observationProvider = observationProvider;
+    public RestProviderTraceSupport(ObjectProvider<ScmEventPublisher> eventPublisherProvider) {
+        this.eventPublisherProvider = eventPublisherProvider;
     }
 
     public ResponseEntity<String> clientSpan(
@@ -28,42 +35,21 @@ public class RestProviderTraceSupport {
             RestProviderRequestSpec request,
             Supplier<ResponseEntity<String>> action
     ) {
-        ScmObservation observation = observationProvider.getIfAvailable();
-        if (observation == null) {
-            return action.get();
-        }
-
-        URI uri = request == null ? null : request.uri();
-        ObservationScope scope = observation.trace()
-                .span("provider.rest.call")
-                .spanKind("client")
-                .action("provider.rest.call")
-                .attribute("scm.provider.name", value(config == null ? null : config.provider()))
-                .attribute("scm.provider.scheme", value(config == null ? null : config.scheme()))
-                .attribute("scm.provider.uri", providerUri(config))
-                .attribute("http.request.method", request == null || request.method() == null ? null : request.method().name())
-                .attribute("net.peer.name", uri == null ? null : uri.getHost())
-                .attribute("net.peer.port", uri == null || uri.getPort() <= 0 ? null : uri.getPort())
-                .attribute("url.path", uri == null ? null : value(uri.getPath()))
-                .start();
-
+        long startedAt = System.nanoTime();
+        publish(ScmProviderEventType.PROVIDER_REQUEST_SENT, requestAttributes(config, request, null, startedAt));
         try {
             ResponseEntity<String> response = action.get();
-            if (response != null) {
-                scope.attribute("http.response.status_code", response.getStatusCode().value());
-            }
-            scope.success();
+            publish(ScmProviderEventType.PROVIDER_RESPONSE_RECEIVED, responseAttributes(config, request, response, startedAt));
             return response;
-        } catch (RuntimeException e) {
-            scope.failure(e);
-            throw e;
-        } finally {
-            scope.close();
+        } catch (RuntimeException exception) {
+            publish(isTimeout(exception) ? ScmProviderEventType.PROVIDER_TIMEOUT : ScmProviderEventType.PROVIDER_CALL_FAILED,
+                    failureAttributes(config, request, exception, startedAt));
+            throw exception;
         }
     }
 
     public void enrichLogMdc(Exchange exchange) {
-        // Trace context is managed by scm-observation-starter/Micrometer.
+        // Trace context is owned by the host observation layer.
         // Keep this method as a compatibility hook for existing producer code.
     }
 
@@ -74,35 +60,7 @@ public class RestProviderTraceSupport {
             String phase,
             Runnable action
     ) {
-        ScmObservation observation = observationProvider.getIfAvailable();
-        if (observation == null) {
-            action.run();
-            return;
-        }
-
-        ObservationScope scope = observation.trace()
-                .span("provider.customizer.execute")
-                .spanKind("internal")
-                .action("provider.customizer.execute")
-                .attribute("scm.provider.name", value(context == null ? null : context.providerCode()))
-                .attribute("scm.provider.scheme", value(context == null ? null : context.scheme()))
-                .attribute("scm.provider.uri", value(context == null ? null : context.providerUri()))
-                .attribute("scm.provider.service_code", value(context == null ? null : context.serviceCode()))
-                .attribute("scm.provider.operation_code", value(context == null ? null : context.operationCode()))
-                .attribute("scm.provider.channel_code", value(context == null ? null : context.channelCode()))
-                .attribute("scm.provider.customizer.type", value(customizerType))
-                .attribute("scm.provider.customizer.phase", value(phase))
-                .start();
-
-        try {
-            action.run();
-            scope.success();
-        } catch (RuntimeException e) {
-            scope.failure(e);
-            throw e;
-        } finally {
-            scope.close();
-        }
+        action.run();
     }
 
     public void tokenEvent(
@@ -111,73 +69,140 @@ public class RestProviderTraceSupport {
             RestAuthUrlProviderMessageCustomizerConfig authConfig,
             ProviderMessageCustomizerContext context
     ) {
-        ScmObservation observation = observationProvider.getIfAvailable();
-        if (observation == null) {
+        Map<String, Object> attributes = providerAttributes(providerConfig);
+        put(attributes, "scm.provider.service_code", context == null ? null : context.serviceCode());
+        put(attributes, "scm.provider.operation_code", context == null ? null : context.operationCode());
+        put(attributes, "scm.provider.channel_code", context == null ? null : context.channelCode());
+        put(attributes, "scm.provider.result", eventName);
+        put(attributes, "scm.provider.auth.profile", authConfig == null || authConfig.cache() == null ? null : authConfig.cache().getAuthProfile());
+        publish(ScmProviderEventType.PROVIDER_RESPONSE_RECEIVED, attributes);
+    }
+
+    private Map<String, Object> requestAttributes(
+            RestProviderResolvedConfig config,
+            RestProviderRequestSpec request,
+            ResponseEntity<String> response,
+            long startedAt
+    ) {
+        Map<String, Object> attributes = providerAttributes(config);
+        putRequest(attributes, request);
+        putResponse(attributes, response);
+        put(attributes, "scm.provider.request_time", Instant.now().toString());
+        put(attributes, "scm.provider.duration_ms", durationMs(startedAt));
+        put(attributes, "scm.provider.result", "sent");
+        return attributes;
+    }
+
+    private Map<String, Object> responseAttributes(
+            RestProviderResolvedConfig config,
+            RestProviderRequestSpec request,
+            ResponseEntity<String> response,
+            long startedAt
+    ) {
+        Map<String, Object> attributes = providerAttributes(config);
+        putRequest(attributes, request);
+        putResponse(attributes, response);
+        put(attributes, "scm.provider.response_time", Instant.now().toString());
+        put(attributes, "scm.provider.duration_ms", durationMs(startedAt));
+        put(attributes, "scm.provider.result", isSuccessful(response) ? "success" : "failure");
+        return attributes;
+    }
+
+    private Map<String, Object> failureAttributes(
+            RestProviderResolvedConfig config,
+            RestProviderRequestSpec request,
+            RuntimeException exception,
+            long startedAt
+    ) {
+        Map<String, Object> attributes = providerAttributes(config);
+        putRequest(attributes, request);
+        put(attributes, "scm.provider.duration_ms", durationMs(startedAt));
+        put(attributes, "scm.provider.result", isTimeout(exception) ? "timeout" : "failure");
+        put(attributes, "error.type", exception == null ? null : exception.getClass().getName());
+        put(attributes, "error.code", exception == null ? null : exception.getClass().getSimpleName());
+        put(attributes, "error.message", safeMessage(exception));
+        return attributes;
+    }
+
+    private Map<String, Object> providerAttributes(RestProviderResolvedConfig config) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        put(attributes, "scm.provider.code", config == null ? null : config.provider());
+        put(attributes, "scm.provider.type", config == null ? null : config.scheme());
+        put(attributes, "scm.provider.endpoint", providerUri(config));
+        return attributes;
+    }
+
+    private void putRequest(Map<String, Object> attributes, RestProviderRequestSpec request) {
+        URI uri = request == null ? null : request.uri();
+        put(attributes, "http.method", request == null || request.method() == null ? null : request.method().name());
+        put(attributes, "url.path", uri == null ? null : uri.getPath());
+        put(attributes, "scm.provider.address", uri == null ? null : uri.getHost());
+    }
+
+    private void putResponse(Map<String, Object> attributes, ResponseEntity<String> response) {
+        Integer status = response == null ? null : response.getStatusCode().value();
+        put(attributes, "http.status_code", status);
+        put(attributes, "http.response.status_code", status);
+        put(attributes, "scm.provider.response_code", status);
+    }
+
+    private void publish(ScmProviderEventType type, Map<String, ?> attributes) {
+        ScmEventPublisher eventPublisher = eventPublisherProvider.getIfAvailable();
+        if (eventPublisher == null || type == null) {
             return;
         }
-
-        ObservationScope scope = observation.trace()
-                .span("provider.auth.event")
-                .spanKind("internal")
-                .action(value(eventName))
-                .attribute("scm.provider.name", value(providerConfig == null ? null : providerConfig.provider()))
-                .attribute("scm.provider.scheme", value(providerConfig == null ? null : providerConfig.scheme()))
-                .attribute("scm.provider.uri", providerUri(providerConfig))
-                .attribute("scm.provider.service_code", serviceCode(context))
-                .attribute("scm.provider.operation_code", operationCode(context))
-                .attribute("scm.provider.channel_code", channelCode(context))
-                .attribute("scm.provider.auth.profile", authConfig == null || authConfig.cache() == null ? null : authConfig.cache().getAuthProfile())
-                .attribute("scm.provider.auth.cache_hit", cacheHit(eventName))
-                .attribute("scm.provider.auth.lock_acquired", lockAcquired(eventName))
-                .attribute("scm.provider.auth.token_refreshed", "provider.auth.token.refresh".equals(eventName) ? Boolean.TRUE : null)
-                .start();
         try {
-            scope.success();
-        } catch (RuntimeException e) {
-            scope.failure(e);
-            throw e;
-        } finally {
-            scope.close();
+            eventPublisher.publish(ScmProviderEvent.of(type, attributes));
+        } catch (RuntimeException exception) {
+            log.warn("event=SCM_PROVIDER_EVENT_PUBLISH_FAILED outcome=ignored providerEventType={} failureType={} failureMessage={}",
+                    type.code(),
+                    exception.getClass().getSimpleName(),
+                    safeMessage(exception));
         }
     }
 
     private String providerUri(RestProviderResolvedConfig config) {
         if (config == null) {
-            return "";
+            return null;
         }
         return value(config.scheme()) + ":" + value(config.provider());
     }
 
-    private Boolean cacheHit(String eventName) {
-        if ("provider.auth.cache.hit".equals(eventName)) {
-            return Boolean.TRUE;
-        }
-        if ("provider.auth.cache.miss".equals(eventName)) {
-            return Boolean.FALSE;
-        }
-        return null;
+    private boolean isSuccessful(ResponseEntity<String> response) {
+        return response != null && response.getStatusCode().is2xxSuccessful();
     }
 
-    private Boolean lockAcquired(String eventName) {
-        if ("provider.auth.lock.acquired".equals(eventName)) {
-            return Boolean.TRUE;
+    private long durationMs(long startedAt) {
+        return Duration.ofNanos(Math.max(0L, System.nanoTime() - startedAt)).toMillis();
+    }
+
+    private boolean isTimeout(Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            String className = current.getClass().getName();
+            if (className.contains("Timeout")) {
+                return true;
+            }
+            current = current.getCause();
         }
-        if ("provider.auth.lock.timeout".equals(eventName)) {
-            return Boolean.FALSE;
+        return false;
+    }
+
+    private void put(Map<String, Object> attributes, String key, Object value) {
+        if (key != null && !key.isBlank() && value != null) {
+            attributes.put(key, value);
         }
-        return null;
     }
 
-    private String channelCode(ProviderMessageCustomizerContext context) {
-        return context == null ? "" : value(context.channelCode());
-    }
-
-    private String serviceCode(ProviderMessageCustomizerContext context) {
-        return context == null ? "" : value(context.serviceCode());
-    }
-
-    private String operationCode(ProviderMessageCustomizerContext context) {
-        return context == null ? "" : value(context.operationCode());
+    private String safeMessage(Throwable exception) {
+        if (exception == null || exception.getMessage() == null) {
+            return null;
+        }
+        String message = exception.getMessage()
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .trim();
+        return message.length() > 300 ? message.substring(0, 300) : message;
     }
 
     private String value(String value) {

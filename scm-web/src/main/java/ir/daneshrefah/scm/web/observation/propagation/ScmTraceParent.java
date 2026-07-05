@@ -36,7 +36,7 @@ public record ScmTraceParent(
 
     private static boolean isValidVersion(String value) {
         String normalized = normalize(value);
-        return normalized != null && VERSION.matcher(normalized).matches() && !"ff".equals(normalized);
+        return "00".equals(normalized) && VERSION.matcher(normalized).matches();
     }
 
     private static boolean isValidFlags(String value) {
