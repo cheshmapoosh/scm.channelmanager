@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.common.event;
 
 import java.lang.reflect.Array;
+import java.time.Instant;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -12,6 +14,17 @@ public final class ScmSafeEventAttributes {
     public static final String SECURE_VALUE = "[SECURE]";
 
     private static final int MAX_DEPTH = 6;
+    private static final int MAX_STRING_LENGTH = 512;
+    private static final List<String> PAYLOAD_KEYS = List.of(
+            "body",
+            "payload",
+            "raw",
+            "iso",
+            "request.body",
+            "response.body",
+            "provider.request.body",
+            "provider.response.body"
+    );
     private static final List<String> SENSITIVE_CONTAINS = List.of(
             "authorization",
             "proxy-authorization",
@@ -135,19 +148,36 @@ public final class ScmSafeEventAttributes {
         return false;
     }
 
+    public static String sanitizeMessage(String message) {
+        if (message == null) {
+            return null;
+        }
+        String sanitized = sanitizeText(message)
+                .replaceAll("(?i)\\bBearer\\s+[^\\s,;]+", "Bearer " + SECURE_VALUE)
+                .replaceAll("(?i)\\b(token|authorization|cookie|password|secret)\\s*([=:])\\s*(?:Bearer\\s+)?[^\\s,;]+", "$1$2" + SECURE_VALUE)
+                .replaceAll("(?i)\\b(token)\\s+[^\\s,;]+", "$1 " + SECURE_VALUE);
+        return limit(sanitized);
+    }
+
     private static Object safeValue(String key, Object value, int depth) {
         if (value == null) {
             return null;
         }
-        if (isSensitiveKey(key)) {
+        if (isSensitiveKey(key) || isPayloadKey(key)) {
             return SECURE_VALUE;
         }
         if (value instanceof String text) {
-            String sanitized = sanitizeText(text);
+            String sanitized = sanitizeMessage(text);
             return sanitized.isBlank() ? null : sanitized;
         }
+        if (value instanceof Number || value instanceof Boolean || value instanceof Instant || value instanceof Temporal) {
+            return value;
+        }
+        if (value instanceof Enum<?> enumValue) {
+            return enumValue.name();
+        }
         if (depth >= MAX_DEPTH) {
-            return sanitizeText(String.valueOf(value));
+            return safeObjectText(value);
         }
         if (value instanceof Map<?, ?> map) {
             Map<String, Object> safeMap = new LinkedHashMap<>();
@@ -179,7 +209,7 @@ public final class ScmSafeEventAttributes {
             }
             return safeValues.isEmpty() ? null : List.copyOf(safeValues);
         }
-        return value;
+        return safeObjectText(value);
     }
 
     private static void putNested(Map<String, Object> target, String key, Object value, int depth) {
@@ -202,7 +232,7 @@ public final class ScmSafeEventAttributes {
     }
 
     private static String sanitizeText(String value) {
-        return value == null ? "" : value.replace('\r', ' ').replace('\n', ' ').trim();
+        return value == null ? "" : limit(value.replace('\r', ' ').replace('\n', ' ').trim());
     }
 
     private static String normalizeKey(String key) {
@@ -229,5 +259,35 @@ public final class ScmSafeEventAttributes {
             }
         }
         return false;
+    }
+
+    private static boolean isPayloadKey(String key) {
+        String normalized = normalizeKey(key).replace('-', '.');
+        if (isAllowedMetadataKey(normalized)) {
+            return false;
+        }
+        for (String payloadKey : PAYLOAD_KEYS) {
+            if (normalized.equals(payloadKey) || normalized.endsWith("." + payloadKey)) {
+                return true;
+            }
+        }
+        return containsToken(normalized, "body")
+                || containsToken(normalized, "payload")
+                || containsToken(normalized, "raw")
+                || containsToken(normalized, "iso");
+    }
+
+    private static String safeObjectText(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return value.getClass().getSimpleName();
+    }
+
+    private static String limit(String value) {
+        if (value == null || value.length() <= MAX_STRING_LENGTH) {
+            return value;
+        }
+        return value.substring(0, MAX_STRING_LENGTH);
     }
 }

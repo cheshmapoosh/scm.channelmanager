@@ -4,7 +4,9 @@ import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import ir.daneshrefah.scm.observation.ObservationSanitizer;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -43,6 +45,23 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
         } catch (RuntimeException ex) {
             return TraceObservationHandle.NOOP;
         }
+    }
+
+    private Map<String, Object> eventAttributes(Map<String, ?> attributes) {
+        Map<String, Object> safeAttributes = new LinkedHashMap<>();
+        if (attributes == null || attributes.isEmpty()) {
+            return safeAttributes;
+        }
+        attributes.forEach((key, value) -> {
+            if (key == null || key.isBlank() || value == null || !TraceAttributeSecurity.isAllowed(key)) {
+                return;
+            }
+            Object sanitized = sanitizer == null ? value : sanitizer.sanitize(key.trim(), value);
+            if (sanitized != null) {
+                safeAttributes.put(key.trim(), sanitized);
+            }
+        });
+        return safeAttributes;
     }
 
     private void tagAll(Span.Builder spanBuilder, Map<String, Object> attributes) {
@@ -192,6 +211,26 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
             } finally {
                 closeScope();
                 endSpan();
+            }
+        }
+
+        @Override
+        public void event(String name, Map<String, ?> attributes) {
+            if (finished || span == null || name == null || name.isBlank()) {
+                return;
+            }
+            try {
+                String safeName = name.replace('\r', ' ').replace('\n', ' ').trim();
+                span.event(safeName);
+                if (span.context() != null) {
+                    TraceObservationSpanEventRegistry.add(
+                            span.context().traceId(),
+                            span.context().spanId(),
+                            new TraceObservationSpanEvent(safeName, Instant.now(), eventAttributes(attributes))
+                    );
+                }
+            } catch (RuntimeException ignored) {
+                // Trace event failures must not affect business flow.
             }
         }
 

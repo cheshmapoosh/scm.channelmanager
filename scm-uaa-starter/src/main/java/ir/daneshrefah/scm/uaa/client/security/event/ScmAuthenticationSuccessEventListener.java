@@ -22,14 +22,8 @@ public class ScmAuthenticationSuccessEventListener implements ApplicationListene
         if (eventPublisher == null || event == null || !isRealAuthenticatedPrincipal(event.getAuthentication())) {
             return;
         }
-        try {
-            Map<String, Object> attributes = ScmSecurityEventAttributes.authentication(event.getAuthentication());
-            eventPublisher.publish(ScmSecurityEvent.of(ScmSecurityEventType.AUTHENTICATION_SUCCESS, attributes));
-        } catch (RuntimeException exception) {
-            log.warn("event=SCM_AUTHENTICATION_SUCCESS_EVENT_PUBLISH_FAILED outcome=ignored failureType={} failureMessage={}",
-                    exception.getClass().getSimpleName(),
-                    ScmSecurityEventAttributes.safeMessage(exception));
-        }
+        Map<String, Object> attributes = ScmSecurityEventAttributes.authentication(event.getAuthentication());
+        safePublish(ScmSecurityEvent.of(ScmSecurityEventType.AUTHENTICATION_SUCCESS, attributes));
     }
 
     private boolean isRealAuthenticatedPrincipal(Authentication authentication) {
@@ -38,5 +32,15 @@ public class ScmAuthenticationSuccessEventListener implements ApplicationListene
         }
         Object principal = authentication.getPrincipal();
         return principal != null && !"anonymousUser".equals(String.valueOf(principal));
+    }
+
+    private void safePublish(ScmSecurityEvent event) {
+        try {
+            eventPublisher.publish(event);
+        } catch (RuntimeException ex) {
+            log.warn("event=SCM_SECURITY_EVENT_PUBLISH_FAILED outcome=ignored failureType={} failureMessage={}",
+                    ex.getClass().getSimpleName(),
+                    ScmSecurityEventAttributes.safeMessage(ex));
+        }
     }
 }

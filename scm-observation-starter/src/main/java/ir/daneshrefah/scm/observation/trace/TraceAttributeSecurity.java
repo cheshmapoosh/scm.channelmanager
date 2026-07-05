@@ -73,7 +73,8 @@ final class TraceAttributeSecurity {
                     "span.kind",
                     "span.start_time",
                     "span.end_time",
-                    "span.duration_ms" -> true;
+                    "span.duration_ms",
+                    "span.events" -> true;
             default -> false;
         };
     }

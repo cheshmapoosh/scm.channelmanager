@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.uaa.client.properties.ScmResourceServerProperties;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -12,6 +13,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import java.io.IOException;
 import java.util.Map;
 
+@Slf4j
 public class ScmPublishingAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final AuthenticationEntryPoint delegate = new BearerTokenAuthenticationEntryPoint();
     private final ScmEventPublisher eventPublisher;
@@ -44,7 +46,17 @@ public class ScmPublishingAuthenticationEntryPoint implements AuthenticationEntr
         ScmSecurityEventAttributes.put(attributes, "security.failure.reason", tokenEventType.code());
         ScmSecurityEventAttributes.put(attributes, "error.code", ScmSecurityEventAttributes.errorCode(exception));
         ScmSecurityEventAttributes.put(attributes, "error.message", ScmSecurityEventAttributes.safeMessage(exception));
-        eventPublisher.publish(ScmSecurityEvent.of(tokenEventType, attributes));
-        eventPublisher.publish(ScmSecurityEvent.of(ScmSecurityEventType.AUTHENTICATION_FAILURE, attributes));
+        safePublish(ScmSecurityEvent.of(tokenEventType, attributes));
+        safePublish(ScmSecurityEvent.of(ScmSecurityEventType.AUTHENTICATION_FAILURE, attributes));
+    }
+
+    private void safePublish(ScmSecurityEvent event) {
+        try {
+            eventPublisher.publish(event);
+        } catch (RuntimeException ex) {
+            log.warn("event=SCM_SECURITY_EVENT_PUBLISH_FAILED outcome=ignored failureType={} failureMessage={}",
+                    ex.getClass().getSimpleName(),
+                    ScmSecurityEventAttributes.safeMessage(ex));
+        }
     }
 }

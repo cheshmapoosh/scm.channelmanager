@@ -6,13 +6,59 @@ import ir.daneshrefah.scm.web.observation.ScmWebObservationEvent;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class ScmWebProviderObservationMapper {
     private static final String PROVIDER_CALL_FAILED = "provider.call.failed";
     private static final String PROVIDER_TIMEOUT = "provider.timeout";
+    private static final Set<String> TRACE_METADATA_KEYS = Set.of(
+            "scm.provider.code",
+            "scm.provider.type",
+            "scm.provider.address",
+            "scm.provider.endpoint",
+            "scm.provider.request_time",
+            "scm.provider.response_time",
+            "scm.provider.duration_ms",
+            "scm.provider.result",
+            "scm.provider.response_code",
+            "http.method",
+            "http.status_code",
+            "http.status_code.value",
+            "http.response.status_code",
+            "url.path",
+            "endpoint.path",
+            "duration",
+            "duration.ms",
+            "duration_ms",
+            "scm.event.type",
+            "scm.event.source",
+            "scm.event.occurred_at",
+            "error.type",
+            "error.code",
+            "error.message"
+    );
+    private static final List<String> DENIED_TRACE_KEY_FRAGMENTS = List.of(
+            "body",
+            "payload",
+            "raw",
+            "iso",
+            "authorization",
+            "cookie",
+            "token",
+            "password",
+            "secret",
+            "pin",
+            "cvv",
+            "cvv2",
+            "pan",
+            "card",
+            "mac",
+            "key"
+    );
 
     public ScmWebObservationEvent map(ScmProviderEvent event) {
         String action = event == null ? "provider.event" : event.eventType();
@@ -54,20 +100,12 @@ public class ScmWebProviderObservationMapper {
             return false;
         }
         String normalized = key.toLowerCase(Locale.ROOT);
-        return normalized.contains("provider")
-                || normalized.equals("scm.event.type")
-                || normalized.equals("http.method")
-                || normalized.equals("method")
-                || normalized.equals("url.path")
-                || normalized.equals("endpoint.path")
-                || normalized.equals("http.status.code")
-                || normalized.equals("http.status_code")
-                || normalized.equals("http.response.status_code")
-                || normalized.endsWith(".duration.ms")
-                || normalized.endsWith(".duration_ms")
-                || normalized.equals("duration")
-                || normalized.equals("duration.ms")
-                || normalized.equals("duration_ms");
+        for (String denied : DENIED_TRACE_KEY_FRAGMENTS) {
+            if (normalized.contains(denied)) {
+                return false;
+            }
+        }
+        return TRACE_METADATA_KEYS.contains(normalized);
     }
 
     private String outcome(String action) {
