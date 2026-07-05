@@ -13,6 +13,9 @@ public class ScmCamelTracePropagationRouteBuilder extends RouteBuilder {
 
     @Override
     public void configure() {
-        interceptSendToEndpoint("http*").process(processor);
+        interceptSendToEndpoint("http://*").process(processor);
+        interceptSendToEndpoint("https://*").process(processor);
+        interceptSendToEndpoint("http4://*").process(processor);
+        interceptSendToEndpoint("https4://*").process(processor);
     }
 }

@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.web.observation;
+package ir.daneshrefah.scm.web.observation.gateway.http;
 
 import ir.daneshrefah.scm.observation.ObservationContext;
 import ir.daneshrefah.scm.observation.ObservationIds;
