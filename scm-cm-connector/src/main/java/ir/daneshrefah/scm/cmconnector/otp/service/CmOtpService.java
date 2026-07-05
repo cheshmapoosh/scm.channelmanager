@@ -32,31 +32,115 @@ public class CmOtpService {
     public CmOtpVerifyResponse verify(CmOtpVerifyRequest request) {
         long startedAt = System.nanoTime();
         ScmPrincipal principal = securityContext.requirePrincipal();
-        ObservationScope scope = observation.trace()
-                .source(CmOtpService.class)
-                .span(OPERATION_NAME)
-                .attribute(CmConnectorTraceAttributes.OPERATION_NAME, OPERATION_NAME)
-                .start();
+        ObservationScope scope = safeStartScope();
 
         log.info("CM connector OTP verification delegated");
-        writeObservationEvent("started", "started", null);
+        safeObservationEvent("started", "started", null);
         try {
             CmOtpVerifyResponse response = otpVerificationGateway.verify(principal, request);
             String outcome = response.verified() ? "verified" : "rejected";
             log.info("CM connector OTP verification completed result={}", outcome);
-            scope.outcome(outcome);
-            writeObservationEvent(outcome, outcome, null);
-            recordOtpMetric(outcome, startedAt);
+            safeScopeOutcome(scope, outcome);
+            safeObservationEvent(outcome, outcome, null);
+            safeRecordOtpMetric(outcome, startedAt);
             return response;
         } catch (RuntimeException exception) {
-            log.error("CM connector OTP verification failed", exception);
-            scope.failure(exception);
-            writeObservationEvent("failure", "failure", exception);
-            recordOtpMetric("failure", startedAt);
-            recordErrorMetric(exception.getClass().getSimpleName());
+            log.error("CM connector OTP verification failed failureType={}", exception.getClass().getSimpleName());
+            safeScopeFailure(scope, exception);
+            safeObservationEvent("failure", "failure", exception);
+            safeRecordOtpMetric("failure", startedAt);
+            safeRecordErrorMetric(exception.getClass().getSimpleName());
             throw exception;
         } finally {
+            safeCloseScope(scope);
+        }
+    }
+
+    private ObservationScope safeStartScope() {
+        try {
+            return observation.trace()
+                    .source(CmOtpService.class)
+                    .span(OPERATION_NAME)
+                    .attribute(CmConnectorTraceAttributes.OPERATION_NAME, OPERATION_NAME)
+                    .start();
+        } catch (RuntimeException exception) {
+            log.warn("event=CM_CONNECTOR_TRACE_SCOPE_FAILED outcome=ignored operation={} failureType={}",
+                    OPERATION_NAME,
+                    exception.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    private void safeScopeOutcome(ObservationScope scope, String outcome) {
+        if (scope == null) {
+            return;
+        }
+        try {
+            scope.outcome(outcome);
+        } catch (RuntimeException exception) {
+            log.warn("event=CM_CONNECTOR_TRACE_SCOPE_OUTCOME_FAILED outcome=ignored operation={} traceOutcome={} failureType={}",
+                    OPERATION_NAME,
+                    outcome,
+                    exception.getClass().getSimpleName());
+        }
+    }
+
+    private void safeScopeFailure(ObservationScope scope, RuntimeException businessException) {
+        if (scope == null) {
+            return;
+        }
+        try {
+            scope.failure(businessException);
+        } catch (RuntimeException exception) {
+            log.warn("event=CM_CONNECTOR_TRACE_SCOPE_FAILURE_FAILED outcome=ignored operation={} failureType={}",
+                    OPERATION_NAME,
+                    exception.getClass().getSimpleName());
+        }
+    }
+
+    private void safeCloseScope(ObservationScope scope) {
+        if (scope == null) {
+            return;
+        }
+        try {
             scope.close();
+        } catch (RuntimeException exception) {
+            log.warn("event=CM_CONNECTOR_TRACE_SCOPE_CLOSE_FAILED outcome=ignored operation={} failureType={}",
+                    OPERATION_NAME,
+                    exception.getClass().getSimpleName());
+        }
+    }
+
+    private void safeObservationEvent(String action, String outcome, RuntimeException exception) {
+        try {
+            writeObservationEvent(action, outcome, exception);
+        } catch (RuntimeException observationException) {
+            log.warn("event=CM_CONNECTOR_OBSERVATION_EVENT_FAILED outcome=ignored operation={} action={} failureType={}",
+                    OPERATION_NAME,
+                    action,
+                    observationException.getClass().getSimpleName());
+        }
+    }
+
+    private void safeRecordOtpMetric(String outcome, long startedAt) {
+        try {
+            recordOtpMetric(outcome, startedAt);
+        } catch (RuntimeException metricException) {
+            log.warn("event=CM_CONNECTOR_METRIC_RECORD_FAILED outcome=ignored operation={} metricOutcome={} failureType={}",
+                    OPERATION_NAME,
+                    outcome,
+                    metricException.getClass().getSimpleName());
+        }
+    }
+
+    private void safeRecordErrorMetric(String errorCode) {
+        try {
+            recordErrorMetric(errorCode);
+        } catch (RuntimeException metricException) {
+            log.warn("event=CM_CONNECTOR_ERROR_METRIC_RECORD_FAILED outcome=ignored operation={} errorCode={} failureType={}",
+                    OPERATION_NAME,
+                    errorCode,
+                    metricException.getClass().getSimpleName());
         }
     }
 
