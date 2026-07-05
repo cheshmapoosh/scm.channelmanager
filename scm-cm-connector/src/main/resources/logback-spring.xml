@@ -1,0 +1,31 @@
+<configuration>
+    <include resource="META-INF/scm/logback/scm-log-properties.xml"/>
+    <include resource="META-INF/scm/logback/scm-console-simple-appender.xml"/>
+    <include resource="META-INF/scm/logback/scm-file-jsonl-appender.xml"/>
+
+    <springProperty scope="context" name="ROOT_LEVEL" source="scm.cm.connector.log.level.root" defaultValue="INFO"/>
+    <springProperty scope="context" name="SCM_CM_CONNECTOR_LEVEL" source="scm.cm.connector.log.level.application" defaultValue="INFO"/>
+    <springProperty scope="context" name="SPRING_LEVEL" source="scm.cm.connector.log.level.spring" defaultValue="INFO"/>
+
+    <logger name="ir.daneshrefah.scm.cmconnector" level="${SCM_CM_CONNECTOR_LEVEL}"/>
+    <logger name="org.springframework" level="${SPRING_LEVEL}"/>
+
+    <springProfile name="dev">
+        <root level="${ROOT_LEVEL}">
+            <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
+            <appender-ref ref="SCM_FILE_JSONL"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="test,pilot,prod">
+        <root level="${ROOT_LEVEL}">
+            <appender-ref ref="SCM_FILE_JSONL"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="!dev &amp; !test &amp; !pilot &amp; !prod">
+        <root level="${ROOT_LEVEL}">
+            <appender-ref ref="SCM_FILE_JSONL"/>
+        </root>
+    </springProfile>
+</configuration>
