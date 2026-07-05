@@ -15,7 +15,7 @@ scm:
     gateway-name: ${SCM_GATEWAY_NAME:default}
     file-name-platform-token: scm
     time-zone: UTC
-  channels: MB4TEST
+  channels: IB4TEST
   runtime:
     target:
       kind: SERVICE_DOMAIN
@@ -242,6 +242,11 @@ scm:
       user:
         enabled: true
         cache-name: user_cache
+    legacy-authentication:
+      enabled: true
+    resource-server:
+      issuer-uri: ${SCM_UAA_TOKEN_ISSUER:http://scm-auth-server}
+      jwk-set-uri: ${SCM_UAA_JWK_SET_URI:http://127.0.0.1:8000/oauth2/jwks}
     client-id: scm
     client-secret:
     distributed: true

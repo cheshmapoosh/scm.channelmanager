@@ -10,7 +10,7 @@ import jakarta.persistence.Converter;
  * @version 1.0
  * @since 2024-01-11
  */
-@Converter(autoApply = true)
+@Converter(autoApply = false)
 public class StringGlobalConverter implements AttributeConverter<String, String> {
 
     @Override

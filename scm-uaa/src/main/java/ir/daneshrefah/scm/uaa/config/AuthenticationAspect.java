@@ -112,11 +112,11 @@ public class AuthenticationAspect {
             return null;
         }
         username = username.replace('\r', ' ').replace('\n', ' ').trim();
-        if (username.length() <= 4) {
+       /* if (username.length() <= 4) {
             return "****";
         }
-        String masked = username.substring(0, 2) + "***" + username.substring(username.length() - 2);
-        return masked.length() > 128 ? masked.substring(0, 128) : masked;
+        String masked = username.substring(0, 2) + "***" + username.substring(username.length() - 2);*/
+        return username.length() > 128 ? username.substring(0, 128) : username;
     }
 
     private String clientId(Authentication authentication) {

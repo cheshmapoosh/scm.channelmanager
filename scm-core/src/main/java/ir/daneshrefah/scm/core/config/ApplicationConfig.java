@@ -44,12 +44,12 @@ public class ApplicationConfig implements ApplicationContextAware {
 //        objectMapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    @Bean
+    /*@Bean
     public ObjectMapper objectMapper(ServiceService service) {
         if (null == objectMapper)
             initObjectMapper(service);
         return objectMapper;
-    }
+    }*/
 
     @Bean
     public LocalValidatorFactoryBean validator() {
