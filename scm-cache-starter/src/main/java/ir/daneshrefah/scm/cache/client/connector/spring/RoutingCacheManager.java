@@ -44,6 +44,11 @@ public class RoutingCacheManager implements CacheManager {
         CacheRoute route = routeResolver.resolve(cacheName);
         CacheBackend backend = backendRouter.get(route.type());
         log.info("Spring cache mapped: cache='{}', backend={}", cacheName, route.type());
-        return new RoutingSpringCache(route, backend, cacheEventSupport);
+        return new RoutingSpringCache(
+                route,
+                backend,
+                cacheEventSupport,
+                properties.getEvents() != null && properties.getEvents().isPublishStarted()
+        );
     }
 }

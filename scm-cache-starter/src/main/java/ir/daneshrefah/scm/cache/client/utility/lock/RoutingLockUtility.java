@@ -22,21 +22,29 @@ public class RoutingLockUtility implements LockUtility {
     public <T> T executeWithLock(String lockName, Duration waitTime, Callable<T> job) {
         long startedAt = System.nanoTime();
         CacheClientProperties.UtilityBackendType backendType = utilityBackends.resolveLock(lockName);
+        String provider = provider(backendType);
         log.debug("Lock '{}' resolved to {} backend", lockName, backendType);
         try {
             T result = switch (backendType) {
                 case LOCAL -> localLockUtility.executeWithLock(lockName, waitTime, job);
                 case REMOTE -> remoteLockUtility().executeWithLock(lockName, waitTime, job);
             };
-            cacheEventSupport.lockEvent(ScmCacheEventType.CACHE_LOCK_ACQUIRED, lockName, startedAt, "success", null);
+            cacheEventSupport.lockEvent(ScmCacheEventType.CACHE_LOCK_COMPLETED, lockName, provider, startedAt, "completed", null);
             return result;
         } catch (LockAcquireFailedException exception) {
-            cacheEventSupport.lockEvent(ScmCacheEventType.CACHE_LOCK_FAILED, lockName, startedAt, "failure", exception);
+            cacheEventSupport.lockEvent(ScmCacheEventType.CACHE_LOCK_FAILED, lockName, provider, startedAt, "failure", exception);
+            throw exception;
+        } catch (LockExecutionException exception) {
+            cacheEventSupport.lockEvent(ScmCacheEventType.CACHE_LOCK_EXECUTION_FAILED, lockName, provider, startedAt, "failure", exception);
             throw exception;
         } catch (RuntimeException exception) {
-            cacheEventSupport.lockEvent(ScmCacheEventType.CACHE_ERROR, lockName, startedAt, "failure", exception);
+            cacheEventSupport.lockEvent(ScmCacheEventType.CACHE_ERROR, lockName, provider, startedAt, "failure", exception);
             throw exception;
         }
+    }
+
+    private String provider(CacheClientProperties.UtilityBackendType backendType) {
+        return backendType == CacheClientProperties.UtilityBackendType.LOCAL ? "local" : "remote";
     }
 
     private LockUtility remoteLockUtility() {
