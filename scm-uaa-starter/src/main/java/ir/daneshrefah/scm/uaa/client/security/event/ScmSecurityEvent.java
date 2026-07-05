@@ -2,9 +2,9 @@ package ir.daneshrefah.scm.uaa.client.security.event;
 
 import ir.daneshrefah.scm.common.event.ScmEvent;
 import ir.daneshrefah.scm.common.event.ScmEventMetadata;
+import ir.daneshrefah.scm.common.event.ScmSafeEventAttributes;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -17,20 +17,11 @@ public record ScmSecurityEvent(
     public ScmSecurityEvent {
         type = Objects.requireNonNull(type, "type");
         metadata = metadata == null ? ScmEventMetadata.now("scm-uaa-starter") : metadata;
-        attributes = attributes == null
-                ? Map.of()
-                : Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
+        attributes = ScmSafeEventAttributes.copyOf(attributes);
     }
 
     public static ScmSecurityEvent of(ScmSecurityEventType type, Map<String, ?> attributes) {
-        Map<String, Object> safeAttributes = new LinkedHashMap<>();
-        if (attributes != null) {
-            attributes.forEach((key, value) -> {
-                if (key != null && !key.isBlank() && value != null) {
-                    safeAttributes.put(key.trim(), value);
-                }
-            });
-        }
+        Map<String, Object> safeAttributes = new LinkedHashMap<>(ScmSafeEventAttributes.mutableCopyOf(attributes));
         safeAttributes.put("security.event.type", type.code());
         return new ScmSecurityEvent(type, ScmEventMetadata.now("scm-uaa-starter"), safeAttributes);
     }

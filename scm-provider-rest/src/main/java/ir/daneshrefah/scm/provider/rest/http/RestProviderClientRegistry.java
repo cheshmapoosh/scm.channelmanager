@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.provider.rest.model.RestProviderRequestSpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.web.client.RestClientCustomizer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
@@ -36,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 public class RestProviderClientRegistry {
     @Qualifier("restProviderVirtualThreadExecutor")
     private final ObjectProvider<ExecutorService> virtualThreadExecutorProvider;
+    private final ObjectProvider<RestClientCustomizer> restClientCustomizers;
     private final ConcurrentMap<ClientKey, RestClient> clients = new ConcurrentHashMap<>();
 
     public ResponseEntity<String> exchange(RestProviderResolvedConfig config, RestProviderRequestSpec requestSpec) {
@@ -119,9 +121,10 @@ public class RestProviderClientRegistry {
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClientBuilder.build());
         requestFactory.setReadTimeout(Duration.ofMillis(config.responseTimeoutMs()));
 
-        return RestClient.builder()
-                .requestFactory(requestFactory)
-                .build();
+        RestClient.Builder restClientBuilder = RestClient.builder()
+                .requestFactory(requestFactory);
+        restClientCustomizers.orderedStream().forEach(customizer -> customizer.customize(restClientBuilder));
+        return restClientBuilder.build();
     }
 
     private void copyHeaders(Map<String, String> source, HttpHeaders target) {

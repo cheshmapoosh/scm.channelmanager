@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.event.SpringScmEventPublisher;
 import ir.daneshrefah.scm.uaa.client.properties.ScmResourceServerProperties;
 import ir.daneshrefah.scm.uaa.client.resource.ScmBearerTokenResolver;
 import ir.daneshrefah.scm.uaa.client.security.ScmJwtAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.client.security.event.ScmAuthenticationSuccessEventListener;
 import ir.daneshrefah.scm.uaa.client.security.event.ScmPublishingAccessDeniedHandler;
 import ir.daneshrefah.scm.uaa.client.security.event.ScmPublishingAuthenticationEntryPoint;
 import ir.daneshrefah.scm.uaa.client.security.event.ScmSecurityEventPublishingFilter;
@@ -59,6 +60,12 @@ public class ScmResourceServerAutoConfiguration {
     @ConditionalOnMissingBean
     public ScmEventPublisher scmEventPublisher(ApplicationEventPublisher publisher) {
         return new SpringScmEventPublisher(publisher);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ScmAuthenticationSuccessEventListener scmAuthenticationSuccessEventListener(ScmEventPublisher eventPublisher) {
+        return new ScmAuthenticationSuccessEventListener(eventPublisher);
     }
 
     @Bean

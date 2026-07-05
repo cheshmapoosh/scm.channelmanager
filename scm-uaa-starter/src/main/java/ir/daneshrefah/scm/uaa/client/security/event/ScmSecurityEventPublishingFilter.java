@@ -6,8 +6,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -33,10 +31,6 @@ public class ScmSecurityEventPublishingFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         publish(ScmSecurityEventType.AUTHENTICATION_STARTED, request);
         filterChain.doFilter(request, response);
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (isRealAuthenticatedPrincipal(authentication)) {
-            publish(ScmSecurityEventType.AUTHENTICATION_SUCCESS, request);
-        }
     }
 
     private void publish(ScmSecurityEventType type, HttpServletRequest request) {
@@ -47,15 +41,4 @@ public class ScmSecurityEventPublishingFilter extends OncePerRequestFilter {
         eventPublisher.publish(ScmSecurityEvent.of(type, attributes));
     }
 
-    private boolean isRealAuthenticatedPrincipal(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return false;
-        }
-        String className = authentication.getClass().getName();
-        if (className != null && className.contains("AnonymousAuthenticationToken")) {
-            return false;
-        }
-        Object principal = authentication.getPrincipal();
-        return principal != null && !"anonymousUser".equals(String.valueOf(principal));
-    }
 }
