@@ -1,196 +1,638 @@
-# scm-observation-starter
+﻿# راهنمای `scm-observation-starter`
 
-`scm-observation-starter` provides the shared SCM observation foundation for LOG, TRACE, AUDIT, and METRIC work. Adding the dependency alone enables nothing; every signal is opt-in and fail-closed.
+## ۱. هدف ماژول
 
-## Architecture
+`scm-observation-starter` زیرساخت مشترک مشاهده‌پذیری SCM برای چهار سیگنال اصلی است:
+
+- `LOG`: ثبت رخدادهای ساخت‌یافته و قابل جست‌وجو
+- `TRACE`: نمایش مسیر اجرا، زمان‌بندی و رابطهٔ والد/فرزند
+- `AUDIT`: ثبت رویدادهای ممیزی، مستقل از Application Log
+- `METRIC`: تولید شاخص‌های عددی از مسیر استاندارد Actuator و Micrometer
+
+معماری خروجی:
 
 ```text
-LOG    -> Logback JSONL -> Filebeat -> Elasticsearch -> Kibana
-TRACE  -> starter event -> Logback routing marker -> JSONL -> Filebeat -> Elasticsearch -> Kibana
-AUDIT  -> starter event -> Logback routing marker -> JSONL -> Filebeat -> Elasticsearch -> Kibana
+LOG    -> NDJSON file -> Filebeat -> Elasticsearch -> Kibana
+TRACE  -> NDJSON file -> Filebeat -> Elasticsearch -> Kibana
+AUDIT  -> NDJSON file -> Filebeat -> Elasticsearch -> Kibana
 METRIC -> Actuator -> Micrometer -> Prometheus -> Grafana
 ```
 
-Metrics are not JSONL records. Host modules expose Actuator/Micrometer metrics and use starter-owned generic models where shared calculation logic is needed.
+صرف اضافه‌کردن dependency این starter نباید همهٔ سیگنال‌ها را خودکار فعال کند. رفتار ماژول `opt-in` و `fail-closed` است و ماژول میزبان باید سیگنال‌های موردنیاز را صریحاً فعال کند:
 
-## Core Concepts
-
-`ObservationStream` identifies the output stream: `LOG`, `TRACE`, `AUDIT`, or future `METRIC`.
-
-`ObservationRecordKind` is validation context only. It is never written to JSONL.
-
-| kind | required presence |
-| --- | --- |
-| `PLAIN` | `ALWAYS_REQUIRED` |
-| `CONTEXT` | `ALWAYS_REQUIRED`, `CONTEXT_REQUIRED` |
-| `EVENT` | `ALWAYS_REQUIRED`, `EVENT_REQUIRED` |
-| `EXCEPTION` | `ALWAYS_REQUIRED`, `ERROR_REQUIRED` |
-| `CHANGE` | `ALWAYS_REQUIRED` |
-
-When an `EVENT`, `CONTEXT`, or `CHANGE` record also has a throwable, `ERROR_REQUIRED` is added. `ERROR_REQUIRED` means a throwable, fault, or exception marker exists; it does not mean `log.level=ERROR`.
-
-`ObservationAttributePresence` defines required and optional fields without boolean `required` flags. Use `ALWAYS_REQUIRED`, `CONTEXT_REQUIRED`, `CONTEXT_OPTIONAL`, `EVENT_REQUIRED`, `EVENT_OPTIONAL`, `ERROR_REQUIRED`, `ERROR_OPTIONAL`, or `ON_CHANGE_OPTIONAL`.
-
-`ObservationAttributeSensitivity` is registry policy. `RAW` is emitted as-is, `SECURE` is replaced with `[SECURE]`, and prefix/suffix masking modes expose only configured visible characters.
-
-## Responsibility Boundaries
-
-`ObservationAttributeRegistry` is the attribute catalog. It owns metadata lookup, stream allow-list checks, blank/null/drop handling, and sensitivity masking through `prepareValue(...)`. It does not build observation documents, validate full records, or run regex/content secret scrubbing.
-
-Each key has one `ObservationAttributeType<T>` containing both its Java type and `ElasticFieldType`. Attribute definitions must not use raw Elasticsearch type strings. Elasticsearch remains the permanent destination for LOG, TRACE, and AUDIT records.
-
-`ObservationDocumentFactory` builds base documents for `LOG`, `TRACE`, and `AUDIT`. It owns common field placement and default base values only. It does not own validation rules or duplicate `correlation.type` allowed values.
-
-`ObservationRecordValidator` validates a finished document by `ObservationStream`, `ObservationRecordKind`, required `ObservationAttributePresence`, and the active `ObservationAttributeRegistry`. It does not build or sanitize documents.
-
-`ObservationDocumentBuilder` is the assembly path used by LOG, TRACE, and AUDIT. It applies `SecretScrubbingObservationSanitizer` first for hard safety, then calls `ObservationAttributeRegistry.prepareValue(...)` for contract policy and masking.
-
-`SecretScrubbingObservationSanitizer` is hard safety only. It redacts raw JWTs, Bearer tokens, Authorization values, invalid `scm.auth.jwt.hash` values, and obvious secret assignments inside free text, maps, collections, and arrays. The hard replacement token is always `[SECURE]`.
-
-## Registry Model
-
-`ObservationAttributeContributor` is Spring Bean based. Do not register contributors with Java SPI or `META-INF/services`.
-
-Spring auto-configuration builds one `ObservationAttributeRegistry` from built-in starter attributes and Spring contributors. Duplicate metadata for the same stream and field must be compatible or startup fails.
-
-The starter registers only these common catalogs:
-
-- `attributes.log.CommonLogAttributes`
-- `attributes.trace.CommonTraceAttributes`
-- `attributes.audit.ChangeEntityAuditAttributes`
-- `attributes.audit.ServiceExecuteAuditAttributes`
-- `attributes.metric.CommonMetricTags`
-
-Metric names live separately in `metrics.CommonMetricNames`. HTTP, database, messaging, cache, channel, and other technical fields belong to the host module and are registered by that module's single `ObservationAttributeContributor`.
-
-`ObservationAttributeRegistryHolder` publishes the Spring-built registry for Logback providers. If Logback initializes before Spring publishes the registry, providers use the common-only fallback registry. There is no SPI fallback.
-
-## Official LOG API
-
-Junior developers should use either normal SLF4J messages or the official SCM observation API/helpers. Do not use raw `StructuredArguments.kv(...)` as the official path; unregistered fields are dropped by the JSONL provider and warned once per field name.
-
-```java
-observation.log()
-        .event()
-        .category("cache.init")
-        .action("hazelcast.bootstrap.started")
-        .outcome("success")
-        .correlationId(correlationId)
-        .correlationType(CorrelationType.LIFECYCLE.value())
-        .message("Hazelcast bootstrap started")
-        .write();
+```yaml
+scm:
+  observation:
+    enabled: true
+    log:
+      enabled: true
+    trace:
+      enabled: true
+    metric:
+      enabled: true
 ```
 
-Supported LOG builder flows:
+Metric در فایل نوشته نمی‌شود و همان مسیر استاندارد Actuator، Micrometer، Prometheus و Grafana را طی می‌کند. مدل Audit نیز از Application Log جدا باقی می‌ماند.
 
-- `plain()`
-- `context()`
-- `event()`
-- `exception(Throwable)`
-- `change()`
-- `category(String)`
-- `action(String)`
-- `outcome(String)`
-- `correlationId(String)`
-- `correlationType(String)`
-- `message(String)`
-- `write()`
+## ۲. مرزبندی مسئولیت‌ها
 
-## SLF4J Markers
+مرز ماژول‌ها باید به شکل زیر حفظ شود:
 
-RecordKind markers are for normal LOG JSONL validation:
+```text
+scm-observation-starter:
+  ابزار عمومی log / trace / metric / audit
 
-| marker | record kind |
+scm-uaa-starter:
+  فقط security و resource-server
+  بدون dependency به scm-observation-starter
+  فقط انتشار event خنثی
+
+scm-web:
+  ماژول میزبان
+  مالک اتصال security / provider / plugin / gateway به observation
+```
+
+`scm-uaa-starter` نباید به `scm-observation-starter` وابسته باشد و نباید `ScmObservation`، `ObservationScope` یا attributeهای observation را بشناسد. این starter فقط رفتار resource-server را پیاده‌سازی و رخدادهای امنیتی خنثی را منتشر می‌کند.
+
+Providerها و starterهای دیگر نیز نباید برای ثبت log معمولی مجبور به dependency روی `scm-observation-starter` شوند. آن‌ها می‌توانند از `SLF4J` و `@Slf4j` استفاده کنند و برای رخدادهای رسمی SCM، event منتشر کنند. `scm-web` که هر دو سمت را در اختیار دارد، eventها را به observation تبدیل می‌کند.
+
+جهت dependency مجاز:
+
+```text
+scm-web -> scm-uaa-starter
+scm-web -> scm-observation-starter
+```
+
+جهت dependency غیرمجاز:
+
+```text
+scm-uaa-starter -> scm-observation-starter
+provider starter -> scm-observation-starter
+security starter -> scm-observation-starter
+```
+
+## ۳. تفاوت log معمولی، event، observation log، trace span و span event
+
+### ۳.۱. log معمولی با SLF4J
+
+log معمولی با `log.info`، `log.warn` و `log.error` تولید می‌شود. تنظیمات `Logback` در ماژول میزبان تعیین می‌کند خروجی کجا و با چه قالبی نوشته شود. همهٔ ماژول‌ها می‌توانند از این روش استفاده کنند و فیلدهای `MDC` مانند `correlationId`، `traceId` و `spanId` نیز در الگوی log نمایش داده شوند.
+
+این روش برای پیام‌های عملیاتی روزمره، مانند شروع اتصال، retry، انتخاب endpoint یا خطای پیکربندی مناسب است.
+
+### ۳.۲. SCM application event
+
+SCM application event با `ScmEventPublisher` منتشر می‌شود و در محیط Spring بر `ApplicationEventPublisher` تکیه دارد. انتشار به‌صورت پیش‌فرض synchronous و داخل همان JVM است.
+
+هدف event، جداکردن starter و provider از observation است. منتشرکننده فقط یک رخداد امن و خنثی تولید می‌کند و دربارهٔ log، trace یا metric تصمیم نمی‌گیرد.
+
+### ۳.۳. Observation log
+
+Observation log یک رکورد ساخت‌یافته است که از طریق `ScmObservation` نوشته می‌شود. این رکورد:
+
+- متعلق به ماژول میزبان است؛
+- با `ObservationAttributeRegistry` اعتبارسنجی می‌شود؛
+- قبل از خروجی sanitize و mask می‌شود؛
+- برای جست‌وجوی پایدار در Elasticsearch طراحی شده است.
+
+### ۳.۴. Trace span
+
+Span یک بازهٔ زمانی از اجرای برنامه را نمایش می‌دهد. هر span دارای `trace.id`، `span.id` و در صورت وجود والد، `parent.span.id` است. نمونه‌های اصلی SCM:
+
+```text
+gateway.receive
+service.execute
+operation.call
+```
+
+### ۳.۵. Span event
+
+Span event یک رخداد نقطه‌ای داخل span جاری است و span مستقل جدید ایجاد نمی‌کند. برای رویدادهایی مانند اجرای plugin یا دریافت پاسخ provider مناسب است:
+
+```text
+plugin.before.started
+plugin.before.completed
+provider.response.received
+```
+
+ساختار پایدار span event در trace:
+
+```json
+{
+  "span.events": [
+    {
+      "name": "plugin.before.completed",
+      "timestamp": "2026-07-05T10:15:30Z",
+      "attributes": {
+        "plugin.name": "requestTransformer",
+        "plugin.outcome": "success"
+      }
+    }
+  ]
+}
+```
+
+## ۴. چرا event bus مشترک داریم؟
+
+پروژه یک abstraction کوچک و مشترک برای event دارد:
+
+```text
+ScmEventPublisher
+ScmEvent
+ScmEventType
+```
+
+پیاده‌سازی Spring آن از `ApplicationEventPublisher` استفاده می‌کند. این انتخاب با الگوی event/listener موجود در بخش‌های دیگر پروژه، از جمله جریان‌های audit، هماهنگ است و به Kafka، RabbitMQ، broker یا outbox نیاز ندارد.
+
+Eventها به‌صورت پیش‌فرض synchronous هستند تا context همان thread حفظ شود:
+
+- thread context
+- `MDC`
+- trace context
+
+`ScmEventPublisher` باید سبک باشد و خطای listener نباید جریان business را متوقف کند، مگر آن‌که یک جریان مشخص صریحاً رفتار دیگری تعریف کرده باشد. Event payload نیز باید تا حد امکان immutable و همیشه فاقد secret باشد.
+
+## ۵. معماری security event
+
+`scm-uaa-starter` رخدادهای امنیتی خنثی زیر را منتشر می‌کند:
+
+```text
+AUTHENTICATION_STARTED
+AUTHENTICATION_SUCCESS
+AUTHENTICATION_FAILURE
+ACCESS_DENIED
+TOKEN_MISSING
+TOKEN_INVALID
+TOKEN_EXPIRED
+```
+
+این starter observation log یا trace را مستقیماً نمی‌نویسد. در نتیجه security starter مستقل می‌ماند و hostهای مختلف می‌توانند سیاست observation متفاوتی داشته باشند.
+
+`scm-web` به این eventها گوش می‌دهد و بر اساس تنظیمات میزبان آن‌ها را به موارد زیر تبدیل می‌کند:
+
+- structured observation log؛
+- trace event روی span جاری؛
+- metric در صورت نیاز.
+
+Attributeهای security event فقط باید اطلاعات امنی مانند `http.method`، `url.path`، `client.ip`، شناسه‌های غیرحساس کاربر و error code امن را حمل کنند. JWT یا headerهای احراز هویت نباید داخل event قرار گیرند.
+
+## ۶. قانون `correlation.id`
+
+`correlation.id` یک شناسهٔ محلی برای هر microservice است:
+
+- در ابتدای پردازش request یا message محلی ساخته می‌شود؛
+- در تمام پردازش همان microservice ثابت می‌ماند؛
+- با کلید `correlationId` در `MDC` قرار می‌گیرد؛
+- به microservice پایین‌دست ارسال نمی‌شود؛
+- هر microservice برای پردازش محلی خود شناسهٔ جدید می‌سازد.
+
+نمونه:
+
+```text
+scm-web:
+  correlation.id = C1
+
+scm-uaa:
+  correlation.id = C2
+
+هر دو ممکن است در یک trace باشند، اما correlation جدا دارند.
+```
+
+این تفکیک باعث می‌شود `correlation.id` برای جست‌وجوی logهای محلی قابل اتکا باشد و هم‌زمان مرز پردازش هر سرویس را مشخص کند.
+
+## ۷. قانون distributed trace و `traceparent`
+
+انتقال distributed trace فقط با استاندارد W3C و header زیر انجام می‌شود:
+
+```text
+traceparent
+```
+
+Headerهای زیر نباید به downstream منتقل شوند:
+
+```text
+X-Correlation-ID
+X-SCM-Trace-ID
+X-SCM-Span-ID
+X-SCM-Parent-Span-ID
+```
+
+قالب `traceparent`:
+
+```text
+traceparent: 00-<trace-id>-<current-span-id>-01
+```
+
+- `<trace-id>` شناسهٔ distributed trace است.
+- `<current-span-id>` شناسهٔ span جاری در caller است.
+- سرویس دریافت‌کننده این مقدار را به‌عنوان `parent.span.id` استفاده می‌کند.
+- سرویس دریافت‌کننده یک `span.id` محلی جدید می‌سازد.
+- سرویس دریافت‌کننده یک `correlation.id` محلی جدید می‌سازد.
+
+نمونه:
+
+```text
+scm-web:
+  trace.id = T1
+  current span.id = S3
+
+ارسال به scm-uaa:
+  traceparent: 00-T1-S3-01
+
+scm-uaa:
+  trace.id = T1
+  parent.span.id = S3
+  span.id = S4
+  correlation.id = C2
+```
+
+اگر `traceparent` ورودی وجود نداشته باشد، سرویس دریافت‌کننده یک `trace.id` جدید ایجاد می‌کند. اگر وجود داشته باشد، `trace.id` ورودی حفظ می‌شود، span مربوط به caller والد اولین span محلی خواهد بود و span محلی شناسهٔ جدید می‌گیرد.
+
+## ۸. ساختار spanهای اصلی
+
+ساختار منطقی اجرای business در `scm-web`:
+
+```text
+gateway.receive
+  -> service.execute
+      -> operation.call
+```
+
+`trace.id` در هر سه span ثابت است. هر span یک `span.id` مستقل دارد و `parent.span.id` ارتباط آن‌ها را مشخص می‌کند. `correlation.id` نیز در محدودهٔ پردازش محلی `scm-web` ثابت می‌ماند.
+
+### `gateway.receive`
+
+- root span مربوط به business request در `scm-web` است.
+- protocol-neutral است و می‌تواند REST، SOAP، TCP، ISO، JMS یا protocolهای آینده را نمایش دهد.
+- در ورودی gateway یا route شروع می‌شود، نه در یک filter صرفاً HTTP.
+- پس از مشخص‌شدن نتیجهٔ نهایی business بسته می‌شود.
+- تنها span مجاز برای projection به legacy DB است.
+- نتیجهٔ نهایی موردنیاز legacy را جمع‌بندی می‌کند، اما payload کامل provider را نگه نمی‌دارد.
+
+### `service.execute`
+
+- فرزند `gateway.receive` است.
+- هنگام شروع اجرای SCM service باز می‌شود.
+- پس از مشخص‌شدن نتیجه یا failure سرویس بسته می‌شود.
+- برای زمان‌بندی و عیب‌یابی لایهٔ service استفاده می‌شود.
+
+### `operation.call`
+
+- فرزند `service.execute` است.
+- اطراف provider call، downstream microservice call یا اجرای operation باز می‌شود.
+- پس از دریافت نتیجه یا failure پایین‌دست بسته می‌شود.
+- برای call خارجی معمولاً `span.kind=client` دارد.
+
+## ۹. قانون legacy projection
+
+فقط `gateway.receive` می‌تواند این attribute را داشته باشد:
+
+```text
+scm.target.legacy.enabled = true
+```
+
+مقدار table باید یکی از مقصدهای تعریف‌شدهٔ legacy باشد:
+
+```text
+scm.target.legacy.table = ib.transaction | rb.message_log | cm.transaction_log
+```
+
+برای spanهای داخلی باید مقدار زیر برقرار باشد:
+
+```text
+service.execute:
+  scm.target.legacy.enabled = false
+
+operation.call:
+  scm.target.legacy.enabled = false
+```
+
+Tableهای legacy به یک رکورد نهایی برای هر business transaction نیاز دارند. Spanهای داخلی فقط برای troubleshooting، زمان‌بندی و تحلیل مسیر اجرا هستند؛ projection آن‌ها باعث چند رکورد برای یک transaction و گزارش‌های نادرست می‌شود.
+
+## ۱۰. قواعد Provider
+
+Providerها می‌توانند برای log عملیاتی معمولی از `@Slf4j` استفاده کنند. برای observation رسمی باید eventهای زیر را از طریق `ScmEventPublisher` منتشر کنند:
+
+```text
+PROVIDER_REQUEST_SENT
+PROVIDER_RESPONSE_RECEIVED
+PROVIDER_CALL_FAILED
+PROVIDER_TIMEOUT
+```
+
+Trace مربوط به provider فقط metadata، زمان‌بندی و نتیجه را نگه می‌دارد:
+
+```text
+scm.provider.code
+scm.provider.type
+scm.provider.address
+scm.provider.endpoint
+scm.provider.request_time
+scm.provider.response_time
+scm.provider.duration_ms
+scm.provider.result
+scm.provider.response_code
+http.status_code
+```
+
+موارد زیر نباید در provider trace قرار گیرند:
+
+- request body
+- response body
+- full ISO message
+- raw provider payload
+- secrets
+- token
+- PIN
+- CVV2
+- MAC key
+- full PAN/card number
+
+Provider log می‌تواند جزئیات امن و موردنیاز عملیات را پس از masking و sanitization ثبت کند. تنظیمات `sensitive-headers`، `sensitive-body-keys` و `max-body-log-length` باید رعایت شوند و نباید تضعیف شوند.
+
+## ۱۱. قواعد Plugin
+
+Wrapper اجرای plugin باید eventهای زیر را منتشر کند:
+
+```text
+PLUGIN_BEFORE_STARTED
+PLUGIN_BEFORE_COMPLETED
+PLUGIN_AFTER_STARTED
+PLUGIN_AFTER_COMPLETED
+PLUGIN_FAILED
+```
+
+Listener میزبان در `scm-web` آن‌ها را به span eventهای زیر تبدیل می‌کند:
+
+```text
+plugin.before.started
+plugin.before.completed
+plugin.after.started
+plugin.after.completed
+plugin.failed
+```
+
+Plugin می‌تواند برای log معمولی از `@Slf4j` استفاده کند. اتصال رسمی به observation، تولید structured observation log، افزودن span event و metric در ماژول میزبان انجام می‌شود.
+
+Attributeهای plugin باید به metadata امن مانند نام، type، class، phase، order، outcome و duration محدود باشند. ورودی یا خروجی کامل provider نباید به span event افزوده شود.
+
+## ۱۲. قانون Groovy plugin
+
+Groovy plugin نباید raw `ScmObservation` دریافت کند و نباید مستقیماً span بسازد یا trace output بنویسد. تنها یک facade محدود در اختیار script قرار می‌گیرد؛ برای مثال:
+
+```java
+public interface PluginObservationContext {
+    void traceEvent(String eventName, Map<String, ?> attributes);
+    void logInput(String operation, Map<String, ?> importantParams);
+    void logOutput(String operation, Map<String, ?> importantResult);
+    void logFailure(String operation, Throwable throwable, Map<String, ?> safeContext);
+}
+```
+
+Wrapper جاوا مسئول این موارد است:
+
+- محدودکردن event name و attributeهای مجاز؛
+- sanitization و masking قبل از log یا trace؛
+- حذف payload، header و secretهای غیرمجاز؛
+- تبدیل درخواست facade به event یا observation استاندارد میزبان.
+
+Script فقط context امن و ضروری را ارسال می‌کند و نباید request/response کامل provider را وارد trace کند.
+
+## ۱۳. اطلاعاتی که هرگز نباید log یا trace شوند
+
+موارد زیر نباید به‌صورت خام در LOG، TRACE، AUDIT، METRIC یا SCM event ثبت شوند:
+
+```text
+raw JWT
+Authorization header
+Cookie
+Set-Cookie
+access token
+refresh token
+PIN
+CVV2
+MAC key
+password
+secret
+full PAN/card number
+raw provider payload
+```
+
+مقدار حساس باید حذف، mask یا با `[SECURE]` جایگزین شود. `SecretScrubbingObservationSanitizer` لایهٔ ایمنی نهایی است، اما وجود sanitizer مجوز ارسال دادهٔ حساس به API مشاهده‌پذیری نیست؛ داده باید از ابتدا حداقلی و امن باشد.
+
+## ۱۴. مثال‌های کوتاه
+
+### Normal SLF4J log
+
+این log توسط تنظیمات `Logback` میزبان کنترل می‌شود و در صورت وجود، فیلدهای `MDC` را نیز همراه دارد:
+
+```java
+@Slf4j
+public class RestProviderExecutor {
+    public void call(String providerCode, String endpoint) {
+        log.info("Calling provider code={} endpoint={}", providerCode, endpoint);
+    }
+}
+```
+
+### انتشار security event
+
+Event فقط metadata امن request و error code را حمل می‌کند:
+
+```java
+scmEventPublisher.publish(
+        ScmSecurityEvent.of(
+                ScmSecurityEventType.TOKEN_INVALID,
+                Map.of(
+                        "http.method", request.getMethod(),
+                        "url.path", request.getRequestURI(),
+                        "client.ip", request.getRemoteAddr(),
+                        "error.code", "invalid_token"
+                )
+        )
+);
+```
+
+### انتشار provider event
+
+Body درخواست و پاسخ در event قرار نمی‌گیرد:
+
+```java
+scmEventPublisher.publish(
+        ScmProviderEvent.of(
+                ScmProviderEventType.PROVIDER_RESPONSE_RECEIVED,
+                Map.of(
+                        "scm.provider.code", providerCode,
+                        "scm.provider.endpoint", endpoint,
+                        "scm.provider.duration_ms", durationMs,
+                        "scm.provider.response_code", responseCode
+                )
+        )
+);
+```
+
+### انتشار plugin event
+
+Wrapper مدت اجرا و outcome را منتشر می‌کند:
+
+```java
+scmEventPublisher.publish(
+        ScmPluginEvent.of(
+                ScmPluginEventType.PLUGIN_BEFORE_COMPLETED,
+                Map.of(
+                        "plugin.name", pluginName,
+                        "plugin.outcome", "success",
+                        "plugin.duration_ms", durationMs
+                )
+        )
+);
+```
+
+### مدیریت event در `scm-web`
+
+Listener میزبان event خنثی را به observation log تبدیل می‌کند:
+
+```java
+@Component
+@RequiredArgsConstructor
+public class ScmWebSecurityObservationListener
+        implements ApplicationListener<ScmSecurityEvent> {
+
+    private final ScmObservation observation;
+
+    @Override
+    public void onApplicationEvent(ScmSecurityEvent event) {
+        observation.log()
+                .event()
+                .category("security")
+                .action(event.eventType())
+                .outcome("failure")
+                .attributes(event.attributes())
+                .write();
+    }
+}
+```
+
+در پیاده‌سازی واقعی، outcome بر اساس event type تعیین می‌شود و listener می‌تواند trace event یا metric متناظر را نیز ثبت کند.
+
+### ساخت `traceparent`
+
+Caller فقط شناسهٔ trace و span جاری را ارسال می‌کند:
+
+```java
+String traceparent = "00-" + traceId + "-" + currentSpanId + "-01";
+```
+
+### ساخت spanهای اصلی
+
+Scopeها به‌ترتیب بسته می‌شوند تا رابطهٔ والد/فرزند حفظ شود:
+
+```java
+try (ObservationScope gateway = observation.trace()
+        .span("gateway.receive")
+        .spanKind("server")
+        .start()) {
+
+    try (ObservationScope service = observation.trace()
+            .span("service.execute")
+            .spanKind("internal")
+            .start()) {
+
+        try (ObservationScope operation = observation.trace()
+                .span("operation.call")
+                .spanKind("client")
+                .start()) {
+
+            // provider/downstream call
+        }
+    }
+}
+```
+
+در مسیر واقعی باید قبل از `close()`، outcome موفق یا failure و attributeهای نتیجه روی scope ثبت شوند.
+
+## ۱۵. Registry، validation و خروجی‌ها
+
+### Attribute registry
+
+`ObservationAttributeRegistry` کاتالوگ attributeهای مجاز است و مسئول این موارد است:
+
+- تشخیص attributeهای مجاز برای هر stream؛
+- کنترل type و metadata؛
+- حذف مقدار null، blank یا ثبت‌نشده؛
+- اجرای سیاست sensitivity و masking؛
+- جلوگیری از تعریف ناسازگار یک field در یک stream.
+
+Attributeهای مشترک در starter تعریف می‌شوند و هر host یک `ObservationAttributeContributor` برای attributeهای اختصاصی خود ثبت می‌کند. Registration با Spring bean انجام می‌شود و Java SPI یا `META-INF/services` برای contributorها استفاده نمی‌شود.
+
+کاتالوگ‌های مشترک:
+
+```text
+attributes.log.CommonLogAttributes
+attributes.trace.CommonTraceAttributes
+attributes.audit.ChangeEntityAuditAttributes
+attributes.audit.ServiceExecuteAuditAttributes
+attributes.metric.CommonMetricTags
+```
+
+Metric nameها جداگانه در `metrics.CommonMetricNames` قرار دارند. Attributeهای HTTP، provider، plugin، security، gateway و channel باید توسط host مربوط ثبت شوند.
+
+### Document builder و validation
+
+`ObservationDocumentFactory` فیلدهای پایهٔ LOG، TRACE و AUDIT را می‌سازد. `ObservationDocumentBuilder` مقدارها را ابتدا sanitize و سپس با registry آماده می‌کند. `ObservationRecordValidator` سند نهایی را بر اساس stream، record kind و presenceهای الزامی بررسی می‌کند.
+
+`ObservationRecordKind` فقط context اعتبارسنجی است و در NDJSON نوشته نمی‌شود:
+
+| kind | کاربرد |
 | --- | --- |
-| `SCM_CONTEXT` | `CONTEXT` |
-| `SCM_EVENT` | `EVENT` |
-| `SCM_EXCEPTION` | `EXCEPTION` |
-| `SCM_CHANGE` | `CHANGE` |
+| `PLAIN` | log معمولی |
+| `CONTEXT` | context مربوط به runtime یا lifecycle |
+| `EVENT` | رخداد ساخت‌یافته |
+| `EXCEPTION` | خطا همراه throwable |
+| `CHANGE` | تغییر entity یا state |
 
-Detection rules:
+### Sanitizer
 
-- `log.info("x")`, `log.warn("x")`, and `log.error("x")` without marker and without throwable are `PLAIN`.
-- `log.warn("x", throwable)` and `log.error("x", throwable)` are `EXCEPTION`.
-- `log.error("x")` without throwable does not require `error.*`.
-- Marker plus throwable validates both marker-required fields and `ERROR_REQUIRED`.
+`SecretScrubbingObservationSanitizer` آخرین لایهٔ ایمنی است. این component JWT خام، Bearer token، Authorization value و assignmentهای واضح secret را در text، map، collection و array پاک‌سازی می‌کند. جایگزین استاندارد مقدار حساس `[SECURE]` است.
 
-Routing markers are not RecordKind markers:
+`ObservationAttributeSensitivity` سیاست registry را تعیین می‌کند:
+
+- `RAW`: مقدار مجاز بدون masking؛
+- `SECURE`: جایگزینی کامل با `[SECURE]`؛
+- حالت‌های prefix/suffix: نمایش فقط بخش مجاز مقدار.
+
+### JSONL و Logback
+
+Provider مربوط به JSONL، document نهایی LOG را از Logback event، `MDC`، structured fieldهای ثبت‌شده، marker و throwable می‌سازد. Field ثبت‌نشده حذف می‌شود و برای نام field ناشناخته warning کنترل‌شده ثبت می‌شود.
+
+TRACE و AUDIT از مسیر `ObservationDocumentFactory` ساخته و با `ObservationRecordValidator` بررسی می‌شوند. Markerهای routing زیر فقط برای هدایت خروجی TRACE و AUDIT به appenderهای اختصاصی هستند:
 
 ```text
 SCM_OBSERVATION_TRACE
 SCM_OBSERVATION_AUDIT
 ```
 
-They route starter TRACE/AUDIT payloads to dedicated JSONL appenders and must stay out of normal application appenders.
+### Metric و element risk
 
-## Correlation
+Metricها باید low-cardinality باشند. `correlation.id`، `trace.id`، `span.id`، username، شمارهٔ کارت یا حساب، شمارهٔ تلفن، token، OTP و sequence id نباید metric tag باشند.
 
-Allowed `correlation.type` values are defined by `CorrelationType`:
-
-```text
-LIFECYCLE -> lifecycle
-REQUEST -> request
-MESSAGE -> message
-JOB -> job
-BATCH -> batch
-OPERATION -> operation
-UNKNOWN -> unknown
-```
-
-Use `lifecycle` only for startup, shutdown, bootstrap, and runtime context creation. Missing context should be `unknown` or a clear generated fallback, not lifecycle.
-
-The base document factory defaults a missing `correlation.type` to `CorrelationType.UNKNOWN`. Invalid non-empty values are rejected by `ObservationRecordValidator`.
-
-## JSONL Providers
-
-The bundled JSONL provider builds the full official LOG document from the Logback event, MDC, registered structured fields, marker kind, and throwable state. It uses `ObservationAttributeRegistryHolder`, drops unregistered fields, warns once for each unknown dropped field, runs `SecretScrubbingObservationSanitizer` for hard safety, then applies registry masking/sensitivity through `prepareValue(...)`.
-
-TRACE and AUDIT documents are built through `ObservationDocumentFactory` and validated with `ObservationRecordValidator`. The legacy base document path was removed; new documents do not use the old stream, service, app, gateway, channel, correlation, or target projection fields.
-
-Raw `StructuredArguments.kv(...)` is not the official contract path for junior developers. Use `ScmObservation` builders or official SCM log helpers so record kind, correlation type, validation, hard secret scrubbing, and registry masking are applied consistently.
-
-## Common LOG Attributes
-
-The source of truth for common LOG fields is:
+مدل عمومی element risk و health در starter قرار دارد. Host نمونه‌های runtime را فراهم می‌کند و نتیجهٔ نهایی را به Micrometer می‌دهد:
 
 ```text
-src/main/resources/META-INF/scm/docs/observation/common-log-attributes.md
-```
-
-Keep that file aligned with `CommonLogAttributes`.
-
-## Host Module Adoption
-
-Keep module-specific observation code inside the host module:
-
-```text
-<module>/observation/attributes/<Module>LogAttributes.java
-<module>/observation/attributes/<Module>TraceAttributes.java
-<module>/observation/attributes/<Module>AuditAttributes.java
-<module>/observation/attributes/<Module>MetricTags.java
-<module>/observation/<Module>ObservationAttributeContributor.java
-<module>/observation/<Module>Observation.java
-```
-
-Attribute classes use `LogAttribute`, `TraceAttribute`, `AuditAttribute`, and `MetricTag` factories. One contributor returns all four attribute lists. Business code receives the module facade and calls intent methods such as `uaaObservation.authStarted(ctx)`, `uaaObservation.authFailed(ctx, ex)`, or `uaaObservation.otpSent(ctx)`; it does not assemble raw observation builders.
-
-The raw builders remain available for the module facade and senior extensions. Host metric tags must be bounded. Correlation IDs, trace/span IDs, usernames, card/account/phone values, tokens, OTPs, and message sequence IDs are rejected as metric tags.
-
-AUDIT supports exactly `CHANGE_ENTITY` and `SERVICE_EXECUTE`. A TRACE without a non-blank `parent.span.id` is a root span; do not add `span.role`.
-
-## Element Risk
-
-`scm-observation-starter` owns the generic SCM element risk and health model. Host modules bind their own configuration prefix by extending `ScmElementRiskProperties`, then provide runtime samples and HealthIndicator adapters.
-
-Risk is application-computed before metrics are exported. Grafana and Prometheus consume final values only:
-
-```text
-risk: 0=normal, 1=warning, 2=critical
+risk:   0=normal, 1=warning, 2=critical
 health: 1=healthy, 0=unhealthy
 ```
 
-`warningRatio` and `criticalRatio` are capacity ratios between `0` and `1`; count, millisecond, byte, latency, error, and memory thresholds must use separate future properties with explicit units. Grafana should alert on final risk and health metrics, not threshold math.
+محاسبهٔ threshold در application انجام می‌شود و Prometheus و Grafana فقط مقدار نهایی را مصرف می‌کنند. Metric همچنان از مسیر Actuator و Micrometer صادر می‌شود و در فایل LOG، TRACE یا AUDIT نوشته نمی‌شود.
 
-Generic element metrics should use Prometheus-friendly tags: `service`, `component`, `element_type`, and `element_name` when the element name is finite and configured. Host modules should avoid scrape-time remote-system sampling; for example, `scm-cache` refreshes Hazelcast element samples and health results on a schedule, then serves gauges from the latest snapshot.
+## چک‌لیست پیاده‌سازی
 
-`ScmElementHealthEngine` reports `capacity_ratio_unavailable` when an element is materialized and healthy but the host adapter cannot calculate a capacity ratio. That reason remains `NORMAL` risk and must not make readiness fail by itself. Host modules should validate bound `ScmElementRiskProperties` during startup by delegating to `ScmElementRiskEngine`.
+- آیا host سیگنال‌های موردنیاز را صریحاً فعال کرده است؟
+- آیا starter یا provider فقط event خنثی منتشر می‌کند؟
+- آیا observation رسمی در host انجام می‌شود؟
+- آیا `correlation.id` محلی است و به downstream ارسال نمی‌شود؟
+- آیا فقط `traceparent` برای distributed trace ارسال می‌شود؟
+- آیا ساختار `gateway.receive -> service.execute -> operation.call` حفظ شده است؟
+- آیا فقط `gateway.receive` برای legacy projection مجاز است؟
+- آیا payload و secret از event، trace، metric و log حذف یا mask شده‌اند؟
+- آیا metric tagها محدود و low-cardinality هستند؟
+
