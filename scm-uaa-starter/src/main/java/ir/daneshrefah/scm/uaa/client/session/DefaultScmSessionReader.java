@@ -19,7 +19,7 @@ public class DefaultScmSessionReader implements ScmSessionReader {
         if (principal == null
                 || !StringUtils.hasText(principal.nickname())
                 || !StringUtils.hasText(principal.terminalCode())) {
-            throw new ScmSessionAccessDeniedException();
+            throw new ScmSessionPrincipalInvalidException();
         }
 
         UserAuthentication authentication = sessionCache.getSessionFromCache(
