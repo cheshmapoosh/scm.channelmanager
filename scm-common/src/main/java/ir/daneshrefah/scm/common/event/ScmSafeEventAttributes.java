@@ -65,7 +65,9 @@ public final class ScmSafeEventAttributes {
             ".token_id",
             ".jti",
             ".key_hash",
+            ".key-hash",
             ".key_type",
+            ".key-type",
             ".span.id",
             ".trace.id",
             ".parent.span.id"
@@ -94,7 +96,9 @@ public final class ScmSafeEventAttributes {
             "jti",
             "security.jti",
             "scm.cache.key_hash",
+            "scm.cache.key-hash",
             "scm.cache.key_type",
+            "scm.cache.key-type",
             "span.id",
             "trace.id",
             "parent.span.id"

@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.cache.client.utility.concurrencylimit;
 
+import ir.daneshrefah.scm.cache.client.event.ScmCacheEventSupport;
+import ir.daneshrefah.scm.common.event.cache.ScmCacheEventType;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -12,7 +14,18 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class LocalConcurrencyLimiterUtility implements ConcurrencyLimiterUtility {
 
+    private static final String PROVIDER = "local";
+
     private final Map<String, Semaphore> limiters = new ConcurrentHashMap<>();
+    private final ScmCacheEventSupport cacheEventSupport;
+
+    public LocalConcurrencyLimiterUtility() {
+        this(null);
+    }
+
+    public LocalConcurrencyLimiterUtility(ScmCacheEventSupport cacheEventSupport) {
+        this.cacheEventSupport = cacheEventSupport;
+    }
 
     @Override
     public boolean initialize(String limitName, int maxConcurrentExecutions) {
@@ -29,37 +42,68 @@ public class LocalConcurrencyLimiterUtility implements ConcurrencyLimiterUtility
 
     @Override
     public boolean tryAcquire(String limitName) {
-        return limiter(limitName, 1).tryAcquire();
+        long startedAt = System.nanoTime();
+        try {
+            boolean acquired = limiter(limitName, 1).tryAcquire();
+            publishAcquireResult(limitName, startedAt, acquired, null);
+            return acquired;
+        } catch (RuntimeException exception) {
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_ERROR, limitName, startedAt, "failure", exception);
+            throw exception;
+        }
     }
 
     @Override
     public boolean tryAcquire(String limitName, int slots, Duration waitTime) {
+        long startedAt = System.nanoTime();
         validateSlots(slots);
         Semaphore limiter = limiter(limitName, slots);
         try {
+            boolean acquired;
             if (waitTime == null || waitTime.isNegative()) {
                 limiter.acquire(slots);
-                return true;
+                acquired = true;
+            } else if (waitTime.isZero()) {
+                acquired = limiter.tryAcquire(slots);
+            } else {
+                acquired = limiter.tryAcquire(slots, waitTime.toMillis(), TimeUnit.MILLISECONDS);
             }
-            if (waitTime.isZero()) {
-                return limiter.tryAcquire(slots);
-            }
-            return limiter.tryAcquire(slots, waitTime.toMillis(), TimeUnit.MILLISECONDS);
+            publishAcquireResult(limitName, startedAt, acquired, null);
+            return acquired;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new ConcurrencyLimitOperationException("Interrupted while waiting to acquire local concurrency limiter '" + limitName + "'", exception);
+            RuntimeException wrapped = new ConcurrencyLimitOperationException("Interrupted while waiting to acquire local concurrency limiter '" + limitName + "'", exception);
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_ERROR, limitName, startedAt, "failure", wrapped);
+            throw wrapped;
+        } catch (RuntimeException exception) {
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_ERROR, limitName, startedAt, "failure", exception);
+            throw exception;
         }
     }
 
     @Override
     public void release(String limitName) {
-        limiter(limitName, 1).release();
+        long startedAt = System.nanoTime();
+        try {
+            limiter(limitName, 1).release();
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_RELEASED, limitName, startedAt, "released", null);
+        } catch (RuntimeException exception) {
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_ERROR, limitName, startedAt, "failure", exception);
+            throw exception;
+        }
     }
 
     @Override
     public void release(String limitName, int slots) {
+        long startedAt = System.nanoTime();
         validateSlots(slots);
-        limiter(limitName, slots).release(slots);
+        try {
+            limiter(limitName, slots).release(slots);
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_RELEASED, limitName, startedAt, "released", null);
+        } catch (RuntimeException exception) {
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_ERROR, limitName, startedAt, "failure", exception);
+            throw exception;
+        }
     }
 
     @Override
@@ -80,9 +124,12 @@ public class LocalConcurrencyLimiterUtility implements ConcurrencyLimiterUtility
         try {
             return job.call();
         } catch (RuntimeException exception) {
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_ERROR, limitName, System.nanoTime(), "failure", exception);
             throw exception;
         } catch (Exception exception) {
-            throw new ConcurrencyLimitOperationException("Could not execute job for local concurrency limiter '" + limitName + "'", exception);
+            RuntimeException wrapped = new ConcurrencyLimitOperationException("Could not execute job for local concurrency limiter '" + limitName + "'", exception);
+            publish(ScmCacheEventType.CACHE_CONCURRENCY_ERROR, limitName, System.nanoTime(), "failure", wrapped);
+            throw wrapped;
         } finally {
             release(limitName);
             log.debug("Local concurrency limiter released: name='{}'", limitName);
@@ -96,6 +143,22 @@ public class LocalConcurrencyLimiterUtility implements ConcurrencyLimiterUtility
     private void validateSlots(int slots) {
         if (slots <= 0) {
             throw new IllegalArgumentException("slots must be greater than zero");
+        }
+    }
+
+    private void publishAcquireResult(String limitName, long startedAt, boolean acquired, Throwable error) {
+        publish(
+                acquired ? ScmCacheEventType.CACHE_CONCURRENCY_ACQUIRED : ScmCacheEventType.CACHE_CONCURRENCY_REJECTED,
+                limitName,
+                startedAt,
+                acquired ? "acquired" : "rejected",
+                error
+        );
+    }
+
+    private void publish(ScmCacheEventType type, String limitName, long startedAt, String result, Throwable error) {
+        if (cacheEventSupport != null) {
+            cacheEventSupport.concurrencyEvent(type, limitName, PROVIDER, startedAt, result, error);
         }
     }
 }

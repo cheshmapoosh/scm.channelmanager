@@ -16,6 +16,7 @@ public class RoutingSpringCache implements TtlAwareCache {
     private final CacheRoute route;
     private final CacheBackend backend;
     private final ScmCacheEventSupport cacheEventSupport;
+    private final boolean publishStartedEvents;
 
     @Override
     public String getName() {
@@ -30,7 +31,7 @@ public class RoutingSpringCache implements TtlAwareCache {
     @Override
     public ValueWrapper get(Object key) {
         long startedAt = System.nanoTime();
-        cacheEventSupport.cacheEvent(ScmCacheEventType.CACHE_GET, route, "get", key, null, startedAt, "started", null, null);
+        publishGetStarted(key, startedAt);
         try {
             Object value = backend.get(route, toKey(key));
             publishGetResult(key, startedAt, value);
@@ -45,7 +46,7 @@ public class RoutingSpringCache implements TtlAwareCache {
     @SuppressWarnings("unchecked")
     public <T> T get(Object key, Class<T> type) {
         long startedAt = System.nanoTime();
-        cacheEventSupport.cacheEvent(ScmCacheEventType.CACHE_GET, route, "get", key, null, startedAt, "started", null, null);
+        publishGetStarted(key, startedAt);
         try {
             Object value = backend.get(route, toKey(key));
             publishGetResult(key, startedAt, value);
@@ -67,7 +68,7 @@ public class RoutingSpringCache implements TtlAwareCache {
     public <T> T get(Object key, Callable<T> valueLoader) {
         long startedAt = System.nanoTime();
         String cacheKey = toKey(key);
-        cacheEventSupport.cacheEvent(ScmCacheEventType.CACHE_GET, route, "get", key, null, startedAt, "started", null, null);
+        publishGetStarted(key, startedAt);
         try {
             Object value = backend.get(route, cacheKey);
             if (value != null) {
@@ -81,6 +82,8 @@ public class RoutingSpringCache implements TtlAwareCache {
                 cacheEventSupport.cacheEvent(ScmCacheEventType.CACHE_PUT, route, "put_if_absent", key, route.ttl(), startedAt, "success", null, null);
             }
             return loadedValue;
+        } catch (ValueRetrievalException exception) {
+            throw exception;
         } catch (RuntimeException exception) {
             publishError("get", key, startedAt, exception);
             throw exception;
@@ -166,6 +169,12 @@ public class RoutingSpringCache implements TtlAwareCache {
         } catch (Exception exception) {
             publishError("get", key, startedAt, exception);
             throw new ValueRetrievalException(key, valueLoader, exception);
+        }
+    }
+
+    private void publishGetStarted(Object key, long startedAt) {
+        if (publishStartedEvents) {
+            cacheEventSupport.cacheEvent(ScmCacheEventType.CACHE_GET, route, "get", key, null, startedAt, "started", null, null);
         }
     }
 

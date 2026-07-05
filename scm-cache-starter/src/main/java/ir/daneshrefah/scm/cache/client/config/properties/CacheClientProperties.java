@@ -48,9 +48,25 @@ public class CacheClientProperties {
      */
     private UtilityBackends utilities = new UtilityBackends();
 
+    /**
+     * Cache event publishing controls.
+     */
+    private Events events = new Events();
+
     public enum UtilityBackendType {
         LOCAL,
         REMOTE
+    }
+
+    @Getter
+    @Setter
+    public static class Events {
+
+        /**
+         * Publish started events such as cache.get before the final hit/miss/error result.
+         * Disabled by default to avoid high-volume observation noise.
+         */
+        private boolean publishStarted = false;
     }
 
     @Getter
