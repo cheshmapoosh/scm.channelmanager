@@ -1,8 +1,13 @@
 package ir.daneshrefah.scm.uaa.client.autoconfigure;
 
+import ir.daneshrefah.scm.common.event.ScmEventPublisher;
+import ir.daneshrefah.scm.common.event.SpringScmEventPublisher;
 import ir.daneshrefah.scm.uaa.client.properties.ScmResourceServerProperties;
 import ir.daneshrefah.scm.uaa.client.resource.ScmBearerTokenResolver;
 import ir.daneshrefah.scm.uaa.client.security.ScmJwtAuthenticationConverter;
+import ir.daneshrefah.scm.uaa.client.security.event.ScmPublishingAccessDeniedHandler;
+import ir.daneshrefah.scm.uaa.client.security.event.ScmPublishingAuthenticationEntryPoint;
+import ir.daneshrefah.scm.uaa.client.security.event.ScmSecurityEventPublishingFilter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -10,6 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,9 +29,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
-import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.StringUtils;
 
@@ -51,6 +56,12 @@ public class ScmResourceServerAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public ScmEventPublisher scmEventPublisher(ApplicationEventPublisher publisher) {
+        return new SpringScmEventPublisher(publisher);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     @ConditionalOnProperty(
             prefix = "scm.security.resource-server",
@@ -62,13 +73,14 @@ public class ScmResourceServerAutoConfiguration {
             HttpSecurity http,
             ScmResourceServerProperties properties,
             Converter<Jwt, UsernamePasswordAuthenticationToken> scmJwtAuthenticationConverter,
-            BearerTokenResolver bearerTokenResolver
+            BearerTokenResolver bearerTokenResolver,
+            ScmEventPublisher eventPublisher
     ) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.exceptionHandling(exception -> exception
-                .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
-                .accessDeniedHandler(new BearerTokenAccessDeniedHandler()));
+                .authenticationEntryPoint(new ScmPublishingAuthenticationEntryPoint(eventPublisher, properties))
+                .accessDeniedHandler(new ScmPublishingAccessDeniedHandler(eventPublisher, properties)));
         http.authorizeHttpRequests(authorize -> {
             for (String publicPath : properties.getPublicPaths()) {
                 if (StringUtils.hasText(publicPath)) {
@@ -80,6 +92,10 @@ public class ScmResourceServerAutoConfiguration {
         http.oauth2ResourceServer(oauth2 -> oauth2
                 .bearerTokenResolver(bearerTokenResolver)
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(scmJwtAuthenticationConverter)));
+        http.addFilterBefore(
+                new ScmSecurityEventPublishingFilter(eventPublisher, properties),
+                BearerTokenAuthenticationFilter.class
+        );
         return http.build();
     }
 
