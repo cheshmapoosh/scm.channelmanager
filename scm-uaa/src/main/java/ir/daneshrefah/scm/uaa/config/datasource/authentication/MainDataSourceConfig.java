@@ -96,7 +96,8 @@ public class MainDataSourceConfig {
                 .packages(
                         "ir.daneshrefah.scm.uaa.repository.authentication",
                         "ir.daneshrefah.scm.common.data.entity",
-                        "ir.daneshrefah.scm.notification.client.repository.entity"
+                        "ir.daneshrefah.scm.notification.client.repository.entity",
+                        "ir.daneshrefah.scm.common.data.converter"
                 )
                 .properties(jpaProperties)
                 .build();

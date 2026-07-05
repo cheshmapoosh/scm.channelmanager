@@ -38,14 +38,7 @@ import java.util.Map;
         havingValue = "true",
         matchIfMissing = false
 )
-@ConditionalOnBean({SessionCache.class, CacheManager.class})
 public class ScmLegacyAuthenticationProvidersAutoConfiguration {
-
-    @Bean
-    @ConditionalOnMissingBean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
 
     @Bean
     @ConditionalOnMissingBean(RemoteSecurityServiceProvider.class)
@@ -164,7 +157,7 @@ public class ScmLegacyAuthenticationProvidersAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
+
     public AuthenticationClientTemplate authenticationClientTemplate(
             AuthenticationManager authenticationManager,
             SecurityServiceProvider securityServiceProvider

@@ -44,7 +44,7 @@ import java.util.Objects;
 @Primary
 public class JpaConfig {
 
-    @Bean(name = "entityManagerFactory")
+    @Bean(name = {"entityManagerFactory", "mainEntityManagerFactory"})
     @Primary
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             @Qualifier("primaryDataSource") DataSource dataSource,
@@ -66,17 +66,22 @@ public class JpaConfig {
                         "ir.daneshrefah.scm.common.log",
                         "ir.daneshrefah.scm.common.data.entity",
 //                        "ir.daneshrefah.scm.entity",
-                        "ir.daneshrefah.scm.cache.entity"
+                        "ir.daneshrefah.scm.cache.entity",
+                        "ir.daneshrefah.scm.common.data.converter"
                 )
                 .properties(props)
                 .build();
     }
 
-    @Bean(name = "transactionManager")
+    @Bean(name = {"transactionManager", "mainTransactionManager"})
     @Primary
     public PlatformTransactionManager transactionManager(
             @Qualifier("entityManagerFactory") LocalContainerEntityManagerFactoryBean emf) {
         return new JpaTransactionManager(Objects.requireNonNull(emf.getObject()));
     }
 
+    @Bean(name = "mainDataSource")
+    public DataSource mainDataSource(@Qualifier("primaryDataSource") DataSource dataSource) {
+        return dataSource;
+    }
 }
