@@ -35,7 +35,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     api 'com.bucket4j:bucket4j_jdk17-core'
     api 'com.bucket4j:bucket4j_jdk17-hazelcast'
-    implementation project(':scm-observation-starter')
+    implementation project(':scm-common')
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.mockito:mockito-junit-jupiter'

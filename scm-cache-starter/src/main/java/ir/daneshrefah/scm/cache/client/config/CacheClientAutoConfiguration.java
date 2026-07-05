@@ -21,6 +21,7 @@ import ir.daneshrefah.scm.cache.client.connector.backend.HazelcastCacheBackend;
 import ir.daneshrefah.scm.cache.client.connector.backend.LocalCaffeineCacheBackend;
 import ir.daneshrefah.scm.cache.client.connector.routing.CacheRouteResolver;
 import ir.daneshrefah.scm.cache.client.connector.spring.RoutingCacheManager;
+import ir.daneshrefah.scm.cache.client.event.ScmCacheEventSupport;
 import ir.daneshrefah.scm.cache.client.utility.lock.HazelcastLockUtility;
 import ir.daneshrefah.scm.cache.client.utility.lock.LocalLockUtility;
 import ir.daneshrefah.scm.cache.client.utility.lock.LockUtility;
@@ -42,7 +43,9 @@ import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.LocalConcurrency
 import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.ConcurrencyLimiterUtility;
 import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.RoutingConcurrencyLimiterUtility;
 import ir.daneshrefah.scm.cache.client.utility.concurrencylimit.aspect.WithConcurrencyLimitAspect;
+import ir.daneshrefah.scm.common.event.ScmEventPublisher;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -95,6 +98,12 @@ public class CacheClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public ScmCacheEventSupport scmCacheEventSupport(ObjectProvider<ScmEventPublisher> eventPublisherProvider) {
+        return new ScmCacheEventSupport(eventPublisherProvider);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public CacheRouteResolver cacheRouteResolver(CacheClientProperties cacheProperties) {
         return new CacheRouteResolver(cacheProperties);
     }
@@ -130,8 +139,9 @@ public class CacheClientAutoConfiguration {
     @ConditionalOnMissingBean(CacheManager.class)
     public CacheManager cacheManager(CacheRouteResolver routeResolver,
                                      CacheBackendRouter backendRouter,
-                                     CacheClientProperties cacheProperties) {
-        return new RoutingCacheManager(routeResolver, backendRouter, cacheProperties);
+                                     CacheClientProperties cacheProperties,
+                                     ScmCacheEventSupport cacheEventSupport) {
+        return new RoutingCacheManager(routeResolver, backendRouter, cacheProperties, cacheEventSupport);
     }
 
     @Bean
@@ -165,8 +175,9 @@ public class CacheClientAutoConfiguration {
     @ConditionalOnBean(RateLimitBucketService.class)
     @ConditionalOnMissingBean
     public RateLimiterUtility rateLimiterUtility(RateLimitBucketService rateLimitBucketService,
-                                                 RateLimitProperties rateLimitProperties) {
-        return new Bucket4jRateLimiterUtility(rateLimitBucketService, rateLimitProperties);
+                                                 RateLimitProperties rateLimitProperties,
+                                                 ScmCacheEventSupport cacheEventSupport) {
+        return new Bucket4jRateLimiterUtility(rateLimitBucketService, rateLimitProperties, cacheEventSupport);
     }
 
     @Bean
@@ -179,13 +190,14 @@ public class CacheClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public LockUtility lockUtility(Optional<HazelcastInstance> hazelcastInstance,
-                                   CacheClientProperties cacheProperties) {
+                                   CacheClientProperties cacheProperties,
+                                   ScmCacheEventSupport cacheEventSupport) {
         LockUtility remoteLockUtility = null;
         if (cacheProperties.getUtilities().requiresRemoteLock()) {
             remoteLockUtility = new HazelcastLockUtility(requireHazelcast(hazelcastInstance, "lock"));
         }
         log.info("LockUtility uses per-name backend routing");
-        return new RoutingLockUtility(new LocalLockUtility(), remoteLockUtility, cacheProperties.getUtilities());
+        return new RoutingLockUtility(new LocalLockUtility(), remoteLockUtility, cacheProperties.getUtilities(), cacheEventSupport);
     }
 
     @Bean

@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.cache.client.connector.backend.CacheBackend;
 import ir.daneshrefah.scm.cache.client.connector.backend.CacheBackendRouter;
 import ir.daneshrefah.scm.cache.client.connector.routing.CacheRoute;
 import ir.daneshrefah.scm.cache.client.connector.routing.CacheRouteResolver;
+import ir.daneshrefah.scm.cache.client.event.ScmCacheEventSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -24,6 +25,7 @@ public class RoutingCacheManager implements CacheManager {
     private final CacheRouteResolver routeResolver;
     private final CacheBackendRouter backendRouter;
     private final CacheClientProperties properties;
+    private final ScmCacheEventSupport cacheEventSupport;
     private final Map<String, Cache> cacheMap = new ConcurrentHashMap<>();
 
     @Override
@@ -42,6 +44,6 @@ public class RoutingCacheManager implements CacheManager {
         CacheRoute route = routeResolver.resolve(cacheName);
         CacheBackend backend = backendRouter.get(route.type());
         log.info("Spring cache mapped: cache='{}', backend={}", cacheName, route.type());
-        return new RoutingSpringCache(route, backend);
+        return new RoutingSpringCache(route, backend, cacheEventSupport);
     }
 }

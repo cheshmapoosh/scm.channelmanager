@@ -5,6 +5,7 @@ import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.EstimationProbe;
 import ir.daneshrefah.scm.cache.client.config.properties.RateLimitProperties;
+import ir.daneshrefah.scm.cache.client.event.ScmCacheEventSupport;
 import ir.daneshrefah.scm.cache.client.utility.ratelimit.backend.RateLimitBucketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class Bucket4jRateLimiterUtility implements RateLimiterUtility {
 
     private final RateLimitBucketService rateLimitBucketService;
     private final RateLimitProperties rateLimitProperties;
+    private final ScmCacheEventSupport cacheEventSupport;
 
     @Override
     public RateLimitResult tryConsume(String bucketName, String key) {
@@ -28,60 +30,68 @@ public class Bucket4jRateLimiterUtility implements RateLimiterUtility {
 
     @Override
     public RateLimitResult tryConsume(String bucketName, String key, int tokenCountUsage) {
+        long startedAt = System.nanoTime();
         int requestedTokens = tokenCountUsage > 0 ? tokenCountUsage : 1;
-        Optional<Bucket> bucketOptional = rateLimitBucketService.resolveBucket(bucketName, key);
-        if (bucketOptional.isEmpty()) {
-            return missingBucketResult(bucketName, key, requestedTokens);
-        }
-
-        Bucket bucket = bucketOptional.get();
-        ConsumptionProbe firstProbe = bucket.tryConsumeAndReturnRemaining(requestedTokens);
-        RateLimitResult firstResult = fromProbe(bucketName, key, requestedTokens, firstProbe);
-        if (firstResult.allowed()) {
-            return firstResult;
-        }
-        if (rateLimitProperties.getOverflowPolicy() != RateLimitProperties.OverflowPolicy.WAIT) {
-            return firstResult;
-        }
-
-        long maxWaitNanos = toNanosSafely(resolveMaxWaitDuration(bucketName));
-        if (maxWaitNanos <= 0) {
-            return firstResult;
-        }
-
         try {
-            log.debug("Rate limit wait started: bucket='{}', key='{}', waitNanos={}", bucketName, key, maxWaitNanos);
-            boolean consumed = bucket.asBlocking().tryConsume(requestedTokens, maxWaitNanos, BlockingStrategy.PARKING);
-            if (consumed) {
-                long remaining = bucket.getAvailableTokens();
-                log.debug("Rate limit wait completed: bucket='{}', key='{}', remaining={}", bucketName, key, remaining);
-                return new RateLimitResult(
-                        bucketName,
-                        key,
-                        requestedTokens,
-                        true,
-                        true,
-                        remaining,
-                        0,
-                        0
-                );
+            Optional<Bucket> bucketOptional = rateLimitBucketService.resolveBucket(bucketName, key);
+            if (bucketOptional.isEmpty()) {
+                return publishAndReturn(missingBucketResult(bucketName, key, requestedTokens), startedAt);
             }
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            log.warn("Rate limit wait interrupted for bucket='{}', key='{}'", bucketName, key);
-        }
 
-        EstimationProbe estimation = bucket.estimateAbilityToConsume(requestedTokens);
-        return new RateLimitResult(
-                bucketName,
-                key,
-                requestedTokens,
-                false,
-                true,
-                estimation.getRemainingTokens(),
-                estimation.getNanosToWaitForRefill(),
-                estimation.getNanosToWaitForRefill()
-        );
+            Bucket bucket = bucketOptional.get();
+            ConsumptionProbe firstProbe = bucket.tryConsumeAndReturnRemaining(requestedTokens);
+            RateLimitResult firstResult = fromProbe(bucketName, key, requestedTokens, firstProbe);
+            if (firstResult.allowed()) {
+                return publishAndReturn(firstResult, startedAt);
+            }
+            if (rateLimitProperties.getOverflowPolicy() != RateLimitProperties.OverflowPolicy.WAIT) {
+                return publishAndReturn(firstResult, startedAt);
+            }
+
+            long maxWaitNanos = toNanosSafely(resolveMaxWaitDuration(bucketName));
+            if (maxWaitNanos <= 0) {
+                return publishAndReturn(firstResult, startedAt);
+            }
+
+            try {
+                log.debug("Rate limit wait started: bucket='{}', keyHash='{}', waitNanos={}",
+                        bucketName, cacheEventSupport.keyHash(key), maxWaitNanos);
+                boolean consumed = bucket.asBlocking().tryConsume(requestedTokens, maxWaitNanos, BlockingStrategy.PARKING);
+                if (consumed) {
+                    long remaining = bucket.getAvailableTokens();
+                    log.debug("Rate limit wait completed: bucket='{}', keyHash='{}', remaining={}",
+                            bucketName, cacheEventSupport.keyHash(key), remaining);
+                    return publishAndReturn(new RateLimitResult(
+                            bucketName,
+                            key,
+                            requestedTokens,
+                            true,
+                            true,
+                            remaining,
+                            0,
+                            0
+                    ), startedAt);
+                }
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                log.warn("Rate limit wait interrupted for bucket='{}', keyHash='{}'", bucketName, cacheEventSupport.keyHash(key));
+            }
+
+            EstimationProbe estimation = bucket.estimateAbilityToConsume(requestedTokens);
+            return publishAndReturn(new RateLimitResult(
+                    bucketName,
+                    key,
+                    requestedTokens,
+                    false,
+                    true,
+                    estimation.getRemainingTokens(),
+                    estimation.getNanosToWaitForRefill(),
+                    estimation.getNanosToWaitForRefill()
+            ), startedAt);
+        } catch (RuntimeException exception) {
+            cacheEventSupport.cacheError(bucketName, "rate_limit", "rate_limit", key, startedAt, exception);
+            throw exception;
+        }
     }
 
     private RateLimitResult fromProbe(String bucketName, String key, int requestedTokens, ConsumptionProbe probe) {
@@ -105,6 +115,11 @@ public class Bucket4jRateLimiterUtility implements RateLimiterUtility {
             log.warn("Rate-limit bucket '{}' is not configured. request is rejected by policy.", bucketName);
         }
         return RateLimitResult.missingBucket(bucketName, key, requestedTokens, allow);
+    }
+
+    private RateLimitResult publishAndReturn(RateLimitResult result, long startedAt) {
+        cacheEventSupport.rateLimitEvent(result, startedAt);
+        return result;
     }
 
     private long toNanosSafely(Duration duration) {

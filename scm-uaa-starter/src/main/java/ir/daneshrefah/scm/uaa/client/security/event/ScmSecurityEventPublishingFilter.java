@@ -47,7 +47,7 @@ public class ScmSecurityEventPublishingFilter extends OncePerRequestFilter {
 
     private boolean shouldPublishAuthenticationStarted(HttpServletRequest request) {
         return !ScmSecurityEventAttributes.isPublicEndpoint(request, properties)
-                || ScmSecurityEventAttributes.hasBearerCredential(request, properties);
+                && ScmSecurityEventAttributes.hasBearerCredential(request, properties);
     }
 
     private void safePublish(ScmSecurityEvent event) {
