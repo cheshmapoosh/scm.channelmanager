@@ -14,12 +14,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class CmOtpService {
+    private static final String OPERATION_NAME = "scm.cm.connector.otp.verify";
+    private static final String EVENT_CATEGORY = "cm.otp";
+
     private final ScmSecurityContext securityContext;
     private final OtpVerificationGateway otpVerificationGateway;
     private final ScmObservation observation;
@@ -29,21 +34,24 @@ public class CmOtpService {
         ScmPrincipal principal = securityContext.requirePrincipal();
         ObservationScope scope = observation.trace()
                 .source(CmOtpService.class)
-                .span("scm.cm.connector.otp.verify")
-                .attribute(CmConnectorTraceAttributes.OPERATION_NAME, "scm.cm.connector.otp.verify")
+                .span(OPERATION_NAME)
+                .attribute(CmConnectorTraceAttributes.OPERATION_NAME, OPERATION_NAME)
                 .start();
 
         log.info("CM connector OTP verification delegated");
+        writeObservationEvent("started", "started", null);
         try {
             CmOtpVerifyResponse response = otpVerificationGateway.verify(principal, request);
             String outcome = response.verified() ? "verified" : "rejected";
             log.info("CM connector OTP verification completed result={}", outcome);
             scope.outcome(outcome);
+            writeObservationEvent(outcome, outcome, null);
             recordOtpMetric(outcome, startedAt);
             return response;
         } catch (RuntimeException exception) {
             log.error("CM connector OTP verification failed", exception);
             scope.failure(exception);
+            writeObservationEvent("failure", "failure", exception);
             recordOtpMetric("failure", startedAt);
             recordErrorMetric(exception.getClass().getSimpleName());
             throw exception;
@@ -55,7 +63,7 @@ public class CmOtpService {
     private void recordOtpMetric(String outcome, long startedAt) {
         observation.metric()
                 .timer(CmConnectorMetricNames.OTP_VERIFY)
-                .tag(CmConnectorMetricTags.OPERATION_NAME, "scm.cm.connector.otp.verify")
+                .tag(CmConnectorMetricTags.OPERATION_NAME, OPERATION_NAME)
                 .tag(CommonMetricTags.OUTCOME, outcome)
                 .record(elapsedMillis(startedAt), TimeUnit.MILLISECONDS);
     }
@@ -63,9 +71,30 @@ public class CmOtpService {
     private void recordErrorMetric(String errorCode) {
         observation.metric()
                 .counter(CmConnectorMetricNames.ERRORS)
-                .tag(CmConnectorMetricTags.OPERATION_NAME, "scm.cm.connector.otp.verify")
+                .tag(CmConnectorMetricTags.OPERATION_NAME, OPERATION_NAME)
                 .tag(CommonMetricTags.ERROR_CODE, errorCode)
                 .increment();
+    }
+
+    private void writeObservationEvent(String action, String outcome, RuntimeException exception) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put(CmConnectorTraceAttributes.OPERATION_NAME.name(), OPERATION_NAME);
+        attributes.put("event.outcome", outcome);
+        if (exception != null) {
+            attributes.put("error.type", exception.getClass().getName());
+            attributes.put("error.code", exception.getClass().getSimpleName());
+        }
+
+        observation.log()
+                .event()
+                .source(CmOtpService.class)
+                .loggerName(CmOtpService.class)
+                .message("CM connector OTP verification event")
+                .category(EVENT_CATEGORY)
+                .action(action)
+                .outcome(outcome)
+                .attributes(attributes)
+                .write();
     }
 
     private long elapsedMillis(long startedAt) {
