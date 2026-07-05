@@ -54,6 +54,13 @@ public class RestProviderProducer extends DefaultProducer {
             "connection",
             "authorization",
             "proxy-authorization",
+            "traceparent",
+            "tracestate",
+            "x-correlation-id",
+            "x-scm-correlation-id",
+            "x-scm-trace-id",
+            "x-scm-span-id",
+            "x-scm-parent-span-id",
             "restprovider",
             "restprovidermethod",
             "restproviderurl",
@@ -717,14 +724,6 @@ public class RestProviderProducer extends DefaultProducer {
 
     private String correlationId(Exchange exchange) {
         String correlationId = exchange.getProperty(Message.CORRELATION_ID, String.class);
-        if (StringUtils.isNotBlank(correlationId)) {
-            return correlationId;
-        }
-        correlationId = exchange.getMessage().getHeader("X-Correlation-Id", String.class);
-        if (StringUtils.isNotBlank(correlationId)) {
-            return correlationId;
-        }
-        correlationId = exchange.getMessage().getHeader("X-SCM-Correlation-ID", String.class);
         return StringUtils.defaultString(correlationId);
     }
 

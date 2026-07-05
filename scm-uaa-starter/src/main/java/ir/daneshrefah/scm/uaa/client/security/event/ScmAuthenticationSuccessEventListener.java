@@ -1,0 +1,42 @@
+package ir.daneshrefah.scm.uaa.client.security.event;
+
+import ir.daneshrefah.scm.common.event.ScmEventPublisher;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationListener;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.security.core.Authentication;
+
+import java.util.Map;
+
+@Slf4j
+public class ScmAuthenticationSuccessEventListener implements ApplicationListener<AuthenticationSuccessEvent> {
+    private final ScmEventPublisher eventPublisher;
+
+    public ScmAuthenticationSuccessEventListener(ScmEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
+    }
+
+    @Override
+    public void onApplicationEvent(AuthenticationSuccessEvent event) {
+        if (eventPublisher == null || event == null || !isRealAuthenticatedPrincipal(event.getAuthentication())) {
+            return;
+        }
+        try {
+            Map<String, Object> attributes = ScmSecurityEventAttributes.authentication(event.getAuthentication());
+            eventPublisher.publish(ScmSecurityEvent.of(ScmSecurityEventType.AUTHENTICATION_SUCCESS, attributes));
+        } catch (RuntimeException exception) {
+            log.warn("event=SCM_AUTHENTICATION_SUCCESS_EVENT_PUBLISH_FAILED outcome=ignored failureType={} failureMessage={}",
+                    exception.getClass().getSimpleName(),
+                    ScmSecurityEventAttributes.safeMessage(exception));
+        }
+    }
+
+    private boolean isRealAuthenticatedPrincipal(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            return false;
+        }
+        Object principal = authentication.getPrincipal();
+        return principal != null && !"anonymousUser".equals(String.valueOf(principal));
+    }
+}
