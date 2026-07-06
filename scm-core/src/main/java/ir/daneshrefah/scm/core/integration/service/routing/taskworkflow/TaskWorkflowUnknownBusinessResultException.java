@@ -7,4 +7,10 @@ public class TaskWorkflowUnknownBusinessResultException extends IllegalStateExce
                 + (processId == null ? "<unknown>" : processId)
                 + "; COMPLETE_PROCESS was not called");
     }
+
+    public TaskWorkflowUnknownBusinessResultException(Long processId, Throwable cause) {
+        super("TASK_WORKFLOW business result is unknown for processId="
+                + (processId == null ? "<unknown>" : processId)
+                + "; COMPLETE_PROCESS was not called", cause);
+    }
 }

@@ -14,6 +14,10 @@ management:
       probes:
         enabled: true
 scm:
+  provider:
+    task:
+      jpa:
+        enabled: true
   cache:
     client:
       caches:

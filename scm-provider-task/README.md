@@ -4,7 +4,15 @@
 
 `scm-provider-task` is the internal provider for task and process operations.
 It owns task/process entities, repositories, management services, payload models,
-and JavaService operation endpoints.
+JavaService operations, and the `scm-task:` Camel endpoint.
+
+```text
+Module name:            scm-provider-task
+Java package:           ir.daneshrefah.scm.provider.task
+Camel component scheme: scm-task
+Operation route:        direct:op.<operationName>
+Provider endpoint:      scm-task:<operationName>
+```
 
 It is a provider rather than a workflow router:
 
@@ -32,9 +40,23 @@ from:
 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
 ```
 
+The host opts in to provider persistence explicitly:
+
+```yaml
+scm:
+  provider:
+    task:
+      jpa:
+        enabled: true
+```
+
 The auto-configuration uses focused scanning for task provider APIs, services,
-mappers, repositories, and entities. A TODO remains to replace focused component
-scanning with explicit bean registration as the provider surface stabilizes.
+and mappers. Provider repositories are explicitly bound to the host beans named
+`entityManagerFactory` and `transactionManager`. The provider contributes its
+entity package through `JpaManagedPackageContributor`; it does not create a
+datasource, entity manager factory, or transaction manager. A TODO remains to
+replace focused component scanning with explicit bean registration as the
+provider surface stabilizes.
 
 The provider Java package is `ir.daneshrefah.scm.provider.task`.
 
@@ -58,33 +80,62 @@ operations are not deleted to enforce that policy.
 
 ## Operation routes
 
-`scm-core` calls provider operations through the standard operation route:
+`ServiceOperation.operationName` in the database is the operation code. Do not
+store the generated `op.` prefix in this field:
 
 ```text
-direct:op.<normalized-operation-name>
+operationName = SVC_CARTABLE_APPROVE_PROCESS
 ```
 
-For example:
+`scm-core` generates the route id and endpoint with
+`RouteIdSupport.operationRouteId(operationName)`:
 
 ```text
-SVC_CARTABLE_APPROVE_PROCESS
-  -> direct:op.SVC_CARTABLE_APPROVE_PROCESS
+DB operationName:  SVC_CARTABLE_APPROVE_PROCESS
+Camel route id:    op.SVC_CARTABLE_APPROVE_PROCESS
+Camel endpoint:    direct:op.SVC_CARTABLE_APPROVE_PROCESS
 ```
 
-The `TASK_WORKFLOW` handler never injects or directly calls task management or
-task API services.
+Configure each task `Operation` with `type = PROVIDER` and bind it to the task
+operation provider whose base URI is `scm-task:`. The generic provider
+operation handler appends the operation code:
+
+```text
+direct:op.SVC_CARTABLE_APPROVE_PROCESS
+  -> scm-task:SVC_CARTABLE_APPROVE_PROCESS
+  -> ProcessInstanceService.approve(...)
+```
+
+Supported provider endpoints include:
+
+```text
+scm-task:SVC_CARTABLE_START_PROCESS
+scm-task:SVC_CARTABLE_APPROVE_PROCESS
+scm-task:SVC_CARTABLE_COMPLETE_PROCESS
+scm-task:SVC_CARTABLE_CANCEL_PROCESS
+scm-task:SVC_CARTABLE_COMPLTE_TASK
+scm-task:SVC_CARTABLE_GET_ALL_TASK
+scm-task:SVC_CARTABLE_GET_ALL_PROCESS
+scm-task:SVC_CARTABLE_GET_TASK_BY_PROCESS_ID
+scm-task:SVC_CARTABLE_UPDATE_PROCESS_DESCRIPTION
+```
+
+The `TASK_WORKFLOW` handler calls only `direct:op.*` routes and never injects or
+directly calls task management or task API services. `scm-core` creates generic
+`Map`/`JsonNode` payloads. `TaskProviderOperationAdapter` owns conversion to
+task-provider DTOs and invokes the appropriate provider API bean.
 
 ## Host usage
 
 The host includes `scm-provider-task` when task/process operations are required.
-The current runtime receives it through the `scm-core` project dependency.
+`scm-core` does not depend on the provider module; the running host selects it.
 
 Observation is optional and belongs to the host:
 
 ```text
 scm-web / host
   -> scm-core
-  -> scm-provider-task
+  -> scm-provider-task (when task operations are enabled)
 
 scm-web / host
   -> scm-observation-starter   (only when observation is required)
@@ -150,6 +201,11 @@ Gateway configuration and operation configuration have separate purposes.
 Each inbound command has its own `INBOUND` row and Definition. The inbound
 Definition declares the requested command and its ordered steps:
 
+Every `INBOUND` row must also define an explicit, non-blank REST `path`, for
+example `/fund-transfer/task-workflow/processes/{processId}/approve`. Blank paths
+are invalid and fail route construction; there is no backward-compatible path
+fallback.
+
 ```json
 {
   "inboundAction": "APPROVE_AND_EXECUTE",
@@ -183,8 +239,9 @@ Message.INBOUND_PATH_VARIABLES
 ```
 
 The service layer resolves the command, selects the prebuilt command plan, maps
-payloads, and calls operation routes. `BUSINESS_OPERATION` must resolve to
-exactly one active operation.
+generic payloads, and calls operation routes. DTO conversion occurs only in
+`scm-provider-task`. `BUSINESS_OPERATION` must resolve to exactly one active
+operation.
 
 Examples:
 
@@ -231,5 +288,10 @@ UNKNOWN business result:
 For `APPROVE_AND_EXECUTE`, the approve response is retained in exchange
 properties. Its `transactionData` is used as the preferred business operation
 payload. Definitive success completes the process with `COMPLETE`; definitive
-business failure completes it with `FAIL`. Timeout, connection loss, or another
-ambiguous result never marks the process as failed.
+business failure completes it with `FAIL`. If a definitive business exception
+was thrown and that completion succeeds, the workflow returns a non-retryable
+failure response instead of rethrowing the original exception. This prevents an
+upstream retry after the process is already terminal. Timeout, connection loss,
+or another ambiguous result does not call `COMPLETE_PROCESS`, publishes the
+unknown-result semantic event, and propagates an unknown-result error for
+recovery/reconciliation.

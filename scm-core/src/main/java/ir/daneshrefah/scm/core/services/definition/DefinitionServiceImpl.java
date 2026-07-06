@@ -14,7 +14,7 @@ import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.definition.*;
 import ir.daneshrefah.scm.common.service.definition.DefinitionService;
 import ir.daneshrefah.scm.core.repository.DefinitionRepository;
-import ir.daneshrefah.scm.provider.task.utils.PageableUtils;
+import ir.daneshrefah.scm.common.log.utils.PageableUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

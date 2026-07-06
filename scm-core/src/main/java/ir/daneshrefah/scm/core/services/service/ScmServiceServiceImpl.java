@@ -14,7 +14,7 @@ import ir.daneshrefah.scm.common.service.ScmServiceService;
 import ir.daneshrefah.scm.common.service.category.ServiceCategoryService;
 import ir.daneshrefah.scm.core.repository.service.ScmServiceRepository;
 import ir.daneshrefah.scm.core.repository.service.ScmServiceSpecification;
-import ir.daneshrefah.scm.provider.task.utils.PageableUtils;
+import ir.daneshrefah.scm.common.log.utils.PageableUtils;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

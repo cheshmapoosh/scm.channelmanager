@@ -8,7 +8,7 @@ import ir.daneshrefah.scm.common.dto.service.ServiceCategoryResponse;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.service.category.ServiceCategoryService;
-import ir.daneshrefah.scm.provider.task.utils.PageableUtils;
+import ir.daneshrefah.scm.common.log.utils.PageableUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
