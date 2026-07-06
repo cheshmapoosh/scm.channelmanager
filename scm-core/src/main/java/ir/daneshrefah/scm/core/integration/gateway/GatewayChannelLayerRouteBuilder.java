@@ -16,8 +16,10 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
     @Override
     public void configure() {
         List<RuntimeTargetProperties> runtimeTargets = runtimeRouteActivation.runtimeTargets();
+        Set<String> gatewayRouteIds = new LinkedHashSet<>();
         log.info("event={} layer=gateway targetCount={} outcome=started",
                 RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_STARTED, runtimeTargets.size());
         if (CollectionUtils.isEmpty(inboundRouteFactories)) {
@@ -43,20 +46,26 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
         }
         runtimeTargets.forEach(runtimeTarget ->
                 runtimeTarget.gatewayNames().forEach(gatewayName ->
-                        configureGatewayTarget(runtimeTarget, gatewayName)));
+                        configureGatewayTarget(runtimeTarget, gatewayName, gatewayRouteIds)));
         log.info("event={} layer=gateway targetCount={} outcome=success",
                 RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_COMPLETED, runtimeTargets.size());
     }
 
     private void configureGatewayTarget(RuntimeTargetProperties runtimeTarget,
-                                        String gatewayName) {
+                                        String gatewayName,
+                                        Set<String> gatewayRouteIds) {
         long startNanos = System.nanoTime();
         log.info("event={} layer=gateway gatewayName={} configuredTargetKind={} outcome=started",
                 RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_STARTED,
                 gatewayName,
                 runtimeTarget.targetKind());
         try {
-            configureGatewayTargetSafely(runtimeTarget, gatewayName, startNanos);
+            configureGatewayTargetSafely(
+                    runtimeTarget,
+                    gatewayName,
+                    gatewayRouteIds,
+                    startNanos
+            );
         } catch (RuntimeException exception) {
             log.error("event={} layer=gateway gatewayName={} configuredTargetKind={} durationMs={} outcome=failed failureType={} failureMessage={}",
                     RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_FAILED,
@@ -72,6 +81,7 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
 
     private void configureGatewayTargetSafely(RuntimeTargetProperties runtimeTarget,
                                               String gatewayName,
+                                              Set<String> gatewayRouteIds,
                                               long startNanos) {
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(gatewayName);
         if (gatewayChannel == null) {
@@ -117,7 +127,12 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
                                 routePlan,
                                 servicePlan,
                                 this))
-                        .forEach(inboundRoute -> configureGatewayRoute(routePlan, servicePlan, inboundRoute)));
+                        .forEach(inboundRoute -> configureGatewayRoute(
+                                routePlan,
+                                servicePlan,
+                                inboundRoute,
+                                gatewayRouteIds
+                        )));
         log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} serviceCount={} durationMs={} outcome=success",
                 RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_COMPLETED,
                 gatewayChannel.getName(),
@@ -155,8 +170,15 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
 
     private void configureGatewayRoute(RuntimeRoutePlan routePlan,
                                        RuntimeServicePlan servicePlan,
-                                       InboundRouteDefinition inboundRoute) {
+                                       InboundRouteDefinition inboundRoute,
+                                       Set<String> gatewayRouteIds) {
         try {
+            validateUniqueGatewayRouteId(
+                    routePlan,
+                    servicePlan,
+                    inboundRoute,
+                    gatewayRouteIds
+            );
             gatewayRoutePipelineConfigurer.configureGatewayRoute(new ChannelRouteBuildContext(routePlan, servicePlan), inboundRoute);
         } catch (RuntimeException exception) {
             log.error("event={} layer=gateway routeId={} gatewayName={} targetKind={} serviceCode={} serviceVersion={} outcome=failed failureType={} failureMessage={}",
@@ -171,5 +193,26 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
                     exception);
             throw exception;
         }
+    }
+
+    private void validateUniqueGatewayRouteId(
+            RuntimeRoutePlan routePlan,
+            RuntimeServicePlan servicePlan,
+            InboundRouteDefinition inboundRoute,
+            Set<String> gatewayRouteIds
+    ) {
+        String routeId = inboundRoute.route().getRouteId();
+        if (gatewayRouteIds.add(routeId)) {
+            return;
+        }
+        throw new IllegalStateException("Duplicate gateway route id '" + routeId
+                + "' for gatewayName=" + routePlan.gatewayChannel().getName()
+                + ", targetKind=" + routePlan.targetKind()
+                + ", serviceCode=" + servicePlan.service().getCode()
+                + ", channelServiceDefinitionId="
+                + (inboundRoute.channelServiceDefinition() == null
+                ? "<null>"
+                : inboundRoute.channelServiceDefinition().getId())
+                + ". Route identity cannot be resolved safely.");
     }
 }

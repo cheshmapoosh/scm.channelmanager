@@ -45,6 +45,8 @@ public class Message implements Serializable {
     public static final String RUNTIME_ROUTE_PLAN = "scmRuntimeRoutePlan";
     public static final String RUNTIME_SERVICE_PLAN = "scmRuntimeServicePlan";
     public static final String SERVICE_LAYER_INVOCATION = "scmServiceLayerInvocation";
+    public static final String INBOUND_ROUTE_ACTION = "scmInboundRouteAction";
+    public static final String INBOUND_PATH_VARIABLES = "scmInboundPathVariables";
     public static final String TRACE_ID = "scmTraceId";
     public static final String SPAN_ID = "scmSpanId";
     public static final String CORRELATION_ID = "scmCorrelationId";
@@ -53,7 +55,7 @@ public class Message implements Serializable {
     public static final String TEMPLATE_ENGINE = "scmTemplateEngine";
     public static final String STATUS_HANDLER = "scmStatusHandler";
     public static final String OPERATION_PHASE_DEFINITION = "scmOperationPhaseDefinition";
-        public static final String SERVICE_OPERATION_DEFINITION = "scmServiceOperationDefinition";
+    public static final String SERVICE_OPERATION_DEFINITION = "scmServiceOperationDefinition";
     public static final String CHANNEL_SERVICE_DEFINITION = "ScmChannelServiceDefinition";
     public static final String CURRENT_OPEN_TELEMETRY_SPAN = "ScmOtelSpanTrace";
     private final Header header;

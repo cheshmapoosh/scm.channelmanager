@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.service;
 
 import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceTargetRouteContext;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceTargetRoutingRegistry;
 import org.apache.camel.model.RouteDefinition;
@@ -17,5 +18,15 @@ public class ServiceTargetRouter {
     public void buildTarget(RouteDefinition route, Service service) {
         registry.getRequired(service.getRoutingStrategy())
                 .buildTarget(new ServiceTargetRouteContext(route, service));
+    }
+
+    public void buildTarget(RouteDefinition route, RuntimeServicePlan servicePlan) {
+        Service service = servicePlan.service();
+        registry.getRequired(service.getRoutingStrategy())
+                .buildTarget(new ServiceTargetRouteContext(
+                        route,
+                        service,
+                        servicePlan.routeDefinitions()
+                ));
     }
 }
