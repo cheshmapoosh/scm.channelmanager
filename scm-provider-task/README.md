@@ -49,19 +49,64 @@ scm:
       enabled: true
 ```
 
-There is no separate `scm.provider.task.jpa.enabled` switch. If
+There is no secondary persistence enablement switch. If
 `scm.provider.task.enabled` is missing or false, the provider does not register
 its API/service beans, `scm-task` component, operation adapter, repositories, or
 JPA managed package contribution.
 
 The auto-configuration uses focused scanning for task provider APIs, services,
-and mappers. Provider repositories are explicitly bound to the host beans named
-`entityManagerFactory` and `transactionManager`. The provider contributes its
-entity package through `JpaManagedPackageContributor`; it does not create a
-datasource, entity manager factory, or transaction manager. When the provider is
-enabled, the host must supply both named persistence beans. A TODO remains to
-replace focused component scanning with explicit bean registration as the
-provider surface stabilizes.
+and mappers. Persistence has two supported modes.
+
+Default mode uses the host primary persistence beans:
+
+```yaml
+scm:
+  provider:
+    task:
+      enabled: true
+```
+
+In default mode, task provider repositories bind to:
+
+```text
+entityManagerFactory
+transactionManager
+```
+
+The task provider entity package may be contributed to the host main
+`entityManagerFactory` through `JpaManagedPackageContributor`. The provider does
+not create a datasource, entity manager factory, or transaction manager.
+
+Dedicated mode uses configured bean names:
+
+```yaml
+scm:
+  provider:
+    task:
+      enabled: true
+      datasource: taskProviderDataSource
+      entity-manager-factory: taskProviderEntityManagerFactory
+      transaction-manager: taskProviderTransactionManager
+```
+
+In dedicated mode:
+
+- `datasource` is the bean name of the task provider datasource.
+- `entity-manager-factory` is the bean name of the task provider
+  `EntityManagerFactory`.
+- `transaction-manager` is the bean name of the task provider
+  `TransactionManager`.
+- Task provider repositories bind to `taskProviderEntityManagerFactory` and
+  `taskProviderTransactionManager`.
+- The task provider does not use host primary persistence and does not
+  contribute `ir.daneshrefah.scm.provider.task.entity` to the host main
+  `entityManagerFactory`.
+
+If none of `datasource`, `entity-manager-factory`, and `transaction-manager` is
+configured, default mode is used. If any one is configured, all three are
+required and the named beans must exist at startup. A TODO remains to replace
+focused component scanning with explicit bean registration as the provider
+surface stabilizes.
 
 The provider Java package is `ir.daneshrefah.scm.provider.task`.
 
