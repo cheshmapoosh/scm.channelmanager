@@ -615,6 +615,53 @@ direct:op.SVC_CARTABLE_APPROVE_PROCESS
 `scm-core` maps workflow requests with generic `Map`/`JsonNode` payloads. DTO
 conversion and task API invocation belong to `scm-provider-task`.
 
+### Task provider persistence
+
+The task provider is enabled with a single flag:
+
+```yaml
+scm:
+  provider:
+    task:
+      enabled: true
+```
+
+In default mode, `scm-provider-task` uses the host primary persistence beans:
+
+```text
+entityManagerFactory
+transactionManager
+```
+
+The task provider entity package may be contributed to the host main
+`entityManagerFactory`.
+
+Dedicated mode is selected by configuring all persistence bean names:
+
+```yaml
+scm:
+  provider:
+    task:
+      enabled: true
+      datasource: taskProviderDataSource
+      entity-manager-factory: taskProviderEntityManagerFactory
+      transaction-manager: taskProviderTransactionManager
+```
+
+- `datasource` is the bean name of the task provider datasource.
+- `entity-manager-factory` is the bean name of the task provider
+  `EntityManagerFactory`.
+- `transaction-manager` is the bean name of the task provider
+  `TransactionManager`.
+- In dedicated mode, task provider repositories bind to
+  `taskProviderEntityManagerFactory` and `taskProviderTransactionManager`.
+- In dedicated mode, task provider persistence does not use the host primary
+  persistence and does not contribute its entity package to the host main
+  `entityManagerFactory`.
+
+If none of the three bean-name properties is configured, default mode is used.
+If any one is configured, all three are required.
+
 Configuration JSON is parsed and validated during route construction. Request
 handling does not query the database or parse route configuration.
 
