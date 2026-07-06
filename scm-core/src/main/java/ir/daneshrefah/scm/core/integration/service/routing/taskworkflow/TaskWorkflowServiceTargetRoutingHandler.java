@@ -19,6 +19,12 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
     private final TaskWorkflowPayloadMapper payloadMapper;
     private final TaskWorkflowTransactionCoordinator transactionCoordinator;
     private final ServiceOperationRouteMetadataSetter metadataSetter;
+    /**
+     * Command plans are resolved from startup configuration, but the command is selected per
+     * request. Synchronous ProducerTemplate calls preserve one Exchange across conditional
+     * operation-route invocations and let the coordinator classify each result before deciding
+     * whether COMPLETE_PROCESS is safe. Targets remain limited to direct:op.* routes.
+     */
     private final ProducerTemplate producerTemplate;
 
     public TaskWorkflowServiceTargetRoutingHandler(
@@ -92,11 +98,10 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
                 payloadMapper.toApproveRequest(exchange)
         );
         requireControlOperationSuccess(approveStep, approveResponseValue);
-        var approveResponse = payloadMapper.toApproveResponse(approveResponseValue);
         transactionCoordinator.afterApprove(
                 exchange,
-                approveResponse,
-                approveResponse.getId()
+                approveResponseValue,
+                payloadMapper.approveProcessId(approveResponseValue)
         );
 
         transactionCoordinator.beforeBusinessOperation(exchange);
@@ -108,8 +113,16 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
                     payloadMapper.toBusinessRequest(exchange)
             );
         } catch (RuntimeException exception) {
-            handleBusinessException(exchange, completeStep, exception);
-            throw exception;
+            if (handleBusinessException(exchange, completeStep, exception)) {
+                exchange.getMessage().setBody(
+                        payloadMapper.toDefinitiveBusinessFailureResponse(exchange)
+                );
+                return;
+            }
+            throw new TaskWorkflowUnknownBusinessResultException(
+                    exchange.getProperty(TaskWorkflowExchangeProperties.PROCESS_ID, Long.class),
+                    exception
+            );
         }
 
         TaskWorkflowBusinessResultClassifier.BusinessResult businessResult =
@@ -124,7 +137,7 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
         exchange.getMessage().setBody(businessResponse);
     }
 
-    private void handleBusinessException(
+    private boolean handleBusinessException(
             Exchange exchange,
             TaskWorkflowStepPlan completeStep,
             RuntimeException exception
@@ -137,9 +150,10 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
                     completeStep,
                     TaskWorkflowBusinessResultClassifier.BusinessResult.FAILURE
             );
-            return;
+            return true;
         }
         transactionCoordinator.handleUnknownBusinessResult(exchange, exception);
+        return false;
     }
 
     private void completeProcess(

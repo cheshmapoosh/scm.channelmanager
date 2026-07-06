@@ -25,6 +25,17 @@ public class TaskWorkflowOperationRoleConfigExtractor {
             Service service,
             ServiceOperation operation
     ) {
+        String operationName = operation == null
+                ? null
+                : StringUtils.trimToNull(operation.getOperationName());
+        if (operationName == null) {
+            throw invalid(service, operation, null, "operationName",
+                    "active TASK_WORKFLOW operationName must not be blank");
+        }
+        if (StringUtils.startsWithIgnoreCase(operationName, "op.")) {
+            throw invalid(service, operation, null, "operationName",
+                    "store the operation code without the generated op. route prefix");
+        }
         Definition definition = operation == null ? null : operation.getDefinition();
         if (definition == null) {
             throw invalid(service, operation, null, "definition",

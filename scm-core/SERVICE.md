@@ -555,6 +555,14 @@ on each INBOUND Definition, not in Java enums and not in a ServiceOperation.
 
 Each command uses one INBOUND row with its own Definition:
 
+Every INBOUND row must define an explicit, non-blank REST `path`. A blank path
+is invalid and fails route construction; the gateway does not fall back to a
+service-code-derived path. For example:
+
+```text
+/fund-transfer/task-workflow/processes/{processId}/approve
+```
+
 ```json
 {
   "inboundAction": "APPROVE_AND_EXECUTE",
@@ -582,11 +590,33 @@ At route construction, `TaskWorkflowRoutePlanFactory` combines active operation
 roles with all command step definitions and resolves each step to:
 
 ```text
-direct:op.<normalized-operation-name>
+ServiceOperation.operationName = SVC_CARTABLE_APPROVE_PROCESS
+RouteIdSupport.operationRouteId(operationName) = op.SVC_CARTABLE_APPROVE_PROCESS
+Camel endpoint = direct:op.SVC_CARTABLE_APPROVE_PROCESS
 ```
+
+Store only the operation code in `ServiceOperation.operationName`; never store
+`op.` in the database field. A task provider operation delegates from that
+operation route to its provider endpoint. Configure the corresponding
+`Operation` with `type = PROVIDER` and task provider base URI
+`scm-task:`:
+
+```text
+direct:op.SVC_CARTABLE_APPROVE_PROCESS
+  -> scm-task:SVC_CARTABLE_APPROVE_PROCESS
+```
+
+`scm-core` maps workflow requests with generic `Map`/`JsonNode` payloads. DTO
+conversion and task API invocation belong to `scm-provider-task`.
 
 Configuration JSON is parsed and validated during route construction. Request
 handling does not query the database or parse route configuration.
+
+The handler keeps synchronous `ProducerTemplate` invocation because command
+selection is request-specific and each operation result must be classified on
+the same Exchange before the next operation is considered safe. The invoker
+clears stale Camel exception state, inspects both the returned exception and
+`Exchange.EXCEPTION_CAUGHT`, and only sends to prebuilt `direct:op.*` endpoints.
 
 ### Business safety
 
@@ -601,9 +631,12 @@ The approve response is stored before the business call. The preferred business
 request payload is `approveResponse.transactionData`.
 
 - Definitive success calls `COMPLETE_PROCESS` with `COMPLETE`.
-- Definitive business failure calls `COMPLETE_PROCESS` with `FAIL`.
+- Definitive business failure calls `COMPLETE_PROCESS` with `FAIL`. After that
+  completion succeeds, a thrown business exception is converted to a
+  non-retryable failure response instead of being rethrown.
 - Unknown, timeout, connection-lost, or ambiguous results do not call
-  `COMPLETE_PROCESS` and never mark the process as failed.
+  `COMPLETE_PROCESS`, never mark the process as failed, and propagate an
+  unknown-result error.
 
 Unknown results remain in the acknowledgement/recovery state. The no-op
 `TaskWorkflowExecutionStore` is an extension point for durable recovery and

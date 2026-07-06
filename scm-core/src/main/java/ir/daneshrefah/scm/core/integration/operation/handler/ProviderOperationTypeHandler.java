@@ -5,12 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
+import ir.daneshrefah.scm.common.model.message.Message;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.Locale;
 import java.util.Map;
 
 @Component
@@ -32,13 +32,18 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
     @Override
     public void config(RouteDefinition route, Operation operation) {
         validateProvider(operation);
+        String targetUri = resolveTargetUri(operation);
         route.process(exchange -> {
             exchange.getMessage().setHeader(OPERATION_PROVIDER_NAME, operation.getProvider().getName());
-            exchange.getMessage().setHeader(OPERATION_PROVIDER_URI, operation.getProvider().getUri());
-            exchange.getMessage().setBody(toMap(exchange.getMessage().getBody(JsonNode.class)));
+            exchange.getMessage().setHeader(OPERATION_PROVIDER_URI, targetUri);
+            Object body = exchange.getMessage().getBody();
+            if (body instanceof Message message) {
+                body = message.getPayload();
+            }
+            exchange.getMessage().setBody(toMap(body));
         });
 
-        route.to(resolveTargetUri(operation));
+        route.to(targetUri);
     }
 
     private void validateProvider(Operation operation) {
@@ -81,6 +86,9 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
         }
         if (!StringUtils.contains(uri, ':')) {
             throw new IllegalArgumentException("Provider operation target URI must include a Camel scheme for operation " + operation.getName());
+        }
+        if (uri.endsWith(":")) {
+            return uri + operation.getName();
         }
         return uri;
     }

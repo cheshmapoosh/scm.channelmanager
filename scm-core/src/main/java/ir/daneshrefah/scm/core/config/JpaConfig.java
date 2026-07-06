@@ -1,9 +1,10 @@
 package ir.daneshrefah.scm.core.config;
 
 import ir.daneshrefah.scm.common.log.repository.logging.LogTraceRepository;
+import ir.daneshrefah.scm.common.persistence.JpaManagedPackageContributor;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -13,8 +14,10 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Configuration("coreJpaConfig")
 @EnableTransactionManagement
@@ -33,14 +36,6 @@ import java.util.Objects;
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "transactionManager"
 )
-@EntityScan(basePackages = {"ir.daneshrefah.scm.core",
-        "ir.daneshrefah.scm.provider.task",
-        "ir.daneshrefah.scm.config",
-        "ir.daneshrefah.scm.notification.client",
-        "ir.daneshrefah.scm.common.data",
-        "ir.daneshrefah.scm.common.log",
-        "ir.daneshrefah.scm.cache"
-})
 @Primary
 public class JpaConfig {
 
@@ -48,7 +43,8 @@ public class JpaConfig {
     @Primary
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             @Qualifier("primaryDataSource") DataSource dataSource,
-            EntityManagerFactoryBuilder builder) {
+            EntityManagerFactoryBuilder builder,
+            ObjectProvider<JpaManagedPackageContributor> packageContributors) {
 
         Map<String, Object> props = new HashMap<>();
         props.put("hibernate.hbm2ddl.auto", "none");
@@ -56,19 +52,26 @@ public class JpaConfig {
 //        props.put("hibernate.use-new-id-generator-mappings", "false");
         props.put("hibernate.physical_naming_strategy", "org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy");
 
+        Set<String> managedPackages = new LinkedHashSet<>(Set.of(
+                "ir.daneshrefah.scm.core.entity",
+                "ir.daneshrefah.scm.config.entity",
+                "ir.daneshrefah.scm.notification.client.entity",
+                "ir.daneshrefah.scm.common.log",
+                "ir.daneshrefah.scm.common.data.entity",
+                "ir.daneshrefah.scm.cache.entity",
+                "ir.daneshrefah.scm.common.data.converter"
+        ));
+        packageContributors.orderedStream()
+                .map(JpaManagedPackageContributor::managedPackages)
+                .filter(Objects::nonNull)
+                .flatMap(java.util.Collection::stream)
+                .filter(packageName -> packageName != null && !packageName.isBlank())
+                .map(String::trim)
+                .forEach(managedPackages::add);
+
         return builder
                 .dataSource(dataSource)
-                .packages(
-                        "ir.daneshrefah.scm.core.entity",
-                        "ir.daneshrefah.scm.provider.task.entity",
-                        "ir.daneshrefah.scm.config.entity",
-                        "ir.daneshrefah.scm.notification.client.entity",
-                        "ir.daneshrefah.scm.common.log",
-                        "ir.daneshrefah.scm.common.data.entity",
-//                        "ir.daneshrefah.scm.entity",
-                        "ir.daneshrefah.scm.cache.entity",
-                        "ir.daneshrefah.scm.common.data.converter"
-                )
+                .packages(managedPackages.toArray(String[]::new))
                 .properties(props)
                 .build();
     }
