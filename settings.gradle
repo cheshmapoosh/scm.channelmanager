@@ -23,7 +23,7 @@ pluginManagement {
 
 rootProject.name = 'ChannelManager'
 include('scm-common', 'scm-utils', 'scm-plugin-api', 'scm-core', 'scm-gateway', 'scm-web', 'scm-common-data', 'scm-plugin-scm', 'scm-plugin-nab', 'scm-plugin-pichack', 'scm-plugin-sayad', 'scm-plugin-mock', 'scm-plugin-hps',
-        'scm-config', 'scm-cache','scm-cache-starter', 'scm-uaa', 'scm-uaa-starter', 'scm-cm-connector', 'scm-notification-client', 'scm-uaa-common', 'scm-logging', 'scm-job', 'scm-plugin-iban','scm-common-error','scm-message-queue','scm-task','scm-otp-client')
+        'scm-config', 'scm-cache','scm-cache-starter', 'scm-uaa', 'scm-uaa-starter', 'scm-cm-connector', 'scm-notification-client', 'scm-uaa-common', 'scm-logging', 'scm-job', 'scm-plugin-iban','scm-common-error','scm-message-queue','scm-task-provider','scm-otp-client')
 include ('scm-jmeter', 'scm-plugin-camel-components')
 include ('scm-common-log')
 include ('scm-provider-shetab')

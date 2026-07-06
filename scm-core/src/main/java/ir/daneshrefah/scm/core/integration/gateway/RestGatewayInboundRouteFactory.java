@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.Service;
@@ -11,6 +12,10 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
 import ir.daneshrefah.scm.core.config.RestGatewayIdempotencyProperties;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractVersionResolver;
+import ir.daneshrefah.scm.core.integration.gateway.inbound.GatewayInboundPathVariablesBinder;
+import ir.daneshrefah.scm.core.integration.gateway.inbound.GatewayInboundRouteActionBinder;
+import ir.daneshrefah.scm.core.integration.gateway.inbound.InboundRouteActionConfig;
+import ir.daneshrefah.scm.core.integration.gateway.inbound.InboundRouteDefinitionValidator;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
@@ -33,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -47,6 +53,9 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
     private static final String CLIENT_CORRELATION_ID_HEADER = "X-Correlation-Id";
 
     private final ClientContractVersionResolver clientContractVersionResolver;
+    private final InboundRouteDefinitionValidator inboundRouteDefinitionValidator;
+    private final GatewayInboundRouteActionBinder inboundRouteActionBinder;
+    private final GatewayInboundPathVariablesBinder inboundPathVariablesBinder;
 
     private final IdempotentRepository idempotentRepository;
     private final RestGatewayIdempotencyProperties idempotencyProperties;
@@ -92,6 +101,18 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         if (channelServiceDefinitions == null || channelServiceDefinitions.isEmpty()) {
             return routeDefinitions;
         }
+        List<InboundChannelServiceDefinition> inboundDefinitions = channelServiceDefinitions.stream()
+                .filter(definition -> definition.getType() == ChannelServiceDefinitionType.INBOUND)
+                .map(definition -> {
+                    if (definition instanceof InboundChannelServiceDefinition inboundDefinition) {
+                        return inboundDefinition;
+                    }
+                    throw new IllegalStateException("INBOUND channel service definition "
+                            + definition.getId() + " is not an InboundChannelServiceDefinition");
+                })
+                .toList();
+        Map<InboundChannelServiceDefinition, InboundRouteActionConfig> actionConfigs =
+                inboundRouteDefinitionValidator.validate(context, inboundDefinitions);
         Set<String> usedRouteIds = new HashSet<>();
         channelServiceDefinitions.forEach(channelServiceDefinition -> {
             if (channelServiceDefinition.getType() == null) {
@@ -104,6 +125,7 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
                                 clientContractVersionResolver,
                                 service,
                                 (InboundChannelServiceDefinition) channelServiceDefinition,
+                                actionConfigs.get((InboundChannelServiceDefinition) channelServiceDefinition),
                                 usedRouteIds);
                         // API_DOC and SVC_DOMAIN_MEMBER are metadata only; they must never create inbound routes.
                         default -> Collections.emptyList();
@@ -117,6 +139,7 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
                                                                    ClientContractVersionResolver clientContractVersionResolver,
                                                                    Service service,
                                                                    InboundChannelServiceDefinition definition,
+                                                                   InboundRouteActionConfig actionConfig,
                                                                    Set<String> usedRouteIds) {
         GatewayChannel gatewayChannel = context.gatewayChannel();
         String serviceCode = service.getCode().trim();
@@ -132,6 +155,8 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         RouteDefinition routeDefinition = context.routeBuilder().from(uri.toString())
                 .routeId(uniqueRouteId(context, serviceCode, serviceVersion, definition, usedRouteIds));
         setEarlyGatewayProperties(routeDefinition, context, definition, service, serviceVersion);
+        inboundRouteActionBinder.bind(routeDefinition, actionConfig);
+        inboundPathVariablesBinder.bind(routeDefinition, definition);
         ProcessorDefinition<?> pipeline = routeDefinition;
         if (idempotencyProperties.isEnabled()) {
             pipeline = routeDefinition.process(this::reserveIdempotentRequest);

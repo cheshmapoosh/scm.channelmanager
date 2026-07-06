@@ -51,7 +51,7 @@ dependencies {
     api project(':scm-plugin-scm')
     api project(':scm-plugin-mock')
     api project(':scm-common-error')
-    api project(':scm-task')
+    api project(':scm-task-provider')
     api project(':scm-otp-client')
     implementation project(':scm-uaa-starter')
     implementation project(':scm-observation-starter')

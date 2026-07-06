@@ -243,7 +243,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
                     exchange.getExchangeId(),
                     fields.get("correlationId"));
         });
-        serviceTargetRouter.buildTarget(route, service);
+        serviceTargetRouter.buildTarget(route, servicePlan);
         route.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
             log.info("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=success",

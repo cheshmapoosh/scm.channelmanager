@@ -499,6 +499,116 @@ CHAIN_ON_APPROVE  -> operationهای فعال را به ترتیب اجرا می
 - اگر JSON نامعتبر باشد، `executionOrder` معتبر نباشد، مقدار `executionOrder` در یک chain تکراری باشد، یا `approvalPolicyCode` به policy ثبت‌شده‌ای اشاره نکند، ساخت route همان موقع fail می‌شود.
 - `ChainOnApproveServiceTargetRoutingHandler` با plan آماده route را می‌سازد. قبل از هر فراخوانی، propertyهای `Message.SERVICE_OPERATION` و `Message.OPERATION_NAME` تنظیم می‌شوند.
 
+## TASK_WORKFLOW routing strategy
+
+`TASK_WORKFLOW` is a service-layer routing strategy. `ServiceTargetRouter`
+remains the generic dispatcher and selects
+`TaskWorkflowServiceTargetRoutingHandler` through the existing handler registry.
+
+The gateway does not import task workflow commands, roles, task provider APIs,
+or task/process payload types. It binds only generic exchange properties:
+
+```text
+Message.INBOUND_ROUTE_ACTION
+Message.INBOUND_PATH_VARIABLES
+```
+
+`INBOUND_ROUTE_ACTION` comes from `inboundAction` in the current INBOUND
+Definition. `INBOUND_PATH_VARIABLES` is a map built from REST path placeholders.
+The service layer interprets those properties only when the service routing
+strategy is `TASK_WORKFLOW`.
+
+### Command and role
+
+A command is the requested inbound action:
+
+```text
+START
+COMPLETE_TASK
+APPROVE_AND_EXECUTE
+CANCEL_PROCESS
+FIND_PROCESSES
+FIND_TASKS
+FIND_TASKS_BY_PROCESS_ID
+UPDATE_PROCESS_DESCRIPTION
+```
+
+A role identifies what one active `ServiceOperation` does:
+
+```text
+START_PROCESS
+COMPLETE_TASK
+APPROVE_PROCESS
+BUSINESS_OPERATION
+COMPLETE_PROCESS
+CANCEL_PROCESS
+FIND_PROCESSES
+FIND_TASKS
+FIND_TASKS_BY_PROCESS_ID
+UPDATE_PROCESS_DESCRIPTION
+```
+
+Commands and roles are not interchangeable. Command-to-step mapping is stored
+on each INBOUND Definition, not in Java enums and not in a ServiceOperation.
+
+### INBOUND command definition
+
+Each command uses one INBOUND row with its own Definition:
+
+```json
+{
+  "inboundAction": "APPROVE_AND_EXECUTE",
+  "taskWorkflow": {
+    "steps": [
+      {"role": "APPROVE_PROCESS", "executionOrder": 10},
+      {"role": "BUSINESS_OPERATION", "executionOrder": 20},
+      {"role": "COMPLETE_PROCESS", "executionOrder": 30}
+    ]
+  }
+}
+```
+
+### ServiceOperation role definition
+
+Each active operation declares only its workflow role:
+
+```json
+{
+  "taskWorkflowRole": "BUSINESS_OPERATION"
+}
+```
+
+At route construction, `TaskWorkflowRoutePlanFactory` combines active operation
+roles with all command step definitions and resolves each step to:
+
+```text
+direct:op.<normalized-operation-name>
+```
+
+Configuration JSON is parsed and validated during route construction. Request
+handling does not query the database or parse route configuration.
+
+### Business safety
+
+A `TASK_WORKFLOW` service must have exactly one active
+`BUSINESS_OPERATION`. `APPROVE_AND_EXECUTE` must be ordered as:
+
+```text
+APPROVE_PROCESS -> BUSINESS_OPERATION -> COMPLETE_PROCESS
+```
+
+The approve response is stored before the business call. The preferred business
+request payload is `approveResponse.transactionData`.
+
+- Definitive success calls `COMPLETE_PROCESS` with `COMPLETE`.
+- Definitive business failure calls `COMPLETE_PROCESS` with `FAIL`.
+- Unknown, timeout, connection-lost, or ambiguous results do not call
+  `COMPLETE_PROCESS` and never mark the process as failed.
+
+Unknown results remain in the acknowledgement/recovery state. The no-op
+`TaskWorkflowExecutionStore` is an extension point for durable recovery and
+reconciliation state.
+
 ### startup و runtime
 
 این strategy در startup و هنگام ساخت Camel route آماده می‌شود:

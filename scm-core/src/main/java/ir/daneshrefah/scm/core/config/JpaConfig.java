@@ -20,7 +20,6 @@ import java.util.Objects;
 @EnableTransactionManagement
 @EnableJpaRepositories(
         basePackages = {"ir.daneshrefah.scm.core",
-                "ir.daneshrefah.scm.task",
                 "ir.daneshrefah.scm.config",
                 "ir.daneshrefah.scm.notification.client",
                 "ir.daneshrefah.scm.common.data",

@@ -25,6 +25,15 @@ public class ScmWebProviderObservationMapper {
             "scm.provider.duration_ms",
             "scm.provider.result",
             "scm.provider.response_code",
+            "scm.task.correlation_id",
+            "scm.task.process_id",
+            "scm.task.task_id",
+            "scm.task.process_code",
+            "scm.task.status",
+            "scm.task.outcome",
+            "scm.task.command",
+            "scm.task.role",
+            "scm.task.operation_name",
             "http.method",
             "http.status_code",
             "http.status_code.value",
@@ -109,8 +118,21 @@ public class ScmWebProviderObservationMapper {
     }
 
     private String outcome(String action) {
+        if (action.endsWith(".unknown")) {
+            return "unknown";
+        }
         if (PROVIDER_TIMEOUT.equals(action)) {
             return "timeout";
+        }
+        if (action.endsWith(".requested")
+                || "task.workflow.business.started".equals(action)) {
+            return "started";
+        }
+        if (action.endsWith(".cancelled")) {
+            return "cancelled";
+        }
+        if (action.endsWith(".failed")) {
+            return "failure";
         }
         if (PROVIDER_CALL_FAILED.equals(action)) {
             return "failure";
