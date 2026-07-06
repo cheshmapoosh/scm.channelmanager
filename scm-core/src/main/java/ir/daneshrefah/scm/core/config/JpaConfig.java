@@ -34,7 +34,7 @@ import java.util.Objects;
         transactionManagerRef = "transactionManager"
 )
 @EntityScan(basePackages = {"ir.daneshrefah.scm.core",
-        "ir.daneshrefah.scm.task",
+        "ir.daneshrefah.scm.provider.task",
         "ir.daneshrefah.scm.config",
         "ir.daneshrefah.scm.notification.client",
         "ir.daneshrefah.scm.common.data",
@@ -60,7 +60,7 @@ public class JpaConfig {
                 .dataSource(dataSource)
                 .packages(
                         "ir.daneshrefah.scm.core.entity",
-                        "ir.daneshrefah.scm.task.entity",
+                        "ir.daneshrefah.scm.provider.task.entity",
                         "ir.daneshrefah.scm.config.entity",
                         "ir.daneshrefah.scm.notification.client.entity",
                         "ir.daneshrefah.scm.common.log",
