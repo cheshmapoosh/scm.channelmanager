@@ -40,21 +40,26 @@ from:
 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
 ```
 
-The host opts in to provider persistence explicitly:
+The host enables the entire provider with one property:
 
 ```yaml
 scm:
   provider:
     task:
-      jpa:
-        enabled: true
+      enabled: true
 ```
+
+There is no separate `scm.provider.task.jpa.enabled` switch. If
+`scm.provider.task.enabled` is missing or false, the provider does not register
+its API/service beans, `scm-task` component, operation adapter, repositories, or
+JPA managed package contribution.
 
 The auto-configuration uses focused scanning for task provider APIs, services,
 and mappers. Provider repositories are explicitly bound to the host beans named
 `entityManagerFactory` and `transactionManager`. The provider contributes its
 entity package through `JpaManagedPackageContributor`; it does not create a
-datasource, entity manager factory, or transaction manager. A TODO remains to
+datasource, entity manager factory, or transaction manager. When the provider is
+enabled, the host must supply both named persistence beans. A TODO remains to
 replace focused component scanning with explicit bean registration as the
 provider surface stabilizes.
 
@@ -91,10 +96,17 @@ operationName = SVC_CARTABLE_APPROVE_PROCESS
 `RouteIdSupport.operationRouteId(operationName)`:
 
 ```text
-DB operationName:  SVC_CARTABLE_APPROVE_PROCESS
-Camel route id:    op.SVC_CARTABLE_APPROVE_PROCESS
-Camel endpoint:    direct:op.SVC_CARTABLE_APPROVE_PROCESS
+DB Operation.name:              SVC_CARTABLE_APPROVE_PROCESS
+ServiceOperation.operationName: SVC_CARTABLE_APPROVE_PROCESS
+Generated operation route id:   op.SVC_CARTABLE_APPROVE_PROCESS
+Operation route endpoint:       direct:op.SVC_CARTABLE_APPROVE_PROCESS
+Task provider endpoint:         scm-task:SVC_CARTABLE_APPROVE_PROCESS
 ```
+
+For provider URI `scm-task:`, `Operation.name` must exactly match one of the
+supported task `OperationCode` values, including existing spellings such as
+`SVC_CARTABLE_COMPLTE_TASK`. Leading/trailing whitespace, unknown codes, and an
+`op.` prefix fail endpoint creation during route startup.
 
 Configure each task `Operation` with `type = PROVIDER` and bind it to the task
 operation provider whose base URI is `scm-task:`. The generic provider
@@ -291,7 +303,9 @@ payload. Definitive success completes the process with `COMPLETE`; definitive
 business failure completes it with `FAIL`. If a definitive business exception
 was thrown and that completion succeeds, the workflow returns a non-retryable
 failure response instead of rethrowing the original exception. This prevents an
-upstream retry after the process is already terminal. Timeout, connection loss,
-or another ambiguous result does not call `COMPLETE_PROCESS`, publishes the
-unknown-result semantic event, and propagates an unknown-result error for
+upstream retry after the process is already terminal. If that `FAIL` completion
+itself fails, the completion failure is propagated with the original definitive
+business failure attached as suppressed diagnostic context. Timeout, connection
+loss, or another ambiguous result does not call `COMPLETE_PROCESS`, publishes
+the unknown-result semantic event, and propagates an unknown-result error for
 recovery/reconciliation.
