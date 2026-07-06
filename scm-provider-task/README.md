@@ -75,7 +75,7 @@ transactionManager
 
 The task provider entity package may be contributed to the host main
 `entityManagerFactory` through `JpaManagedPackageContributor`. The provider does
-not create a datasource, entity manager factory, or transaction manager.
+not create a datasource, `EntityManagerFactory`, or `TransactionManager`.
 
 Dedicated mode uses configured bean names:
 
@@ -84,14 +84,12 @@ scm:
   provider:
     task:
       enabled: true
-      datasource: taskProviderDataSource
       entity-manager-factory: taskProviderEntityManagerFactory
       transaction-manager: taskProviderTransactionManager
 ```
 
 In dedicated mode:
 
-- `datasource` is the bean name of the task provider datasource.
 - `entity-manager-factory` is the bean name of the task provider
   `EntityManagerFactory`.
 - `transaction-manager` is the bean name of the task provider
@@ -101,12 +99,13 @@ In dedicated mode:
 - The task provider does not use host primary persistence and does not
   contribute `ir.daneshrefah.scm.provider.task.entity` to the host main
   `entityManagerFactory`.
+- The host creates any dedicated datasource and wires it into the dedicated
+  `EntityManagerFactory`.
 
-If none of `datasource`, `entity-manager-factory`, and `transaction-manager` is
-configured, default mode is used. If any one is configured, all three are
-required and the named beans must exist at startup. A TODO remains to replace
-focused component scanning with explicit bean registration as the provider
-surface stabilizes.
+If neither `entity-manager-factory` nor `transaction-manager` is configured,
+default mode is used. If either one is configured, both are required and the
+named beans must exist at startup. A TODO remains to replace focused component
+scanning with explicit bean registration as the provider surface stabilizes.
 
 The provider Java package is `ir.daneshrefah.scm.provider.task`.
 
