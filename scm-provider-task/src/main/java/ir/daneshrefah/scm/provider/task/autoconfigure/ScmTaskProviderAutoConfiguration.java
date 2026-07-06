@@ -20,7 +20,7 @@ import java.util.Set;
 
 @AutoConfiguration(afterName = "ir.daneshrefah.scm.uaa.client.autoconfigure.ScmResourceServerAutoConfiguration")
 @ConditionalOnProperty(
-        prefix = "scm.provider.task.jpa",
+        prefix = "scm.provider.task",
         name = "enabled",
         havingValue = "true"
 )

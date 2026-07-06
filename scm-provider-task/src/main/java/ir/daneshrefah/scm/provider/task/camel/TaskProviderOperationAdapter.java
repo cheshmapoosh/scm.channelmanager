@@ -47,21 +47,8 @@ public class TaskProviderOperationAdapter {
         this.taskInstanceService = taskInstanceService;
     }
 
-    public boolean supports(String operationCode) {
-        try {
-            return SUPPORTED_OPERATIONS.contains(resolveOperation(operationCode));
-        } catch (IllegalArgumentException exception) {
-            return false;
-        }
-    }
-
     public void execute(String operationCode, Exchange exchange) {
-        OperationCode operation = resolveOperation(operationCode);
-        if (!SUPPORTED_OPERATIONS.contains(operation)) {
-            throw new IllegalArgumentException(
-                    "Unsupported " + TaskProviderComponent.SCHEME
-                            + " operationCode=" + operationCode);
-        }
+        OperationCode operation = requireSupportedOperation(operationCode);
 
         Object response = switch (operation) {
             case SVC_CARTABLE_START_PROCESS -> processInstanceService.start(
@@ -181,19 +168,57 @@ public class TaskProviderOperationAdapter {
         return body;
     }
 
-    private OperationCode resolveOperation(String operationCode) {
+    OperationCode requireSupportedOperation(String operationCode) {
         if (operationCode == null || operationCode.isBlank()) {
             throw new IllegalArgumentException(
-                    TaskProviderComponent.SCHEME + " operationCode is required");
+                    TaskProviderComponent.SCHEME
+                            + " provider requires a non-blank Operation.name");
         }
+        if (!operationCode.equals(operationCode.trim())) {
+            throw invalidOperationName(operationCode,
+                    "leading or trailing whitespace is not allowed");
+        }
+        if (operationCode.regionMatches(true, 0, "op.", 0, "op.".length())) {
+            throw invalidOperationName(operationCode,
+                    "do not include the generated op. route prefix");
+        }
+        OperationCode operation;
         try {
-            return OperationCode.valueOf(operationCode.trim());
+            operation = OperationCode.valueOf(operationCode);
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException(
-                    "Unknown " + TaskProviderComponent.SCHEME
-                            + " operationCode=" + operationCode,
-                    exception
-            );
+            throw invalidOperationName(operationCode,
+                    "name is not an exact OperationCode", exception);
         }
+        if (!SUPPORTED_OPERATIONS.contains(operation)) {
+            throw invalidOperationName(operationCode,
+                    "OperationCode is not exposed by the task provider");
+        }
+        return operation;
+    }
+
+    private IllegalArgumentException invalidOperationName(
+            String operationCode,
+            String reason
+    ) {
+        return invalidOperationName(operationCode, reason, null);
+    }
+
+    private IllegalArgumentException invalidOperationName(
+            String operationCode,
+            String reason,
+            Throwable cause
+    ) {
+        String supported = SUPPORTED_OPERATIONS.stream()
+                .map(OperationCode::name)
+                .sorted()
+                .toList()
+                .toString();
+        String message = "Invalid " + TaskProviderComponent.SCHEME
+                + " provider Operation.name=" + operationCode
+                + ": " + reason
+                + "; expected one of " + supported;
+        return cause == null
+                ? new IllegalArgumentException(message)
+                : new IllegalArgumentException(message, cause);
     }
 }

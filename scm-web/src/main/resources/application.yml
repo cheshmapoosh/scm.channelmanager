@@ -16,8 +16,7 @@ management:
 scm:
   provider:
     task:
-      jpa:
-        enabled: true
+      enabled: true
   cache:
     client:
       caches:

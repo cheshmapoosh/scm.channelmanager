@@ -31,11 +31,7 @@ public class TaskProviderComponent extends DefaultComponent {
             String remaining,
             Map<String, Object> parameters
     ) throws Exception {
-        String operationCode = normalizeOperationCode(remaining);
-        if (!operationAdapter.supports(operationCode)) {
-            throw new IllegalArgumentException(
-                    "Unsupported " + SCHEME + " endpoint operationCode=" + operationCode);
-        }
+        String operationCode = operationAdapter.requireSupportedOperation(remaining).name();
         TaskProviderEndpoint endpoint = new TaskProviderEndpoint(
                 uri,
                 this,
@@ -44,12 +40,5 @@ public class TaskProviderComponent extends DefaultComponent {
         );
         setProperties(endpoint, parameters);
         return endpoint;
-    }
-
-    private String normalizeOperationCode(String remaining) {
-        if (remaining == null) {
-            return null;
-        }
-        return remaining.replaceFirst("^/+", "").trim();
     }
 }

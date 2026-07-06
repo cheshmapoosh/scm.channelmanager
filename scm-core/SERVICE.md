@@ -590,9 +590,11 @@ At route construction, `TaskWorkflowRoutePlanFactory` combines active operation
 roles with all command step definitions and resolves each step to:
 
 ```text
-ServiceOperation.operationName = SVC_CARTABLE_APPROVE_PROCESS
-RouteIdSupport.operationRouteId(operationName) = op.SVC_CARTABLE_APPROVE_PROCESS
-Camel endpoint = direct:op.SVC_CARTABLE_APPROVE_PROCESS
+DB Operation.name:                    SVC_CARTABLE_APPROVE_PROCESS
+ServiceOperation.operationName:       SVC_CARTABLE_APPROVE_PROCESS
+Generated operation route id:         op.SVC_CARTABLE_APPROVE_PROCESS
+Operation route endpoint:             direct:op.SVC_CARTABLE_APPROVE_PROCESS
+Task provider endpoint:               scm-task:SVC_CARTABLE_APPROVE_PROCESS
 ```
 
 Store only the operation code in `ServiceOperation.operationName`; never store
@@ -600,6 +602,10 @@ Store only the operation code in `ServiceOperation.operationName`; never store
 operation route to its provider endpoint. Configure the corresponding
 `Operation` with `type = PROVIDER` and task provider base URI
 `scm-task:`:
+
+For this provider URI, `Operation.name` must exactly match a supported task
+`OperationCode`. Unknown codes, leading/trailing whitespace, and names prefixed
+with `op.` fail endpoint creation during route startup.
 
 ```text
 direct:op.SVC_CARTABLE_APPROVE_PROCESS
@@ -633,7 +639,9 @@ request payload is `approveResponse.transactionData`.
 - Definitive success calls `COMPLETE_PROCESS` with `COMPLETE`.
 - Definitive business failure calls `COMPLETE_PROCESS` with `FAIL`. After that
   completion succeeds, a thrown business exception is converted to a
-  non-retryable failure response instead of being rethrown.
+  non-retryable failure response instead of being rethrown. If completion fails,
+  the completion failure is propagated with the original business failure
+  retained as suppressed diagnostic context.
 - Unknown, timeout, connection-lost, or ambiguous results do not call
   `COMPLETE_PROCESS`, never mark the process as failed, and propagate an
   unknown-result error.
@@ -642,22 +650,27 @@ Unknown results remain in the acknowledgement/recovery state. The no-op
 `TaskWorkflowExecutionStore` is an extension point for durable recovery and
 reconciliation state.
 
-### startup و runtime
+### Startup and runtime
 
-این strategy در startup و هنگام ساخت Camel route آماده می‌شود:
+`TASK_WORKFLOW` configuration is parsed and validated while Camel routes are
+built:
 
 ```text
-DB -> Service + ServiceOperation + Definition
-   -> ChainOnApproveRoutePlanFactory
-   -> ChainOnApproveRoutePlan با stepهای آماده
+DB -> Service + ServiceOperation + INBOUND Definition
+   -> TaskWorkflowRoutePlanFactory
+   -> TaskWorkflowRoutePlan
+   -> TASK_WORKFLOW command plan
+   -> TASK_WORKFLOW step plan
    -> Camel route
 ```
 
-در زمان اجرای request، برنامه فقط operation فعلی را اجرا می‌کند و policy از قبل resolveشده در همان step را صدا می‌زند. در این مسیر نه query دیتابیس انجام می‌شود و نه JSON موجود در definition دوباره parse می‌شود.
+At request time, the command resolver selects a prebuilt command plan and the
+handler invokes its prebuilt step plans. Runtime processing does not query the
+database or parse definition JSON again. Changes to command or operation
+definitions require route reload or application restart.
 
-بنابراین تغییر `TBL_SCM_DEFINITION` یا اتصال definition به service-operation بعد از startup روی route موجود اثر ندارد. تا وقتی قابلیت route reload اضافه نشده است، برای اعمال این تغییرها application باید restart شود.
-
-ترتیب stepها فقط از `executionOrder` داخل `TBL_SCM_DEFINITION.DETAILS` می‌آید. قبل از ساخت route، همه stepها بر اساس `executionOrder` مرتب می‌شوند. اگر دو step فعال در یک service chain مقدار `executionOrder` یکسان داشته باشند، application هنگام startup/ساخت route fail می‌شود.
+Steps are sorted by `executionOrder` during plan construction. Duplicate orders
+inside one command fail route construction.
 
 ### approved همیشه مساوی success نیست
 

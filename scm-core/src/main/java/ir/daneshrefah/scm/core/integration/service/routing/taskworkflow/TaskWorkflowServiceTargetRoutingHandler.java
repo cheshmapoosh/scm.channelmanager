@@ -145,15 +145,47 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
         if (transactionCoordinator.classifyException(exception)
                 == TaskWorkflowExceptionClassifier.ExceptionResult.DEFINITIVE_FAILURE) {
             transactionCoordinator.handleDefinitiveBusinessFailure(exchange, exception);
-            completeProcess(
-                    exchange,
-                    completeStep,
-                    TaskWorkflowBusinessResultClassifier.BusinessResult.FAILURE
-            );
+            try {
+                completeProcess(
+                        exchange,
+                        completeStep,
+                        TaskWorkflowBusinessResultClassifier.BusinessResult.FAILURE
+                );
+            } catch (RuntimeException completionFailure) {
+                preserveBusinessFailureContext(
+                        exchange,
+                        completeStep,
+                        exception,
+                        completionFailure
+                );
+                throw completionFailure;
+            }
             return true;
         }
         transactionCoordinator.handleUnknownBusinessResult(exchange, exception);
         return false;
+    }
+
+    private void preserveBusinessFailureContext(
+            Exchange exchange,
+            TaskWorkflowStepPlan completeStep,
+            RuntimeException businessFailure,
+            RuntimeException completionFailure
+    ) {
+        if (businessFailure == completionFailure) {
+            return;
+        }
+        Long processId = exchange.getProperty(
+                TaskWorkflowExchangeProperties.PROCESS_ID,
+                Long.class
+        );
+        completionFailure.addSuppressed(new IllegalStateException(
+                "Original definitive business failure before COMPLETE_PROCESS(status=FAIL)"
+                        + ", processId=" + (processId == null ? "<unknown>" : processId)
+                        + ", completionOperationName="
+                        + completeStep.serviceOperation().getOperationName(),
+                businessFailure
+        ));
     }
 
     private void completeProcess(
