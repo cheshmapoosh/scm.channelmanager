@@ -23,7 +23,7 @@ spring:
 scm:
   config:
     applications:
-      scm-web: ib4dev ,ib4test ,ib4prod ,scm4dev,ib4pilot ,scm4test ,scm4prod,scm4pilot , mb4dev, mb4test, mb4pilot,mb4prod, mbcard4dev, mbcard4test, mbcard4pilot,mbcard4prod, pwa4dev, pwa4test, pwa4prod,pwa4pilot
+      scm-web: dev, test, pilot, prod
       scm-uaa: dev, test, prod,pilot
       scm-cache: dev, test, prod,pilot
       scm-logging: dev, test, prod,pilot

@@ -1,29 +1,388 @@
 spring:
   profiles:
-    active: default
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
-    name: ${SCM_APPLICATION_NAME}
+    name: ${SCM_APPLICATION_NAME:scm-web}
+  jpa:
+    show-sql: ${SCM_JPA_SHOW_SQL:false}
+    open-in-view: ${SCM_JPA_OPEN_IN_VIEW:false}
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,prometheus
+        include: ${SCM_MANAGEMENT_ENDPOINTS_INCLUDE:health,metrics,prometheus}
   endpoint:
     health:
-      show-details: never
+      show-details: ${SCM_MANAGEMENT_HEALTH_SHOW_DETAILS:never}
       probes:
-        enabled: true
+        enabled: ${SCM_MANAGEMENT_HEALTH_PROBES_ENABLED:true}
+
+server:
+  servlet:
+    context-path: ${SCM_SERVER_CONTEXT_PATH:/}
+  port: ${SCM_SERVER_PORT:${SERVER_PORT:8083}}
+
+camel:
+  servlet:
+    mapping:
+      contextPath: ${SCM_CAMEL_SERVLET_CONTEXT_PATH:/*}
+
+logging:
+  config: ${SCM_LOGBACK_CONFIG:classpath:logback-spring.xml}
+  level:
+    root: ${SCM_LOG_LEVEL_ROOT:INFO}
+    ir.daneshrefah: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+    org.springframework: ${SCM_LOG_LEVEL_SPRING:INFO}
+    org.hibernate.SQL: ${SCM_LOG_LEVEL_HIBERNATE_SQL:WARN}
+    org.hibernate.type.descriptor.sql: ${SCM_LOG_LEVEL_HIBERNATE_SQL_TYPE:WARN}
+    org.hibernate.orm.jdbc.bind: ${SCM_LOG_LEVEL_HIBERNATE_BIND:WARN}
+
 scm:
+  env: ${SCM_ENV:${spring.profiles.active}}
+  instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-web}}
+  app-name: ${SCM_GATEWAY_NAME}
+  channels: ${SCM_CHANNELS:${SCM_CHANNEL_CODE}}
+
+  deployment:
+    service-version: ${SCM_SERVICE_VERSION:${VERSION:9.0.0}}
+
+  application:
+    version: ${SCM_APPLICATION_VERSION:${VERSION:9.0.0}}
+    build: ${SCM_APPLICATION_BUILD:unknown}
+
   provider:
     task:
-      enabled: true
+      enabled: ${SCM_PROVIDER_TASK_ENABLED:true}
+
+  runtime:
+    gateway-name: ${SCM_GATEWAY_NAME}
+    target:
+      kind: ${SCM_RUNTIME_TARGET_KIND:CHANNEL}
+      gateway-names: ${SCM_GATEWAY_NAMES:${SCM_GATEWAY_NAME}}
+    channel-affinity:
+      enabled: ${SCM_RUNTIME_CHANNEL_AFFINITY_ENABLED:false}
+      allowed-channel-codes: ${SCM_RUNTIME_ALLOWED_CHANNEL_CODES:*}
+
+  observation:
+    enabled: ${SCM_OBS_ENABLED:true}
+    log:
+      enabled: ${SCM_OBS_LOG_ENABLED:${SCM_OBS_LOG_FILE_ENABLED:true}}
+      console:
+        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:false}
+        format: ${SCM_OBS_LOG_CONSOLE_FORMAT:simple}
+      file:
+        enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
+        format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log}
+        archive-directory: ${SCM_OBS_LOG_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log/archive}
+        file-name: ${SCM_OBS_LOG_FILE_NAME:${spring.application.name}.jsonl}
+      rolling:
+        max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_LOG_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_LOG_CLEAN_HISTORY_ON_START:false}
+      level:
+        root: ${SCM_LOG_LEVEL_ROOT:INFO}
+        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
+        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
+    trace:
+      enabled: ${SCM_OBS_TRACE_ENABLED:${SCM_OBS_TRACE_FILE_ENABLED:false}}
+      file:
+        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
+        format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace}
+        archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace/archive}
+        file-name: ${SCM_OBS_TRACE_FILE_NAME:${spring.application.name}-trace.jsonl}
+      rolling:
+        max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_TRACE_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_TRACE_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBS_TRACE_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_TRACE_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_TRACE_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_TRACE_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_TRACE_ASYNC_MAX_FLUSH_TIME:1000}
+    audit:
+      enabled: ${SCM_OBS_AUDIT_ENABLED:false}
+      file:
+        enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
+        format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit}
+        archive-directory: ${SCM_OBS_AUDIT_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit/archive}
+        file-name: ${SCM_OBS_AUDIT_FILE_NAME:${spring.application.name}-audit.jsonl}
+      rolling:
+        max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}
+        total-size-cap: ${SCM_OBS_AUDIT_TOTAL_SIZE_CAP:20GB}
+        clean-history-on-start: ${SCM_OBS_AUDIT_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBS_AUDIT_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_AUDIT_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_AUDIT_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_AUDIT_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_AUDIT_ASYNC_MAX_FLUSH_TIME:1000}
+    metric:
+      enabled: ${SCM_OBS_METRIC_ENABLED:true}
+    http:
+      server:
+        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:http.server.request}
+
+  datasource:
+    primary:
+      url: ${SCM_DB_URL}
+      username: ${SCM_DB_USERNAME}
+      password: ${SCM_DB_PASSWORD}
+      driver-class-name: ${SCM_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+      max-connection: ${SCM_DB_MAX_CONNECTION:10}
+      default-schema: ${SCM_DB_SCHEMA:REF}
+
+  security:
+    cache:
+      session:
+        enabled: ${SCM_SECURITY_SESSION_CACHE_ENABLED:true}
+        cache-name: ${SCM_SECURITY_SESSION_CACHE_NAME:session_cache}
+      user:
+        enabled: ${SCM_SECURITY_USER_CACHE_ENABLED:true}
+        cache-name: ${SCM_SECURITY_USER_CACHE_NAME:user_cache}
+    legacy-authentication:
+      enabled: ${SCM_SECURITY_LEGACY_AUTH_ENABLED:true}
+      claim:
+        enabled: ${SCM_SECURITY_LEGACY_CLAIM_AUTH_ENABLED:false}
+    resource-server:
+      enabled: ${SCM_RESOURCE_SERVER_ENABLED:true}
+      issuer-uri: ${SCM_UAA_BASE_URL}
+      jwk-set-uri: ${SCM_UAA_BASE_URL}/oauth2/jwks
+      method-security-enabled: ${SCM_RESOURCE_SERVER_METHOD_SECURITY_ENABLED:true}
+      observation:
+        enabled: ${SCM_RESOURCE_SERVER_OBSERVATION_ENABLED:true}
+        log-enabled: ${SCM_RESOURCE_SERVER_OBS_LOG_ENABLED:true}
+        trace-enabled: ${SCM_RESOURCE_SERVER_OBS_TRACE_ENABLED:true}
+        metric-enabled: ${SCM_RESOURCE_SERVER_OBS_METRIC_ENABLED:true}
+    client-id: ${SCM_SECURITY_CLIENT_ID:scm}
+    client-secret: ${SCM_SECURITY_CLIENT_SECRET:}
+    distributed: ${SCM_SECURITY_DISTRIBUTED:true}
+    person-service: ${SCM_SECURITY_PERSON_SERVICE:local}
+    issuer-uri: ${SCM_UAA_BASE_URL}
+
+  otp:
+    rest-client:
+      enabled: ${SCM_OTP_REST_CLIENT_ENABLED:true}
+      auth-header-name: ${SCM_OTP_AUTH_HEADER_NAME:authorization}
+      auth-prefix: ${SCM_OTP_AUTH_PREFIX:Bearer }
+      base-url: ${SCM_UAA_BASE_URL}
+      verify-logged-in-url: ${SCM_OTP_VERIFY_LOGGED_IN_URL:/api/otp/verify-by-logged-in-user}
+
+  gateway:
+    idempotency:
+      enabled: ${SCM_GATEWAY_IDEMPOTENCY_ENABLED:true}
+      map-name: ${SCM_GATEWAY_IDEMPOTENCY_MAP_NAME:restGatewayIdempotentRepository}
+      api-paths: ${SCM_GATEWAY_IDEMPOTENCY_API_PATHS:card/cardPasswordInquiry}
+    client-contracts:
+      defaults:
+        REST:
+          default:
+            name: ${SCM_GATEWAY_REST_DEFAULT_CONTRACT_NAME:rest-default}
+            request-decoder: ${SCM_GATEWAY_REST_DEFAULT_REQUEST_DECODER:jsonScmRequestDecoder}
+            response-encoder: ${SCM_GATEWAY_REST_DEFAULT_RESPONSE_ENCODER:jsonScmResponseEncoder}
+            fault-encoder: ${SCM_GATEWAY_REST_DEFAULT_FAULT_ENCODER:restProblemDetailFaultEncoder}
+          versions:
+            v1:
+              name: ${SCM_GATEWAY_REST_V1_CONTRACT_NAME:rest-legacy-v1}
+              request-decoder: ${SCM_GATEWAY_REST_V1_REQUEST_DECODER:legacyMbRequestDecoder}
+              response-encoder: ${SCM_GATEWAY_REST_V1_RESPONSE_ENCODER:legacyMbResponseEncoder}
+              fault-encoder: ${SCM_GATEWAY_REST_V1_FAULT_ENCODER:legacyMbFaultEncoder}
+            v2:
+              name: ${SCM_GATEWAY_REST_V2_CONTRACT_NAME:rest-legacy-v2}
+              request-decoder: ${SCM_GATEWAY_REST_V2_REQUEST_DECODER:jsonScmRequestDecoder}
+              response-encoder: ${SCM_GATEWAY_REST_V2_RESPONSE_ENCODER:jsonScmResponseEncoder}
+              fault-encoder: ${SCM_GATEWAY_REST_V2_FAULT_ENCODER:restProblemDetailFaultEncoder}
+
+  providers:
+    hps-rest:
+      scheme: ${SCM_HPS_REST_SCHEME:scm-rest}
+      enabled: ${SCM_HPS_REST_ENABLED:true}
+      base-url: ${SCM_HPS_REST_BASE_URL:${SCM_HPS_BASE_URL}/general/ws/do}
+      connect-timeout-ms: ${SCM_HPS_REST_CONNECT_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS:3000}}
+      response-timeout-ms: ${SCM_HPS_REST_RESPONSE_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_RESPONSE_TIMEOUT_MS:8000}}
+      virtual-threads-enabled: ${SCM_HPS_REST_VIRTUAL_THREADS_ENABLED:true}
+      insecure-ssl: ${SCM_HPS_REST_INSECURE_SSL:false}
+      follow-redirects: ${SCM_HPS_REST_FOLLOW_REDIRECTS:NORMAL}
+      default-method: ${SCM_HPS_REST_DEFAULT_METHOD:POST}
+      headers:
+        Accept: ${SCM_HPS_REST_ACCEPT_HEADER:application/json}
+        Content-Type: ${SCM_HPS_REST_CONTENT_TYPE_HEADER:application/json}
+      security:
+        sensitive-headers: ${SCM_HPS_REST_SENSITIVE_HEADERS:authorization,proxy-authorization,cookie,set-cookie}
+        sensitive-body-keys: ${SCM_HPS_REST_SENSITIVE_BODY_KEYS:password,token,secret,pin,cvv,pan,card}
+        max-body-log-length: ${SCM_HPS_REST_MAX_BODY_LOG_LENGTH:400}
+      rate-limit:
+        enabled: ${SCM_HPS_REST_RATE_LIMIT_ENABLED:false}
+        bucket: ${SCM_HPS_REST_RATE_LIMIT_BUCKET:hps-rest}
+        key: ${SCM_HPS_REST_RATE_LIMIT_KEY:provider-operation}
+      message-customizers:
+        - type: ${SCM_HPS_REST_AUTH_CUSTOMIZER_TYPE:rest-static-auth}
+          config:
+            type: ${SCM_HPS_REST_AUTH_TYPE:BASIC}
+            header-name: ${SCM_HPS_REST_AUTH_HEADER_NAME:Authorization}
+            username: ${SCM_HPS_REST_USERNAME}
+            password: ${SCM_HPS_REST_PASSWORD}
+            basic-base64: ${SCM_HPS_REST_BASIC_BASE64:true}
+        - type: ${SCM_HPS_REST_PIN_BLOCK_CUSTOMIZER_TYPE:rest-shetab-pin-block}
+          config:
+            key: ${SCM_HPS_SHETAB7_PIN_KEY}
+            pin-source: ${SCM_HPS_REST_PIN_SOURCE:data.pin}
+            pan-source: ${SCM_HPS_REST_PAN_SOURCE:data.cardNumber}
+
+    hps-shetab7:
+      scheme: ${SCM_HPS_SHETAB7_SCHEME:scm-shetab}
+      enabled: ${SCM_HPS_SHETAB7_ENABLED:true}
+      endpoints: ${SCM_HPS_SHETAB7_ENDPOINTS}
+      packager-class: ${SCM_HPS_SHETAB7_PACKAGER_CLASS:Shetab7AsciiXAPackager}
+      connect-timeout-ms: ${SCM_HPS_SHETAB7_CONNECT_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS:3000}}
+      socket-timeout-ms: ${SCM_HPS_SHETAB7_SOCKET_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_SOCKET_TIMEOUT_MS:1000}}
+      response-timeout-ms: ${SCM_HPS_SHETAB7_RESPONSE_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_RESPONSE_TIMEOUT_MS:8000}}
+      send-timeout-ms: ${SCM_HPS_SHETAB7_SEND_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_SEND_TIMEOUT_MS:1000}}
+      reconnect-delay-ms: ${SCM_HPS_SHETAB7_RECONNECT_DELAY_MS:1000}
+      same-endpoint-reconnect-attempts: ${SCM_HPS_SHETAB7_SAME_ENDPOINT_RECONNECT_ATTEMPTS:3}
+      queue-capacity: ${SCM_HPS_SHETAB7_QUEUE_CAPACITY:${SCM_PROVIDER_DEFAULT_QUEUE_CAPACITY:1000}}
+      endpoint-lease:
+        enabled: ${SCM_HPS_SHETAB7_ENDPOINT_LEASE_ENABLED:true}
+        ttl-ms: ${SCM_HPS_SHETAB7_ENDPOINT_LEASE_TTL_MS:30000}
+      rate-limit:
+        enabled: ${SCM_HPS_SHETAB7_RATE_LIMIT_ENABLED:false}
+        bucket: ${SCM_HPS_SHETAB7_RATE_LIMIT_BUCKET:hps-shetab7}
+        key: ${SCM_HPS_SHETAB7_RATE_LIMIT_KEY:provider-operation}
+      message-customizers:
+        - type: ${SCM_HPS_SHETAB7_EXPIRY_CUSTOMIZER_TYPE:shetab-expiry}
+          config:
+            field: ${SCM_HPS_SHETAB7_EXPIRY_FIELD:14}
+            source: ${SCM_HPS_SHETAB7_EXPIRY_SOURCE:security.expiryDate}
+        - type: ${SCM_HPS_SHETAB7_CVV2_CUSTOMIZER_TYPE:shetab-cvv2}
+          config:
+            field: ${SCM_HPS_SHETAB7_CVV2_FIELD:48}
+            tag: ${SCM_HPS_SHETAB7_CVV2_TAG:P92}
+            source: ${SCM_HPS_SHETAB7_CVV2_SOURCE:security.cvv2}
+            length-digits: ${SCM_HPS_SHETAB7_CVV2_LENGTH_DIGITS:3}
+            min-length: ${SCM_HPS_SHETAB7_CVV2_MIN_LENGTH:3}
+            max-length: ${SCM_HPS_SHETAB7_CVV2_MAX_LENGTH:4}
+        - type: ${SCM_HPS_SHETAB7_PIN_BLOCK_CUSTOMIZER_TYPE:shetab-pin-block}
+          config:
+            key: ${SCM_HPS_SHETAB7_PIN_KEY}
+            field: ${SCM_HPS_SHETAB7_PIN_FIELD:52}
+            pan-field: ${SCM_HPS_SHETAB7_PAN_FIELD:2}
+            pin-source: ${SCM_HPS_SHETAB7_PIN_SOURCE:security.pin}
+        - type: ${SCM_HPS_SHETAB7_MAC_CUSTOMIZER_TYPE:shetab-mac}
+          config:
+            key: ${SCM_HPS_SHETAB7_MAC_KEY}
+            field: ${SCM_HPS_SHETAB7_MAC_FIELD:128}
+            verify-response: ${SCM_HPS_SHETAB7_MAC_VERIFY_RESPONSE:false}
+
+    api-repo:
+      schema: ${SCM_API_REPO_SCHEMA:nab-api-repo}
+      enabled: ${SCM_API_REPO_ENABLED:true}
+      base-url: ${SCM_API_REPO_BASE_URL:${SCM_HPS_BASE_URL}}
+      connect-timeout-ms: ${SCM_API_REPO_CONNECT_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS:3000}}
+      response-timeout-ms: ${SCM_API_REPO_RESPONSE_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_RESPONSE_TIMEOUT_MS:8000}}
+      virtual-threads-enabled: ${SCM_API_REPO_VIRTUAL_THREADS_ENABLED:true}
+      insecure-ssl: ${SCM_API_REPO_INSECURE_SSL:false}
+      follow-redirects: ${SCM_API_REPO_FOLLOW_REDIRECTS:NORMAL}
+      default-method: ${SCM_API_REPO_DEFAULT_METHOD:POST}
+      headers:
+        Accept: ${SCM_API_REPO_ACCEPT_HEADER:application/json}
+        Content-Type: ${SCM_API_REPO_CONTENT_TYPE_HEADER:application/json}
+
+    nab-atps:
+      scheme: ${SCM_NAB_ATPS_SCHEME:scm-nab}
+      enabled: ${SCM_NAB_ATPS_ENABLED:true}
+      protocol: ${SCM_NAB_ATPS_PROTOCOL:ATPS}
+      endpoint: ${SCM_NAB_ATPS_ENDPOINT}
+      connect-timeout-ms: ${SCM_NAB_ATPS_CONNECT_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS:3000}}
+      socket-timeout-ms: ${SCM_NAB_ATPS_SOCKET_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_SOCKET_TIMEOUT_MS:1000}}
+      response-timeout-ms: ${SCM_NAB_ATPS_RESPONSE_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_RESPONSE_TIMEOUT_MS:6000}}
+      ack-length-bytes: ${SCM_NAB_ATPS_ACK_LENGTH_BYTES:5}
+      charset: ${SCM_NAB_ATPS_CHARSET:windows-1256}
+      user-id: ${SCM_NAB_ATPS_USER_ID}
+      password: ${SCM_NAB_ATPS_PASSWORD}
+      rq-uid:
+        length: ${SCM_NAB_ATPS_RQ_UID_LENGTH:16}
+        type: ${SCM_NAB_ATPS_RQ_UID_TYPE:NUMERIC}
+      header-fields:
+        - name: ${SCM_NAB_ATPS_HEADER_PROTOCOL_NAME:protocol}
+          length: ${SCM_NAB_ATPS_HEADER_PROTOCOL_LENGTH:4}
+          required: ${SCM_NAB_ATPS_HEADER_PROTOCOL_REQUIRED:true}
+        - name: ${SCM_NAB_ATPS_HEADER_COMMAND_NAME:command}
+          length: ${SCM_NAB_ATPS_HEADER_COMMAND_LENGTH:2}
+          required: ${SCM_NAB_ATPS_HEADER_COMMAND_REQUIRED:true}
+        - name: ${SCM_NAB_ATPS_HEADER_SERVICE_CODE_NAME:serviceCode}
+          length: ${SCM_NAB_ATPS_HEADER_SERVICE_CODE_LENGTH:2}
+          required: ${SCM_NAB_ATPS_HEADER_SERVICE_CODE_REQUIRED:true}
+        - name: ${SCM_NAB_ATPS_HEADER_DATE_TIME_NAME:dateTime}
+          length: ${SCM_NAB_ATPS_HEADER_DATE_TIME_LENGTH:14}
+          required: ${SCM_NAB_ATPS_HEADER_DATE_TIME_REQUIRED:true}
+        - name: ${SCM_NAB_ATPS_HEADER_USER_ID_NAME:userId}
+          length: ${SCM_NAB_ATPS_HEADER_USER_ID_LENGTH:10}
+          required: ${SCM_NAB_ATPS_HEADER_USER_ID_REQUIRED:true}
+        - name: ${SCM_NAB_ATPS_HEADER_PASSWORD_NAME:password}
+          length: ${SCM_NAB_ATPS_HEADER_PASSWORD_LENGTH:10}
+          required: ${SCM_NAB_ATPS_HEADER_PASSWORD_REQUIRED:true}
+        - name: ${SCM_NAB_ATPS_HEADER_RQ_UID_NAME:rqUid}
+          length: ${SCM_NAB_ATPS_HEADER_RQ_UID_LENGTH:16}
+          required: ${SCM_NAB_ATPS_HEADER_RQ_UID_REQUIRED:true}
+      rate-limit:
+        enabled: ${SCM_NAB_ATPS_RATE_LIMIT_ENABLED:false}
+        bucket: ${SCM_NAB_ATPS_RATE_LIMIT_BUCKET:nab-atps}
+        key: ${SCM_NAB_ATPS_RATE_LIMIT_KEY:provider-operation}
+
   cache:
     client:
+      distributed: ${SCM_CACHE_DISTRIBUTED:true}
       caches:
         scm-web-api-doc-catalog:
-          type: local
-          ttl: 60s
-          maximum-size: 128
-  application:
-    version: 9.0.0
-    build:  0521T1030
+          type: ${SCM_CACHE_API_DOC_CATALOG_TYPE:local}
+          ttl: ${SCM_CACHE_API_DOC_CATALOG_TTL:60s}
+          maximum-size: ${SCM_CACHE_API_DOC_CATALOG_MAXIMUM_SIZE:128}
+        user_cache:
+          type: ${SCM_CACHE_USER_TYPE:near}
+        session_cache:
+          type: ${SCM_CACHE_SESSION_TYPE:near}
+        bank:
+          type: ${SCM_CACHE_BANK_TYPE:local}
+        userCards:
+          type: ${SCM_CACHE_USER_CARDS_TYPE:remote}
+          ttl: ${SCM_USER_CARDS_CACHE_TTL:10m}
+      config:
+        clusterName: ${SCM_CACHE_CLUSTER_NAME:scm}
+        network-config:
+          addresses:
+            - ${SCM_CACHE_ADDRESS}
+        nearCacheConfigMap:
+          myMap:
+            in-memory-format: ${SCM_CACHE_NEAR_MAP_IN_MEMORY_FORMAT:object}
+            time-to-live-seconds: ${SCM_CACHE_NEAR_MAP_TTL_SECONDS:10}
+
+  membership-access:
+    default-services: ${SCM_MEMBERSHIP_DEFAULT_SERVICES:TAccListInq,AcctInq}
+
+  asset-provider:
+    configs:
+      NAB:
+        provider-service-code: ${SCM_ASSET_PROVIDER_NAB_SERVICE_CODE:SVC_NAB_ACCOUNT_LIST_PROXY}
+
+  jms:
+    logout:
+      enabled: ${SCM_LOGOUT_JMS_ENABLED:true}
+      host: ${SCM_LOGOUT_JMS_HOST:}
+      port: ${SCM_LOGOUT_JMS_PORT:1818}
+      channel: ${SCM_LOGOUT_JMS_CHANNEL:SYSTEM.ADMIN.SVRCONN}
+      queueManager: ${SCM_LOGOUT_JMS_QUEUE_MANAGER:}
+      username: ${SCM_LOGOUT_JMS_USERNAME:}
+      password: ${SCM_LOGOUT_JMS_PASSWORD:}
+      topic: ${SCM_LOGOUT_JMS_TOPIC:SUA/LOGOUT}
+
+  transformers:
+    dir: ${SCM_TRANSFORMERS_DIR:/transformers}
