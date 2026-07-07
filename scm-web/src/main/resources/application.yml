@@ -89,9 +89,9 @@ scm:
         hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
         hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
     trace:
-      enabled: ${SCM_OBS_TRACE_ENABLED:${SCM_OBS_TRACE_FILE_ENABLED:false}}
+      enabled: ${SCM_OBS_TRACE_ENABLED:true}
       file:
-        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
+        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:${SCM_OBS_TRACE_ENABLED:true}}
         format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
         directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace}
         archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace/archive}

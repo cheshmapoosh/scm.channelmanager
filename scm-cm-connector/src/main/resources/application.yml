@@ -48,8 +48,8 @@ scm:
         cache-name: ${SCM_SECURITY_USER_CACHE_NAME:user_cache}
     resource-server:
       enabled: ${SCM_RESOURCE_SERVER_ENABLED:true}
-      issuer-uri: ${SCM_UAA_ISSUER_URL:${SCM_UAA_BASE_URL:http://localhost:8000}}
-      jwk-set-uri: ${SCM_UAA_JWK_SET_URL:${SCM_UAA_BASE_URL:http://localhost:8000}/oauth2/jwks}
+      issuer-uri: ${SCM_UAA_BASE_URL}
+      jwk-set-uri: ${SCM_UAA_BASE_URL}/oauth2/jwks
       audiences:
         - ${SCM_CM_CONNECTOR_RESOURCE_AUDIENCE:scm-cm-connector}
       required-claims:
