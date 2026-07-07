@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class GatewayObservationLifecycle {
@@ -21,6 +23,15 @@ public class GatewayObservationLifecycle {
     private static final String OUTCOME_SUCCESS = "success";
     private static final String OUTCOME_FAILURE = "failure";
     private static final String DEFAULT_VALUE = "default";
+    private static final Set<String> MISSING_CHANNEL_CODES = Set.of(
+            "null",
+            "blank",
+            "unknown",
+            "default",
+            "none",
+            "n/a",
+            "n-a"
+    );
 
     private final ScmObservation observation;
     private final ObservationContext observationContext;
@@ -43,7 +54,7 @@ public class GatewayObservationLifecycle {
                     .traceId(context.traceId())
                     .spanId(context.gatewaySpanId())
                     .attribute("scm.gateway.name", context.gatewayName())
-                    .attribute("scm.channel.code", context.channelCode())
+                    .attribute("scm.channel.code", businessChannelCode(context.channelCode()))
                     .attribute("scm.protocol", context.protocol().value())
                     .attribute("scm.request.name", context.requestName())
                     .attribute("scm.message.id", context.messageId())
@@ -186,6 +197,15 @@ public class GatewayObservationLifecycle {
 
     private String textOrNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String businessChannelCode(String value) {
+        String candidate = textOrNull(value);
+        if (candidate == null) {
+            return null;
+        }
+        String normalized = candidate.toLowerCase(Locale.ROOT);
+        return MISSING_CHANNEL_CODES.contains(normalized) ? null : normalized;
     }
 
     private void safeObservationFailure(String phase, RuntimeException ex) {

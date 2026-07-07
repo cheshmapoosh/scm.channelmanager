@@ -125,14 +125,14 @@ Every LOG, TRACE, and AUDIT record includes:
 
 ```text
 event.stream
-scm.obs.target.namespace
-scm.obs.target.index
+scm.observation.target.namespace
+scm.observation.target.index
 scm.platform
 service.name
 deployment.environment
 ```
 
-`scm.obs.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Cache records normally do not represent a legacy business entry point, so `scm.obs.legacy.enabled` defaults to `false`.
+`scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Cache records normally do not represent a legacy business entry point, so `scm.observation.legacy.enabled` defaults to `false`.
 
 Files are namespace-based and do not use channel code:
 
@@ -140,7 +140,7 @@ Files are namespace-based and do not use channel code:
 {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
 ```
 
-In Kubernetes, `SCM_OBS_NAMESPACE` and `SCM_INSTANCE_ID` come from the Downward API. Outside Kubernetes, namespace defaults to `default`.
+In Kubernetes, `SCM_OBSERVATION_TARGET_NAMESPACE` and `SCM_INSTANCE_ID` come from the Downward API. `SCM_OBS_NAMESPACE` is accepted only as a compatibility fallback. Outside Kubernetes, namespace defaults to `default`.
 
 Console output for LOG, TRACE, and AUDIT is enabled only in `dev`. Test, pilot, and prod keep console disabled and file output enabled.
 

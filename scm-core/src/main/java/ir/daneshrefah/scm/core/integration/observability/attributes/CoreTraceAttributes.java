@@ -24,7 +24,7 @@ public final class CoreTraceAttributes {
             "scm.service.duration_ms", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Service duration in milliseconds.");
     public static final ObservationAttributeKey<String> EXCHANGE_ID = keyword("scm.exchange.id", "Camel exchange identifier.");
     public static final ObservationAttributeKey<String> PROTOCOL = keyword("scm.protocol", "Gateway protocol.");
-    public static final ObservationAttributeKey<String> TARGET_KIND = keyword("scm.target.kind", "Runtime target kind.");
+    public static final ObservationAttributeKey<String> TARGET_KIND = keyword("scm.runtime.target.kind", "Runtime target kind.");
     public static final ObservationAttributeKey<String> PLUGIN_NAME = keyword("plugin.name", "Plugin name.");
     public static final ObservationAttributeKey<String> PLUGIN_TYPE = keyword("plugin.type", "Plugin type.");
     public static final ObservationAttributeKey<String> PLUGIN_PHASE = keyword("plugin.phase", "Plugin phase.");

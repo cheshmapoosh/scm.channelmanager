@@ -86,25 +86,25 @@ public class ObservationRecordValidator {
 
     private void validateStandardTargetFields(ObservationStream stream, Map<String, Object> document) {
         require(stream, document, "event.stream");
-        require(stream, document, "scm.obs.target.namespace");
-        require(stream, document, "scm.obs.target.index");
+        require(stream, document, "scm.observation.target.namespace");
+        require(stream, document, "scm.observation.target.index");
         require(stream, document, "scm.platform");
         require(stream, document, "service.name");
         require(stream, document, "deployment.environment");
     }
 
     private void validateLegacyProjection(ObservationStream stream, Map<String, Object> document) {
-        Object enabled = document.get("scm.obs.legacy.enabled");
+        Object enabled = document.get("scm.observation.legacy.enabled");
         if (!isTrue(enabled)) {
             return;
         }
-        if (missing(document.get("scm.obs.legacy.service.code"))) {
+        if (missing(document.get("scm.observation.legacy.service.code"))) {
             throw new IllegalStateException("Invalid " + stream
-                    + " legacy projection: scm.obs.legacy.service.code is required when scm.obs.legacy.enabled=true");
+                    + " legacy projection: scm.observation.legacy.service.code is required when scm.observation.legacy.enabled=true");
         }
-        if (missing(document.get("scm.obs.legacy.operation.code"))) {
+        if (missing(document.get("scm.observation.legacy.operation.code"))) {
             throw new IllegalStateException("Invalid " + stream
-                    + " legacy projection: scm.obs.legacy.operation.code is required when scm.obs.legacy.enabled=true");
+                    + " legacy projection: scm.observation.legacy.operation.code is required when scm.observation.legacy.enabled=true");
         }
     }
 

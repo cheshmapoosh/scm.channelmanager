@@ -52,7 +52,11 @@ public class UaaLegacyBusinessObservationAspect {
             return null;
         }
         for (Object arg : joinPoint.getArgs()) {
-            String value = readStringGetter(arg, "getChannelCode");
+            String value = observation.resolveBusinessChannelCode(readStringGetter(arg, "getClientId"));
+            if (value != null) {
+                return value;
+            }
+            value = observation.resolveBusinessChannelCode(readStringGetter(arg, "getChannelCode"));
             if (value != null) {
                 return value;
             }

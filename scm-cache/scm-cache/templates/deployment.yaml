@@ -37,7 +37,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: SCM_OBS_NAMESPACE
+            - name: SCM_OBSERVATION_TARGET_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace

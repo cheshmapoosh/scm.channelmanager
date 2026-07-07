@@ -98,14 +98,14 @@ Every LOG, TRACE, and AUDIT record includes:
 
 ```text
 event.stream
-scm.obs.target.namespace
-scm.obs.target.index
+scm.observation.target.namespace
+scm.observation.target.index
 scm.platform
 service.name
 deployment.environment
 ```
 
-`scm.obs.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and real business channel code when present. `scm.channel.code` remains a business attribute and is not used for physical file names.
+`scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and real business channel code when present. `scm.channel.code` remains a business attribute and is not used for physical file names.
 
 Files are namespace-based:
 
@@ -113,7 +113,7 @@ Files are namespace-based:
 {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
 ```
 
-In Kubernetes, `SCM_OBS_NAMESPACE` and `SCM_INSTANCE_ID` come from the Downward API.
+In Kubernetes, `SCM_OBSERVATION_TARGET_NAMESPACE` and `SCM_INSTANCE_ID` come from the Downward API. `SCM_OBS_NAMESPACE` is accepted only as a compatibility fallback.
 
 ## Legacy Projection
 
@@ -126,12 +126,25 @@ span.name = gateway.receive
 Only real end-user channel requests may set:
 
 ```text
-scm.obs.legacy.enabled = true
-scm.obs.legacy.operation.code
-scm.obs.legacy.service.code
+scm.observation.legacy.enabled = true
+scm.observation.legacy.operation.code
+scm.observation.legacy.service.code
 ```
 
-`scm.obs.legacy.service.code` must come from route/service configuration, not from `span.name`. Health checks, actuator, admin/config, static resource, docs, and internal endpoints are not legacy projection records.
+`scm.observation.legacy.service.code` must come from route/service configuration, not from `span.name`. Health checks, actuator, admin/config, static resource, docs, and internal endpoints are not legacy projection records.
+
+Gateway channel and legacy mappings are configured through:
+
+```yaml
+scm:
+  web:
+    observation:
+      gateway:
+        channel:
+          path-prefix-mappings: "/ib=ib,/mb=mb"
+        legacy:
+          route-mappings: "/ib/payments=PAYMENT:TRANSFER,/mb/cards=CARD:CARD_INQUIRY"
+```
 
 ## Metric
 
@@ -147,4 +160,4 @@ scm.faults
 
 Metric tags are low-cardinality only: app, profile, label, platform, channel, gateway, protocol, request name, outcome, and error code when available.
 
-Metrics do not write JSONL files and do not use `scm.obs.target.index`.
+Metrics do not write JSONL files and do not use `scm.observation.target.index`.

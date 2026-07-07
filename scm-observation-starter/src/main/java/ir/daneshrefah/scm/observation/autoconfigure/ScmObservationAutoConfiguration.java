@@ -74,8 +74,8 @@ public class ScmObservationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ObsTargetIndexResolver obsTargetIndexResolver() {
-        return new ObsTargetIndexResolver();
+    public ObsTargetIndexResolver obsTargetIndexResolver(ObservationProperties properties) {
+        return new ObsTargetIndexResolver(properties.getTarget());
     }
 
     @Bean

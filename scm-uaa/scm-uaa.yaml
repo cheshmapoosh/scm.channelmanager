@@ -83,7 +83,7 @@ spec:
           image: "reg.daneshrefah.ir/modern-banking/scm-app:8.5.4"
           imagePullPolicy: IfNotPresent
           env:
-            - name: SCM_OBS_NAMESPACE
+            - name: SCM_OBSERVATION_TARGET_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace

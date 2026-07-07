@@ -59,7 +59,7 @@ Observability signals:
 Rules:
 
 - `log`, `trace`, and `audit` are the only JSONL observation streams in this contract.
-- `metric` is a separate signal and must not create JSONL sample files, JSONL folders, `scm.target.index` values, or metric target indexes.
+- `metric` is a separate signal and must not create JSONL sample files, JSONL folders, `scm.observation.target.index` values, or metric target indexes.
 - Kafka topic requirements are out of scope for this spiral.
 - `scm-logging` consumes trace and audit JSONL events from Kafka and projects only explicitly targeted events to legacy tables.
 - Legacy transaction tables are populated from trace events, not from audit events.
@@ -158,9 +158,14 @@ SCM Java 21 exposes typed Java constants for the shared attribute catalog. Futur
 - Files are UTF-8 JSONL.
 - Each line is one complete compact JSON object.
 - Do not pretty-print JSONL files.
-- Each event must include `scm.target.index`.
-- Each event must include `scm.target.legacy.enabled`.
-- `scm.target.legacy.table` must exist only when `scm.target.legacy.enabled=true`.
+- Each event must include `event.stream`.
+- Each event must include `scm.observation.target.namespace`.
+- Each event must include `scm.observation.target.index`.
+- Each event must include `scm.platform`.
+- Each event must include `service.name`.
+- Each event must include `deployment.environment`.
+- Each event must include `scm.observation.legacy.enabled`.
+- When `scm.observation.legacy.enabled=true`, `scm.observation.legacy.service.code` and `scm.observation.legacy.operation.code` are mandatory.
 - Omit fields that are not applicable instead of writing `null`, unless a downstream consumer explicitly requires the field.
 - Field names are case-sensitive.
 - Timestamps use ISO-8601 UTC format where possible, for example `2026-06-10T14:15:30.123Z`.
@@ -171,32 +176,33 @@ SCM Java 21 exposes typed Java constants for the shared attribute catalog. Futur
 Active file:
 
 ```text
-/var/obs/${APP_NAME}/${APP_PROFILE}/${STREAM}/${STREAM}-scm-${APP_NAME}-${APP_PROFILE}-${APP_LABEL}-${INSTANCE_ID}-${yyyyMMdd-HH}.jsonl
+/var/obs/{appName}/{env}/{namespace}/{stream}/{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
 ```
 
 Archive file:
 
 ```text
-/var/obs/${APP_NAME}/${APP_PROFILE}/${STREAM}/archive/${STREAM}-scm-${APP_NAME}-${APP_PROFILE}-${APP_LABEL}-${INSTANCE_ID}-${yyyyMMdd-HH}.jsonl
+/var/obs/{appName}/{env}/{namespace}/{stream}/archive/{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl.gz
 ```
 
 Notes:
 
-- `${STREAM}` is one of `log`, `trace`, or `audit`.
-- `${APP_NAME}` is the emitting application name, for example `scm-web` or `cm`.
-- `${APP_PROFILE}` is the runtime profile or environment label, for example `prod`.
-- `${APP_LABEL}` is a low-cardinality deployment label, commonly the channel label such as `mobile`.
-- `${INSTANCE_ID}` identifies the pod, VM, or legacy node, for example `pod01` or `cm01`.
+- `{stream}` is one of `log`, `trace`, or `audit`.
+- `{appName}` is the emitting application name, for example `scm-web` or `cm`.
+- `{env}` is the runtime environment label, for example `prod`.
+- `{namespace}` is the Kubernetes namespace. Outside Kubernetes it defaults to `default`.
+- `{instanceId}` identifies the pod, VM, or legacy node, for example `pod01` or `cm01`.
 - The `-scm-` segment is the compatibility namespace in the file name and stays literal for both SCM and CM emitters.
-- Archive files use the same file name contract under the stream `archive` directory.
+- Archive files use the same file name contract under the stream `archive` directory and append the rolling index before `.jsonl.gz`.
+- Physical file names are namespace-based and must not use `scm.channel.code`.
 
 Examples:
 
 ```text
-/var/obs/scm-web/prod/trace/trace-scm-scm-web-prod-mobile-pod01-20260610-14.jsonl
-/var/obs/scm-web/prod/log/log-scm-scm-web-prod-mobile-pod01-20260610-14.jsonl
-/var/obs/scm-web/prod/audit/audit-scm-scm-web-prod-mobile-pod01-20260610-14.jsonl
-/var/obs/cm/prod/trace/trace-scm-cm-prod-mobile-cm01-20260610-14.jsonl
+/var/obs/scm-web/prod/mb/trace/trace-scm-scm-web-prod-mb-pod01-20260610-14.jsonl
+/var/obs/scm-web/prod/mb/log/log-scm-scm-web-prod-mb-pod01-20260610-14.jsonl
+/var/obs/scm-web/prod/mb/audit/audit-scm-scm-web-prod-mb-pod01-20260610-14.jsonl
+${user.home}/scm/obs/scm-web/prod/default/log/log-scm-scm-web-prod-default-local-20260610-14.jsonl
 ```
 
 ## Target Fields
@@ -204,75 +210,77 @@ Examples:
 Every JSONL observation event must include:
 
 ```text
-scm.target.index
-scm.target.legacy.enabled
+event.stream
+scm.observation.target.namespace
+scm.observation.target.index
+scm.platform
+service.name
+deployment.environment
+scm.observation.legacy.enabled
 ```
 
-`scm.target.index` is mandatory for every JSONL event and is used for Elasticsearch and analytics routing.
+`scm.observation.target.index` is mandatory for every JSONL event and is used for Elasticsearch and analytics routing.
+`scm.observation.target.namespace` is mandatory for every JSONL event and is used for file layout and index routing.
 
-Index pattern:
+Index patterns:
 
 ```text
-{stream}-{platform}-{channelCode}-{env}-{yyyy.MM.dd.HH}
+{stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}
+{stream}-scm-{namespace}-{env}-{yyyy.MM.dd.HH}
 ```
 
 Examples:
 
 ```text
-trace-scm-mobile-prod-2026.06.10.14
-audit-scm-mobile-prod-2026.06.10.14
-log-scm-mobile-prod-2026.06.10.14
-trace-cm-mobile-prod-2026.06.10.14
+trace-scm-ib-prod-ib-2026.06.10.14
+log-scm-shared-prod-mb-2026.06.10.14
+audit-scm-shared-prod-2026.06.10.14
 ```
 
 Index rules:
 
 - `stream` is `log`, `trace`, or `audit`.
-- `platform` is `scm` or `cm`.
-- `channelCode` is the normalized channel code, for example `mobile`.
+- `namespace` is the normalized target namespace.
+- `channelCode` is included only when a real business channel code exists.
 - `env` is the normalized deployment environment, for example `prod`.
 - The hour bucket is based on the event timestamp.
 - The hour bucket uses `scm.observation.time-zone`; the default is `UTC`.
+- Missing channel values are `null`, blank, `unknown`, `default`, `none`, `n/a`, and `n-a`.
+- All rendered index parts are lower-case.
 - Application code must treat this as a routing hint, not as an Elastic-specific API contract.
 
 Legacy projection target fields:
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `scm.target.legacy.enabled` | boolean | Yes | Whether this event must be projected by `scm-logging` to a legacy table. |
-| `scm.target.legacy.table` | keyword | Conditional | Required only when `scm.target.legacy.enabled=true`. Allowed values are `ib.transaction`, `rb.message_log`, `cm.transaction_log`, and `cm.user_action_log`. |
+| `scm.observation.legacy.enabled` | boolean | Yes | Whether this event must be projected by `scm-logging` to a legacy table. |
+| `scm.observation.legacy.service.code` | keyword | Conditional | Required only when `scm.observation.legacy.enabled=true`. Must come from an explicit attribute or configured mapping. |
+| `scm.observation.legacy.operation.code` | keyword | Conditional | Required only when `scm.observation.legacy.enabled=true`. Must come from an explicit attribute or configured mapping. |
 
 Defaults:
 
-- Log events set `scm.target.legacy.enabled=false`.
-- Trace events set `scm.target.legacy.enabled=false` unless they represent a service transaction that must be projected to a legacy transaction table.
-- Audit events with `scm.audit.type=SERVICE` set `scm.target.legacy.enabled=false` by default unless explicitly required.
-- Audit events with `scm.audit.type=CHANGE` set `scm.target.legacy.enabled=true` when they must be written to `cm.user_action_log`.
+- Log events set `scm.observation.legacy.enabled=false`.
+- Trace events set `scm.observation.legacy.enabled=false` unless they represent a service transaction that must be projected to a legacy transaction table.
+- Audit events with `scm.audit.type=SERVICE` set `scm.observation.legacy.enabled=false` by default unless explicitly required.
+- Audit events with `scm.audit.type=CHANGE` set `scm.observation.legacy.enabled=true` when they must be written to `cm.user_action_log`.
 
 ## Legacy Projection Routing
-
-Supported legacy target tables:
-
-- `ib.transaction`
-- `rb.message_log`
-- `cm.transaction_log`
-- `cm.user_action_log`
 
 Trace-based legacy projection rules:
 
 | Condition | Target fields |
 | --- | --- |
-| `event.stream=trace` and the event represents an internet banking service transaction | `scm.target.legacy.enabled=true`, `scm.target.legacy.table=ib.transaction` |
-| `event.stream=trace` and the event represents a mobile or PWA gateway service transaction | `scm.target.legacy.enabled=true`, `scm.target.legacy.table=rb.message_log` |
-| `event.stream=trace` and the event represents a CM service transaction | `scm.target.legacy.enabled=true`, `scm.target.legacy.table=cm.transaction_log` |
+| `event.stream=trace` and the event represents an internet banking service transaction | `scm.observation.legacy.enabled=true`, explicit `scm.observation.legacy.service.code`, explicit `scm.observation.legacy.operation.code` |
+| `event.stream=trace` and the event represents a mobile or PWA gateway service transaction | `scm.observation.legacy.enabled=true`, explicit `scm.observation.legacy.service.code`, explicit `scm.observation.legacy.operation.code` |
+| `event.stream=trace` and the event represents a CM service transaction | `scm.observation.legacy.enabled=true`, explicit `scm.observation.legacy.service.code`, explicit `scm.observation.legacy.operation.code` |
 
 Audit-based legacy projection rules:
 
 | Condition | Target fields |
 | --- | --- |
-| `event.stream=audit` and `scm.audit.type=CHANGE` | `scm.target.legacy.enabled=true`, `scm.target.legacy.table=cm.user_action_log` |
+| `event.stream=audit` and `scm.audit.type=CHANGE` | `scm.observation.legacy.enabled=true`, explicit `scm.observation.legacy.service.code`, explicit `scm.observation.legacy.operation.code` |
 
-If a producer cannot infer the target table unambiguously, the producing application must set the final `scm.target.legacy.table` explicitly.
+If a producer cannot resolve the legacy service and operation codes unambiguously, it must leave `scm.observation.legacy.enabled=false` or fail validation. Producers must not parse `span.name` to create legacy service codes.
 
 ## Mandatory Common Fields
 
@@ -286,8 +294,9 @@ These fields are mandatory for every JSONL event in every JSONL stream:
 | `event.category` | keyword | High-level category such as `application`, `trace`, `audit`, `service`, or `transaction`. |
 | `event.action` | keyword | Action name, for example `operation.call` or `service.audit`. |
 | `event.outcome` | keyword | Event result. See outcome values below. |
-| `scm.target.index` | keyword | Target index routing name. |
-| `scm.target.legacy.enabled` | boolean | Whether legacy projection is enabled for this event. |
+| `scm.observation.target.namespace` | keyword | Target namespace used for file layout and index routing. |
+| `scm.observation.target.index` | keyword | Target index routing name. |
+| `scm.observation.legacy.enabled` | boolean | Whether legacy projection is enabled for this event. |
 | `scm.platform` | keyword | `scm` or `cm`. |
 | `service.name` | keyword | Emitting service/application name. |
 | `deployment.environment` | keyword | Runtime environment, for example `prod`. |
@@ -295,8 +304,9 @@ These fields are mandatory for every JSONL event in every JSONL stream:
 | `scm.app.profile` | keyword | Application profile used in file path. |
 | `scm.app.label` | keyword | Low-cardinality app label, for example `mobile`. |
 | `scm.gateway.name` | keyword | Gateway name. |
-| `scm.channel.code` | keyword | Channel code. |
 | `scm.correlation_id` | keyword | Correlation ID shared across events for one request or transaction. |
+
+`scm.channel.code` is an optional business attribute. It must be present only when the producer resolved a real business channel code such as `ib` or `mb`.
 
 ## Mandatory Log Fields
 
@@ -436,11 +446,11 @@ Allowed values:
 ## SCM Example
 
 ```json
-{"@timestamp":"2026-06-10T14:15:30.310Z","event.stream":"trace","event.kind":"event","event.category":"transaction","event.action":"operation.call","event.outcome":"success","scm.target.index":"trace-scm-mobile-prod-2026.06.10.14","scm.target.legacy.enabled":true,"scm.target.legacy.table":"rb.message_log","scm.platform":"scm","service.name":"scm-web","deployment.environment":"prod","scm.app.name":"scm-web","scm.app.profile":"prod","scm.app.label":"mobile","scm.gateway.name":"mobile","scm.channel.code":"mobile","scm.correlation_id":"corr-20260610-0001","trace.id":"4d2f8a6b0e7c4a1db8f4d2f1a9c00101","span.id":"2f54b2a7c9e40003","parent.span.id":"1d8c0b7a44ef0002","span.name":"operation.call","span.kind":"client","span.start_time":"2026-06-10T14:15:30.221Z","span.end_time":"2026-06-10T14:15:30.310Z","span.duration_ms":89,"scm.service.code":"cardInquiry","scm.transaction.type":"CARD_INQUIRY","scm.transaction.status":"DONE","scm.message.sequence_id":"SCM-SEQ-0001","scm.status.code":"00"}
+{"@timestamp":"2026-06-10T14:15:30.310Z","event.stream":"trace","event.kind":"event","event.category":"transaction","event.action":"operation.call","event.outcome":"success","scm.observation.target.namespace":"mb","scm.observation.target.index":"trace-scm-mb-prod-mb-2026.06.10.14","scm.observation.legacy.enabled":true,"scm.observation.legacy.service.code":"CARD_INQUIRY","scm.observation.legacy.operation.code":"SVC_CARD_INQUIRY_REST","scm.platform":"scm","service.name":"scm-web","deployment.environment":"prod","scm.app.name":"scm-web","scm.app.profile":"prod","scm.app.label":"mobile","scm.gateway.name":"mobile","scm.channel.code":"mb","scm.correlation_id":"corr-20260610-0001","trace.id":"4d2f8a6b0e7c4a1db8f4d2f1a9c00101","span.id":"2f54b2a7c9e40003","parent.span.id":"1d8c0b7a44ef0002","span.name":"operation.call","span.kind":"client","span.start_time":"2026-06-10T14:15:30.221Z","span.end_time":"2026-06-10T14:15:30.310Z","span.duration_ms":89,"scm.service.code":"cardInquiry","scm.transaction.type":"CARD_INQUIRY","scm.transaction.status":"DONE","scm.message.sequence_id":"SCM-SEQ-0001","scm.status.code":"00"}
 ```
 
 ## CM Example
 
 ```json
-{"@timestamp":"2026-06-10T14:18:12.390Z","event.stream":"trace","event.kind":"event","event.category":"transaction","event.action":"operation.call","event.outcome":"success","scm.target.index":"trace-cm-mobile-prod-2026.06.10.14","scm.target.legacy.enabled":true,"scm.target.legacy.table":"cm.transaction_log","scm.platform":"cm","service.name":"cm","deployment.environment":"prod","scm.app.name":"cm","scm.app.profile":"prod","scm.app.label":"mobile","scm.gateway.name":"mobile-gateway","scm.channel.code":"mobile","scm.correlation_id":"cm-corr-20260610-7788","trace.id":"8e2f8a6b0e7c4a1db8f4d2f1a9c00778","span.id":"cm-op-7788","parent.span.id":"cm-service-7788","span.name":"operation.call","span.kind":"client","span.start_time":"2026-06-10T14:18:12.300Z","span.end_time":"2026-06-10T14:18:12.390Z","span.duration_ms":90,"scm.service.code":"CARD_INQUIRY","scm.transaction.type":"CARD_INQUIRY","scm.transaction.status":"DONE","scm.message.sequence_id":"CM-SEQ-7788","scm.status.code":"00","scm.legacy.transaction_log_id":"984512"}
+{"@timestamp":"2026-06-10T14:18:12.390Z","event.stream":"trace","event.kind":"event","event.category":"transaction","event.action":"operation.call","event.outcome":"success","scm.observation.target.namespace":"shared","scm.observation.target.index":"trace-scm-shared-prod-mb-2026.06.10.14","scm.observation.legacy.enabled":true,"scm.observation.legacy.service.code":"CARD_INQUIRY","scm.observation.legacy.operation.code":"CM_TRANSACTION_LOG","scm.platform":"cm","service.name":"cm","deployment.environment":"prod","scm.app.name":"cm","scm.app.profile":"prod","scm.app.label":"mobile","scm.gateway.name":"mobile-gateway","scm.channel.code":"mb","scm.correlation_id":"cm-corr-20260610-7788","trace.id":"8e2f8a6b0e7c4a1db8f4d2f1a9c00778","span.id":"cm-op-7788","parent.span.id":"cm-service-7788","span.name":"operation.call","span.kind":"client","span.start_time":"2026-06-10T14:18:12.300Z","span.end_time":"2026-06-10T14:18:12.390Z","span.duration_ms":90,"scm.service.code":"CARD_INQUIRY","scm.transaction.type":"CARD_INQUIRY","scm.transaction.status":"DONE","scm.message.sequence_id":"CM-SEQ-7788","scm.status.code":"00","scm.legacy.transaction_log_id":"984512"}
 ```

@@ -11,8 +11,8 @@ public final class ChangeEntityAuditAttributes {
     public static final ObservationAttributeKey<String> TIMESTAMP = date("@timestamp", ObservationAttributePresence.ALWAYS_REQUIRED, "Audit event timestamp.");
     public static final ObservationAttributeKey<String> MESSAGE = text("message", ObservationAttributePresence.ALWAYS_REQUIRED, "Audit message.");
     public static final ObservationAttributeKey<String> EVENT_STREAM = keyword("event.stream", ObservationAttributePresence.ALWAYS_REQUIRED, "Observation stream name.");
-    public static final ObservationAttributeKey<String> SCM_OBS_TARGET_NAMESPACE = keyword("scm.obs.target.namespace", ObservationAttributePresence.ALWAYS_REQUIRED, "Observation target namespace.");
-    public static final ObservationAttributeKey<String> SCM_OBS_TARGET_INDEX = keyword("scm.obs.target.index", ObservationAttributePresence.ALWAYS_REQUIRED, "Final Elasticsearch routing index.");
+    public static final ObservationAttributeKey<String> SCM_OBS_TARGET_NAMESPACE = keyword("scm.observation.target.namespace", ObservationAttributePresence.ALWAYS_REQUIRED, "Observation target namespace.");
+    public static final ObservationAttributeKey<String> SCM_OBS_TARGET_INDEX = keyword("scm.observation.target.index", ObservationAttributePresence.ALWAYS_REQUIRED, "Final Elasticsearch routing index.");
     public static final ObservationAttributeKey<String> SCM_PLATFORM = keyword("scm.platform", ObservationAttributePresence.ALWAYS_REQUIRED, "SCM platform code.");
     public static final ObservationAttributeKey<String> SERVICE_NAME = keyword("service.name", ObservationAttributePresence.ALWAYS_REQUIRED, "Running SCM service name.");
     public static final ObservationAttributeKey<String> DEPLOYMENT_SERVICE_NAME = keyword("deployment.service.name", ObservationAttributePresence.EVENT_OPTIONAL, "Running SCM service name.");
@@ -20,11 +20,11 @@ public final class ChangeEntityAuditAttributes {
     public static final ObservationAttributeKey<String> DEPLOYMENT_ENVIRONMENT = keyword("deployment.environment", ObservationAttributePresence.ALWAYS_REQUIRED, "Deployment environment.");
     public static final ObservationAttributeKey<String> SCM_RUNTIME = keyword("scm.runtime", ObservationAttributePresence.EVENT_OPTIONAL, "Runtime mode.");
     public static final ObservationAttributeKey<Boolean> SCM_OBS_LEGACY_ENABLED = AuditAttribute.booleanValue(
-            "scm.obs.legacy.enabled", ObservationAttributePresence.EVENT_OPTIONAL, "Whether this record is eligible for legacy projection.");
+            "scm.observation.legacy.enabled", ObservationAttributePresence.EVENT_OPTIONAL, "Whether this record is eligible for legacy projection.");
     public static final ObservationAttributeKey<String> SCM_OBS_LEGACY_SERVICE_CODE = keyword(
-            "scm.obs.legacy.service.code", ObservationAttributePresence.EVENT_OPTIONAL, "Explicit legacy service code.");
+            "scm.observation.legacy.service.code", ObservationAttributePresence.EVENT_OPTIONAL, "Explicit legacy service code.");
     public static final ObservationAttributeKey<String> SCM_OBS_LEGACY_OPERATION_CODE = keyword(
-            "scm.obs.legacy.operation.code", ObservationAttributePresence.EVENT_OPTIONAL, "Explicit legacy operation code.");
+            "scm.observation.legacy.operation.code", ObservationAttributePresence.EVENT_OPTIONAL, "Explicit legacy operation code.");
     public static final ObservationAttributeKey<String> CORRELATION_ID = keyword("correlation.id", ObservationAttributePresence.ALWAYS_REQUIRED, "Correlation identifier.");
     public static final ObservationAttributeKey<String> CORRELATION_TYPE = keyword("correlation.type", ObservationAttributePresence.ALWAYS_REQUIRED, "Correlation type.");
     public static final ObservationAttributeKey<String> EVENT_CATEGORY = keyword("event.category", ObservationAttributePresence.EVENT_REQUIRED, "Event category.");

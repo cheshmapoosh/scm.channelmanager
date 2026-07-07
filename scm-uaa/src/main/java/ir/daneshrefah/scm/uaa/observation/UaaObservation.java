@@ -14,13 +14,24 @@ import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Set;
 
 @Component
 public class UaaObservation {
     private static final String REQUEST = CorrelationType.REQUEST.value();
     private static final int MAX_SAFE_MESSAGE_LENGTH = 300;
     private static final String LEGACY_LOGIN = "login";
+    private static final Set<String> MISSING_CHANNEL_CODES = Set.of(
+            "null",
+            "blank",
+            "unknown",
+            "default",
+            "none",
+            "n/a",
+            "n-a"
+    );
 
     private final ScmObservation observation;
     private final Environment environment;
@@ -166,8 +177,9 @@ public class UaaObservation {
         }
         putAuthTraceAttributes(builder, ctx);
         putLegacyProjectionAttributes(builder, LEGACY_LOGIN);
-        if (ctx != null) {
-            builder.attribute("scm.channel.code", ctx.clientId());
+        String channelCode = channelCodeForClient(ctx == null ? null : ctx.clientId());
+        if (channelCode != null) {
+            builder.attribute("scm.channel.code", channelCode);
         }
         return builder.start();
     }
@@ -184,7 +196,7 @@ public class UaaObservation {
                 .traceId(ObservationIds.traceId())
                 .parentSpanId("");
         putLegacyProjectionAttributes(builder, operation);
-        builder.attribute("scm.channel.code", channelCode);
+        builder.attribute("scm.channel.code", resolveBusinessChannelCode(channelCode));
         builder.attribute(UaaTraceAttributes.AUTH_STEP, operation);
         return builder.start();
     }
@@ -338,6 +350,15 @@ public class UaaObservation {
 
     public String safeErrorMessage(Throwable throwable) {
         return safeMessage(throwable);
+    }
+
+    public String resolveBusinessChannelCode(String value) {
+        String mappedClientChannel = channelCodeForClient(value);
+        if (mappedClientChannel != null) {
+            return mappedClientChannel;
+        }
+        String normalized = normalizeChannelCode(value);
+        return "ib".equals(normalized) || "mb".equals(normalized) ? normalized : null;
     }
 
     public String maskPhone(String value) {
@@ -556,9 +577,9 @@ public class UaaObservation {
         if (operation == null) {
             return;
         }
-        builder.attribute("scm.obs.legacy.enabled", true)
-                .attribute("scm.obs.legacy.operation.code", legacyOperationCode(operation))
-                .attribute("scm.obs.legacy.service.code", legacyServiceCode(operation));
+        builder.attribute("scm.observation.legacy.enabled", true)
+                .attribute("scm.observation.legacy.operation.code", legacyOperationCode(operation))
+                .attribute("scm.observation.legacy.service.code", legacyServiceCode(operation));
     }
 
     private String legacyOperationCode(String operationCode) {
@@ -574,6 +595,70 @@ public class UaaObservation {
 
     private String environmentValue(String key) {
         return environment == null ? null : environment.getProperty(key);
+    }
+
+    private String channelCodeForClient(String clientId) {
+        String client = normalizeLookup(clientId);
+        if (client == null) {
+            return null;
+        }
+        String configured = configuredClientChannel(client);
+        if (configured != null) {
+            return configured;
+        }
+        if (matchesClient(client, environmentValue("scm.uaa.legacy.client-resolution.nib-client-id"))
+                || "nib".equals(client)
+                || "ib".equals(client)
+                || "internet".equals(client)
+                || "internet-banking".equals(client)) {
+            return "ib";
+        }
+        if (matchesClient(client, environmentValue("scm.uaa.legacy.client-resolution.pwa-client-id"))
+                || matchesClient(client, environmentValue("scm.uaa.legacy.client-resolution.mb-client-id"))
+                || matchesClient(client, environmentValue("scm.uaa.legacy.client-resolution.super-app-client-id"))
+                || "pwa".equals(client)
+                || "mb".equals(client)
+                || "mobile".equals(client)
+                || "sa".equals(client)
+                || "super-app".equals(client)) {
+            return "mb";
+        }
+        return null;
+    }
+
+    private String configuredClientChannel(String normalizedClientId) {
+        String mappings = environmentValue("scm.uaa.observation.channel.client-mappings");
+        if (mappings == null || mappings.isBlank()) {
+            return null;
+        }
+        return Arrays.stream(mappings.split("[,;]"))
+                .map(String::trim)
+                .filter(mapping -> !mapping.isBlank())
+                .map(mapping -> mapping.split("=", 2))
+                .filter(parts -> parts.length == 2)
+                .filter(parts -> normalizedClientId.equals(normalizeLookup(parts[0])))
+                .map(parts -> normalizeChannelCode(parts[1]))
+                .filter(channel -> channel != null)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean matchesClient(String normalizedClientId, String configuredClientId) {
+        String configured = normalizeLookup(configuredClientId);
+        return configured != null && configured.equals(normalizedClientId);
+    }
+
+    private String normalizeChannelCode(String value) {
+        String channel = normalizeLookup(value);
+        if (channel == null || MISSING_CHANNEL_CODES.contains(channel)) {
+            return null;
+        }
+        return channel;
+    }
+
+    private String normalizeLookup(String value) {
+        String text = textOrNull(value);
+        return text == null ? null : text.toLowerCase(Locale.ROOT);
     }
 
     private void putJwtTraceAttributes(TraceObservationBuilder builder, JwtContext ctx) {
