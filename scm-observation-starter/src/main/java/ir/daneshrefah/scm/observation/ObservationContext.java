@@ -25,7 +25,7 @@ public record ObservationContext(
         return new ObservationContext(
                 safeProperties.isEnabled(),
                 "scm",
-                namespace(environment, runtime),
+                namespace(safeProperties, environment, runtime),
                 firstText(environmentValue(environment, "spring.application.name"), "application"),
                 firstText(environmentValue(environment, "deployment.environment"),
                         environmentValue(environment, "scm.env"),
@@ -39,8 +39,20 @@ public record ObservationContext(
         );
     }
 
-    private static String namespace(Environment environment, String runtime) {
-        String namespace = textOrNull(environmentValue(environment, "SCM_OBS_NAMESPACE"));
+    private static String namespace(ObservationProperties properties, Environment environment, String runtime) {
+        String namespace = textOrNull(environmentValue(environment, "scm.observation.target.namespace"));
+        if (namespace == null && properties != null && properties.getTarget() != null) {
+            namespace = textOrNull(properties.getTarget().getNamespace());
+        }
+        if (namespace == null) {
+            namespace = textOrNull(environmentValue(environment, "SCM_OBSERVATION_TARGET_NAMESPACE"));
+        }
+        if (namespace == null) {
+            namespace = textOrNull(System.getenv("SCM_OBSERVATION_TARGET_NAMESPACE"));
+        }
+        if (namespace == null) {
+            namespace = textOrNull(environmentValue(environment, "SCM_OBS_NAMESPACE"));
+        }
         if (namespace == null) {
             namespace = textOrNull(System.getenv("SCM_OBS_NAMESPACE"));
         }

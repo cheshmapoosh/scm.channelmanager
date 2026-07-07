@@ -85,7 +85,6 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
         validateDirectory(prefix + ".archive-directory", file.getArchiveDirectory());
         if (file.isEnabled()) {
             requireConfigured(prefix + ".directory", file.getDirectory());
-            requireText(prefix + ".file-name", file.getFileName());
             requireConfigured(prefix + ".archive-directory", file.getArchiveDirectory());
         }
     }
@@ -130,12 +129,6 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
 
     private void requireConfigured(String property, Path directory) {
         if (directory == null || directory.toString().isBlank()) {
-            throw new IllegalStateException(property + " must be configured when file output is enabled.");
-        }
-    }
-
-    private void requireText(String property, String value) {
-        if (value == null || value.isBlank()) {
             throw new IllegalStateException(property + " must be configured when file output is enabled.");
         }
     }

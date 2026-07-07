@@ -76,12 +76,12 @@ public class ObservationDocumentBuilder {
         String platform = targetIndexResolver.normalizePlatform(context.platform());
         String environment = targetIndexResolver.normalizeEnvironment(context.appProfile());
         put("event.stream", stream.value());
-        put("scm.obs.target.namespace", namespace);
+        put("scm.observation.target.namespace", namespace);
         put("scm.platform", platform);
         put("service.name", context.appName());
         put("deployment.environment", environment);
-        put("scm.obs.legacy.enabled", document.getOrDefault("scm.obs.legacy.enabled", Boolean.FALSE));
-        put("scm.obs.target.index", targetIndexResolver.resolve(
+        put("scm.observation.legacy.enabled", document.getOrDefault("scm.observation.legacy.enabled", Boolean.FALSE));
+        put("scm.observation.target.index", targetIndexResolver.resolve(
                 stream,
                 platform,
                 namespace,

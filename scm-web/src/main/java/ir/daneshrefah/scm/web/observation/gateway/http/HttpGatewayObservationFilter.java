@@ -26,33 +26,56 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
 public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     private static final String DEFAULT_VALUE = "default";
+    private static final Set<String> MISSING_CHANNEL_CODES = Set.of(
+            "null",
+            "blank",
+            "unknown",
+            "default",
+            "none",
+            "n/a",
+            "n-a"
+    );
 
     private final GatewayObservationLifecycle gatewayObservationLifecycle;
     private final ObservationContext observationContext;
     private final ScmTraceParentParser traceParentParser;
     private final boolean legacyGatewayEnabled;
-    private final String legacyServiceCode;
-    private final String legacyOperationCode;
+    private final List<ChannelPathMapping> channelPathMappings;
+    private final boolean trustedChannelHeaderEnabled;
+    private final String trustedChannelHeaderName;
+    private final List<String> allowedChannelCodes;
+    private final List<LegacyPathMapping> legacyPathMappings;
 
     public HttpGatewayObservationFilter(
             GatewayObservationLifecycle gatewayObservationLifecycle,
             ObservationContext observationContext,
             ScmTraceParentParser traceParentParser,
-            @Value("${scm.web.observation.legacy.gateway.enabled:false}") boolean legacyGatewayEnabled,
-            @Value("${scm.web.observation.legacy.gateway.service-code:}") String legacyServiceCode,
-            @Value("${scm.web.observation.legacy.gateway.operation-code:}") String legacyOperationCode
+            @Value("${scm.web.observation.gateway.legacy.enabled:${SCM_WEB_OBS_LEGACY_GATEWAY_ENABLED:false}}") boolean legacyGatewayEnabled,
+            @Value("${scm.web.observation.gateway.channel.path-prefix-mappings:${SCM_WEB_OBS_GATEWAY_CHANNEL_PATH_PREFIX_MAPPINGS:}}") String channelPathMappings,
+            @Value("${scm.web.observation.gateway.channel.trusted-header.enabled:false}") boolean trustedChannelHeaderEnabled,
+            @Value("${scm.web.observation.gateway.channel.trusted-header.name:X-SCM-Channel}") String trustedChannelHeaderName,
+            @Value("${scm.runtime.channel-affinity.allowed-channel-codes:${SCM_CHANNEL_CODE:}}") String allowedChannelCodes,
+            @Value("${scm.web.observation.gateway.legacy.route-mappings:${SCM_WEB_OBS_LEGACY_GATEWAY_ROUTE_MAPPINGS:}}") String legacyRouteMappings
     ) {
         this.gatewayObservationLifecycle = gatewayObservationLifecycle;
         this.observationContext = observationContext;
         this.traceParentParser = traceParentParser;
         this.legacyGatewayEnabled = legacyGatewayEnabled;
-        this.legacyServiceCode = legacyServiceCode;
-        this.legacyOperationCode = legacyOperationCode;
+        this.channelPathMappings = parseChannelPathMappings(channelPathMappings);
+        this.trustedChannelHeaderEnabled = trustedChannelHeaderEnabled;
+        this.trustedChannelHeaderName = textOrDefault(trustedChannelHeaderName);
+        this.allowedChannelCodes = parseAllowedChannels(allowedChannelCodes);
+        this.legacyPathMappings = parseLegacyPathMappings(legacyRouteMappings);
     }
 
     @Override
@@ -101,10 +124,11 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         ScmTraceParent incomingTraceParent = traceParentParser.parse(request.getHeader(ScmTraceParentWriter.TRACEPARENT))
                 .orElse(null);
         String correlationId = ObservationIds.correlationId();
+        String channelCode = resolveChannelCode(request);
         GatewayObservationRequest.Builder requestBuilder = GatewayObservationRequest.builder()
                 .protocol(GatewayProtocol.HTTP)
                 .gatewayName(textOrDefault(observationContext.gatewayName()))
-                .channelCode(textOrDefault(observationContext.channelCode()))
+                .channelCode(channelCode)
                 .correlationId(correlationId)
                 .traceId(incomingTraceParent == null ? ObservationIds.traceId() : incomingTraceParent.traceId())
                 .spanId(ObservationIds.spanId())
@@ -114,7 +138,7 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
                 .attribute(WebTraceAttributes.URL_PATH, safePath(request))
                 .attribute(WebTraceAttributes.QUERY_PRESENT, hasQuery(request))
                 .attribute(WebTraceAttributes.CLIENT_IP, clientIp(request));
-        putLegacyProjectionAttributes(requestBuilder);
+        putLegacyProjectionAttributes(requestBuilder, request);
         GatewayObservationRequest observationRequest = requestBuilder.build();
 
         TraceContextHolder.Scope incomingParentScope = openIncomingParentScope(incomingTraceParent);
@@ -204,18 +228,157 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         return value == null || value.isBlank() ? DEFAULT_VALUE : value.trim();
     }
 
-    private void putLegacyProjectionAttributes(GatewayObservationRequest.Builder builder) {
-        if (!legacyGatewayEnabled) {
-            builder.attribute("scm.obs.legacy.enabled", false);
+    private String resolveChannelCode(HttpServletRequest request) {
+        String path = safePath(request);
+        String mappedChannel = resolveMappedChannel(path);
+        if (mappedChannel != null) {
+            return mappedChannel;
+        }
+        if (trustedChannelHeaderEnabled) {
+            String headerChannel = normalizeChannelCode(request.getHeader(trustedChannelHeaderName));
+            if (headerChannel != null && channelAllowed(headerChannel)) {
+                return headerChannel;
+            }
+        }
+        String affinityChannel = singleAllowedChannel();
+        if (affinityChannel != null) {
+            return affinityChannel;
+        }
+        String contextChannel = normalizeChannelCode(observationContext.channelCode());
+        return contextChannel == null ? DEFAULT_VALUE : contextChannel;
+    }
+
+    private String resolveMappedChannel(String path) {
+        for (ChannelPathMapping mapping : channelPathMappings) {
+            if (mapping.matches(path)) {
+                return mapping.channelCode();
+            }
+        }
+        return null;
+    }
+
+    private void putLegacyProjectionAttributes(GatewayObservationRequest.Builder builder, HttpServletRequest request) {
+        if (!legacyGatewayEnabled || request == null) {
+            builder.attribute("scm.observation.legacy.enabled", false);
             return;
         }
-        builder.attribute("scm.obs.legacy.enabled", true)
-                .attribute("scm.obs.legacy.service.code", textOrNull(legacyServiceCode))
-                .attribute("scm.obs.legacy.operation.code", textOrNull(legacyOperationCode));
+        LegacyPathMapping mapping = resolveLegacyMapping(safePath(request));
+        if (mapping == null) {
+            builder.attribute("scm.observation.legacy.enabled", false);
+            return;
+        }
+        builder.attribute("scm.observation.legacy.enabled", true)
+                .attribute("scm.observation.legacy.service.code", mapping.serviceCode())
+                .attribute("scm.observation.legacy.operation.code", mapping.operationCode());
     }
 
     private String textOrNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private LegacyPathMapping resolveLegacyMapping(String path) {
+        for (LegacyPathMapping mapping : legacyPathMappings) {
+            if (mapping.matches(path)) {
+                return mapping;
+            }
+        }
+        return null;
+    }
+
+    private List<ChannelPathMapping> parseChannelPathMappings(String value) {
+        List<ChannelPathMapping> mappings = new ArrayList<>();
+        for (String item : splitMappings(value)) {
+            int separator = item.indexOf('=');
+            if (separator <= 0 || separator >= item.length() - 1) {
+                continue;
+            }
+            String prefix = normalizePathPrefix(item.substring(0, separator));
+            String channel = normalizeChannelCode(item.substring(separator + 1));
+            if (prefix != null && channel != null) {
+                mappings.add(new ChannelPathMapping(prefix, channel));
+            }
+        }
+        mappings.sort(Comparator.comparingInt(ChannelPathMapping::prefixLength).reversed());
+        return List.copyOf(mappings);
+    }
+
+    private List<LegacyPathMapping> parseLegacyPathMappings(String value) {
+        List<LegacyPathMapping> mappings = new ArrayList<>();
+        for (String item : splitMappings(value)) {
+            int separator = item.indexOf('=');
+            if (separator <= 0 || separator >= item.length() - 1) {
+                continue;
+            }
+            String prefix = normalizePathPrefix(item.substring(0, separator));
+            String[] codes = splitLegacyCodes(item.substring(separator + 1));
+            if (prefix != null && codes != null) {
+                mappings.add(new LegacyPathMapping(prefix, codes[0], codes[1]));
+            }
+        }
+        mappings.sort(Comparator.comparingInt(LegacyPathMapping::prefixLength).reversed());
+        return List.copyOf(mappings);
+    }
+
+    private List<String> parseAllowedChannels(String value) {
+        List<String> channels = new ArrayList<>();
+        for (String item : splitMappings(value)) {
+            String channel = normalizeChannelCode(item);
+            if (channel != null) {
+                channels.add(channel);
+            }
+        }
+        return List.copyOf(channels);
+    }
+
+    private List<String> splitMappings(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(value.split("[,;]"))
+                .map(String::trim)
+                .filter(text -> !text.isBlank())
+                .toList();
+    }
+
+    private String[] splitLegacyCodes(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String[] parts = value.trim().split("[:|/]", 2);
+        if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+            return null;
+        }
+        return new String[]{parts[0].trim(), parts[1].trim()};
+    }
+
+    private String normalizePathPrefix(String value) {
+        String prefix = textOrNull(value);
+        if (prefix == null) {
+            return null;
+        }
+        return prefix.startsWith("/") ? prefix : "/" + prefix;
+    }
+
+    private String normalizeChannelCode(String value) {
+        String channel = textOrNull(value);
+        if (channel == null) {
+            return null;
+        }
+        channel = channel.toLowerCase(Locale.ROOT);
+        return MISSING_CHANNEL_CODES.contains(channel) ? null : channel;
+    }
+
+    private boolean channelAllowed(String channelCode) {
+        return allowedChannelCodes.isEmpty()
+                || allowedChannelCodes.contains("*")
+                || allowedChannelCodes.contains(channelCode);
+    }
+
+    private String singleAllowedChannel() {
+        if (allowedChannelCodes.size() == 1 && !"*".equals(allowedChannelCodes.getFirst())) {
+            return allowedChannelCodes.getFirst();
+        }
+        return null;
     }
 
     private void putMdc(GatewayObservationContext gatewayContext) {
@@ -264,5 +427,25 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
             throw error;
         }
         throw new ServletException(throwable);
+    }
+
+    private record ChannelPathMapping(String pathPrefix, String channelCode) {
+        private boolean matches(String path) {
+            return path != null && path.startsWith(pathPrefix);
+        }
+
+        private int prefixLength() {
+            return pathPrefix.length();
+        }
+    }
+
+    private record LegacyPathMapping(String pathPrefix, String serviceCode, String operationCode) {
+        private boolean matches(String path) {
+            return path != null && path.startsWith(pathPrefix);
+        }
+
+        private int prefixLength() {
+            return pathPrefix.length();
+        }
     }
 }
