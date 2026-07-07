@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.util.TokenBuffer;
 import ir.daneshrefah.scm.observation.CorrelationType;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistryHolder;
+import ir.daneshrefah.scm.observation.ObservationContext;
+import ir.daneshrefah.scm.observation.ObservationContextHolder;
 import ir.daneshrefah.scm.observation.ObservationDocumentBuilder;
 import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationIds;
@@ -55,7 +57,9 @@ public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
         putThrowableFields(attributes, event.getThrowableProxy());
 
         boolean errorContext = event.getThrowableProxy() != null || kind == ObservationRecordKind.EXCEPTION;
-        ObservationDocumentFactory factory = new ObservationDocumentFactory(null, registry, SANITIZER);
+        ObservationContext context = ObservationContextHolder.get()
+                .orElseGet(() -> ObservationContext.from(null, null));
+        ObservationDocumentFactory factory = new ObservationDocumentFactory(context, registry, SANITIZER);
         ObservationDocumentBuilder builder = factory.log(
                 Instant.ofEpochMilli(event.getTimeStamp()),
                 level(event),

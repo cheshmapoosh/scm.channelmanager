@@ -64,3 +64,22 @@ SCM_OBS_LOG_CONSOLE_ENABLED: true
 SCM_OBS_LOG_FILE_ENABLED: true
 SCM_OBS_TRACE_FILE_ENABLED: true
 SCM_OBS_AUDIT_ENABLED: true
+
+scm:
+  observation:
+    log:
+      console:
+        enabled: true
+      file:
+        enabled: true
+    trace:
+      console:
+        enabled: true
+      file:
+        enabled: true
+    audit:
+      enabled: true
+      console:
+        enabled: true
+      file:
+        enabled: true

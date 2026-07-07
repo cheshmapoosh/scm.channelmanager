@@ -18,8 +18,11 @@ public final class WebTraceAttributes {
             "http.query.present", ObservationAttributePresence.EVENT_OPTIONAL, "Whether an HTTP query string was present.");
     public static final ObservationAttributeKey<String> CLIENT_IP = commonKeyword("client.ip", "Client IP address.");
     public static final ObservationAttributeKey<String> CLIENT_ADDRESS = keyword("client.address", "Protocol-neutral client address.");
+    public static final ObservationAttributeKey<String> GATEWAY_NAME = keyword("scm.gateway.name", "SCM gateway name.");
+    public static final ObservationAttributeKey<String> PROTOCOL = keyword("scm.protocol", "Gateway protocol.");
     public static final ObservationAttributeKey<String> GATEWAY_REQUEST_NAME = keyword("scm.request.name", "Low-cardinality gateway request name.");
     public static final ObservationAttributeKey<String> MESSAGE_ID = keyword("scm.message.id", "Protocol message identifier.");
+    public static final ObservationAttributeKey<String> ROUTE_ID = keyword("scm.route.id", "Gateway route identifier.");
 
     private WebTraceAttributes() {
     }
@@ -27,7 +30,7 @@ public final class WebTraceAttributes {
     public static List<ObservationAttributeKey<?>> attributes() {
         return List.of(
                 HTTP_METHOD, URL_PATH, HTTP_STATUS_CODE, HTTP_ROUTE, QUERY_PRESENT,
-                CLIENT_IP, CLIENT_ADDRESS, GATEWAY_REQUEST_NAME, MESSAGE_ID
+                CLIENT_IP, CLIENT_ADDRESS, GATEWAY_NAME, PROTOCOL, GATEWAY_REQUEST_NAME, MESSAGE_ID, ROUTE_ID
         );
     }
 

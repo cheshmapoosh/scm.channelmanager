@@ -119,6 +119,33 @@ scm.cache.init
 scm.cache.health
 ```
 
+## Observation Routing
+
+Every LOG, TRACE, and AUDIT record includes:
+
+```text
+event.stream
+scm.obs.target.namespace
+scm.obs.target.index
+scm.platform
+service.name
+deployment.environment
+```
+
+`scm.obs.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Cache records normally do not represent a legacy business entry point, so `scm.obs.legacy.enabled` defaults to `false`.
+
+Files are namespace-based and do not use channel code:
+
+```text
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
+```
+
+In Kubernetes, `SCM_OBS_NAMESPACE` and `SCM_INSTANCE_ID` come from the Downward API. Outside Kubernetes, namespace defaults to `default`.
+
+Console output for LOG, TRACE, and AUDIT is enabled only in `dev`. Test, pilot, and prod keep console disabled and file output enabled.
+
+Distributed tracing uses W3C `traceparent`; custom `X-SCM-*` trace headers are not distributed trace sources of truth.
+
 Stable event actions:
 
 ```text

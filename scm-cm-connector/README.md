@@ -47,3 +47,30 @@ Ownership must be established before session data is returned.
 The connector records low-cardinality logs, traces, and metrics for session reads, cache access, ownership checks, OTP delegation, and error paths.
 
 Never log or tag tokens, subjects, nicknames, terminal codes, session ids, JWT ids, raw cache keys, OTPs, passwords, or full cache values.
+
+Every LOG, TRACE, and AUDIT record includes:
+
+```text
+event.stream
+scm.obs.target.namespace
+scm.obs.target.index
+scm.platform
+service.name
+deployment.environment
+```
+
+`scm.obs.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Physical files are namespace-based and do not use channel code:
+
+```text
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
+```
+
+CM connector spans are not legacy by default. If a request already started at `scm-web.gateway.receive`, connector spans should keep `scm.obs.legacy.enabled=false`. If CM connector is later configured as the direct business entry point for a legacy-reportable flow, only the root business span may set:
+
+```text
+scm.obs.legacy.enabled = true
+scm.obs.legacy.operation.code
+scm.obs.legacy.service.code
+```
+
+Console output for LOG, TRACE, and AUDIT is enabled only in `dev`. Test, pilot, and prod keep console disabled and file output enabled. Distributed tracing uses W3C `traceparent`; custom `X-SCM-*` trace headers are not distributed trace sources of truth.

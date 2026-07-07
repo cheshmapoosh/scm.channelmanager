@@ -7,6 +7,7 @@ import java.time.ZoneId;
 public record ObservationContext(
         boolean enabled,
         String platform,
+        String namespace,
         String appName,
         String appProfile,
         String appLabel,
@@ -20,18 +21,33 @@ public record ObservationContext(
 
     public static ObservationContext from(ObservationProperties properties, Environment environment) {
         ObservationProperties safeProperties = properties == null ? new ObservationProperties() : properties;
+        String runtime = runtime(environment);
         return new ObservationContext(
                 safeProperties.isEnabled(),
                 "scm",
+                namespace(environment, runtime),
                 firstText(environmentValue(environment, "spring.application.name"), "application"),
-                firstText(firstActiveProfile(environment), "default"),
+                firstText(environmentValue(environment, "deployment.environment"),
+                        environmentValue(environment, "scm.env"),
+                        firstActiveProfile(environment), "default"),
                 "default",
                 "default",
                 "default",
                 firstText(environmentValue(environment, "scm.deployment.service-version"), System.getenv("VERSION"), "unknown"),
-                runtime(environment),
+                runtime,
                 OBSERVATION_ZONE_ID
         );
+    }
+
+    private static String namespace(Environment environment, String runtime) {
+        String namespace = textOrNull(environmentValue(environment, "SCM_OBS_NAMESPACE"));
+        if (namespace == null) {
+            namespace = textOrNull(System.getenv("SCM_OBS_NAMESPACE"));
+        }
+        if ("kubernetes".equals(runtime)) {
+            return namespace;
+        }
+        return namespace == null ? "default" : namespace;
     }
 
     private static String runtime(Environment environment) {
@@ -53,6 +69,10 @@ public record ObservationContext(
 
     private static String environmentValue(Environment environment, String key) {
         return environment == null ? null : environment.getProperty(key);
+    }
+
+    private static String textOrNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private static String firstText(String... candidates) {

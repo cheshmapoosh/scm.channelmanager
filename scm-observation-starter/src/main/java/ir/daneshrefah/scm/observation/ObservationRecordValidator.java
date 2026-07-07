@@ -42,6 +42,8 @@ public class ObservationRecordValidator {
             }
         }
         validateCorrelationType(stream, document);
+        validateStandardTargetFields(stream, document);
+        validateLegacyProjection(stream, document);
         validateAuditType(stream, document);
         validateTraceParent(stream, document);
     }
@@ -82,6 +84,30 @@ public class ObservationRecordValidator {
         }
     }
 
+    private void validateStandardTargetFields(ObservationStream stream, Map<String, Object> document) {
+        require(stream, document, "event.stream");
+        require(stream, document, "scm.obs.target.namespace");
+        require(stream, document, "scm.obs.target.index");
+        require(stream, document, "scm.platform");
+        require(stream, document, "service.name");
+        require(stream, document, "deployment.environment");
+    }
+
+    private void validateLegacyProjection(ObservationStream stream, Map<String, Object> document) {
+        Object enabled = document.get("scm.obs.legacy.enabled");
+        if (!isTrue(enabled)) {
+            return;
+        }
+        if (missing(document.get("scm.obs.legacy.service.code"))) {
+            throw new IllegalStateException("Invalid " + stream
+                    + " legacy projection: scm.obs.legacy.service.code is required when scm.obs.legacy.enabled=true");
+        }
+        if (missing(document.get("scm.obs.legacy.operation.code"))) {
+            throw new IllegalStateException("Invalid " + stream
+                    + " legacy projection: scm.obs.legacy.operation.code is required when scm.obs.legacy.enabled=true");
+        }
+    }
+
     private void validateTraceParent(ObservationStream stream, Map<String, Object> document) {
         if (stream != ObservationStream.TRACE) {
             return;
@@ -98,5 +124,18 @@ public class ObservationRecordValidator {
 
     private boolean missing(Object value) {
         return value == null || (value instanceof String text && text.isBlank());
+    }
+
+    private void require(ObservationStream stream, Map<String, Object> document, String fieldName) {
+        if (missing(document.get(fieldName))) {
+            throw new IllegalStateException("Missing required " + stream + " observation attribute: " + fieldName);
+        }
+    }
+
+    private boolean isTrue(Object value) {
+        if (value instanceof Boolean booleanValue) {
+            return booleanValue;
+        }
+        return value != null && "true".equalsIgnoreCase(String.valueOf(value).trim());
     }
 }

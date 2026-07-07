@@ -11,6 +11,7 @@ import ir.daneshrefah.scm.observation.TraceObservationBuilder;
 import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
 import ir.daneshrefah.scm.uaa.observation.attributes.UaaLogAttributes;
 import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
@@ -19,11 +20,14 @@ import java.util.Locale;
 public class UaaObservation {
     private static final String REQUEST = CorrelationType.REQUEST.value();
     private static final int MAX_SAFE_MESSAGE_LENGTH = 300;
+    private static final String LEGACY_LOGIN = "login";
 
     private final ScmObservation observation;
+    private final Environment environment;
 
-    public UaaObservation(ScmObservation observation) {
+    public UaaObservation(ScmObservation observation, Environment environment) {
         this.observation = observation;
+        this.environment = environment;
     }
 
     public void controllerStarted(ControllerContext ctx) {
@@ -154,13 +158,34 @@ public class UaaObservation {
     public ObservationScope traceAuth(AuthContext ctx) {
         TraceObservationBuilder builder = observation.trace()
                 .source(UaaObservation.class)
-                .span("uaa.auth.authenticate")
+                .span("uaa.auth.login")
                 .spanKind("internal")
-                .action("uaa.auth.authenticate");
+                .action("uaa.auth.login");
         if (TraceContextHolder.current() == null) {
             builder.correlationType(REQUEST);
         }
         putAuthTraceAttributes(builder, ctx);
+        putLegacyProjectionAttributes(builder, LEGACY_LOGIN);
+        if (ctx != null) {
+            builder.attribute("scm.channel.code", ctx.clientId());
+        }
+        return builder.start();
+    }
+
+    public ObservationScope traceLegacyBusinessOperation(String operationCode, String spanName, String channelCode) {
+        String operation = textOrDefault(operationCode, "unknown");
+        String span = textOrDefault(spanName, "uaa.business." + normalizeName(operation));
+        TraceObservationBuilder builder = observation.trace()
+                .source(UaaObservation.class)
+                .span(span)
+                .spanKind("server")
+                .action(span)
+                .correlationType(REQUEST)
+                .traceId(ObservationIds.traceId())
+                .parentSpanId("");
+        putLegacyProjectionAttributes(builder, operation);
+        builder.attribute("scm.channel.code", channelCode);
+        builder.attribute(UaaTraceAttributes.AUTH_STEP, operation);
         return builder.start();
     }
 
@@ -526,6 +551,31 @@ public class UaaObservation {
                 .attribute(UaaTraceAttributes.CLIENT_IP, ctx.clientIp());
     }
 
+    private void putLegacyProjectionAttributes(TraceObservationBuilder builder, String operationCode) {
+        String operation = textOrNull(operationCode);
+        if (operation == null) {
+            return;
+        }
+        builder.attribute("scm.obs.legacy.enabled", true)
+                .attribute("scm.obs.legacy.operation.code", legacyOperationCode(operation))
+                .attribute("scm.obs.legacy.service.code", legacyServiceCode(operation));
+    }
+
+    private String legacyOperationCode(String operationCode) {
+        return firstText(
+                environmentValue("scm.uaa.observation.legacy.operations." + operationCode + ".operation-code"),
+                operationCode
+        );
+    }
+
+    private String legacyServiceCode(String operationCode) {
+        return environmentValue("scm.uaa.observation.legacy.operations." + operationCode + ".service-code");
+    }
+
+    private String environmentValue(String key) {
+        return environment == null ? null : environment.getProperty(key);
+    }
+
     private void putJwtTraceAttributes(TraceObservationBuilder builder, JwtContext ctx) {
         if (ctx == null) {
             return;
@@ -613,6 +663,15 @@ public class UaaObservation {
 
     private String textOrNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String firstText(String... candidates) {
+        for (String candidate : candidates) {
+            if (candidate != null && !candidate.isBlank()) {
+                return candidate.trim();
+            }
+        }
+        return null;
     }
 
     private String normalizeName(String value) {
