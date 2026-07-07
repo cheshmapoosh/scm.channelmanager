@@ -35,7 +35,6 @@ operation.call
 provider attributes
 plugin observation
 audit rollout
-legacy table projection
 SOAP adapter
 MQ/JMS adapter
 TCP/ISO adapter
@@ -51,6 +50,7 @@ Rules:
 - Otherwise a new correlation id is generated.
 - The response always includes `X-Correlation-Id`.
 - Request attributes include `scm.gateway.observation.context`, `scm.correlation_id`, `scm.trace.id`, `scm.gateway.span.id`, `scm.gateway.name`, and `scm.channel.code`.
+- Distributed trace propagation uses W3C `traceparent`. Custom `X-SCM-*` trace headers are not the source of truth.
 
 ## Trace
 
@@ -92,6 +92,47 @@ request.failed    -> failure
 
 The log event includes correlation id, trace id, gateway span id, gateway/channel, protocol, request name, safe adapter attributes, and duration.
 
+## Target Routing
+
+Every LOG, TRACE, and AUDIT record includes:
+
+```text
+event.stream
+scm.obs.target.namespace
+scm.obs.target.index
+scm.platform
+service.name
+deployment.environment
+```
+
+`scm.obs.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and real business channel code when present. `scm.channel.code` remains a business attribute and is not used for physical file names.
+
+Files are namespace-based:
+
+```text
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
+```
+
+In Kubernetes, `SCM_OBS_NAMESPACE` and `SCM_INSTANCE_ID` come from the Downward API.
+
+## Legacy Projection
+
+The main end-user gateway span is:
+
+```text
+span.name = gateway.receive
+```
+
+Only real end-user channel requests may set:
+
+```text
+scm.obs.legacy.enabled = true
+scm.obs.legacy.operation.code
+scm.obs.legacy.service.code
+```
+
+`scm.obs.legacy.service.code` must come from route/service configuration, not from `span.name`. Health checks, actuator, admin/config, static resource, docs, and internal endpoints are not legacy projection records.
+
 ## Metric
 
 Gateway metrics are emitted through `ScmObservation.metric()` and Micrometer when a `MeterRegistry` is available.
@@ -106,4 +147,4 @@ scm.faults
 
 Metric tags are low-cardinality only: app, profile, label, platform, channel, gateway, protocol, request name, outcome, and error code when available.
 
-Metrics do not write JSONL files and do not use `scm.target.index`.
+Metrics do not write JSONL files and do not use `scm.obs.target.index`.

@@ -9,7 +9,7 @@
 - Disabling `scm.uaa.datasource.activation.enabled` removes only legacy MB/PWA activation repositories, services, controllers, and adapters. It does not remove NIB activation, normal login, or token handling. The activation datasource will be deprecated after legacy migration.
 - UAA security explicitly selects `uaaCorsConfigurationSource`; it does not use `@Primary` to resolve CORS beans. Credentialed CORS rejects a wildcard, and the Kubernetes profiles also reject an empty origin list.
 - The dev profile supports HTTPS through `SCM_UAA_SSL_*`. Realistic cross-site cookie tests normally require `SameSite=None; Secure`; `Secure` requires HTTPS except for browser localhost exceptions. A `__Host-` cookie also requires `Path=/` and no `Domain` attribute.
-- Log, trace, and audit use separate NDJSON files. Dev and the no-profile local fallback also log to the console. Test, pilot, and prod default to files under `/var/log/app`.
+- Log, trace, and audit use separate NDJSON files. Only the `dev` profile logs observation streams to the console. Kubernetes profiles write files under `/var/obs/{appName}/{env}/{namespace}/{stream}`; the local fallback uses `${user.home}/scm/obs/{appName}/{env}/default/{stream}`.
 
 هدف این است که بدانید هر مسیر لاگین از کجا وارد می‌شود، کدام کلاس‌ها مسئول چه کاری هستند، کجا باید کد اضافه کنید، و چطور خروجی‌های JSONL برای LOG و TRACE تولید می‌شوند.
 

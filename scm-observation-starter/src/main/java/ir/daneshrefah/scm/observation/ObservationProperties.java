@@ -11,6 +11,7 @@ public class ObservationProperties {
     private TraceProperties trace = new TraceProperties();
     private AuditProperties audit = new AuditProperties();
     private MetricProperties metric = new MetricProperties();
+    private HttpProperties http = new HttpProperties();
 
     public boolean isEnabled() {
         return enabled;
@@ -50,6 +51,14 @@ public class ObservationProperties {
 
     public void setMetric(MetricProperties metric) {
         this.metric = metric == null ? new MetricProperties() : metric;
+    }
+
+    public HttpProperties getHttp() {
+        return http;
+    }
+
+    public void setHttp(HttpProperties http) {
+        this.http = http == null ? new HttpProperties() : http;
     }
 
     public static class LogProperties {
@@ -102,6 +111,7 @@ public class ObservationProperties {
 
     public static class TraceProperties {
         private boolean enabled;
+        private ConsoleProperties console = new ConsoleProperties();
         private FileProperties file = new FileProperties();
         private RollingProperties rolling = new RollingProperties();
         private AsyncProperties async = new AsyncProperties();
@@ -112,6 +122,14 @@ public class ObservationProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public ConsoleProperties getConsole() {
+            return console;
+        }
+
+        public void setConsole(ConsoleProperties console) {
+            this.console = console == null ? new ConsoleProperties() : console;
         }
 
         public FileProperties getFile() {
@@ -141,6 +159,7 @@ public class ObservationProperties {
 
     public static class AuditProperties {
         private boolean enabled;
+        private ConsoleProperties console = new ConsoleProperties();
         private FileProperties file = new FileProperties();
         private RollingProperties rolling = new RollingProperties();
         private AsyncProperties async = new AsyncProperties();
@@ -151,6 +170,14 @@ public class ObservationProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public ConsoleProperties getConsole() {
+            return console;
+        }
+
+        public void setConsole(ConsoleProperties console) {
+            this.console = console == null ? new ConsoleProperties() : console;
         }
 
         public FileProperties getFile() {
@@ -207,6 +234,7 @@ public class ObservationProperties {
         private Path directory;
         private String fileName;
         private Path archiveDirectory;
+        private String archiveFileName;
 
         public boolean isEnabled() {
             return enabled;
@@ -238,6 +266,56 @@ public class ObservationProperties {
 
         public void setArchiveDirectory(Path archiveDirectory) {
             this.archiveDirectory = archiveDirectory;
+        }
+
+        public String getArchiveFileName() {
+            return archiveFileName;
+        }
+
+        public void setArchiveFileName(String archiveFileName) {
+            this.archiveFileName = archiveFileName;
+        }
+    }
+
+    public static class HttpProperties {
+        private ServerProperties server = new ServerProperties();
+
+        public ServerProperties getServer() {
+            return server;
+        }
+
+        public void setServer(ServerProperties server) {
+            this.server = server == null ? new ServerProperties() : server;
+        }
+    }
+
+    public static class ServerProperties {
+        private boolean enabled;
+        private String mode = "channel-only";
+        private String spanName = "http.server.request";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getMode() {
+            return mode;
+        }
+
+        public void setMode(String mode) {
+            this.mode = mode;
+        }
+
+        public String getSpanName() {
+            return spanName;
+        }
+
+        public void setSpanName(String spanName) {
+            this.spanName = spanName;
         }
     }
 

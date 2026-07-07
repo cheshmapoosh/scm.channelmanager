@@ -110,7 +110,7 @@ autoscaling:
 volumes:
   - name: log-volume
     hostPath:
-      path: /log
+      path: /var/obs
       type: DirectoryOrCreate
 # - name: foo
 #   secret:
@@ -120,7 +120,7 @@ volumes:
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
   - name: log-volume
-    mountPath: "/mnt/log"
+    mountPath: "/var/obs"
 
 # - name: foo
 #   mountPath: "/etc/foo"

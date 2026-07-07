@@ -282,31 +282,87 @@ gateway.receive
 - پس از دریافت نتیجه یا failure پایین‌دست بسته می‌شود.
 - برای call خارجی معمولاً `span.kind=client` دارد.
 
-## ۹. قانون legacy projection
+## ۹. Observation target, routing, and legacy projection
 
-فقط `gateway.receive` می‌تواند این attribute را داشته باشد:
-
-```text
-scm.target.legacy.enabled = true
-```
-
-مقدار table باید یکی از مقصدهای تعریف‌شدهٔ legacy باشد:
+Every LOG, TRACE, and AUDIT document must include these common routing fields:
 
 ```text
-scm.target.legacy.table = ib.transaction | rb.message_log | cm.transaction_log
+event.stream
+scm.obs.target.namespace
+scm.obs.target.index
+scm.platform
+service.name
+deployment.environment
 ```
 
-برای spanهای داخلی باید مقدار زیر برقرار باشد:
+The deprecated target namespace, target index, and legacy-enabled names from the previous schema are not emitted. The replacement fields are:
 
 ```text
-service.execute:
-  scm.target.legacy.enabled = false
-
-operation.call:
-  scm.target.legacy.enabled = false
+scm.obs.target.index
+scm.obs.target.namespace
+scm.obs.legacy.enabled
+scm.obs.legacy.service.code
+scm.obs.legacy.operation.code
 ```
 
-Tableهای legacy به یک رکورد نهایی برای هر business transaction نیاز دارند. Spanهای داخلی فقط برای troubleshooting، زمان‌بندی و تحلیل مسیر اجرا هستند؛ projection آن‌ها باعث چند رکورد برای یک transaction و گزارش‌های نادرست می‌شود.
+`scm.obs.target.namespace` comes from `SCM_OBS_NAMESPACE` in Kubernetes and defaults to `default` outside Kubernetes. Kubernetes deployments must set `SCM_OBS_NAMESPACE` from `metadata.namespace` and `SCM_INSTANCE_ID` from `metadata.name` through the Downward API.
+
+`scm.obs.target.index` is the final Elasticsearch routing index. The resolver uses stream, platform, namespace, environment, channel code, and timestamp. All parts are normalized to lower-case. When a real business channel code exists, the pattern is:
+
+```text
+{stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}
+```
+
+When the channel code is missing, blank, `unknown`, `default`, `none`, or `n/a`, the channel part is omitted:
+
+```text
+{stream}-scm-{namespace}-{env}-{yyyy.MM.dd.HH}
+```
+
+Examples:
+
+```text
+log-scm-shared-prod-mb-2026.07.07.19
+trace-scm-shared-prod-2026.07.07.19
+audit-scm-ib-prod-ib-2026.07.07.19
+```
+
+Physical file routing is separate from Elasticsearch routing. File names are namespace-based and must not use `scm.channel.code`:
+
+```text
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl.gz
+```
+
+In Kubernetes files are under `/var/obs/{appName}/{env}/{namespace}/{stream}/`. Outside Kubernetes they are under `${user.home}/scm/obs/{appName}/{env}/default/{stream}/`. A single physical file can contain records for multiple Elasticsearch indexes because routing is based on `scm.obs.target.index` inside each record.
+
+`scm.channel.code` is a business attribute only. It may affect the target index when it is a real business channel code such as `ib` or `mb`, but it must not be used for physical file naming.
+
+When `scm.obs.legacy.enabled=true`, `scm.obs.legacy.service.code` and `scm.obs.legacy.operation.code` must be present. Validation fails clearly if they are missing. Legacy service codes must come from explicit attributes or configured mappings; the starter does not parse `span.name` to produce legacy DB values.
+
+Host modules apply legacy projection at their business entry points only:
+
+- `scm-web`: the real end-user gateway entry span is `gateway.receive`, and its legacy service code comes from route/service configuration.
+- `scm-uaa`: entry spans for `login`, `change-password`, `update-favorite-account`, and `update-account-label` may set legacy projection using configured service codes.
+- `scm-cache`: default behavior is `scm.obs.legacy.enabled=false`.
+- `scm-cm-connector`: provider/technical spans are not legacy by default; a root span can be legacy only when CM connector is the direct business entry point and configured service/operation codes are supplied.
+
+Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Common, `test`, `pilot`, and `prod` configuration keeps console output disabled and file output enabled. `clean-history-on-start=false` remains the default and affects archived files only; active LOG, TRACE, and AUDIT files must not be deleted.
+
+Generic HTTP server tracing is disabled by default:
+
+```yaml
+scm:
+  observation:
+    http:
+      server:
+        enabled: false
+        mode: channel-only
+```
+
+Business TRACE should be created only for real end-user channel calls, not actuator, internal, admin/config, static, documentation, or background job endpoints.
+
+Distributed trace propagation uses the standard W3C `traceparent` header as the source of truth. Custom headers such as `X-SCM-Trace-ID`, `X-SCM-Span-ID`, and `X-SCM-Parent-Span-ID` are not distributed trace propagation sources.
 
 ## ۱۰. قواعد Provider
 
@@ -629,10 +685,13 @@ health: 1=healthy, 0=unhealthy
 - آیا host سیگنال‌های موردنیاز را صریحاً فعال کرده است؟
 - آیا starter یا provider فقط event خنثی منتشر می‌کند؟
 - آیا observation رسمی در host انجام می‌شود؟
+- آیا همهٔ رکوردهای LOG، TRACE و AUDIT مقدارهای `event.stream`، `scm.obs.target.namespace`، `scm.obs.target.index`، `scm.platform`، `service.name` و `deployment.environment` را دارند؟
+- آیا file routing از namespace استفاده می‌کند و از `scm.channel.code` برای نام فایل استفاده نمی‌شود؟
+- آیا console output فقط در profile `dev` روشن است و file output در profileهای غیر dev روشن مانده است؟
 - آیا `correlation.id` محلی است و به downstream ارسال نمی‌شود؟
 - آیا فقط `traceparent` برای distributed trace ارسال می‌شود؟
 - آیا ساختار `gateway.receive -> service.execute -> operation.call` حفظ شده است؟
-- آیا فقط `gateway.receive` برای legacy projection مجاز است؟
+- آیا legacy projection فقط در entry spanهای business و با `scm.obs.legacy.service.code` و `scm.obs.legacy.operation.code` صریح انجام می‌شود؟
 - آیا payload و secret از event، trace، metric و log حذف یا mask شده‌اند؟
 - آیا metric tagها محدود و low-cardinality هستند؟
 

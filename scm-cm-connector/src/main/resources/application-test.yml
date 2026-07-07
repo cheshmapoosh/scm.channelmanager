@@ -10,3 +10,21 @@ spring:
       retry:
         max-attempts: ${SCM_CONFIG_RETRY_MAX_ATTEMPTS:10}
         max-interval: ${SCM_CONFIG_RETRY_MAX_INTERVAL:3000}
+
+scm:
+  observation:
+    log:
+      console:
+        enabled: false
+      file:
+        enabled: true
+    trace:
+      console:
+        enabled: false
+      file:
+        enabled: true
+    audit:
+      console:
+        enabled: false
+      file:
+        enabled: true

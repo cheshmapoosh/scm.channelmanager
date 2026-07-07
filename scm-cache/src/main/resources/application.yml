@@ -67,17 +67,20 @@ scm:
     app-label: ${SCM_OBS_APP_LABEL:${spring.profiles.active:dev}}
     instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-cache}}
     time-zone: ${SCM_OBS_TIME_ZONE:UTC}
+    file:
+      root-directory: ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
     log:
       enabled: ${SCM_OBS_LOG_ENABLED:true}
       console:
-        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:true}
+        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:false}
         format: ${SCM_OBS_LOG_CONSOLE_FORMAT:simple}
       file:
         enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
         format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log}
-        file-name: ${SCM_OBS_LOG_FILE_NAME:${spring.application.name}.jsonl}
-        archive-directory: ${SCM_OBS_LOG_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log/archive}
+        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBS_NAMESPACE:default}/log}
+        file-name: log-scm-${spring.application.name}-${scm.env}-${SCM_OBS_NAMESPACE:default}-${scm.instance-id}-%d{yyyyMMdd-HH}.jsonl
+        archive-directory: ${SCM_OBS_LOG_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBS_NAMESPACE:default}/log/archive}
+        archive-file-name: log-scm-${spring.application.name}-${scm.env}-${SCM_OBS_NAMESPACE:default}-${scm.instance-id}-%d{yyyyMMdd-HH}-%i.jsonl.gz
       rolling:
         max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
@@ -91,12 +94,16 @@ scm:
         hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
     trace:
       enabled: ${SCM_OBS_TRACE_ENABLED:true}
+      console:
+        enabled: ${SCM_OBS_TRACE_CONSOLE_ENABLED:false}
+        format: ${SCM_OBS_TRACE_CONSOLE_FORMAT:jsonl}
       file:
         enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
         format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace}
-        file-name: ${SCM_OBS_TRACE_FILE_NAME:${spring.application.name}-trace.jsonl}
-        archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace/archive}
+        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBS_NAMESPACE:default}/trace}
+        file-name: trace-scm-${spring.application.name}-${scm.env}-${SCM_OBS_NAMESPACE:default}-${scm.instance-id}-%d{yyyyMMdd-HH}.jsonl
+        archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBS_NAMESPACE:default}/trace/archive}
+        archive-file-name: trace-scm-${spring.application.name}-${scm.env}-${SCM_OBS_NAMESPACE:default}-${scm.instance-id}-%d{yyyyMMdd-HH}-%i.jsonl.gz
       rolling:
         max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
@@ -110,12 +117,16 @@ scm:
         max-flush-time: ${SCM_OBS_TRACE_ASYNC_MAX_FLUSH_TIME:1000}
     audit:
       enabled: ${SCM_OBS_AUDIT_ENABLED:false}
+      console:
+        enabled: ${SCM_OBS_AUDIT_CONSOLE_ENABLED:false}
+        format: ${SCM_OBS_AUDIT_CONSOLE_FORMAT:jsonl}
       file:
         enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
         format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit}
-        file-name: ${SCM_OBS_AUDIT_FILE_NAME:${spring.application.name}-audit.jsonl}
-        archive-directory: ${SCM_OBS_AUDIT_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit/archive}
+        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBS_NAMESPACE:default}/audit}
+        file-name: audit-scm-${spring.application.name}-${scm.env}-${SCM_OBS_NAMESPACE:default}-${scm.instance-id}-%d{yyyyMMdd-HH}.jsonl
+        archive-directory: ${SCM_OBS_AUDIT_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBS_NAMESPACE:default}/audit/archive}
+        archive-file-name: audit-scm-${spring.application.name}-${scm.env}-${SCM_OBS_NAMESPACE:default}-${scm.instance-id}-%d{yyyyMMdd-HH}-%i.jsonl.gz
       rolling:
         max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}
@@ -131,6 +142,8 @@ scm:
       enabled: ${SCM_OBS_METRIC_ENABLED:true}
     http:
       server:
+        enabled: ${SCM_OBS_HTTP_SERVER_ENABLED:false}
+        mode: ${SCM_OBS_HTTP_SERVER_MODE:channel-only}
         span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:cache.http.request}
 
   cache:

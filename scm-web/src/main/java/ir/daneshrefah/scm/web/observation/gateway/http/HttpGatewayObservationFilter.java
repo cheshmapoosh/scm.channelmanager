@@ -19,6 +19,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -34,15 +35,24 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     private final GatewayObservationLifecycle gatewayObservationLifecycle;
     private final ObservationContext observationContext;
     private final ScmTraceParentParser traceParentParser;
+    private final boolean legacyGatewayEnabled;
+    private final String legacyServiceCode;
+    private final String legacyOperationCode;
 
     public HttpGatewayObservationFilter(
             GatewayObservationLifecycle gatewayObservationLifecycle,
             ObservationContext observationContext,
-            ScmTraceParentParser traceParentParser
+            ScmTraceParentParser traceParentParser,
+            @Value("${scm.web.observation.legacy.gateway.enabled:false}") boolean legacyGatewayEnabled,
+            @Value("${scm.web.observation.legacy.gateway.service-code:}") String legacyServiceCode,
+            @Value("${scm.web.observation.legacy.gateway.operation-code:}") String legacyOperationCode
     ) {
         this.gatewayObservationLifecycle = gatewayObservationLifecycle;
         this.observationContext = observationContext;
         this.traceParentParser = traceParentParser;
+        this.legacyGatewayEnabled = legacyGatewayEnabled;
+        this.legacyServiceCode = legacyServiceCode;
+        this.legacyOperationCode = legacyOperationCode;
     }
 
     @Override
@@ -56,6 +66,33 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        if (request == null) {
+            return true;
+        }
+        String path = safePath(request).toLowerCase(java.util.Locale.ROOT);
+        return path.startsWith("/actuator")
+                || path.startsWith("/internal")
+                || path.startsWith("/admin")
+                || path.startsWith("/config")
+                || path.startsWith("/swagger")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/docs")
+                || path.startsWith("/webjars")
+                || path.startsWith("/assets")
+                || path.startsWith("/static")
+                || path.equals("/favicon.ico")
+                || path.endsWith(".css")
+                || path.endsWith(".js")
+                || path.endsWith(".map")
+                || path.endsWith(".png")
+                || path.endsWith(".jpg")
+                || path.endsWith(".jpeg")
+                || path.endsWith(".svg")
+                || path.endsWith(".ico");
+    }
+
+    @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -64,7 +101,7 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         ScmTraceParent incomingTraceParent = traceParentParser.parse(request.getHeader(ScmTraceParentWriter.TRACEPARENT))
                 .orElse(null);
         String correlationId = ObservationIds.correlationId();
-        GatewayObservationRequest observationRequest = GatewayObservationRequest.builder()
+        GatewayObservationRequest.Builder requestBuilder = GatewayObservationRequest.builder()
                 .protocol(GatewayProtocol.HTTP)
                 .gatewayName(textOrDefault(observationContext.gatewayName()))
                 .channelCode(textOrDefault(observationContext.channelCode()))
@@ -76,8 +113,9 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
                 .attribute(WebTraceAttributes.HTTP_METHOD, textOrDefault(request.getMethod()))
                 .attribute(WebTraceAttributes.URL_PATH, safePath(request))
                 .attribute(WebTraceAttributes.QUERY_PRESENT, hasQuery(request))
-                .attribute(WebTraceAttributes.CLIENT_IP, clientIp(request))
-                .build();
+                .attribute(WebTraceAttributes.CLIENT_IP, clientIp(request));
+        putLegacyProjectionAttributes(requestBuilder);
+        GatewayObservationRequest observationRequest = requestBuilder.build();
 
         TraceContextHolder.Scope incomingParentScope = openIncomingParentScope(incomingTraceParent);
         GatewayObservationScope observationScope = null;
@@ -164,6 +202,20 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
 
     private String textOrDefault(String value) {
         return value == null || value.isBlank() ? DEFAULT_VALUE : value.trim();
+    }
+
+    private void putLegacyProjectionAttributes(GatewayObservationRequest.Builder builder) {
+        if (!legacyGatewayEnabled) {
+            builder.attribute("scm.obs.legacy.enabled", false);
+            return;
+        }
+        builder.attribute("scm.obs.legacy.enabled", true)
+                .attribute("scm.obs.legacy.service.code", textOrNull(legacyServiceCode))
+                .attribute("scm.obs.legacy.operation.code", textOrNull(legacyOperationCode));
+    }
+
+    private String textOrNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private void putMdc(GatewayObservationContext gatewayContext) {

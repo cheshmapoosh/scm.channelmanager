@@ -8,10 +8,22 @@ import java.util.List;
 public final class CommonTraceAttributes {
     public static final ObservationAttributeKey<String> TIMESTAMP = date("@timestamp", ObservationAttributePresence.ALWAYS_REQUIRED, "Trace event timestamp.");
     public static final ObservationAttributeKey<String> MESSAGE = text("message", ObservationAttributePresence.ALWAYS_REQUIRED, "Trace message.");
+    public static final ObservationAttributeKey<String> EVENT_STREAM = keyword("event.stream", ObservationAttributePresence.ALWAYS_REQUIRED, "Observation stream name.");
+    public static final ObservationAttributeKey<String> SCM_OBS_TARGET_NAMESPACE = keyword("scm.obs.target.namespace", ObservationAttributePresence.ALWAYS_REQUIRED, "Observation target namespace.");
+    public static final ObservationAttributeKey<String> SCM_OBS_TARGET_INDEX = keyword("scm.obs.target.index", ObservationAttributePresence.ALWAYS_REQUIRED, "Final Elasticsearch routing index.");
+    public static final ObservationAttributeKey<String> SCM_PLATFORM = keyword("scm.platform", ObservationAttributePresence.ALWAYS_REQUIRED, "SCM platform code.");
+    public static final ObservationAttributeKey<String> SERVICE_NAME = keyword("service.name", ObservationAttributePresence.ALWAYS_REQUIRED, "Running SCM service name.");
     public static final ObservationAttributeKey<String> DEPLOYMENT_SERVICE_NAME = keyword("deployment.service.name", ObservationAttributePresence.EVENT_OPTIONAL, "Running SCM service name.");
     public static final ObservationAttributeKey<String> DEPLOYMENT_SERVICE_VERSION = keyword("deployment.service.version", ObservationAttributePresence.EVENT_OPTIONAL, "Running SCM service version.");
-    public static final ObservationAttributeKey<String> DEPLOYMENT_ENVIRONMENT = keyword("deployment.environment", ObservationAttributePresence.EVENT_OPTIONAL, "Deployment environment.");
+    public static final ObservationAttributeKey<String> DEPLOYMENT_ENVIRONMENT = keyword("deployment.environment", ObservationAttributePresence.ALWAYS_REQUIRED, "Deployment environment.");
     public static final ObservationAttributeKey<String> SCM_RUNTIME = keyword("scm.runtime", ObservationAttributePresence.EVENT_OPTIONAL, "Runtime mode.");
+    public static final ObservationAttributeKey<String> SCM_CHANNEL_CODE = keyword("scm.channel.code", ObservationAttributePresence.EVENT_OPTIONAL, "Business channel code.");
+    public static final ObservationAttributeKey<Boolean> SCM_OBS_LEGACY_ENABLED = TraceAttribute.booleanValue(
+            "scm.obs.legacy.enabled", ObservationAttributePresence.EVENT_OPTIONAL, "Whether this record is eligible for legacy projection.");
+    public static final ObservationAttributeKey<String> SCM_OBS_LEGACY_SERVICE_CODE = keyword(
+            "scm.obs.legacy.service.code", ObservationAttributePresence.EVENT_OPTIONAL, "Explicit legacy service code.");
+    public static final ObservationAttributeKey<String> SCM_OBS_LEGACY_OPERATION_CODE = keyword(
+            "scm.obs.legacy.operation.code", ObservationAttributePresence.EVENT_OPTIONAL, "Explicit legacy operation code.");
     public static final ObservationAttributeKey<String> CORRELATION_ID = keyword("correlation.id", ObservationAttributePresence.ALWAYS_REQUIRED, "Correlation identifier.");
     public static final ObservationAttributeKey<String> CORRELATION_TYPE = keyword("correlation.type", ObservationAttributePresence.ALWAYS_REQUIRED, "Correlation type.");
     public static final ObservationAttributeKey<String> TRACE_ID = keyword("trace.id", ObservationAttributePresence.ALWAYS_REQUIRED, "Trace identifier.");
@@ -42,7 +54,9 @@ public final class CommonTraceAttributes {
     public static List<ObservationAttributeKey<?>> attributes() {
         return List.of(
                 TIMESTAMP, MESSAGE,
+                EVENT_STREAM, SCM_OBS_TARGET_NAMESPACE, SCM_OBS_TARGET_INDEX, SCM_PLATFORM, SERVICE_NAME,
                 DEPLOYMENT_SERVICE_NAME, DEPLOYMENT_SERVICE_VERSION, DEPLOYMENT_ENVIRONMENT, SCM_RUNTIME,
+                SCM_CHANNEL_CODE, SCM_OBS_LEGACY_ENABLED, SCM_OBS_LEGACY_SERVICE_CODE, SCM_OBS_LEGACY_OPERATION_CODE,
                 CORRELATION_ID, CORRELATION_TYPE, TRACE_ID, SPAN_ID, PARENT_SPAN_ID,
                 SPAN_NAME, SPAN_KIND, SPAN_START_TIME, SPAN_END_TIME, SPAN_DURATION_MS,
                 HTTP_METHOD, HTTP_ROUTE, URL_PATH, HTTP_STATUS_CODE, CLIENT_IP,

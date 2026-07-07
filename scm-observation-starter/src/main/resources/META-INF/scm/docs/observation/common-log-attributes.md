@@ -10,10 +10,19 @@ Use `lifecycle` only for startup, shutdown, bootstrap, and runtime context creat
 | `log.logger` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Logger name. |
 | `process.thread.name` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Thread name that emitted the log. |
 | `message` | String | text | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Rendered log message. |
+| `event.stream` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Observation stream: log, trace, or audit. |
+| `scm.obs.target.namespace` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Observation target namespace. |
+| `scm.obs.target.index` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Final Elasticsearch routing index. |
+| `scm.platform` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | SCM platform code. |
+| `service.name` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Service name used by observability backends. |
 | `deployment.service.name` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service name. |
 | `deployment.service.version` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service version. |
-| `deployment.environment` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Deployment environment: dev, test, pilot or prod. |
+| `deployment.environment` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Deployment environment: dev, test, pilot or prod. |
 | `scm.runtime` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Runtime mode: standalone or kubernetes. |
+| `scm.channel.code` | String | keyword | common | LOG | EVENT_OPTIONAL | RAW | 0 | 0 | Business channel code. It is not used for physical file routing. |
+| `scm.obs.legacy.enabled` | Boolean | boolean | common | LOG | EVENT_OPTIONAL | RAW | 0 | 0 | Whether this record is projected to a legacy business view. |
+| `scm.obs.legacy.service.code` | String | keyword | common | LOG | EVENT_OPTIONAL | RAW | 0 | 0 | Explicit legacy service code. Required when legacy projection is enabled. |
+| `scm.obs.legacy.operation.code` | String | keyword | common | LOG | EVENT_OPTIONAL | RAW | 0 | 0 | Explicit legacy operation code. Required when legacy projection is enabled. |
 | `correlation.id` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation id for the active CorrelationType context. |
 | `correlation.type` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Correlation type from the CorrelationType enum. |
 | `event.category` | String | keyword | common | LOG | EVENT_REQUIRED | RAW | 0 | 0 | SCM event category. |

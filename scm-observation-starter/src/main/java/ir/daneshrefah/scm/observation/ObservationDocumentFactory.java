@@ -9,6 +9,7 @@ import java.util.Locale;
 
 public class ObservationDocumentFactory {
     private final ObservationContext context;
+    private final ObsTargetIndexResolver targetIndexResolver;
     private final ObservationAttributeRegistry registry;
     private final ObservationSanitizer sanitizer;
 
@@ -17,7 +18,17 @@ public class ObservationDocumentFactory {
             ObservationAttributeRegistry registry,
             ObservationSanitizer sanitizer
     ) {
+        this(context, registry, sanitizer, new ObsTargetIndexResolver());
+    }
+
+    public ObservationDocumentFactory(
+            ObservationContext context,
+            ObservationAttributeRegistry registry,
+            ObservationSanitizer sanitizer,
+            ObsTargetIndexResolver targetIndexResolver
+    ) {
         this.context = context;
+        this.targetIndexResolver = targetIndexResolver == null ? new ObsTargetIndexResolver() : targetIndexResolver;
         this.registry = registry == null ? ObservationAttributeRegistry.commonOnly() : registry;
         this.sanitizer = sanitizer;
     }
@@ -25,7 +36,7 @@ public class ObservationDocumentFactory {
     public ObservationDocumentBuilder builder(
             ObservationStream stream
     ) {
-        return new ObservationDocumentBuilder(stream, registry, sanitizer);
+        return new ObservationDocumentBuilder(stream, context, targetIndexResolver, registry, sanitizer);
     }
 
     public ObservationDocumentBuilder log(
@@ -88,6 +99,7 @@ public class ObservationDocumentFactory {
         builder.put(CommonLogAttributes.DEPLOYMENT_SERVICE_NAME, context.appName());
         builder.put(CommonLogAttributes.DEPLOYMENT_SERVICE_VERSION, context.serviceVersion());
         builder.put(CommonLogAttributes.DEPLOYMENT_ENVIRONMENT, context.appProfile());
+        builder.put(CommonLogAttributes.SERVICE_NAME, context.appName());
         builder.put(CommonLogAttributes.SCM_RUNTIME, context.runtime());
     }
 
@@ -108,6 +120,7 @@ public class ObservationDocumentFactory {
         builder.put(CommonTraceAttributes.DEPLOYMENT_SERVICE_NAME, context.appName());
         builder.put(CommonTraceAttributes.DEPLOYMENT_SERVICE_VERSION, context.serviceVersion());
         builder.put(CommonTraceAttributes.DEPLOYMENT_ENVIRONMENT, context.appProfile());
+        builder.put(CommonTraceAttributes.SERVICE_NAME, context.appName());
         builder.put(CommonTraceAttributes.SCM_RUNTIME, context.runtime());
     }
 
@@ -118,6 +131,7 @@ public class ObservationDocumentFactory {
         builder.put(ServiceExecuteAuditAttributes.DEPLOYMENT_SERVICE_NAME, context.appName());
         builder.put(ServiceExecuteAuditAttributes.DEPLOYMENT_SERVICE_VERSION, context.serviceVersion());
         builder.put(ServiceExecuteAuditAttributes.DEPLOYMENT_ENVIRONMENT, context.appProfile());
+        builder.put(ServiceExecuteAuditAttributes.SERVICE_NAME, context.appName());
         builder.put(ServiceExecuteAuditAttributes.SCM_RUNTIME, context.runtime());
     }
 }

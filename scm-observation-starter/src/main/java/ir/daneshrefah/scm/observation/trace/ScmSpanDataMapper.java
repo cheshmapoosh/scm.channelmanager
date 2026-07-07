@@ -42,7 +42,7 @@ public class ScmSpanDataMapper {
     ) {
         this.sanitizer = sanitizer;
         ObservationAttributeRegistry registry = ObservationAttributeRegistry.commonOnly();
-        this.documentFactory = new ObservationDocumentFactory(context, registry, sanitizer);
+        this.documentFactory = new ObservationDocumentFactory(context, registry, sanitizer, targetIndexResolver);
         this.recordValidator = new ObservationRecordValidator(registry);
     }
 

@@ -65,7 +65,7 @@
 | کلید | عنوان | توضیحات |
 |---|---|---|
 | `SCM_OBS_ROOT_DIR` | مسیر اصلی observation | مسیر پایه فایلهای log، trace و audit است. اگر اشتباه باشد فایلها در مسیر نادرست نوشته میشوند یا نوشته نمیشوند. |
-| `SCM_OBS_LOG_CONSOLE_ENABLED` | لاگ کنسول | روشن یا خاموش بودن لاگ کنسول را کنترل میکند. در prod معمولاً مقدار کنترل شده محیطی لازم است. |
+| `SCM_OBS_LOG_CONSOLE_ENABLED` | لاگ کنسول | فقط در profile `dev` باید روشن باشد. در test، pilot و prod خاموش است. |
 | `SCM_OBS_LOG_FILE_ENABLED` | لاگ فایل | روشن یا خاموش بودن فایل log را مشخص میکند. خاموش بودن اشتباه باعث از دست رفتن لاگ عملیاتی میشود. |
 | `SCM_OBS_TRACE_ENABLED` | trace برنامه | به صورت پیشفرض `true` است. اگر `false` شود trace کلی خاموش میشود. |
 | `SCM_OBS_TRACE_FILE_ENABLED` | فایل trace | اگر تنظیم نشود از `SCM_OBS_TRACE_ENABLED` پیروی میکند. مقدار اشتباه باعث تناقض بین trace کلی و فایل trace نمیشود. |

@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.observation.ObservationAttributeContributor;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistryHolder;
 import ir.daneshrefah.scm.observation.ObservationContext;
+import ir.daneshrefah.scm.observation.ObservationContextHolder;
 import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationDocumentSerializer;
 import ir.daneshrefah.scm.observation.ObservationEventDispatcher;
@@ -60,7 +61,9 @@ public class ScmObservationAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ObservationContext observationContext(ObservationProperties properties, Environment environment) {
-        return ObservationContext.from(properties, environment);
+        ObservationContext context = ObservationContext.from(properties, environment);
+        ObservationContextHolder.set(context);
+        return context;
     }
 
     @Bean
@@ -95,11 +98,13 @@ public class ScmObservationAutoConfiguration {
     @ConditionalOnMissingBean
     public ObservationDocumentFactory observationDocumentFactory(
             ObservationContext context,
+            ObsTargetIndexResolver targetIndexResolver,
             ObservationAttributeRegistry registry,
             ObservationSanitizer sanitizer
     ) {
+        ObservationContextHolder.set(context);
         ObservationAttributeRegistryHolder.set(registry);
-        return new ObservationDocumentFactory(context, registry, sanitizer);
+        return new ObservationDocumentFactory(context, registry, sanitizer, targetIndexResolver);
     }
 
     @Bean
@@ -283,14 +288,16 @@ public class ScmObservationAutoConfiguration {
         public FilterRegistrationBean<HttpServerObservationFilter> httpServerObservationFilterRegistration(
                 ScmObservation observation,
                 ObservationSignalPolicy signalPolicy,
-                Environment environment
+                ObservationProperties properties
         ) {
+            ObservationProperties.ServerProperties server = properties.getHttp().getServer();
             FilterRegistrationBean<HttpServerObservationFilter> registration = new FilterRegistrationBean<>();
             registration.setFilter(new HttpServerObservationFilter(
                     observation,
                     signalPolicy,
-                    environment.getProperty("scm.observation.http.server.span-name", "http.server.request")
+                    server.getSpanName()
             ));
+            registration.setEnabled(server.isEnabled() && !"channel-only".equalsIgnoreCase(server.getMode()));
             registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 30);
             registration.addUrlPatterns("/*");
             return registration;
