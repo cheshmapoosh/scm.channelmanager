@@ -1,0 +1,12 @@
+spring:
+  config:
+    import: configserver:${SCM_CONFIG_SERVER_URL:http://scm-config.scm.svc.cluster.local:8888/config}
+  cloud:
+    config:
+      enabled: true
+      username: ${SCM_CONFIG_USERNAME:${SPRING_CLOUD_CONFIG_USERNAME:}}
+      password: ${SCM_CONFIG_PASSWORD:${SPRING_CLOUD_CONFIG_PASSWORD:}}
+      fail-fast: ${SCM_CONFIG_FAIL_FAST:true}
+      retry:
+        max-attempts: ${SCM_CONFIG_RETRY_MAX_ATTEMPTS:10}
+        max-interval: ${SCM_CONFIG_RETRY_MAX_INTERVAL:3000}

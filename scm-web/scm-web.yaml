@@ -59,19 +59,19 @@ spec:
             - name: JDWP_OPTS
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
             - name: SPRING_PROFILES_ACTIVE
-              value: ib4test
+              value: test
             - name: SPRING_APPLICATION_NAME
               value: scm-web
             - name: VERSION
               value: 9.0.0
             - name: SERVER_PORT
               value: "8082"
-            - name: SPRING_CLOUD_CONFIG_URI
+            - name: SCM_CONFIG_SERVER_URL
               valueFrom:
                 configMapKeyRef:
                   key: SPRING_CLOUD_CONFIG_URI
                   name: scm-config-configmap
-            - name: SPRING_SECURITY_ISSUER_URI
+            - name: SCM_UAA_BASE_URL
               valueFrom:
                 configMapKeyRef:
                   key: SPRING_SECURITY_ISSUER_URI

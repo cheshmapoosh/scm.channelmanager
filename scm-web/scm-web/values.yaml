@@ -135,19 +135,19 @@ affinity: {}
 
 env:
   - name: SPRING_PROFILES_ACTIVE
-    value: ib4dev
+    value: dev
   - name: SPRING_APPLICATION_NAME
     value: scm-web
   - name: VERSION
     value: 8.3.0
   - name: SERVER_PORT
     value: "8082"
-  - name: SPRING_CLOUD_CONFIG_URI
+  - name: SCM_CONFIG_SERVER_URL
     valueFrom:
       configMapKeyRef:
         name: scm-config-configmap
         key: SPRING_CLOUD_CONFIG_URI
-  - name: SPRING_SECURITY_ISSUER_URI
+  - name: SCM_UAA_BASE_URL
     valueFrom:
       configMapKeyRef:
         name: scm-uaa-configmap

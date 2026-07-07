@@ -1,82 +1,34 @@
-<configuration scan="true" scanPeriod="30 seconds">
-    <springProperty scope="context" name="APP_NAME"
-                    source="spring.application.name" defaultValue="scm-web" />
-
-    <springProperty scope="context" name="POD_NAME"
-                    source="pod.name" defaultValue="local" />
-
-    <springProperty scope="context" name="LOG_DIR"
-                    source="scm.log.app.file-directory" defaultValue="log/app" />
-
-    <springProperty scope="context" name="ARCHIVE_DIR"
-                    source="scm.log.app.rolling-archive-directory" defaultValue="${LOG_DIR}/archive" />
-
-    <springProperty scope="context" name="APP_LOG_FILE_NAME"
-                    source="scm.log.app.file-name" defaultValue="${POD_NAME}.log" />
-
-    <springProperty scope="context" name="APP_LOG_FILE_NAME_PATTERN"
-                    source="scm.log.app.file-name-pattern"
-                    defaultValue="${POD_NAME}.%d{yyyy-MM-dd}.%i.log" />
-
-    <springProperty scope="context" name="MAX_HISTORY_DAYS"
-                    source="scm.log.app.keep-log-history" defaultValue="50" />
-
-    <springProperty scope="context" name="MAX_FILE_SIZE"
-                    source="scm.log.app.max-file-size" defaultValue="100MB" />
+<configuration>
+    <include resource="META-INF/scm/logback/scm-log-properties.xml"/>
+    <include resource="META-INF/scm/logback/scm-console-simple-appender.xml"/>
+    <include resource="META-INF/scm/logback/scm-console-jsonl-appender.xml"/>
+    <include resource="META-INF/scm/logback/scm-file-simple-appender.xml"/>
+    <include resource="META-INF/scm/logback/scm-file-jsonl-appender.xml"/>
+    <include resource="META-INF/scm/logback/scm-trace-jsonl-appender.xml"/>
+    <include resource="META-INF/scm/logback/scm-audit-jsonl-appender.xml"/>
 
     <springProperty scope="context" name="ROOT_LEVEL"
-                    source="scm.log.root-level" defaultValue="INFO" />
-
-    <springProperty scope="context" name="CONSOLE_ENABLED"
-                    source="scm.log.console.enabled" defaultValue="false" />
-
+                    source="scm.observation.log.level.root" defaultValue="INFO"/>
+    <springProperty scope="context" name="APPLICATION_LEVEL"
+                    source="scm.observation.log.level.application" defaultValue="INFO"/>
     <springProperty scope="context" name="SPRING_LEVEL"
-                    source="scm.log.level.spring" defaultValue="INFO" />
-
+                    source="scm.observation.log.level.spring" defaultValue="INFO"/>
     <springProperty scope="context" name="HIBERNATE_LEVEL"
-                    source="scm.log.level.hibernate" defaultValue="WARN" />
+                    source="scm.observation.log.level.hibernate" defaultValue="WARN"/>
+    <springProperty scope="context" name="HAZELCAST_LEVEL"
+                    source="scm.observation.log.level.hazelcast" defaultValue="INFO"/>
 
-    <property name="ACTIVE_LOG" value="${LOG_DIR}/${APP_LOG_FILE_NAME}" />
-    <property name="ARCHIVE_PATTERN" value="${ARCHIVE_DIR}/${APP_LOG_FILE_NAME_PATTERN}" />
-
-    <property name="LOG_PATTERN"
-              value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %logger{36} - %msg%n" />
-
-    <appender name="ROLLING_FILE"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${ACTIVE_LOG}</file>
-        <append>true</append>
-        <prudent>false</prudent>
-
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${ARCHIVE_PATTERN}</fileNamePattern>
-            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
-            <maxHistory>${MAX_HISTORY_DAYS}</maxHistory>
-            <cleanHistoryOnStart>false</cleanHistoryOnStart>
-        </rollingPolicy>
-
-        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>${LOG_PATTERN}</pattern>
-        </encoder>
-    </appender>
-
-    <appender name="CONSOLE"
-              class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>${LOG_PATTERN}</pattern>
-        </encoder>
-    </appender>
-
-    <logger name="org.springframework" level="${SPRING_LEVEL}" />
-    <logger name="org.hibernate" level="${HIBERNATE_LEVEL}" />
-    <logger name="ir.daneshrefah.scm.logging.utils" level="WARN" />
+    <logger name="ir.daneshrefah" level="${APPLICATION_LEVEL}"/>
+    <logger name="org.springframework" level="${SPRING_LEVEL}"/>
+    <logger name="org.hibernate" level="${HIBERNATE_LEVEL}"/>
+    <logger name="com.hazelcast" level="${HAZELCAST_LEVEL}"/>
 
     <root level="${ROOT_LEVEL}">
-        <appender-ref ref="ROLLING_FILE" />
-        <if condition='property("CONSOLE_ENABLED").equalsIgnoreCase("true")'>
-            <then>
-                <appender-ref ref="CONSOLE" />
-            </then>
-        </if>
+        <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
+        <appender-ref ref="SCM_CONSOLE_JSONL"/>
+        <appender-ref ref="SCM_FILE_SIMPLE"/>
+        <appender-ref ref="SCM_FILE_JSONL"/>
+        <appender-ref ref="SCM_TRACE_JSONL"/>
+        <appender-ref ref="SCM_AUDIT_JSONL"/>
     </root>
 </configuration>
