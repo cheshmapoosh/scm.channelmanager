@@ -13,6 +13,6 @@ public class DefaultOperationApprovalPolicy implements OperationApprovalPolicy {
 
     @Override
     public boolean isApproved(OperationApprovalContext context) {
-        return context != null && context.message() != null && context.message().isSuccessful();
+        return context != null && context.payload() != null; //&& context.message().isSuccessful();
     }
 }

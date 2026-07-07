@@ -23,7 +23,7 @@ public class FailOverServiceTargetRoutingHandler implements ServiceTargetRouting
 
     @Override
     public void buildTarget(ServiceTargetRouteContext context) {
-        List<ServiceOperation> operations = operationSelector.requireActive(context.service(), strategy());
+        List<ServiceOperation> operations = operationSelector.requireAtLeastTwoActive(context.service(), strategy());
         log.debug("Building FAIL_OVER service target routeId={} serviceCode={} operationCount={}",
                 context.route().getRouteId(), context.service().getCode(), operations.size());
         MulticastDefinition multicast = context.route().multicast()
