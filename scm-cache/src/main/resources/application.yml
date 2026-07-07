@@ -1,33 +1,141 @@
-server:
-  port: ${SERVER_PORT:8080}
-
 spring:
-  main:
-    banner-mode: off
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
-    name: scm-cache
+    name: ${SCM_APPLICATION_NAME:scm-cache}
+  main:
+    banner-mode: ${SCM_BANNER_MODE:off}
+  datasource:
+    url: ${SCM_DB_URL}
+    username: ${SCM_DB_USERNAME}
+    password: ${SCM_DB_PASSWORD}
+    driver-class-name: ${SCM_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+    hikari:
+      maximum-pool-size: ${SCM_DB_MAX_CONNECTION:10}
+  jpa:
+    properties:
+      hibernate:
+        default_schema: ${SCM_DB_SCHEMA:REF}
+
+server:
+  port: ${SCM_SERVER_PORT:${SERVER_PORT:8080}}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: ${SCM_MANAGEMENT_ENDPOINTS_INCLUDE:health,info,metrics,prometheus}
   endpoint:
     health:
-      show-details: always
+      show-details: ${SCM_MANAGEMENT_HEALTH_SHOW_DETAILS:always}
       probes:
-        enabled: true
-        add-additional-paths: true
+        enabled: ${SCM_MANAGEMENT_HEALTH_PROBES_ENABLED:true}
+        add-additional-paths: ${SCM_MANAGEMENT_HEALTH_ADDITIONAL_PATHS_ENABLED:true}
       group:
         liveness:
-          include: livenessState,scmCacheHazelcastLiveness
+          include: ${SCM_MANAGEMENT_HEALTH_LIVENESS_INCLUDE:livenessState,scmCacheHazelcastLiveness}
         readiness:
-          include: readinessState,scmCacheHazelcast
+          include: ${SCM_MANAGEMENT_HEALTH_READINESS_INCLUDE:readinessState,scmCacheHazelcast}
+
+logging:
+  config: ${SCM_LOGBACK_CONFIG:classpath:logback-spring.xml}
+  level:
+    root: ${SCM_LOG_LEVEL_ROOT:INFO}
+    ir.daneshrefah: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+    org.springframework: ${SCM_LOG_LEVEL_SPRING:INFO}
+    org.hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+    com.hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
+    com.zaxxer.hikari: ${SCM_LOG_LEVEL_HIKARI:INFO}
 
 scm:
+  env: ${SCM_ENV:${spring.profiles.active}}
+  instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-cache}}
+
+  deployment:
+    service-version: ${SCM_SERVICE_VERSION:${VERSION:8.6.0}}
+
+  application:
+    version: ${SCM_APPLICATION_VERSION:${VERSION:8.6.0}}
+    build: ${SCM_APPLICATION_BUILD:unknown}
+
+  runtime: ${SCM_RUNTIME:standalone}
+
+  observation:
+    enabled: ${SCM_OBS_ENABLED:true}
+    platform: ${SCM_OBS_PLATFORM:scm}
+    app-name: ${SCM_OBS_APP_NAME:${spring.application.name}}
+    app-label: ${SCM_OBS_APP_LABEL:${spring.profiles.active:dev}}
+    instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-cache}}
+    time-zone: ${SCM_OBS_TIME_ZONE:UTC}
+    log:
+      enabled: ${SCM_OBS_LOG_ENABLED:true}
+      console:
+        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:true}
+        format: ${SCM_OBS_LOG_CONSOLE_FORMAT:simple}
+      file:
+        enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
+        format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log}
+        file-name: ${SCM_OBS_LOG_FILE_NAME:${spring.application.name}.jsonl}
+        archive-directory: ${SCM_OBS_LOG_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_LOG_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_LOG_CLEAN_HISTORY_ON_START:false}
+      level:
+        root: ${SCM_LOG_LEVEL_ROOT:INFO}
+        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
+        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
+    trace:
+      enabled: ${SCM_OBS_TRACE_ENABLED:true}
+      file:
+        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
+        format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace}
+        file-name: ${SCM_OBS_TRACE_FILE_NAME:${spring.application.name}-trace.jsonl}
+        archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_TRACE_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_TRACE_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBS_TRACE_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_TRACE_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_TRACE_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_TRACE_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_TRACE_ASYNC_MAX_FLUSH_TIME:1000}
+    audit:
+      enabled: ${SCM_OBS_AUDIT_ENABLED:false}
+      file:
+        enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
+        format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit}
+        file-name: ${SCM_OBS_AUDIT_FILE_NAME:${spring.application.name}-audit.jsonl}
+        archive-directory: ${SCM_OBS_AUDIT_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}
+        total-size-cap: ${SCM_OBS_AUDIT_TOTAL_SIZE_CAP:20GB}
+        clean-history-on-start: ${SCM_OBS_AUDIT_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBS_AUDIT_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_AUDIT_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_AUDIT_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_AUDIT_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_AUDIT_ASYNC_MAX_FLUSH_TIME:1000}
+    metric:
+      enabled: ${SCM_OBS_METRIC_ENABLED:true}
+    http:
+      server:
+        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:cache.http.request}
+
   cache:
+    persistence:
+      schema: ${SCM_CACHE_DB_SCHEMA:${SCM_DB_SCHEMA:REF}}
     health:
       hazelcast:
         minimum-cluster-size: ${SCM_CACHE_HEALTH_MIN_CLUSTER_SIZE:1}
@@ -36,5 +144,49 @@ scm:
           default-critical-ratio: ${SCM_CACHE_ELEMENT_CRITICAL_RATIO:0.90}
           elements:
             user_cache:
-              warning-ratio: 0.80
-              critical-ratio: 0.90
+              warning-ratio: ${SCM_CACHE_USER_WARNING_RATIO:0.80}
+              critical-ratio: ${SCM_CACHE_USER_CRITICAL_RATIO:0.90}
+    hazelcast:
+      member:
+        instance-name: ${SCM_CACHE_MEMBER_NAME:scm-cache-local}
+        cluster-name: ${SCM_CACHE_CLUSTER_NAME:scm}
+        management-center-config:
+          enabled: ${SCM_CACHE_MANAGEMENT_ENABLED:false}
+        properties:
+          hazelcast:
+            socket:
+              bind:
+                any: ${SCM_CACHE_SOCKET_BIND_ANY:true}
+            logging:
+              type: ${SCM_CACHE_LOGGING_TYPE:slf4j}
+            partition:
+              table:
+                send:
+                  interval: ${SCM_CACHE_PARTITION_TABLE_SEND_INTERVAL:15}
+              count: ${SCM_CACHE_PARTITION_COUNT:271}
+        network-config:
+          port: ${SCM_CACHE_NETWORK_PORT:5701}
+          port-auto-increment: ${SCM_CACHE_NETWORK_PORT_AUTO_INCREMENT:true}
+          port-count: ${SCM_CACHE_NETWORK_PORT_COUNT:100}
+          reuse-address: ${SCM_CACHE_NETWORK_REUSE_ADDRESS:true}
+          join:
+            multicast-config:
+              enabled: ${SCM_CACHE_MULTICAST_ENABLED:false}
+            aws-config:
+              enabled: ${SCM_CACHE_AWS_ENABLED:false}
+            tcp-ip-config:
+              enabled: ${SCM_CACHE_TCP_IP_ENABLED:false}
+              required-member: ${SCM_CACHE_TCP_IP_REQUIRED_MEMBER:}
+              members: ${SCM_CACHE_TCP_IP_MEMBERS:}
+              connection-timeout-seconds: ${SCM_CACHE_TCP_IP_CONNECTION_TIMEOUT_SECONDS:5}
+            kubernetes-config:
+              enabled: ${SCM_CACHE_KUBERNETES_ENABLED:false}
+              properties:
+                namespace: ${SCM_CACHE_KUBERNETES_NAMESPACE:default}
+                service-name: ${SCM_CACHE_KUBERNETES_SERVICE_NAME:scm-cache}
+        flake-id-generator-configs:
+          default:
+            prefetch-count: ${SCM_CACHE_FLAKE_PREFETCH_COUNT:10000}
+            prefetch-validity-millis: ${SCM_CACHE_FLAKE_PREFETCH_VALIDITY_MILLIS:600000}
+            node-id-offset: ${SCM_CACHE_FLAKE_NODE_ID_OFFSET:0}
+            statistics-enabled: ${SCM_CACHE_FLAKE_STATISTICS_ENABLED:true}

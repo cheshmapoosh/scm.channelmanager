@@ -1,49 +1,43 @@
 <configuration>
     <include resource="META-INF/scm/logback/scm-log-properties.xml"/>
     <include resource="META-INF/scm/logback/scm-console-simple-appender.xml"/>
+    <include resource="META-INF/scm/logback/scm-console-jsonl-appender.xml"/>
+    <include resource="META-INF/scm/logback/scm-file-simple-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-file-jsonl-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-trace-jsonl-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-audit-jsonl-appender.xml"/>
 
-    <springProperty scope="context" name="ROOT_LEVEL" source="scm.uaa.log.level.root" defaultValue="INFO"/>
-    <springProperty scope="context" name="SCM_UAA_LEVEL" source="scm.uaa.log.level.application" defaultValue="INFO"/>
-    <springProperty scope="context" name="SPRING_LEVEL" source="scm.uaa.log.level.spring" defaultValue="INFO"/>
-    <springProperty scope="context" name="SPRING_SECURITY_LEVEL" source="scm.uaa.log.level.spring-security" defaultValue="INFO"/>
-    <springProperty scope="context" name="HIBERNATE_LEVEL" source="scm.uaa.log.level.hibernate" defaultValue="WARN"/>
-    <springProperty scope="context" name="HIKARI_LEVEL" source="scm.uaa.log.level.hikari" defaultValue="INFO"/>
-    <springProperty scope="context" name="IBM_MQ_LEVEL" source="scm.uaa.log.level.ibm-mq" defaultValue="WARN"/>
+    <springProperty scope="context" name="ROOT_LEVEL"
+                    source="scm.observation.log.level.root" defaultValue="INFO"/>
+    <springProperty scope="context" name="APPLICATION_LEVEL"
+                    source="scm.observation.log.level.application" defaultValue="INFO"/>
+    <springProperty scope="context" name="SPRING_LEVEL"
+                    source="scm.observation.log.level.spring" defaultValue="INFO"/>
+    <springProperty scope="context" name="SPRING_SECURITY_LEVEL"
+                    source="scm.uaa.log.level.spring-security" defaultValue="INFO"/>
+    <springProperty scope="context" name="HIBERNATE_LEVEL"
+                    source="scm.observation.log.level.hibernate" defaultValue="WARN"/>
+    <springProperty scope="context" name="HAZELCAST_LEVEL"
+                    source="scm.observation.log.level.hazelcast" defaultValue="INFO"/>
+    <springProperty scope="context" name="HIKARI_LEVEL"
+                    source="scm.uaa.log.level.hikari" defaultValue="INFO"/>
+    <springProperty scope="context" name="IBM_MQ_LEVEL"
+                    source="scm.uaa.log.level.ibm-mq" defaultValue="WARN"/>
 
-    <logger name="ir.daneshrefah.scm.uaa" level="${SCM_UAA_LEVEL}"/>
+    <logger name="ir.daneshrefah.scm.uaa" level="${APPLICATION_LEVEL}"/>
     <logger name="org.springframework" level="${SPRING_LEVEL}"/>
     <logger name="org.springframework.security" level="${SPRING_SECURITY_LEVEL}"/>
     <logger name="org.hibernate" level="${HIBERNATE_LEVEL}"/>
+    <logger name="com.hazelcast" level="${HAZELCAST_LEVEL}"/>
     <logger name="com.zaxxer.hikari" level="${HIKARI_LEVEL}"/>
     <logger name="com.ibm.mq" level="${IBM_MQ_LEVEL}"/>
 
-    <springProfile name="dev">
-        <root level="${ROOT_LEVEL}">
-            <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
-            <appender-ref ref="SCM_FILE_JSONL"/>
-            <appender-ref ref="SCM_TRACE_JSONL"/>
-            <appender-ref ref="SCM_AUDIT_JSONL"/>
-        </root>
-    </springProfile>
-
-    <springProfile name="test,pilot,prod">
-        <root level="${ROOT_LEVEL}">
-            <appender-ref ref="SCM_FILE_JSONL"/>
-            <appender-ref ref="SCM_TRACE_JSONL"/>
-            <appender-ref ref="SCM_AUDIT_JSONL"/>
-        </root>
-    </springProfile>
-
-    <!-- No profile is the documented local fallback: console plus all three NDJSON files. -->
-    <springProfile name="!dev &amp; !test &amp; !pilot &amp; !prod">
-        <root level="${ROOT_LEVEL}">
-            <appender-ref ref="SCM_FILE_JSONL"/>
-            <appender-ref ref="SCM_TRACE_JSONL"/>
-            <appender-ref ref="SCM_AUDIT_JSONL"/>
-            <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
-        </root>
-    </springProfile>
+    <root level="${ROOT_LEVEL}">
+        <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
+        <appender-ref ref="SCM_CONSOLE_JSONL"/>
+        <appender-ref ref="SCM_FILE_SIMPLE"/>
+        <appender-ref ref="SCM_FILE_JSONL"/>
+        <appender-ref ref="SCM_TRACE_JSONL"/>
+        <appender-ref ref="SCM_AUDIT_JSONL"/>
+    </root>
 </configuration>

@@ -4,4 +4,4 @@ metadata:
   name: scm-logging-configmap
 data:
   # Key-value pairs for your configuration
-  SPRING_CLOUD_CONFIG_URI: "http://scm-config.scm.svc.cluster.local:8888/config"
+  SCM_CONFIG_SERVER_URL: "http://scm-config.scm.svc.cluster.local:8888/config"

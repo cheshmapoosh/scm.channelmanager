@@ -136,10 +136,10 @@ spec:
               value: 8.5.4
             - name: SERVER_PORT
               value: "8080"
-            - name: SPRING_CLOUD_CONFIG_URI
+            - name: SCM_CONFIG_SERVER_URL
               valueFrom:
                 configMapKeyRef:
-                  key: SPRING_CLOUD_CONFIG_URI
+                  key: SCM_CONFIG_SERVER_URL
                   name: scm-config-configmap
           ports:
             - name: hazelcast

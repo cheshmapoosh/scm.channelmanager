@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenti
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenticationProvider;
 import ir.daneshrefah.scm.uaa.utils.Urls;
 import ir.daneshrefah.scm.uaa.web.login.ClientLoginThemeProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,13 @@ import java.util.List;
 @SuppressWarnings("removal")
 public class AuthorizationServerSecurityConfig {
     private static final String LOGIN_PROCESS_URI = "/login";
+    private final String issuerUrl;
+
+    public AuthorizationServerSecurityConfig(
+            @Value("${scm.uaa.issuer-url:http://scm-auth-server}") String issuerUrl
+    ) {
+        this.issuerUrl = issuerUrl;
+    }
 
     @Bean
     @Order(1)
@@ -85,7 +93,7 @@ public class AuthorizationServerSecurityConfig {
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder()
-                .issuer("http://scm-auth-server")
+                .issuer(issuerUrl)
                 .build();
     }
 }

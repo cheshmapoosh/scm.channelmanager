@@ -131,8 +131,8 @@ env:
     value: 8.3.0
   - name: SERVER_PORT
     value: "8080"
-  - name: SPRING_CLOUD_CONFIG_URI
+  - name: SCM_CONFIG_SERVER_URL
     valueFrom:
       configMapKeyRef:
         name: scm-config-configmap
-        key: SPRING_CLOUD_CONFIG_URI
+        key: SCM_CONFIG_SERVER_URL

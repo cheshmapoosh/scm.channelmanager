@@ -14,7 +14,7 @@
     <springProperty scope="context" name="SPRING_LEVEL"
                     source="scm.observation.log.level.spring" defaultValue="INFO"/>
 
-    <logger name="ir.daneshrefah.scm.cmconnector" level="${APPLICATION_LEVEL}"/>
+    <logger name="ir.daneshrefah.scm.config" level="${APPLICATION_LEVEL}"/>
     <logger name="org.springframework" level="${SPRING_LEVEL}"/>
 
     <root level="${ROOT_LEVEL}">

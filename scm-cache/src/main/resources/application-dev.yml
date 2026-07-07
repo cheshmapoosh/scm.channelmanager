@@ -1,131 +1,37 @@
 spring:
-  datasource:
-    url: jdbc:db2://10.15.27.82:446/DSNALOC
-    username: casadm
-    password: a
-    driver-class-name: com.ibm.db2.jcc.DB2Driver
   cloud:
     config:
       enabled: false
 
-  jpa:
-    properties:
-      hibernate:
-        default_schema: REF
+SCM_ENV: dev
+SCM_APPLICATION_NAME: scm-cache
+SCM_INSTANCE_ID: local-scm-cache
+SCM_SERVER_PORT: ${SERVER_PORT:8080}
 
-scm:
-  observation:
-    enabled: true
+SCM_DB_URL: jdbc:db2://10.15.27.82:446/DSNALOC
+SCM_DB_USERNAME: casadm
+SCM_DB_PASSWORD: ${SCM_DEV_DB_PASSWORD:a}
+SCM_DB_DRIVER: com.ibm.db2.jcc.DB2Driver
+SCM_DB_SCHEMA: REF
+SCM_DB_MAX_CONNECTION: 10
+SCM_CACHE_DB_SCHEMA: REF
 
-    log:
-      enabled: true
+SCM_CACHE_CLUSTER_NAME: dev3
+SCM_CACHE_MEMBER_NAME: my-instance3
+SCM_CACHE_NETWORK_PORT: 5701
+SCM_CACHE_NETWORK_PORT_AUTO_INCREMENT: true
+SCM_CACHE_NETWORK_PORT_COUNT: 100
+SCM_CACHE_TCP_IP_ENABLED: false
+SCM_CACHE_TCP_IP_REQUIRED_MEMBER: 10.10.8.66
+SCM_CACHE_TCP_IP_MEMBERS: 10.10.8.66
+SCM_CACHE_KUBERNETES_ENABLED: false
+SCM_CACHE_KUBERNETES_NAMESPACE: default
+SCM_CACHE_KUBERNETES_SERVICE_NAME: scm-cache
+SCM_CACHE_MANAGEMENT_ENABLED: false
+SCM_CACHE_HEALTH_MIN_CLUSTER_SIZE: 1
 
-      console:
-        enabled: ${SCM_OBSERVATION_LOG_CONSOLE_ENABLED:true}
-        format: simple
-
-      file:
-        enabled: ${SCM_OBSERVATION_LOG_FILE_ENABLED:true}
-        format: jsonl
-        directory: ${SCM_OBSERVATION_LOG_FILE_DIRECTORY:${user.home}/scm/obs/log}
-        file-name: ${SCM_OBSERVATION_LOG_FILE_NAME:scm-cache.jsonl}
-        archive-directory: ${SCM_OBSERVATION_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/obs/log/archive}
-
-      rolling:
-        max-file-size: ${SCM_OBSERVATION_LOG_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBSERVATION_LOG_MAX_HISTORY:30}
-        total-size-cap: ${SCM_OBSERVATION_LOG_TOTAL_SIZE_CAP:10GB}
-        clean-history-on-start: ${SCM_OBSERVATION_LOG_CLEAN_HISTORY_ON_START:false}
-
-    trace:
-      enabled: true
-
-      file:
-        enabled: ${SCM_OBSERVATION_TRACE_FILE_ENABLED:true}
-        directory: ${SCM_OBSERVATION_TRACE_FILE_DIRECTORY:${user.home}/scm/obs/trace}
-        file-name: ${SCM_OBSERVATION_TRACE_FILE_NAME:scm-cache-trace.jsonl}
-        archive-directory: ${SCM_OBSERVATION_TRACE_ARCHIVE_DIRECTORY:${user.home}/scm/obs/trace/archive}
-
-      rolling:
-        max-file-size: ${SCM_OBSERVATION_TRACE_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBSERVATION_TRACE_MAX_HISTORY:30}
-        total-size-cap: ${SCM_OBSERVATION_TRACE_TOTAL_SIZE_CAP:10GB}
-        clean-history-on-start: ${SCM_OBSERVATION_TRACE_CLEAN_HISTORY_ON_START:false}
-
-      async:
-        enabled: ${SCM_OBSERVATION_TRACE_ASYNC_ENABLED:true}
-        queue-size: ${SCM_OBSERVATION_TRACE_QUEUE_SIZE:8192}
-        discarding-threshold: ${SCM_OBSERVATION_TRACE_DISCARDING_THRESHOLD:0}
-        never-block: ${SCM_OBSERVATION_TRACE_NEVER_BLOCK:false}
-
-    audit:
-      enabled: false
-
-      file:
-        enabled: ${SCM_OBSERVATION_AUDIT_FILE_ENABLED:true}
-        directory: ${SCM_OBSERVATION_AUDIT_FILE_DIRECTORY:${user.home}/scm/obs/audit}
-        file-name: ${SCM_OBSERVATION_AUDIT_FILE_NAME:scm-cache-audit.jsonl}
-        archive-directory: ${SCM_OBSERVATION_AUDIT_ARCHIVE_DIRECTORY:${user.home}/scm/obs/audit/archive}
-
-      rolling:
-        max-file-size: ${SCM_OBSERVATION_AUDIT_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBSERVATION_AUDIT_MAX_HISTORY:90}
-        total-size-cap: ${SCM_OBSERVATION_AUDIT_TOTAL_SIZE_CAP:20GB}
-        clean-history-on-start: ${SCM_OBSERVATION_AUDIT_CLEAN_HISTORY_ON_START:false}
-
-      async:
-        enabled: ${SCM_OBSERVATION_AUDIT_ASYNC_ENABLED:false}
-        queue-size: ${SCM_OBSERVATION_AUDIT_QUEUE_SIZE:8192}
-        discarding-threshold: ${SCM_OBSERVATION_AUDIT_DISCARDING_THRESHOLD:0}
-        never-block: ${SCM_OBSERVATION_AUDIT_NEVER_BLOCK:false}
-
-    metric:
-      enabled: true
-
-  cache:
-    log:
-      level:
-        root: ${SCM_CACHE_LOG_ROOT_LEVEL:INFO}
-        application: ${SCM_CACHE_LOG_APPLICATION_LEVEL:INFO}
-        spring: ${SCM_CACHE_LOG_SPRING_LEVEL:INFO}
-        hibernate: ${SCM_CACHE_LOG_HIBERNATE_LEVEL:WARN}
-        hazelcast: ${SCM_CACHE_LOG_HAZELCAST_LEVEL:INFO}
-        hikari: ${SCM_CACHE_LOG_HIKARI_LEVEL:INFO}
-
-    hazelcast:
-      member:
-        instance-name: my-instance3
-        cluster-name: dev3
-        properties:
-          hazelcast:
-            socket:
-              bind:
-                any: true
-            logging:
-              type: slf4j
-            partition:
-              table:
-                send:
-                  interval: 15
-              count: 271
-        network-config:
-          port: 5701
-          port-auto-increment: true
-          port-count: 100
-          reuse-address: true
-          join:
-            multicast-config:
-              enabled: false
-            aws-config:
-              enabled: false
-            tcp-ip-config:
-              enabled: false
-              required-member: 10.10.8.66
-              members: 10.10.8.66
-              connection-timeout-seconds: 5
-        flake-id-generator-configs:
-          default:
-            prefetch-count: 10000
-            prefetch-validity-millis: 600000
-            node-id-offset: 0
-            statistics-enabled: true
+SCM_OBS_ROOT_DIR: ${user.home}/scm/obs
+SCM_OBS_LOG_CONSOLE_ENABLED: true
+SCM_OBS_LOG_FILE_ENABLED: true
+SCM_OBS_TRACE_FILE_ENABLED: true
+SCM_OBS_AUDIT_ENABLED: false
