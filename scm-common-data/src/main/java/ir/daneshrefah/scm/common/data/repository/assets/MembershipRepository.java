@@ -34,7 +34,7 @@ public interface MembershipRepository extends JpaRepository<MembershipEntity, Lo
     List<MembershipEntity> findMembershipListByUserId(@Param("userId") Integer userId);
 
     @Query("SELECT O FROM MembershipEntity O WHERE O.person.id = :userId and O.membershipType = :membershipType and O.customerNo = :customerNo")
-    Optional<MembershipEntity> findMembershipListByUserIdAndMembershipTypeAndCustomerNo(@Param("userId") Integer userId, @Param("membershipType") MembershipType membershipType, @Param("customerNo") String customerNo);
+    MembershipEntity findMembershipListByUserIdAndMembershipTypeAndCustomerNo(@Param("userId") Integer userId, @Param("membershipType") MembershipType membershipType, @Param("customerNo") String customerNo);
 
     interface MembershipSpecs {
 
