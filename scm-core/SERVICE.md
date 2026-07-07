@@ -157,7 +157,7 @@ Service layer مسئول pipeline داخلی سرویس است.
 - audit plugin
 - metrics plugin
 - tracing/logging service-level
-- اجرای routing strategy مثل FIRST, FAIL_OVER, MULTI_OPERATION
+- اجرای routing strategy مثل FIRST، FAIL_OVER و CHAIN_ON_APPROVE
 - اتصال به operation/provider
 ```
 
@@ -451,7 +451,8 @@ Metrics مربوط به pluginهای service باید شامل count, duration �
 اگر خواستی routing strategy یا provider call را تغییر بدهی:
 
 ```text
-برو سراغ ServiceTargetRouter یا provider module.
+برو سراغ package مربوط به service routing یا provider module.
+ServiceTargetRouter فقط dispatcher است و business rule نباید داخل آن قرار بگیرد.
 Gateway را تغییر نده.
 ```
 
@@ -467,6 +468,135 @@ Gateway را تغییر نده.
 - business routing/provider logic را در gateway layer نگذار.
 - operation layer را بی‌دلیل تغییر نده.
 ```
+
+---
+
+## CHAIN_ON_APPROVE Routing Strategy
+
+### چه مشکلی را حل می‌کند؟
+
+گاهی یک `Service` به چند `ServiceOperation` فعال وصل است و operationها باید به ترتیب اجرا شوند. در این حالت operation بعدی فقط وقتی اجرا می‌شود که نتیجه operation قبلی از نظر business قابل قبول یا **approved** باشد.
+
+تفاوت strategyها:
+
+```text
+FIRST             -> دقیقا یک operation فعال را اجرا می‌کند.
+FAIL_OVER         -> رفتار failover فعلی را برای operationهای فعال حفظ می‌کند.
+CHAIN_ON_APPROVE  -> operationهای فعال را به ترتیب اجرا می‌کند و قبل از رفتن به مرحله بعد approval را می‌سنجد.
+```
+
+### در کد چگونه کار می‌کند؟
+
+- `ServiceTargetRouter` فقط `RoutingStrategy` را به registry می‌دهد و هیچ `if/else` یا `switch` مربوط به strategy ندارد.
+- `ServiceTargetRoutingRegistry` handler مناسب را پیدا می‌کند و handler تکراری، strategy خالی یا strategy پشتیبانی‌نشده را رد می‌کند.
+- هر پیاده‌سازی `ServiceTargetRoutingHandler` مسئول یک strategy است.
+- `ChainOnApproveRoutePlanFactory` هنگام ساخته‌شدن Camel route، operationهای فعال را به یک plan تغییرناپذیر تبدیل می‌کند.
+- هر `ChainOnApproveStepPlan` از قبل operation، آدرس endpoint، bean مربوط به `OperationApprovalPolicy` و `Definition` همان مرحله را نگه می‌دارد.
+- `OperationApprovalPolicyCodeExtractor` مقدار `approvalPolicyCode` را از JSON موجود در `ServiceOperation.definition.details` استخراج می‌کند و `OperationApprovalPolicyPlanFactory` bean متناظر را از `OperationApprovalPolicyRegistry` پیدا می‌کند.
+- اگر definition وجود نداشته باشد، `details` خالی باشد، یا `approvalPolicyCode` وجود نداشته یا خالی باشد، `DefaultOperationApprovalPolicy` انتخاب می‌شود.
+- اگر JSON نامعتبر باشد یا `approvalPolicyCode` به policy ثبت‌شده‌ای اشاره نکند، ساخت route همان موقع fail می‌شود.
+- `ChainOnApproveServiceTargetRoutingHandler` با plan آماده route را می‌سازد. قبل از هر فراخوانی، propertyهای `Message.SERVICE_OPERATION` و `Message.OPERATION_NAME` تنظیم می‌شوند.
+
+### startup و runtime
+
+این strategy در startup و هنگام ساخت Camel route آماده می‌شود:
+
+```text
+DB -> Service + ServiceOperation + Definition
+   -> ChainOnApproveRoutePlanFactory
+   -> ChainOnApproveRoutePlan با stepهای آماده
+   -> Camel route
+```
+
+در زمان اجرای request، برنامه فقط operation فعلی را اجرا می‌کند و policy از قبل resolveشده در همان step را صدا می‌زند. در این مسیر نه query دیتابیس انجام می‌شود و نه policy code دوباره از definition استخراج می‌شود.
+
+بنابراین تغییر `TBL_SCM_DEFINITION` یا اتصال definition به service-operation بعد از startup روی route موجود اثر ندارد. تا وقتی قابلیت route reload اضافه نشده است، برای اعمال این تغییرها application باید restart شود.
+
+ترتیب stepها از ترتیب لیست `serviceOperations` بارگذاری‌شده از `TBL_SCM_SERVICE_OPERATION` می‌آید. مدل فعلی `ServiceOperation` فیلد order ندارد. بنابراین chain همین ترتیب لیست را حفظ می‌کند. اگر ترتیب business باید از database قابل تنظیم و تضمین‌شده باشد، باید در آینده یک فیلد order صریح به مدل و query دیتابیس اضافه شود.
+
+### approved همیشه مساوی success نیست
+
+`DefaultOperationApprovalPolicy` فقط `Message.isSuccessful()` را approved می‌داند.
+
+ممکن است یک خطای business مثل duplicate data برای ادامه chain قابل قبول باشد. برای این رفتار باید یک bean جدید از `OperationApprovalPolicy` با `code()` مشخص ساخته شود و همان code در JSON فیلد `Definition.details` مرحله قرار بگیرد:
+
+```json
+{
+  "approvalPolicyCode": "DUPLICATE_DATA_APPROVED"
+}
+```
+
+کل `Definition` از طریق `OperationApprovalContext` به policy می‌رسد. هیچ error code مربوط به duplicate داخل router hard-code نشده است و `Definition.name` فقط metadata هویتی/نمایشی است.
+
+### مثال
+
+فرض کن سرویس سه operation فعال `A`، `B` و `C` دارد:
+
+```text
+A approved      -> B اجرا می‌شود
+B approved      -> C اجرا می‌شود
+C not approved  -> chain تمام می‌شود
+```
+
+اگر پاسخ `A` از نظر فنی error باشد ولی policy آن error را approved بداند، `B` همچنان اجرا می‌شود.
+
+### تنظیم database
+
+- `REF.EB_SERVICE.ROUTING_STRATEGY` strategy سرویس را مشخص می‌کند و برای این حالت باید دقیقا `CHAIN_ON_APPROVE` باشد.
+- `REF.TBL_SCM_SERVICE_OPERATION` operationهای سرویس و اتصال هر مرحله به definition را نگه می‌دارد. فقط رکوردهای active وارد plan می‌شوند.
+- `REF.TBL_SCM_SERVICE_OPERATION.DEFINITION_ID` به `REF.TBL_SCM_DEFINITION` اشاره می‌کند.
+- `REF.TBL_SCM_DEFINITION.DETAILS` تنظیمات approval policy را به شکل JSON نگه می‌دارد و `approvalPolicyCode` باید با `OperationApprovalPolicy.code()` یک Spring bean برابر باشد.
+- نبودن definition یا null/blank بودن `DETAILS` یعنی policy پیش‌فرض `DEFAULT`.
+- نبودن یا blank بودن `approvalPolicyCode` در JSON معتبر نیز یعنی policy پیش‌فرض `DEFAULT`.
+- JSON نامعتبر یا `approvalPolicyCode` ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
+
+مسیر resolve شدن policy:
+
+```text
+TBL_SCM_SERVICE_OPERATION.DEFINITION_ID
+  -> TBL_SCM_DEFINITION.DETAILS
+  -> approvalPolicyCode
+  -> OperationApprovalPolicyRegistry
+  -> OperationApprovalPolicy bean
+  -> ChainOnApproveStepPlan
+```
+
+فیلد `ServiceEntity.routingStrategy` با `EnumType.STRING` ذخیره می‌شود. مقدار database:
+
+```text
+CHAIN_ON_APPROVE
+```
+
+مثال:
+
+```sql
+UPDATE REF.EB_SERVICE
+SET ROUTING_STRATEGY = 'CHAIN_ON_APPROVE'
+WHERE CODE = 'YOUR_SERVICE_CODE';
+```
+
+طول این مقدار از محدودیت فعلی ستون (`20`) کمتر است. چون enum به شکل string ذخیره می‌شود و seed/migration محدودکننده‌ای برای لیست strategyها در repository وجود ندارد، برای اضافه شدن این مقدار migration جدا لازم نیست.
+
+مثال تنظیم دو مرحله:
+
+```text
+EB_SERVICE.ROUTING_STRATEGY = CHAIN_ON_APPROVE
+
+Step 1:
+  operation = create-customer
+  definition.details = {"approvalPolicyCode":"DUPLICATE_DATA_APPROVED"}
+
+Step 2:
+  operation = create-account
+  definition.details = {"approvalPolicyCode":"DEFAULT"}
+```
+
+معنی مثال:
+
+- `create-customer` در success ادامه می‌دهد و اگر bean با کد `DUPLICATE_DATA_APPROVED` آن پاسخ را تایید کند، روی duplicate data هم ادامه می‌دهد.
+- `create-account` از رفتار پیش‌فرض استفاده می‌کند.
+- policy هر service-operation مستقل است؛ دو مرحله یک سرویس می‌توانند policy متفاوت داشته باشند.
+- اگر bean مربوط به `DUPLICATE_DATA_APPROVED` وجود نداشته باشد، application هنگام ساخت route fail می‌شود، نه هنگام اولین request.
 
 ---
 

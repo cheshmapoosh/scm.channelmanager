@@ -39,7 +39,7 @@ public class MembershipEntity extends AbstractEntity<Long> {
     @Column(name = "ARCHIVE_NO")
     private Integer archiveNumber;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CUSTOMER_ACCOUNT_ID")
     private CustomerAccountEntity customerAccount;
 
