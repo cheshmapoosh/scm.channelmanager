@@ -15,7 +15,7 @@ scm:
       distributed: true
       default-type: remote
       config:
-        cluster-name: dev3
+        cluster-name: scm-cache-dev
         network-config:
           addresses:
             - 127.0.0.1:5701
