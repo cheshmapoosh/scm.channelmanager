@@ -1,112 +1,68 @@
-# Local developer/template profile. This profile never imports scm-config.
 spring:
   cloud:
     config:
       enabled: false
 
-server:
-  ssl:
-    # Enable HTTPS for realistic Secure/SameSite=None cookie testing.
-    enabled: ${SCM_UAA_SSL_ENABLED:false}
-    key-store: ${SCM_UAA_SSL_KEY_STORE:}
-    key-store-password: ${SCM_UAA_SSL_KEY_STORE_PASSWORD:}
-    key-store-type: ${SCM_UAA_SSL_KEY_STORE_TYPE:PKCS12}
-    key-alias: ${SCM_UAA_SSL_KEY_ALIAS:}
+SCM_ENV: dev
+SCM_APPLICATION_NAME: scm-uaa
+SCM_INSTANCE_ID: local-scm-uaa
+SCM_SERVER_PORT: ${SERVER_PORT:8000}
 
-scm:
-  uaa:
-    security:
-      password:
-        current-encoding-id: ${SCM_UAA_PASSWORD_CURRENT_ENCODING_ID:argon2id}
-        legacy-default-matching-id: ${SCM_UAA_PASSWORD_LEGACY_DEFAULT_MATCHING_ID:legacy-md5}
-    datasource:
-      main:
-        enabled: true
-        url: ${SCM_UAA_MAIN_DB_URL:jdbc:db2://10.15.27.82:446/DSNALOC}
-        username: ${SCM_UAA_MAIN_DB_USERNAME:casadm}
-        password: ${SCM_UAA_MAIN_DB_PASSWORD:a}
-        driver-class-name: ${SCM_UAA_MAIN_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
-        max-connection: ${SCM_UAA_MAIN_DB_MAX_CONNECTION:10}
-        default-schema: ${SCM_UAA_MAIN_DB_SCHEMA:REF}
-      activation:
-        enabled: ${SCM_UAA_ACTIVATION_DB_ENABLED:true}
-        url: ${SCM_UAA_ACTIVATION_DB_URL:jdbc:db2://10.15.1.197:50000/DBREFSW}
-        username: ${SCM_UAA_ACTIVATION_DB_USERNAME:mbusr}
-        password: ${SCM_UAA_ACTIVATION_DB_PASSWORD:mbusr}
-        driver-class-name: ${SCM_UAA_ACTIVATION_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
-        max-connection: ${SCM_UAA_ACTIVATION_DB_MAX_CONNECTION:10}
-        default-schema: ${SCM_UAA_ACTIVATION_DB_SCHEMA:MBUAA}
-    cors:
-      allowed-origin-patterns:
-        - "http://localhost:*"
-        - "https://localhost:*"
-        - "http://127.0.0.1:*"
-        - "https://127.0.0.1:*"
-        - "https://*.local.test:*"
+SCM_UAA_BASE_URL: http://scm-auth-server
+SCM_UAA_ISSUER_URL: http://scm-auth-server
+SCM_UAA_JWK_SET_URL: http://scm-auth-server/oauth2/jwks
 
-  otp:
-    time-to-live-minutes: 1
-    jms:
-      avacas:
-        hostName: 10.15.1.185
-        port: 1717
-        channel: SYSTEM.ADMIN.SVRCONN
-        queueManager: CSQ1
-        username: Administrator
-        password:
-        sendQueueName: AVACAS2CM_R
-        receiverQueueName: AVACAS2CM_L
+SCM_DB_URL: jdbc:db2://10.15.27.82:446/DSNALOC
+SCM_DB_USERNAME: casadm
+SCM_DB_PASSWORD: ${SCM_DEV_DB_PASSWORD:a}
+SCM_DB_DRIVER: com.ibm.db2.jcc.DB2Driver
+SCM_DB_SCHEMA: REF
+SCM_DB_MAX_CONNECTION: 10
 
-  jms:
-    logout:
-      enabled: true
-      host: 10.15.1.185
-      port: 1818
-      channel: SYSTEM.ADMIN.SVRCONN
-      queueManager: CSQ2
-      username:
-      password:
-      topic: SUA/LOGOUT
+SCM_UAA_ACTIVATION_DB_ENABLED: true
+SCM_UAA_ACTIVATION_DB_URL: jdbc:db2://10.15.1.197:50000/DBREFSW
+SCM_UAA_ACTIVATION_DB_USERNAME: mbusr
+SCM_UAA_ACTIVATION_DB_PASSWORD: ${SCM_DEV_UAA_ACTIVATION_DB_PASSWORD:mbusr}
+SCM_UAA_ACTIVATION_DB_DRIVER: com.ibm.db2.jcc.DB2Driver
+SCM_UAA_ACTIVATION_DB_SCHEMA: MBUAA
+SCM_UAA_ACTIVATION_DB_MAX_CONNECTION: 10
 
+SCM_CACHE_DISTRIBUTED: true
+SCM_CACHE_CLUSTER_NAME: dev3
+SCM_CACHE_ADDRESS: 10.10.8.66:5701
 
-  cache:
-    client:
-      distributed: true
-      config:
-        cluster-name: dev3
-        network-config:
-          addresses:
-            - '10.10.8.66:5701'
+SCM_SECURITY_CORS_ALLOWED_ORIGINS: http://localhost:*,https://localhost:*,http://127.0.0.1:*,https://127.0.0.1:*,https://*.local.test:*
 
-  notification:
-    enabled: true
-    sms:
-      enabled: true
-      ibm-mq:
-        queue-manager: CSQ1
-        channel: SYSTEM.ADMIN.SVRCONN
-        username: Administrator
-        password: " "
-        port: 1717
-        host: 10.15.1.185
+SCM_OTP_TTL: 1
+SCM_OTP_AVACAS_HOST: 10.15.1.185
+SCM_OTP_AVACAS_PORT: 1717
+SCM_OTP_AVACAS_CHANNEL: SYSTEM.ADMIN.SVRCONN
+SCM_OTP_AVACAS_QUEUE_MANAGER: CSQ1
+SCM_OTP_AVACAS_USERNAME: Administrator
+SCM_OTP_AVACAS_PASSWORD: ""
+SCM_OTP_AVACAS_SEND_QUEUE: AVACAS2CM_R
+SCM_OTP_AVACAS_RECEIVER_QUEUE: AVACAS2CM_L
 
-  log:
-    app:
-      file-directory: ${SCM_APP_LOG_DIRECTORY:${user.home}/scm/log/app}
-      rolling-archive-directory: ${SCM_APP_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/log/app/archive}
+SCM_LOGOUT_JMS_ENABLED: true
+SCM_LOGOUT_JMS_HOST: 10.15.1.185
+SCM_LOGOUT_JMS_PORT: 1818
+SCM_LOGOUT_JMS_CHANNEL: SYSTEM.ADMIN.SVRCONN
+SCM_LOGOUT_JMS_QUEUE_MANAGER: CSQ2
+SCM_LOGOUT_JMS_USERNAME: ""
+SCM_LOGOUT_JMS_PASSWORD: ""
+SCM_LOGOUT_JMS_TOPIC: SUA/LOGOUT
 
-  observation:
-    log:
-      console:
-        enabled: ${SCM_OBSERVATION_LOG_CONSOLE_ENABLED:true}
-      file:
-        directory: ${SCM_OBSERVATION_LOG_FILE_DIRECTORY:${user.home}/scm/obs/log}
-        archive-directory: ${SCM_OBSERVATION_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/obs/log/archive}
-    trace:
-      file:
-        directory: ${SCM_OBSERVATION_TRACE_FILE_DIRECTORY:${user.home}/scm/obs/trace}
-        archive-directory: ${SCM_OBSERVATION_TRACE_ARCHIVE_DIRECTORY:${user.home}/scm/obs/trace/archive}
-    audit:
-      file:
-        directory: ${SCM_OBSERVATION_AUDIT_FILE_DIRECTORY:${user.home}/scm/obs/audit}
-        archive-directory: ${SCM_OBSERVATION_AUDIT_ARCHIVE_DIRECTORY:${user.home}/scm/obs/audit/archive}
+SCM_NOTIFICATION_ENABLED: true
+SCM_NOTIFICATION_SMS_ENABLED: true
+SCM_NOTIFICATION_MQ_HOST: 10.15.1.185
+SCM_NOTIFICATION_MQ_PORT: 1717
+SCM_NOTIFICATION_MQ_CHANNEL: SYSTEM.ADMIN.SVRCONN
+SCM_NOTIFICATION_MQ_QUEUE_MANAGER: CSQ1
+SCM_NOTIFICATION_MQ_USERNAME: Administrator
+SCM_NOTIFICATION_MQ_PASSWORD: " "
+
+SCM_OBS_ROOT_DIR: ${user.home}/scm/obs
+SCM_OBS_LOG_CONSOLE_ENABLED: true
+SCM_OBS_LOG_FILE_ENABLED: true
+SCM_OBS_TRACE_FILE_ENABLED: true
+SCM_OBS_AUDIT_ENABLED: true

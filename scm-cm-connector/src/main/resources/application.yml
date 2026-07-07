@@ -1,11 +1,154 @@
 spring:
-  application:
-    name: scm-cm-connector
   profiles:
-    active: default
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  application:
+    name: ${SCM_APPLICATION_NAME:scm-cm-connector}
+
+server:
+  port: ${SCM_SERVER_PORT:${SERVER_PORT:8080}}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: ${SCM_MANAGEMENT_ENDPOINTS_INCLUDE:health,info,prometheus}
+  endpoint:
+    health:
+      show-details: ${SCM_MANAGEMENT_HEALTH_SHOW_DETAILS:never}
+      probes:
+        enabled: ${SCM_MANAGEMENT_HEALTH_PROBES_ENABLED:true}
+
+logging:
+  config: ${SCM_LOGBACK_CONFIG:classpath:logback-spring.xml}
+  level:
+    root: ${SCM_LOG_LEVEL_ROOT:INFO}
+    ir.daneshrefah: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+    org.springframework: ${SCM_LOG_LEVEL_SPRING:INFO}
+
+scm:
+  env: ${SCM_ENV:${spring.profiles.active}}
+  instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-cm-connector}}
+
+  deployment:
+    service-version: ${SCM_SERVICE_VERSION:${VERSION:8.6.0}}
+
+  application:
+    version: ${SCM_APPLICATION_VERSION:${VERSION:8.6.0}}
+    build: ${SCM_APPLICATION_BUILD:unknown}
+
+  runtime: ${SCM_RUNTIME:standalone}
+
+  security:
+    cache:
+      session:
+        enabled: ${SCM_SECURITY_SESSION_CACHE_ENABLED:true}
+        cache-name: ${SCM_SECURITY_SESSION_CACHE_NAME:session_cache}
+      user:
+        enabled: ${SCM_SECURITY_USER_CACHE_ENABLED:false}
+        cache-name: ${SCM_SECURITY_USER_CACHE_NAME:user_cache}
+    resource-server:
+      enabled: ${SCM_RESOURCE_SERVER_ENABLED:true}
+      issuer-uri: ${SCM_UAA_ISSUER_URL:${SCM_UAA_BASE_URL:http://localhost:8000}}
+      jwk-set-uri: ${SCM_UAA_JWK_SET_URL:${SCM_UAA_BASE_URL:http://localhost:8000}/oauth2/jwks}
+      audiences:
+        - ${SCM_CM_CONNECTOR_RESOURCE_AUDIENCE:scm-cm-connector}
+      required-claims:
+        - ${SCM_CM_CONNECTOR_REQUIRED_CLAIM_SUB:sub}
+        - ${SCM_CM_CONNECTOR_REQUIRED_CLAIM_SESSION:sid}
+        - ${SCM_CM_CONNECTOR_REQUIRED_CLAIM_NICKNAME:nickname}
+        - ${SCM_CM_CONNECTOR_REQUIRED_CLAIM_TERMINAL:terminalCode}
+      method-security-enabled: ${SCM_RESOURCE_SERVER_METHOD_SECURITY_ENABLED:true}
+      observation:
+        enabled: ${SCM_RESOURCE_SERVER_OBSERVATION_ENABLED:true}
+        log-enabled: ${SCM_RESOURCE_SERVER_OBS_LOG_ENABLED:true}
+        trace-enabled: ${SCM_RESOURCE_SERVER_OBS_TRACE_ENABLED:true}
+        metric-enabled: ${SCM_RESOURCE_SERVER_OBS_METRIC_ENABLED:true}
+
+  cache:
+    client:
+      distributed: ${SCM_CACHE_DISTRIBUTED:true}
+      caches:
+        session_cache:
+          type: ${SCM_CACHE_SESSION_TYPE:near}
+      config:
+        cluster-name: ${SCM_CACHE_CLUSTER_NAME:scm}
+        network-config:
+          addresses:
+            - ${SCM_CACHE_ADDRESS:127.0.0.1:5701}
+
+  cm:
+    connector:
+      admin-cache-endpoints-enabled: ${SCM_CM_CONNECTOR_ADMIN_CACHE_ENDPOINTS_ENABLED:false}
+
+  observation:
+    enabled: ${SCM_OBS_ENABLED:true}
+    platform: ${SCM_OBS_PLATFORM:scm}
+    app-name: ${SCM_OBS_APP_NAME:${spring.application.name}}
+    app-label: ${SCM_OBS_APP_LABEL:${spring.profiles.active:dev}}
+    instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-cm-connector}}
+    time-zone: ${SCM_OBS_TIME_ZONE:UTC}
+    http:
+      server:
+        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:cm-connector.http.request}
+    log:
+      enabled: ${SCM_OBS_LOG_ENABLED:true}
+      console:
+        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:true}
+        format: ${SCM_OBS_LOG_CONSOLE_FORMAT:simple}
+      file:
+        enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
+        format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log}
+        file-name: ${SCM_OBS_LOG_FILE_NAME:${spring.application.name}.jsonl}
+        archive-directory: ${SCM_OBS_LOG_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_LOG_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_LOG_CLEAN_HISTORY_ON_START:false}
+      level:
+        root: ${SCM_LOG_LEVEL_ROOT:INFO}
+        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
+        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
+    trace:
+      enabled: ${SCM_OBS_TRACE_ENABLED:true}
+      file:
+        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
+        format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace}
+        file-name: ${SCM_OBS_TRACE_FILE_NAME:${spring.application.name}-trace.jsonl}
+        archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_TRACE_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_TRACE_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBS_TRACE_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_TRACE_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_TRACE_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_TRACE_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_TRACE_ASYNC_MAX_FLUSH_TIME:1000}
+    audit:
+      enabled: ${SCM_OBS_AUDIT_ENABLED:false}
+      file:
+        enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
+        format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit}
+        file-name: ${SCM_OBS_AUDIT_FILE_NAME:${spring.application.name}-audit.jsonl}
+        archive-directory: ${SCM_OBS_AUDIT_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}
+        total-size-cap: ${SCM_OBS_AUDIT_TOTAL_SIZE_CAP:20GB}
+        clean-history-on-start: ${SCM_OBS_AUDIT_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBS_AUDIT_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_AUDIT_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_AUDIT_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_AUDIT_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_AUDIT_ASYNC_MAX_FLUSH_TIME:1000}
+    metric:
+      enabled: ${SCM_OBS_METRIC_ENABLED:true}

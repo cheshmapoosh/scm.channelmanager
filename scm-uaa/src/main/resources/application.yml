@@ -1,30 +1,54 @@
-server:
-  port: ${SERVER_PORT:8000}
-
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
-    name: scm-uaa
-  cloud:
-    config:
-      enabled: false
+    name: ${SCM_APPLICATION_NAME:scm-uaa}
   jpa:
-    show-sql: ${SCM_UAA_JPA_SHOW_SQL:false}
+    show-sql: ${SCM_JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        format_sql: ${SCM_UAA_HIBERNATE_FORMAT_SQL:false}
+        format_sql: ${SCM_HIBERNATE_FORMAT_SQL:false}
+
+server:
+  port: ${SCM_SERVER_PORT:${SERVER_PORT:8000}}
+  ssl:
+    enabled: ${SCM_UAA_SSL_ENABLED:false}
+    key-store: ${SCM_UAA_SSL_KEY_STORE:}
+    key-store-password: ${SCM_UAA_SSL_KEY_STORE_PASSWORD:}
+    key-store-type: ${SCM_UAA_SSL_KEY_STORE_TYPE:PKCS12}
+    key-alias: ${SCM_UAA_SSL_KEY_ALIAS:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${SCM_MANAGEMENT_ENDPOINTS_INCLUDE:health,metrics,prometheus}
+  endpoint:
+    health:
+      show-details: ${SCM_MANAGEMENT_HEALTH_SHOW_DETAILS:never}
+      probes:
+        enabled: ${SCM_MANAGEMENT_HEALTH_PROBES_ENABLED:true}
 
 springdoc:
   swagger-ui:
-    disable-swagger-default-url: true
-    path: /public/index.html
+    disable-swagger-default-url: ${SCM_SWAGGER_DISABLE_DEFAULT_URL:true}
+    path: ${SCM_SWAGGER_UI_PATH:/public/index.html}
   api-docs:
-    path: /public/v3/api-docs
+    path: ${SCM_SWAGGER_API_DOCS_PATH:/public/v3/api-docs}
 
 logging:
+  config: ${SCM_LOGBACK_CONFIG:classpath:logback-spring.xml}
   level:
-    org.hibernate.SQL: ${SCM_UAA_LOG_LEVEL_HIBERNATE_SQL:WARN}
-    org.hibernate.type.descriptor.sql: ${SCM_UAA_LOG_LEVEL_HIBERNATE_SQL_BIND:WARN}
-    org.hibernate.orm.jdbc.bind: ${SCM_UAA_LOG_LEVEL_HIBERNATE_JDBC_BIND:WARN}
+    root: ${SCM_LOG_LEVEL_ROOT:INFO}
+    ir.daneshrefah: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+    org.springframework: ${SCM_LOG_LEVEL_SPRING:INFO}
+    org.springframework.security: ${SCM_LOG_LEVEL_SPRING_SECURITY:INFO}
+    org.hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+    org.hibernate.SQL: ${SCM_LOG_LEVEL_HIBERNATE_SQL:WARN}
+    org.hibernate.type.descriptor.sql: ${SCM_LOG_LEVEL_HIBERNATE_SQL_BIND:WARN}
+    org.hibernate.orm.jdbc.bind: ${SCM_LOG_LEVEL_HIBERNATE_JDBC_BIND:WARN}
+    com.zaxxer.hikari: ${SCM_LOG_LEVEL_HIKARI:INFO}
+    com.ibm.mq: ${SCM_LOG_LEVEL_IBM_MQ:WARN}
 
 service:
   shahkar:
@@ -36,9 +60,17 @@ service:
     grant_Type: ${SCM_SHAHKAR_GRANT_TYPE:client_credentials}
 
 scm:
+  env: ${SCM_ENV:${spring.profiles.active}}
+  instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-uaa}}
+
+  deployment:
+    service-version: ${SCM_SERVICE_VERSION:${VERSION:8.6.0}}
+
   application:
-    version: ${SCM_APPLICATION_VERSION:8.3.0}
-    build: ${SCM_APPLICATION_BUILD:local}
+    version: ${SCM_APPLICATION_VERSION:${VERSION:8.6.0}}
+    build: ${SCM_APPLICATION_BUILD:unknown}
+
+  runtime: ${SCM_RUNTIME:standalone}
 
   cif:
     url: ${SCM_CIF_URL:http://localhost:8080/Service/}
@@ -56,8 +88,8 @@ scm:
           white-list-enabled: ${SCM_UAA_PWA_WHITE_LIST_ENABLED:false}
           activation:
             check-registry-token: ${SCM_UAA_PWA_CHECK_REGISTRY_TOKEN:true}
-            otp-code-trails-count: ${SCM_UAA_PWA_OTP_CODE_TRIALS_COUNT:5}
-            otp-code-expiration-minutes: ${SCM_UAA_PWA_OTP_CODE_EXPIRATION_MINUTES:2}
+            otp-code-trails-count: ${SCM_OTP_MAX_ATTEMPTS:${SCM_UAA_PWA_OTP_CODE_TRIALS_COUNT:5}}
+            otp-code-expiration-minutes: ${SCM_OTP_TTL:${SCM_UAA_PWA_OTP_CODE_EXPIRATION_MINUTES:2}}
             rate-limit-count: ${SCM_UAA_PWA_ACTIVATION_RATE_LIMIT_COUNT:5}
             rate-limit-blocked-time-minutes: ${SCM_UAA_PWA_ACTIVATION_BLOCKED_MINUTES:10}
           login:
@@ -66,6 +98,9 @@ scm:
             token-change-warn-period-days: ${SCM_UAA_PWA_TOKEN_CHANGE_WARN_DAYS:31}
 
   uaa:
+    base-url: ${SCM_UAA_BASE_URL:http://scm-auth-server}
+    issuer-url: ${SCM_UAA_ISSUER_URL:${SCM_UAA_BASE_URL:http://scm-auth-server}}
+    jwk-set-url: ${SCM_UAA_JWK_SET_URL:${SCM_UAA_BASE_URL:http://scm-auth-server}/oauth2/jwks}
     security:
       password:
         current-encoding-id: ${SCM_UAA_PASSWORD_CURRENT_ENCODING_ID:argon2id}
@@ -75,13 +110,13 @@ scm:
         enabled: ${SCM_UAA_NIB_ACTIVATION_ENABLED:true}
     datasource:
       main:
-        enabled: true
-        url: ${SCM_UAA_MAIN_DB_URL:jdbc:db2://localhost:50000/SCM}
-        username: ${SCM_UAA_MAIN_DB_USERNAME:scm}
-        password: ${SCM_UAA_MAIN_DB_PASSWORD:}
-        driver-class-name: ${SCM_UAA_MAIN_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
-        max-connection: ${SCM_UAA_MAIN_DB_MAX_CONNECTION:10}
-        default-schema: ${SCM_UAA_MAIN_DB_SCHEMA:REF}
+        enabled: ${SCM_DB_ENABLED:true}
+        url: ${SCM_DB_URL:${SCM_UAA_MAIN_DB_URL:jdbc:db2://localhost:50000/SCM}}
+        username: ${SCM_DB_USERNAME:${SCM_UAA_MAIN_DB_USERNAME:scm}}
+        password: ${SCM_DB_PASSWORD:${SCM_UAA_MAIN_DB_PASSWORD:}}
+        driver-class-name: ${SCM_DB_DRIVER:${SCM_UAA_MAIN_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}}
+        max-connection: ${SCM_DB_MAX_CONNECTION:${SCM_UAA_MAIN_DB_MAX_CONNECTION:10}}
+        default-schema: ${SCM_DB_SCHEMA:${SCM_UAA_MAIN_DB_SCHEMA:REF}}
       activation:
         enabled: ${SCM_UAA_ACTIVATION_DB_ENABLED:true}
         url: ${SCM_UAA_ACTIVATION_DB_URL:jdbc:db2://localhost:50000/SCM}
@@ -90,7 +125,6 @@ scm:
         driver-class-name: ${SCM_UAA_ACTIVATION_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
         max-connection: ${SCM_UAA_ACTIVATION_DB_MAX_CONNECTION:10}
         default-schema: ${SCM_UAA_ACTIVATION_DB_SCHEMA:MBUAA}
-
     legacy:
       enabled: ${SCM_UAA_LEGACY_ENABLED:true}
       client-resolution:
@@ -98,6 +132,9 @@ scm:
         mb-client-id: ${SCM_UAA_LEGACY_MB_CLIENT_ID:MB}
         super-app-client-id: ${SCM_UAA_LEGACY_SUPER_APP_CLIENT_ID:SA}
         nib-client-id: ${SCM_UAA_LEGACY_NIB_CLIENT_ID:NIB}
+      refresh:
+        client-id: ${SCM_UAA_LEGACY_REFRESH_CLIENT_ID:${SCM_UAA_LEGACY_SUPER_APP_CLIENT_ID:SA}}
+        client-secret: ${SCM_UAA_LEGACY_REFRESH_CLIENT_SECRET:}
       pwa:
         cookie:
           enabled: ${SCM_UAA_LEGACY_PWA_COOKIE_ENABLED:true}
@@ -107,74 +144,65 @@ scm:
           http-only: ${SCM_UAA_LEGACY_PWA_COOKIE_HTTP_ONLY:true}
           same-site: ${SCM_UAA_LEGACY_PWA_COOKIE_SAME_SITE:Lax}
           path: ${SCM_UAA_LEGACY_PWA_COOKIE_PATH:/}
-
     login:
       theme:
-        default-theme: default
+        default-theme: ${SCM_UAA_LOGIN_DEFAULT_THEME:default}
         clients:
           default:
-            name: default
-            display-name: SCM
-            css-class: theme-default
+            name: ${SCM_UAA_LOGIN_DEFAULT_CLIENT_NAME:default}
+            display-name: ${SCM_UAA_LOGIN_DEFAULT_DISPLAY_NAME:SCM}
+            css-class: ${SCM_UAA_LOGIN_DEFAULT_CSS_CLASS:theme-default}
           nib:
-            name: nib
-            display-name: NIB
-            css-class: theme-nib
-            css-path: /assets/css/nib.css
-
+            name: ${SCM_UAA_LOGIN_NIB_CLIENT_NAME:nib}
+            display-name: ${SCM_UAA_LOGIN_NIB_DISPLAY_NAME:NIB}
+            css-class: ${SCM_UAA_LOGIN_NIB_CSS_CLASS:theme-nib}
+            css-path: ${SCM_UAA_LOGIN_NIB_CSS_PATH:/assets/css/nib.css}
     cors:
       enabled: ${SCM_UAA_CORS_ENABLED:true}
       allow-credentials: ${SCM_UAA_CORS_ALLOW_CREDENTIALS:true}
-      allowed-origin-patterns: ${SCM_UAA_CORS_ALLOWED_ORIGIN_PATTERNS:}
-      allowed-methods:
-        - GET
-        - POST
-        - PUT
-        - PATCH
-        - DELETE
-        - OPTIONS
-      allowed-headers:
-        - Authorization
-        - Content-Type
-        - X-Correlation-Id
-        - AppVersion
-        - Appversion
-        - app_version
-        - app-version
-        - APP_VERSION
-        - APPVERSION
-        - x-otp-code
-        - AccessParameter
-        - Signature
-        - RegistryToken
-      exposed-headers:
-        - Set-Cookie
-        - X-Correlation-Id
-      path-patterns:
-        - "/**"
-
+      allowed-origin-patterns: ${SCM_SECURITY_CORS_ALLOWED_ORIGINS:${SCM_UAA_CORS_ALLOWED_ORIGIN_PATTERNS:}}
+      allowed-methods: ${SCM_UAA_CORS_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
+      allowed-headers: ${SCM_UAA_CORS_ALLOWED_HEADERS:Authorization,Content-Type,X-Correlation-Id,AppVersion,Appversion,app_version,app-version,APP_VERSION,APPVERSION,x-otp-code,AccessParameter,Signature,RegistryToken}
+      exposed-headers: ${SCM_UAA_CORS_EXPOSED_HEADERS:Set-Cookie,X-Correlation-Id}
+      path-patterns: ${SCM_UAA_CORS_PATH_PATTERNS:/**}
     log:
       level:
-        root: ${SCM_UAA_LOG_LEVEL_ROOT:INFO}
-        application: ${SCM_UAA_LOG_LEVEL_APPLICATION:INFO}
-        spring: ${SCM_UAA_LOG_LEVEL_SPRING:INFO}
-        spring-security: ${SCM_UAA_LOG_LEVEL_SPRING_SECURITY:INFO}
-        hibernate: ${SCM_UAA_LOG_LEVEL_HIBERNATE:WARN}
-        hikari: ${SCM_UAA_LOG_LEVEL_HIKARI:INFO}
-        ibm-mq: ${SCM_UAA_LOG_LEVEL_IBM_MQ:WARN}
+        root: ${SCM_LOG_LEVEL_ROOT:INFO}
+        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
+        spring-security: ${SCM_LOG_LEVEL_SPRING_SECURITY:INFO}
+        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+        hikari: ${SCM_LOG_LEVEL_HIKARI:INFO}
+        ibm-mq: ${SCM_LOG_LEVEL_IBM_MQ:WARN}
 
   cache:
     client:
       distributed: ${SCM_CACHE_DISTRIBUTED:false}
+      config:
+        cluster-name: ${SCM_CACHE_CLUSTER_NAME:scm}
+        network-config:
+          addresses:
+            - ${SCM_CACHE_ADDRESS:127.0.0.1:5701}
 
   otp:
-    time-to-live-minutes: ${SCM_OTP_TTL_MINUTES:1}
+    ttl: ${SCM_OTP_TTL:${SCM_OTP_TTL_MINUTES:1}}
+    time-to-live-minutes: ${SCM_OTP_TTL:${SCM_OTP_TTL_MINUTES:1}}
     channel:
       id: ${SCM_OTP_CHANNEL_ID:1}
       channelCode: ${SCM_OTP_CHANNEL_CODE:OTP}
       jcaAlgorithm: ${SCM_OTP_JCA_ALGORITHM:RSA}
       storeKey: ${SCM_OTP_STORE_KEY:storeKey-test}
       password: ${SCM_OTP_STORE_PASSWORD:}
+    jms:
+      avacas:
+        hostName: ${SCM_OTP_AVACAS_HOST:localhost}
+        port: ${SCM_OTP_AVACAS_PORT:1717}
+        channel: ${SCM_OTP_AVACAS_CHANNEL:SYSTEM.ADMIN.SVRCONN}
+        queueManager: ${SCM_OTP_AVACAS_QUEUE_MANAGER:}
+        username: ${SCM_OTP_AVACAS_USERNAME:}
+        password: ${SCM_OTP_AVACAS_PASSWORD:}
+        sendQueueName: ${SCM_OTP_AVACAS_SEND_QUEUE:AVACAS2CM_R}
+        receiverQueueName: ${SCM_OTP_AVACAS_RECEIVER_QUEUE:AVACAS2CM_L}
 
   notification:
     enabled: ${SCM_NOTIFICATION_ENABLED:false}
@@ -190,23 +218,23 @@ scm:
 
   captcha:
     border:
-      enabled: true
-      color: '200,200,200'
-      thickness: 1
+      enabled: ${SCM_CAPTCHA_BORDER_ENABLED:true}
+      color: ${SCM_CAPTCHA_BORDER_COLOR:200,200,200}
+      thickness: ${SCM_CAPTCHA_BORDER_THICKNESS:1}
     noise:
-      color: '124,133,174'
+      color: ${SCM_CAPTCHA_NOISE_COLOR:124,133,174}
     items:
       login:
-        path: /public/login/captcha
+        path: ${SCM_CAPTCHA_LOGIN_PATH:/public/login/captcha}
         session:
-          key: loginCaptchaKey
-          date: loginCaptchaDate
+          key: ${SCM_CAPTCHA_LOGIN_SESSION_KEY:loginCaptchaKey}
+          date: ${SCM_CAPTCHA_LOGIN_SESSION_DATE:loginCaptchaDate}
         background:
-          color-from: '81,89,130'
-          color-to: '81,89,130'
+          color-from: ${SCM_CAPTCHA_LOGIN_BACKGROUND_FROM:81,89,130}
+          color-to: ${SCM_CAPTCHA_LOGIN_BACKGROUND_TO:81,89,130}
         text-producer:
           font:
-            color: '255,255,255'
+            color: ${SCM_CAPTCHA_LOGIN_FONT_COLOR:255,255,255}
 
   jms:
     logout:
@@ -222,67 +250,77 @@ scm:
   super-app:
     session-ttl: ${SCM_SUPER_APP_SESSION_TTL:3600000}
 
-  log:
-    app:
-      file-directory: ${SCM_APP_LOG_DIRECTORY:${user.home}/scm/log/app}
-      rolling-archive-directory: ${SCM_APP_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/log/app/archive}
-
   observation:
-    enabled: ${SCM_OBSERVATION_ENABLED:true}
+    enabled: ${SCM_OBS_ENABLED:true}
+    platform: ${SCM_OBS_PLATFORM:scm}
+    app-name: ${SCM_OBS_APP_NAME:${spring.application.name}}
+    app-label: ${SCM_OBS_APP_LABEL:${spring.profiles.active:dev}}
+    instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-uaa}}
+    time-zone: ${SCM_OBS_TIME_ZONE:UTC}
     http:
       server:
-        span-name: uaa.http.request
+        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:uaa.http.request}
     log:
-      enabled: ${SCM_OBSERVATION_LOG_ENABLED:true}
+      enabled: ${SCM_OBS_LOG_ENABLED:true}
       console:
-        enabled: ${SCM_OBSERVATION_LOG_CONSOLE_ENABLED:true}
-        format: simple
+        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:true}
+        format: ${SCM_OBS_LOG_CONSOLE_FORMAT:simple}
       file:
-        enabled: ${SCM_OBSERVATION_LOG_FILE_ENABLED:true}
-        format: jsonl
-        directory: ${SCM_OBSERVATION_LOG_FILE_DIRECTORY:${user.home}/scm/obs/log}
-        file-name: ${SCM_OBSERVATION_LOG_FILE_NAME:scm-uaa.jsonl}
-        archive-directory: ${SCM_OBSERVATION_LOG_ARCHIVE_DIRECTORY:${user.home}/scm/obs/log/archive}
+        enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
+        format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log}
+        file-name: ${SCM_OBS_LOG_FILE_NAME:${spring.application.name}.jsonl}
+        archive-directory: ${SCM_OBS_LOG_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log/archive}
       rolling:
-        max-file-size: ${SCM_OBSERVATION_LOG_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBSERVATION_LOG_MAX_HISTORY:30}
-        total-size-cap: ${SCM_OBSERVATION_LOG_TOTAL_SIZE_CAP:10GB}
-        clean-history-on-start: ${SCM_OBSERVATION_LOG_CLEAN_HISTORY_ON_START:false}
+        max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_LOG_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_LOG_CLEAN_HISTORY_ON_START:false}
+      level:
+        root: ${SCM_LOG_LEVEL_ROOT:INFO}
+        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
+        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
     trace:
-      enabled: ${SCM_OBSERVATION_TRACE_ENABLED:true}
+      enabled: ${SCM_OBS_TRACE_ENABLED:true}
+      aspect:
+        enabled: ${SCM_UAA_AUTH_TRACE_ASPECT_ENABLED:true}
       file:
-        enabled: ${SCM_OBSERVATION_TRACE_FILE_ENABLED:true}
-        format: jsonl
-        directory: ${SCM_OBSERVATION_TRACE_FILE_DIRECTORY:${user.home}/scm/obs/trace}
-        file-name: ${SCM_OBSERVATION_TRACE_FILE_NAME:scm-uaa-trace.jsonl}
-        archive-directory: ${SCM_OBSERVATION_TRACE_ARCHIVE_DIRECTORY:${user.home}/scm/obs/trace/archive}
+        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
+        format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace}
+        file-name: ${SCM_OBS_TRACE_FILE_NAME:${spring.application.name}-trace.jsonl}
+        archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace/archive}
       rolling:
-        max-file-size: ${SCM_OBSERVATION_TRACE_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBSERVATION_TRACE_MAX_HISTORY:30}
-        total-size-cap: ${SCM_OBSERVATION_TRACE_TOTAL_SIZE_CAP:10GB}
-        clean-history-on-start: ${SCM_OBSERVATION_TRACE_CLEAN_HISTORY_ON_START:false}
+        max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_TRACE_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_TRACE_CLEAN_HISTORY_ON_START:false}
       async:
-        enabled: ${SCM_OBSERVATION_TRACE_ASYNC_ENABLED:true}
-        queue-size: ${SCM_OBSERVATION_TRACE_QUEUE_SIZE:8192}
-        discarding-threshold: ${SCM_OBSERVATION_TRACE_DISCARDING_THRESHOLD:0}
-        never-block: ${SCM_OBSERVATION_TRACE_NEVER_BLOCK:false}
+        enabled: ${SCM_OBS_TRACE_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_TRACE_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_TRACE_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_TRACE_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_TRACE_ASYNC_MAX_FLUSH_TIME:1000}
     audit:
-      enabled: ${SCM_OBSERVATION_AUDIT_ENABLED:true}
+      enabled: ${SCM_OBS_AUDIT_ENABLED:true}
       file:
-        enabled: ${SCM_OBSERVATION_AUDIT_FILE_ENABLED:true}
-        format: jsonl
-        directory: ${SCM_OBSERVATION_AUDIT_FILE_DIRECTORY:${user.home}/scm/obs/audit}
-        file-name: ${SCM_OBSERVATION_AUDIT_FILE_NAME:scm-uaa-audit.jsonl}
-        archive-directory: ${SCM_OBSERVATION_AUDIT_ARCHIVE_DIRECTORY:${user.home}/scm/obs/audit/archive}
+        enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
+        format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit}
+        file-name: ${SCM_OBS_AUDIT_FILE_NAME:${spring.application.name}-audit.jsonl}
+        archive-directory: ${SCM_OBS_AUDIT_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit/archive}
       rolling:
-        max-file-size: ${SCM_OBSERVATION_AUDIT_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBSERVATION_AUDIT_MAX_HISTORY:90}
-        total-size-cap: ${SCM_OBSERVATION_AUDIT_TOTAL_SIZE_CAP:20GB}
-        clean-history-on-start: ${SCM_OBSERVATION_AUDIT_CLEAN_HISTORY_ON_START:false}
+        max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}
+        total-size-cap: ${SCM_OBS_AUDIT_TOTAL_SIZE_CAP:20GB}
+        clean-history-on-start: ${SCM_OBS_AUDIT_CLEAN_HISTORY_ON_START:false}
       async:
-        enabled: ${SCM_OBSERVATION_AUDIT_ASYNC_ENABLED:false}
-        queue-size: ${SCM_OBSERVATION_AUDIT_QUEUE_SIZE:8192}
-        discarding-threshold: ${SCM_OBSERVATION_AUDIT_DISCARDING_THRESHOLD:0}
-        never-block: ${SCM_OBSERVATION_AUDIT_NEVER_BLOCK:false}
+        enabled: ${SCM_OBS_AUDIT_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_AUDIT_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_AUDIT_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_AUDIT_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_AUDIT_ASYNC_MAX_FLUSH_TIME:1000}
     metric:
-      enabled: ${SCM_OBSERVATION_METRIC_ENABLED:true}
+      enabled: ${SCM_OBS_METRIC_ENABLED:true}

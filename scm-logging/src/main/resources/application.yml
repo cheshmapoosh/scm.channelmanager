@@ -1,10 +1,193 @@
 spring:
   profiles:
-    active: default
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
-    name: scm-logging
+    name: ${SCM_APPLICATION_NAME:scm-logging}
+  jms:
+    template:
+      default-destination: ${SCM_LOGGING_JMS_DEFAULT_DESTINATION:SCM2LOG}
+      delivery-mode: ${SCM_LOGGING_JMS_DELIVERY_MODE:NON_PERSISTENT}
+      qos-enabled: ${SCM_LOGGING_JMS_QOS_ENABLED:false}
+      time-to-live: ${SCM_LOGGING_JMS_TIME_TO_LIVE:172800000}
+      receive-timeout: ${SCM_LOGGING_JMS_RECEIVE_TIMEOUT:5000}
+    listener:
+      min-concurrency: ${SCM_LOGGING_JMS_MIN_CONCURRENCY:5}
+      max-concurrency: ${SCM_LOGGING_JMS_MAX_CONCURRENCY:30}
+
+server:
+  port: ${SCM_SERVER_PORT:${SERVER_PORT:9090}}
+
+logging:
+  config: ${SCM_LOGBACK_CONFIG:classpath:logback-spring.xml}
+  level:
+    root: ${SCM_LOG_LEVEL_ROOT:INFO}
+    ir.daneshrefah: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+    org.springframework: ${SCM_LOG_LEVEL_SPRING:INFO}
+    org.hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${SCM_MANAGEMENT_ENDPOINTS_INCLUDE:health,metrics,prometheus}
+  endpoint:
+    health:
+      show-details: ${SCM_MANAGEMENT_HEALTH_SHOW_DETAILS:never}
+      probes:
+        enabled: ${SCM_MANAGEMENT_HEALTH_PROBES_ENABLED:true}
+
+ibm:
+  mq:
+    queue-manager: ${SCM_LOGGING_MQ_QUEUE_MANAGER:}
+    channel: ${SCM_LOGGING_MQ_CHANNEL:}
+    conn-name: ${SCM_LOGGING_MQ_CONN_NAME:${SCM_LOGGING_MQ_HOST:localhost}(${SCM_LOGGING_MQ_PORT:1414})}
+    user: ${SCM_LOGGING_MQ_USERNAME:}
+    password: ${SCM_LOGGING_MQ_PASSWORD:}
 
 scm:
+  env: ${SCM_ENV:${spring.profiles.active}}
+  instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-logging}}
+
+  deployment:
+    service-version: ${SCM_SERVICE_VERSION:${VERSION:8.6.0}}
+
   application:
-    version: 8.3.0
-    build: 0810T1400
+    version: ${SCM_APPLICATION_VERSION:${VERSION:8.6.0}}
+    build: ${SCM_APPLICATION_BUILD:unknown}
+
+  runtime: ${SCM_RUNTIME:standalone}
+
+  observation:
+    enabled: ${SCM_OBS_ENABLED:true}
+    platform: ${SCM_OBS_PLATFORM:scm}
+    app-name: ${SCM_OBS_APP_NAME:${spring.application.name}}
+    app-label: ${SCM_OBS_APP_LABEL:${spring.profiles.active:dev}}
+    instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-logging}}
+    time-zone: ${SCM_OBS_TIME_ZONE:UTC}
+    http:
+      server:
+        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:logging.http.request}
+    log:
+      enabled: ${SCM_OBS_LOG_ENABLED:true}
+      console:
+        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:false}
+        format: ${SCM_OBS_LOG_CONSOLE_FORMAT:simple}
+      file:
+        enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
+        format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log}
+        file-name: ${SCM_OBS_LOG_FILE_NAME:${spring.application.name}.jsonl}
+        archive-directory: ${SCM_OBS_LOG_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/log/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_LOG_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_LOG_CLEAN_HISTORY_ON_START:false}
+      level:
+        root: ${SCM_LOG_LEVEL_ROOT:INFO}
+        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
+        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
+        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
+        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
+    trace:
+      enabled: ${SCM_OBS_TRACE_ENABLED:true}
+      file:
+        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
+        format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace}
+        file-name: ${SCM_OBS_TRACE_FILE_NAME:${spring.application.name}-trace.jsonl}
+        archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/trace/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
+        total-size-cap: ${SCM_OBS_TRACE_TOTAL_SIZE_CAP:10GB}
+        clean-history-on-start: ${SCM_OBS_TRACE_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBS_TRACE_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_TRACE_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_TRACE_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_TRACE_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_TRACE_ASYNC_MAX_FLUSH_TIME:1000}
+    audit:
+      enabled: ${SCM_OBS_AUDIT_ENABLED:false}
+      file:
+        enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
+        format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
+        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit}
+        file-name: ${SCM_OBS_AUDIT_FILE_NAME:${spring.application.name}-audit.jsonl}
+        archive-directory: ${SCM_OBS_AUDIT_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/audit/archive}
+      rolling:
+        max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
+        max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}
+        total-size-cap: ${SCM_OBS_AUDIT_TOTAL_SIZE_CAP:20GB}
+        clean-history-on-start: ${SCM_OBS_AUDIT_CLEAN_HISTORY_ON_START:false}
+      async:
+        enabled: ${SCM_OBS_AUDIT_ASYNC_ENABLED:false}
+        queue-size: ${SCM_OBS_AUDIT_ASYNC_QUEUE_SIZE:8192}
+        discarding-threshold: ${SCM_OBS_AUDIT_ASYNC_DISCARDING_THRESHOLD:0}
+        never-block: ${SCM_OBS_AUDIT_ASYNC_NEVER_BLOCK:false}
+        max-flush-time: ${SCM_OBS_AUDIT_ASYNC_MAX_FLUSH_TIME:1000}
+    metric:
+      enabled: ${SCM_OBS_METRIC_ENABLED:true}
+
+  log:
+    transactionLogConverter:
+      enabled: ${SCM_LOGGING_TRANSACTION_CONVERTER_ENABLED:true}
+      versionRequirement: ${SCM_LOGGING_TRANSACTION_VERSION_REQUIREMENT:>=7.20.0}
+      chunkSize: ${SCM_LOGGING_TRANSACTION_CHUNK_SIZE:2048}
+    logTraceConverter:
+      enabled: ${SCM_LOGGING_TRACE_CONVERTER_ENABLED:true}
+      versionRequirement: ${SCM_LOGGING_TRACE_VERSION_REQUIREMENT:>=8.0.0}
+    messageLogConverter:
+      enabled: ${SCM_LOGGING_MESSAGE_CONVERTER_ENABLED:true}
+      versionRequirement: ${SCM_LOGGING_MESSAGE_VERSION_REQUIREMENT:>=8.0.0}
+    chunkSize: ${SCM_LOGGING_TRACE_CHUNK_SIZE:5600}
+    logSchedulerThreadPool:
+      corePoolSize: ${SCM_LOGGING_SCHEDULER_CORE_POOL_SIZE:5}
+      maxPoolSize: ${SCM_LOGGING_SCHEDULER_MAX_POOL_SIZE:5}
+      fixedRate: ${SCM_LOGGING_SCHEDULER_FIXED_RATE:5000}
+
+  jms:
+    log:
+      destination: ${SCM_LOGGING_JMS_DESTINATION:SCM2LOG}
+      queueManager: ${SCM_LOGGING_MQ_QUEUE_MANAGER:}
+      channel: ${SCM_LOGGING_MQ_CHANNEL:}
+      host: ${SCM_LOGGING_MQ_HOST:localhost}
+      port: ${SCM_LOGGING_MQ_PORT:1414}
+      username: ${SCM_LOGGING_MQ_USERNAME:}
+      password: ${SCM_LOGGING_MQ_PASSWORD:}
+
+  cache:
+    client:
+      distributed: ${SCM_CACHE_DISTRIBUTED:true}
+      config:
+        cluster-name: ${SCM_CACHE_CLUSTER_NAME:scm}
+        network-config:
+          addresses:
+            - ${SCM_CACHE_ADDRESS:127.0.0.1:5701}
+
+  datasource:
+    transactionLog:
+      enabled: ${SCM_LOGGING_TRANSACTION_DB_ENABLED:true}
+      url: ${SCM_LOGGING_TRANSACTION_DB_URL}
+      username: ${SCM_LOGGING_TRANSACTION_DB_USERNAME}
+      password: ${SCM_LOGGING_TRANSACTION_DB_PASSWORD}
+      driver-class-name: ${SCM_LOGGING_TRANSACTION_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+      max-connection: ${SCM_LOGGING_TRANSACTION_DB_MAX_CONNECTION:10}
+      default-schema: ${SCM_LOGGING_TRANSACTION_DB_SCHEMA:REF}
+    logTrace:
+      enabled: ${SCM_LOGGING_TRACE_DB_ENABLED:true}
+      url: ${SCM_LOGGING_TRACE_DB_URL}
+      username: ${SCM_LOGGING_TRACE_DB_USERNAME}
+      password: ${SCM_LOGGING_TRACE_DB_PASSWORD}
+      driver-class-name: ${SCM_LOGGING_TRACE_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+      max-connection: ${SCM_LOGGING_TRACE_DB_MAX_CONNECTION:10}
+      default-schema: ${SCM_LOGGING_TRACE_DB_SCHEMA:REF}
+    messageLog:
+      enabled: ${SCM_LOGGING_MESSAGE_DB_ENABLED:true}
+      url: ${SCM_LOGGING_MESSAGE_DB_URL}
+      username: ${SCM_LOGGING_MESSAGE_DB_USERNAME}
+      password: ${SCM_LOGGING_MESSAGE_DB_PASSWORD}
+      driver-class-name: ${SCM_LOGGING_MESSAGE_DB_DRIVER:com.ibm.db2.jcc.DB2Driver}
+      max-connection: ${SCM_LOGGING_MESSAGE_DB_MAX_CONNECTION:10}
+      default-schema: ${SCM_LOGGING_MESSAGE_DB_SCHEMA:LOGGER}

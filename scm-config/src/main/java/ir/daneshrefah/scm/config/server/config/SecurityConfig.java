@@ -28,11 +28,11 @@ public class SecurityConfig {
     private String scmUserPass;
     @Value("${scm.config.cfg-user.name}")
     private String cfgUserName;
-    @Value("${scm.config.cfg-user.name}")
+    @Value("${scm.config.cfg-user.pass}")
     private String cfgUserPass;
     @Value("${scm.config.opr-user.name}")
     private String oprUserName;
-    @Value("${scm.config.opr-user.name}")
+    @Value("${scm.config.opr-user.pass}")
     private String oprUserPass;
 
     private final ConfigServerProperties configServerProperties;
