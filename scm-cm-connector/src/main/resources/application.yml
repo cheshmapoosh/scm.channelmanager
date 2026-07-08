@@ -3,6 +3,17 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
     name: ${SCM_APPLICATION_NAME:scm-cm-connector}
+  config:
+    import: ${SCM_CONFIG_SERVER_IMPORT:optional:configserver:${SCM_CONFIG_SERVER_URL:http://localhost:8888/config}}
+  cloud:
+    config:
+      enabled: ${SCM_CONFIG_ENABLED:false}
+      username: ${SCM_CONFIG_USERNAME:${SPRING_CLOUD_CONFIG_USERNAME:}}
+      password: ${SCM_CONFIG_PASSWORD:${SPRING_CLOUD_CONFIG_PASSWORD:}}
+      fail-fast: ${SCM_CONFIG_FAIL_FAST:false}
+      retry:
+        max-attempts: ${SCM_CONFIG_RETRY_MAX_ATTEMPTS:5}
+        max-interval: ${SCM_CONFIG_RETRY_MAX_INTERVAL:3000}
 
 server:
   port: ${SCM_SERVER_PORT:${SERVER_PORT:8080}}
