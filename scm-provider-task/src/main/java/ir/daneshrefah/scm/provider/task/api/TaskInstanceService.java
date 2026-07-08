@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.provider.task.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
@@ -10,6 +9,7 @@ import ir.daneshrefah.scm.provider.task.model.TaskFilterRequest;
 import ir.daneshrefah.scm.provider.task.model.TaskRequest;
 import ir.daneshrefah.scm.provider.task.model.TaskResponse;
 import ir.daneshrefah.scm.provider.task.service.TaskManagementService;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRole;
 import org.apache.camel.Body;
 import org.apache.camel.Exchange;
 import org.apache.camel.Header;
@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static ir.daneshrefah.scm.common.constant.OperationCode.*;
 import static ir.daneshrefah.scm.common.event.provider.ScmProviderEventType.*;
 
 @Service
@@ -37,32 +36,30 @@ public class TaskInstanceService extends AbstractJavaService {
         this.eventPublisher = eventPublisher;
     }
 
-    @JavaService(operationCode = SVC_CARTABLE_GET_ALL_TASK)
     @SuppressWarnings("unused")
     public PagedResponseData<TaskResponse> findAllTask(Exchange exchange, @Body TaskFilterRequest request) {
         return taskManagementService.findAllTaskByUserIDAndFilter(exchange,request);
     }
 
-    @JavaService(operationCode = SVC_CARTABLE_COMPLTE_TASK)
     @SuppressWarnings("unused")
     public TaskResponse completeTask(Exchange exchange, @Body TaskRequest taskRequest) {
+        String operationName = TaskWorkflowRole.COMPLETE_TASK.name();
         eventPublisher.publishTask(TASK_COMPLETE_REQUESTED, exchange, taskRequest.getTaskId(),
-                null, taskRequest.getAction(), SVC_CARTABLE_COMPLTE_TASK.name(), null);
+                null, taskRequest.getAction(), operationName, null);
         try {
             TaskResponse response = taskManagementService.completeTask(exchange, taskRequest);
             Long processId = response.getProcessInstance() == null ? null : response.getProcessInstance().getId();
             eventPublisher.publishTask(TASK_COMPLETED, exchange, response.getId(),
-                    processId, response.getTaskStatus(), SVC_CARTABLE_COMPLTE_TASK.name(), null);
+                    processId, response.getTaskStatus(), operationName, null);
             return response;
         } catch (RuntimeException exception) {
             eventPublisher.publishTask(TASK_COMPLETE_FAILED, exchange, taskRequest.getTaskId(),
-                    null, taskRequest.getAction(), SVC_CARTABLE_COMPLTE_TASK.name(), exception);
+                    null, taskRequest.getAction(), operationName, exception);
             throw exception;
         }
     }
 
 
-    @JavaService(operationCode = SVC_CARTABLE_GET_TASK_BY_PROCESS_ID)
     @SuppressWarnings("unused")
     public List<TaskResponse> findAllTasksByProcessId(Exchange exchange, @Header("processID") Long processID) {
        return taskManagementService.findAllTasksByProcessId(exchange,processID);

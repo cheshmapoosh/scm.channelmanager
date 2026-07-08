@@ -501,134 +501,143 @@ CHAIN_ON_APPROVE  -> operationهای فعال را به ترتیب اجرا می
 
 ## TASK_WORKFLOW routing strategy
 
-`TASK_WORKFLOW` is a service-layer routing strategy. `ServiceTargetRouter`
-remains the generic dispatcher and selects
-`TaskWorkflowServiceTargetRoutingHandler` through the existing handler registry.
-
-The gateway does not import task workflow commands, roles, task provider APIs,
-or task/process payload types. It binds only generic exchange properties:
+`TASK_WORKFLOW` is validated in the service layer. The gateway exposes fixed
+task-workflow inbound URLs and forwards only context:
 
 ```text
-Message.INBOUND_ROUTE_ACTION
-Message.INBOUND_PATH_VARIABLES
+POST /gateway/{serviceCode}/task-workflow/start
+POST /gateway/{serviceCode}/task-workflow/approve
+POST /gateway/{serviceCode}/task-workflow/complete
+POST /gateway/{serviceCode}/task-workflow/cancel
 ```
 
-`INBOUND_ROUTE_ACTION` comes from `inboundAction` in the current INBOUND
-Definition. `INBOUND_PATH_VARIABLES` is a map built from REST path placeholders.
-The service layer interprets those properties only when the service routing
-strategy is `TASK_WORKFLOW`.
+The channel is read from the existing request header (`X-SCM-Channel` or
+`channelCode`). It is not duplicated in the path. The command segment is fixed;
+there is no dynamic `{command}` path variable.
 
-### Command and role
-
-A command is the requested inbound action:
+Gateway mapping:
 
 ```text
-START
-COMPLETE_TASK
-APPROVE_AND_EXECUTE
-CANCEL_PROCESS
-FIND_PROCESSES
-FIND_TASKS
-FIND_TASKS_BY_PROCESS_ID
-UPDATE_PROCESS_DESCRIPTION
+start    -> TaskWorkflowRole.START_PROCESS
+approve  -> TaskWorkflowRole.APPROVE_PROCESS
+complete -> TaskWorkflowRole.COMPLETE_PROCESS
+cancel   -> TaskWorkflowRole.CANCEL_PROCESS
 ```
 
-A role identifies what one active `ServiceOperation` does:
+Gateway responsibility:
 
 ```text
-START_PROCESS
-COMPLETE_TASK
-APPROVE_PROCESS
-BUSINESS_OPERATION
-COMPLETE_PROCESS
-CANCEL_PROCESS
-FIND_ALL_PROCESS
-FIND_ALL_TASK
-FIND_TASK_BY_PROCESS_ID
-UPDATE_PROCESS_DESCRIPTION
+1. Match the fixed inbound URL.
+2. Read serviceCode from the path.
+3. Read channelCode from the request header.
+4. Set task workflow context and Message.TASK_WORKFLOW_ROLE.
+5. Forward to the service layer.
 ```
 
-Commands and roles are not interchangeable. Command-to-step mapping is stored
-on each INBOUND Definition, not in Java enums and not in a ServiceOperation.
+The gateway must not load `EbService` and must not check
+`EbService.routingStrategy`.
 
-### INBOUND command definition
+### Service validation
 
-Each command uses one INBOUND row with its own Definition:
-
-Every INBOUND row must define an explicit, non-blank REST `path`. A blank path
-is invalid and fails route construction; the gateway does not fall back to a
-service-code-derived path. For example:
+The service layer receives `serviceCode`, `channelCode`, `TaskWorkflowRole`,
+and the request payload. It then:
 
 ```text
-/fund-transfer/task-workflow/processes/{processId}/approve
+1. Resolves EbService by code.
+2. Resolves EbService.id for downstream lookups.
+3. Validates the service exists and is active.
+4. Validates channel access with the existing channel guards.
+5. Requires EbService.routingStrategy == TASK_WORKFLOW.
+6. Resolves the active ServiceOperation connected to the requested role.
+7. Routes to that Operation.
 ```
 
-```json
-{
-  "inboundAction": "APPROVE_AND_EXECUTE",
-  "taskWorkflow": {
-    "steps": [
-      {"role": "APPROVE_PROCESS", "executionOrder": 10},
-      {"role": "BUSINESS_OPERATION", "executionOrder": 20},
-      {"role": "COMPLETE_PROCESS", "executionOrder": 30}
-    ]
-  }
-}
+If the selected service is not configured for task workflow, fail with:
+
+```text
+code:    SERVICE_NOT_TASK_WORKFLOW
+message: Service "{serviceCode}" is not configured for task workflow execution.
 ```
+
+### EbService cache
+
+`EbService` lookup by `code` is backed by Spring Cache:
+
+```text
+cacheName = ebServiceByCode
+key       = serviceCode
+value     = EbServiceSnapshot
+provider  = scm-cache-starter local cache
+```
+
+Snapshot shape:
+
+```java
+public record EbServiceSnapshot(
+    Long id,
+    String code,
+    RoutingStrategy routingStrategy,
+    boolean active
+) {}
+```
+
+The cached value is immutable and does not hold a live JPA entity.
 
 ### ServiceOperation role definition
 
-Each active operation declares only its workflow role:
+Each active task workflow service operation declares its semantic role in
+metadata:
 
 ```json
 {
-  "taskWorkflowRole": "BUSINESS_OPERATION"
+  "taskWorkflowRole": "START_PROCESS"
 }
 ```
 
-At route construction, `TaskWorkflowRoutePlanFactory` combines active operation
-roles with all command step definitions and resolves each step to:
+New records should use the `TaskWorkflowRole` model:
 
 ```text
-TaskWorkflowRole:                     APPROVE_PROCESS
-Generated operation route id:         op.<operationName>
-Operation route endpoint:             direct:op.<operationName>
-OperationProvider.name:               TASK_INTERNAL
-OperationProvider.uri:                scm-task:internal
-Task provider endpoint:               scm-task:internal
+ServiceOperation.service          = FUND_TRANSFER_SHARED
+ServiceOperation.taskWorkflowRole = START_PROCESS
+ServiceOperation.operation        = START_PROCESS
 ```
 
+If `ServiceOperation` has no direct `taskWorkflowRole` column, keep the role in
+the existing definition metadata. Do not create new records using
+`SVC_CARTABLE_*`.
+
+### Operation/provider routing
+
 Store only the operation name in `ServiceOperation.operationName`; never store
-`op.` in the database field. A task provider operation delegates from that
-operation route to its provider endpoint. Configure the corresponding
-`Operation` with `type = PROVIDER` and provider `TASK_INTERNAL`, and configure
-or propagate the semantic `TaskWorkflowRole`.
-
-`TASK_INTERNAL` is one provider for the internal workflow engine. Define one
-provider per engine and many operations per provider. Do not split task workflow
-operations into separate `OperationProvider` rows.
-
-For canonical configuration, `OperationProvider.uri = scm-task:internal`.
-`scm-web`/core puts `Message.TASK_WORKFLOW_ROLE` on the Exchange, then routes
-to the provider URI as-is:
+`op.` in the database field. The service layer routes to the generated operation
+route:
 
 ```text
 direct:op.<operationName>
-  -> scm-task:internal
-  -> TaskWorkflowRole = APPROVE_PROCESS
 ```
 
-SVC_CARTABLE_* names are legacy operation-code aliases kept for compatibility.
-New TASK_WORKFLOW configuration should use TaskWorkflowRole as the semantic role
-and route to scm-task:internal.
+The operation layer loads the connected `Operation`, and that operation owns its
+provider:
 
-Legacy provider URI `scm-task:` may still resolve to
-`scm-task:SVC_CARTABLE_APPROVE_PROCESS` because the generic provider handler
-appends `Operation.name` when a provider URI ends with `:`. Treat that as
-backward compatibility only; new configuration should use `scm-task:internal`.
+```text
+Operation.name     = START_PROCESS
+Operation.type     = PROVIDER
+Operation.provider = TASK_INTERNAL
 
-`scm-core` maps workflow requests with generic `Map`/`JsonNode` payloads. DTO
-conversion and task API invocation belong to `scm-provider-task`.
+OperationProvider.name = TASK_INTERNAL
+OperationProvider.uri  = scm-task:internal
+```
+
+The task provider endpoint receives only:
+
+```text
+providerCode = internal
+TaskWorkflowRole = START_PROCESS / APPROVE_PROCESS / COMPLETE_PROCESS / CANCEL_PROCESS
+```
+
+Compatibility for existing `SVC_CARTABLE_*` rows must be handled by data
+migration or service/config migration before runtime reaches `scm-provider-task`.
+The provider must not know or map those legacy names.
 
 ### Task provider persistence
 
@@ -680,62 +689,62 @@ scm:
 If neither bean-name property is configured, default mode is used. If either one
 is configured, both are required.
 
-Configuration JSON is parsed and validated during route construction. Request
-handling does not query the database or parse route configuration.
+The fixed task-workflow entrypoint resolves the selected service by code at
+request time through the cached `EbServiceSnapshot`, then loads active
+`ServiceOperation` records for that service id. It keeps synchronous
+`ProducerTemplate` invocation so the same Exchange carries service, operation,
+provider, and task workflow role metadata into the operation layer.
 
-The handler keeps synchronous `ProducerTemplate` invocation because command
-selection is request-specific and each operation result must be classified on
-the same Exchange before the next operation is considered safe. The invoker
-clears stale Camel exception state, inspects both the returned exception and
-`Exchange.EXCEPTION_CAUGHT`, and only sends to prebuilt `direct:op.*` endpoints.
+### Business operation records
 
-### Business safety
-
-A `TASK_WORKFLOW` service must have exactly one active
-`BUSINESS_OPERATION`. `APPROVE_AND_EXECUTE` must be ordered as:
+A process-based service can still bind business operations alongside workflow
+control roles:
 
 ```text
-APPROVE_PROCESS -> BUSINESS_OPERATION -> COMPLETE_PROCESS
+ServiceOperation:
+  service = FUND_TRANSFER_SHARED
+  taskWorkflowRole = START_PROCESS
+  operation = START_PROCESS
+  sortOrder = 10
+
+ServiceOperation:
+  service = FUND_TRANSFER_SHARED
+  taskWorkflowRole = APPROVE_PROCESS
+  operation = APPROVE_PROCESS
+  sortOrder = 20
+
+ServiceOperation:
+  service = FUND_TRANSFER_SHARED
+  taskWorkflowRole = BUSINESS_OPERATION
+  operation = FUND_TRANSFER_PAYA_EXECUTE
+  sortOrder = 30
+
+ServiceOperation:
+  service = FUND_TRANSFER_SHARED
+  taskWorkflowRole = COMPLETE_PROCESS
+  operation = COMPLETE_PROCESS
+  sortOrder = 40
 ```
 
-The approve response is stored before the business call. The preferred business
-request payload is `approveResponse.transactionData`.
-
-- Definitive success calls `COMPLETE_PROCESS` with `COMPLETE`.
-- Definitive business failure calls `COMPLETE_PROCESS` with `FAIL`. After that
-  completion succeeds, a thrown business exception is converted to a
-  non-retryable failure response instead of being rethrown. If completion fails,
-  the completion failure is propagated with the original business failure
-  retained as suppressed diagnostic context.
-- Unknown, timeout, connection-lost, or ambiguous results do not call
-  `COMPLETE_PROCESS`, never mark the process as failed, and propagate an
-  unknown-result error.
-
-Unknown results remain in the acknowledgement/recovery state. The no-op
-`TaskWorkflowExecutionStore` is an extension point for durable recovery and
-reconciliation state.
+The fixed inbound URLs select the requested control role. Any coordinated
+business workflow must be modeled in service/config logic before the provider is
+called; provider-task remains unaware of business service operation names.
 
 ### Startup and runtime
 
-`TASK_WORKFLOW` configuration is parsed and validated while Camel routes are
-built:
+Fixed task-workflow gateway routes are created while Camel routes are built:
 
 ```text
-DB -> Service + ServiceOperation + INBOUND Definition
-   -> TaskWorkflowRoutePlanFactory
-   -> TaskWorkflowRoutePlan
-   -> TASK_WORKFLOW command plan
-   -> TASK_WORKFLOW step plan
-   -> Camel route
+GatewayChannel
+  -> POST /gateway/{serviceCode}/task-workflow/start
+  -> POST /gateway/{serviceCode}/task-workflow/approve
+  -> POST /gateway/{serviceCode}/task-workflow/complete
+  -> POST /gateway/{serviceCode}/task-workflow/cancel
 ```
 
-At request time, the command resolver selects a prebuilt command plan and the
-handler invokes its prebuilt step plans. Runtime processing does not query the
-database or parse definition JSON again. Changes to command or operation
-definitions require route reload or application restart.
-
-Steps are sorted by `executionOrder` during plan construction. Duplicate orders
-inside one command fail route construction.
+At request time, the service entrypoint resolves the service by code, validates
+`TASK_WORKFLOW`, selects the active operation by role, and invokes
+`direct:op.<operationName>`.
 
 ### approved همیشه مساوی success نیست
 

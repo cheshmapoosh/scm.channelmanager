@@ -361,129 +361,70 @@ direct:<operationName>
 
 ## 5) TASK_WORKFLOW routing
 
-This section describes `TASK_WORKFLOW` from the `scm-web` service routing
-perspective only.
+`scm-web` exposes fixed task-workflow inbound URLs and forwards them to the
+service layer. Channel is read from the existing request header
+`X-SCM-Channel` or `channelCode`; it is not part of the URL.
 
-### 5.1) Service layer
-
-`scm-web` receives the inbound request through a gateway route, resolves the
-target `Service`, and enters the service routing layer. The service row decides
-which routing handler is used:
+Canonical inbound URLs:
 
 ```text
-Service:
-  code            = business service code
-  routingStrategy = TASK_WORKFLOW
+POST /gateway/{serviceCode}/task-workflow/start
+POST /gateway/{serviceCode}/task-workflow/approve
+POST /gateway/{serviceCode}/task-workflow/complete
+POST /gateway/{serviceCode}/task-workflow/cancel
 ```
 
-When `routingStrategy = TASK_WORKFLOW`, the generic service router selects the
-`TASK_WORKFLOW` routing handler. `scm-web` selects workflow behavior and
-operation routes; it does not call task services directly and does not own
-workflow engine state.
-
-### 5.2) RoutingStrategy = TASK_WORKFLOW
-
-`TASK_WORKFLOW` is a service-layer strategy. It selects workflow steps from
-service configuration and invokes operation routes. Each task provider step must
-carry a semantic `TaskWorkflowRole`, either as exchange metadata or as operation
-metadata that the provider can resolve.
-
-### 5.3) Operation selection
-
-Each active service operation points to an `Operation` by operation name. For
-new task workflow configuration, the semantic action is not the old operation
-name. The semantic action is `TaskWorkflowRole`.
+Do not add `{channel}` to these paths, and do not replace the fixed command
+segments with a dynamic `{command}` variable. Each inbound route has fixed
+semantics:
 
 ```text
-TaskWorkflowRole examples:
-  START_PROCESS
-  APPROVE_PROCESS
-  COMPLETE_PROCESS
-  CANCEL_PROCESS
-  COMPLETE_TASK
-  FIND_ALL_TASK
-  FIND_ALL_PROCESS
-  FIND_TASK_BY_PROCESS_ID
-  UPDATE_PROCESS_DESCRIPTION
+start    -> TaskWorkflowRole.START_PROCESS
+approve  -> TaskWorkflowRole.APPROVE_PROCESS
+complete -> TaskWorkflowRole.COMPLETE_PROCESS
+cancel   -> TaskWorkflowRole.CANCEL_PROCESS
 ```
 
-SCM Web should set the role on the exchange when invoking a workflow step:
+Gateway responsibility is limited to URL matching, reading `serviceCode`,
+reading the channel header, setting the task workflow role, and forwarding to
+the service layer. The gateway does not load `EbService` and does not validate
+`EbService.routingStrategy`.
+
+The service layer resolves `EbService` by `code`, obtains `id` for downstream
+lookups, validates service activity and channel access, then requires:
 
 ```text
-Message.TASK_WORKFLOW_ROLE = <TaskWorkflowRole>
+EbService.routingStrategy == TASK_WORKFLOW
 ```
 
-If the exchange property is not present, the provider can resolve
-`taskWorkflowRole` from operation metadata. Existing `SVC_CARTABLE_*` operation
-names are compatibility aliases only.
-
-### 5.4) OperationProvider lookup
-
-The current internal task provider is configured once:
+If the selected service is not task workflow, the response error is:
 
 ```text
-OperationProvider:
-  name  = TASK_INTERNAL
-  title = SCM Internal Task Provider
-  uri   = scm-task:internal
+code:    SERVICE_NOT_TASK_WORKFLOW
+message: Service "{serviceCode}" is not configured for task workflow execution.
 ```
 
-`TASK_INTERNAL` means the current internal workflow engine/provider. The URI
-`scm-task:internal` contains `providerCode = internal`.
-
-The selected task provider, such as `scm-task:internal`, resolves its configured
-engine type inside `scm-provider-task`; SCM Web does not select the engine
-directly.
-
-### 5.5) Endpoint URI resolution
-
-For canonical configuration, `OperationProvider.uri` is already the complete
-provider endpoint:
+`EbService` lookup is cached as an immutable `EbServiceSnapshot` using Spring
+Cache:
 
 ```text
-scm-task:internal
+cacheName = ebServiceByCode
+key       = serviceCode
+provider  = scm-cache-starter local cache
 ```
 
-Because the URI does not end with `:`, the generic provider handler routes to
-`scm-task:internal` as-is. The role is carried on the exchange using
-`Message.TASK_WORKFLOW_ROLE` or enough operation metadata for
-`scm-provider-task` to resolve `TaskWorkflowRole`.
-
-SVC_CARTABLE_* names are legacy operation-code aliases kept for compatibility.
-New TASK_WORKFLOW configuration should use TaskWorkflowRole as the semantic role
-and route to scm-task:internal.
-
-Legacy provider URI `scm-task:` may still resolve to
-`scm-task:SVC_CARTABLE_*` because the generic provider handler appends
-`Operation.name` when a provider URI ends with `:`. Treat that as backward
-compatibility only.
-
-### 5.6) Runtime flow to scm-provider-task
-
-Runtime flow:
+After validation, service routing selects the active `ServiceOperation` whose
+metadata declares the requested `taskWorkflowRole`. The operation layer still
+routes to the connected `Operation`, and the `Operation` resolves its provider:
 
 ```text
-1. Request enters scm-web.
-2. scm-web resolves the target Service.
-3. Service routingStrategy is TASK_WORKFLOW.
-4. scm-web resolves one or more Operations for that service/workflow.
-5. Each Operation points to OperationProvider TASK_INTERNAL.
-6. scm-web sets Message.TASK_WORKFLOW_ROLE or operation metadata on the Exchange.
-7. scm-web routes to provider URI scm-task:internal.
-8. scm-provider-task reads TaskWorkflowRole from the Exchange and executes the
-   internal stateful workflow action.
+Operation.provider -> OperationProvider.uri -> scm-task:internal
 ```
 
-Boundary:
-
-```text
-scm-web decides what service and operation should run.
-scm-provider-task executes the workflow/state-machine operation.
-```
-
-`scm-web` must not document internal task engine details.
-`scm-provider-task` must not document business service routing rules except as
-context.
+`scm-provider-task` receives only `providerCode` and `TaskWorkflowRole`. It does
+not know service codes, gateway paths, `SVC_CARTABLE_*`, or legacy cartable
+operation-code aliases. New service and operation records must use the
+`TaskWorkflowRole` model, not `SVC_CARTABLE_*`.
 
 ---
 

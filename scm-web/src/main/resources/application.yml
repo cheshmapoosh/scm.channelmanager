@@ -385,6 +385,8 @@ scm:
     client:
       distributed: ${SCM_CACHE_DISTRIBUTED:true}
       caches:
+        ebServiceByCode:
+          type: local
         scm-web-api-doc-catalog:
           type: ${SCM_CACHE_API_DOC_CATALOG_TYPE:local}
           ttl: ${SCM_CACHE_API_DOC_CATALOG_TTL:60s}
