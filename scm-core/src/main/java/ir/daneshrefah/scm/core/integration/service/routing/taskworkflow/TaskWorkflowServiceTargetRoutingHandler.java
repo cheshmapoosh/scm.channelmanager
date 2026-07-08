@@ -3,12 +3,10 @@ package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 import ir.daneshrefah.scm.common.model.error.ScmFault;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationRouteMetadataSetter;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceTargetRouteContext;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceTargetRoutingHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
-import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,29 +16,26 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
     private final TaskWorkflowCommandResolver commandResolver;
     private final TaskWorkflowPayloadMapper payloadMapper;
     private final TaskWorkflowTransactionCoordinator transactionCoordinator;
-    private final ServiceOperationRouteMetadataSetter metadataSetter;
+    private final TaskWorkflowOperationInvoker operationInvoker;
     /**
      * Command plans are resolved from startup configuration, but the command is selected per
      * request. Synchronous ProducerTemplate calls preserve one Exchange across conditional
      * operation-route invocations and let the coordinator classify each result before deciding
      * whether COMPLETE_PROCESS is safe. Targets remain limited to direct:op.* routes.
      */
-    private final ProducerTemplate producerTemplate;
 
     public TaskWorkflowServiceTargetRoutingHandler(
             TaskWorkflowRoutePlanFactory routePlanFactory,
             TaskWorkflowCommandResolver commandResolver,
             TaskWorkflowPayloadMapper payloadMapper,
             TaskWorkflowTransactionCoordinator transactionCoordinator,
-            ServiceOperationRouteMetadataSetter metadataSetter,
-            ProducerTemplate producerTemplate
+            TaskWorkflowOperationInvoker operationInvoker
     ) {
         this.routePlanFactory = routePlanFactory;
         this.commandResolver = commandResolver;
         this.payloadMapper = payloadMapper;
         this.transactionCoordinator = transactionCoordinator;
-        this.metadataSetter = metadataSetter;
-        this.producerTemplate = producerTemplate;
+        this.operationInvoker = operationInvoker;
     }
 
     @Override
@@ -208,30 +203,7 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
             TaskWorkflowStepPlan step,
             Object request
     ) {
-        metadataSetter.apply(exchange, step.serviceOperation());
-        exchange.setProperty(Message.TASK_WORKFLOW_ROLE, step.role().name());
-        exchange.removeProperty(Exchange.EXCEPTION_CAUGHT);
-        exchange.setException(null);
-        exchange.getMessage().setBody(request);
-
-        Exchange result = producerTemplate.send(step.operationEndpointUri(), exchange);
-        Exception failure = result.getException();
-        if (failure == null) {
-            failure = result.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
-        }
-        if (failure != null) {
-            if (failure instanceof RuntimeException runtimeException) {
-                throw runtimeException;
-            }
-            throw new IllegalStateException("TASK_WORKFLOW operation route failed for role="
-                    + step.role() + ", operationName="
-                    + step.serviceOperation().getOperationName(), failure);
-        }
-        if (result != exchange) {
-            exchange.getMessage().setBody(result.getMessage().getBody());
-            exchange.getMessage().getHeaders().putAll(result.getMessage().getHeaders());
-        }
-        return exchange.getMessage().getBody();
+        return operationInvoker.invoke(exchange, step, request);
     }
 
     private void requireControlOperationSuccess(

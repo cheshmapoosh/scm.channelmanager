@@ -19,11 +19,6 @@ public class TaskProviderOperationAdapter {
     }
 
     public String endpointProviderCode(String remaining) {
-        if (roleResolver.isDeprecatedOperationCodeAlias(remaining)) {
-            return engineRegistry.requireProviderCode(
-                    TaskWorkflowEngineRegistry.INTERNAL_PROVIDER_CODE
-            );
-        }
         return engineRegistry.requireProviderCode(remaining);
     }
 

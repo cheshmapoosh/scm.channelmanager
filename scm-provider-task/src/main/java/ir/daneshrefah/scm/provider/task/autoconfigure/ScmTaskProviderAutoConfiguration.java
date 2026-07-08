@@ -81,8 +81,8 @@ public class ScmTaskProviderAutoConfiguration {
     @Bean
     @ConditionalOnClass(CamelContext.class)
     @ConditionalOnMissingBean
-    public TaskWorkflowRoleResolver taskWorkflowRoleResolver(ObjectMapper objectMapper) {
-        return new TaskWorkflowRoleResolver(objectMapper);
+    public TaskWorkflowRoleResolver taskWorkflowRoleResolver() {
+        return new TaskWorkflowRoleResolver();
     }
 
     @Bean
