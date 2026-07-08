@@ -209,6 +209,7 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
             Object request
     ) {
         metadataSetter.apply(exchange, step.serviceOperation());
+        exchange.setProperty(Message.TASK_WORKFLOW_ROLE, step.role().name());
         exchange.removeProperty(Exchange.EXCEPTION_CAUGHT);
         exchange.setException(null);
         exchange.getMessage().setBody(request);

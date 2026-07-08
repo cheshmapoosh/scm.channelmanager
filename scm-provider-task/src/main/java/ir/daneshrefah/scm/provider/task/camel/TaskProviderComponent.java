@@ -31,19 +31,11 @@ public class TaskProviderComponent extends DefaultComponent {
             String remaining,
             Map<String, Object> parameters
     ) throws Exception {
-        String providerCode = remaining;
-        String legacyOperationCode = null;
-        if (operationAdapter.supportsOperation(remaining)) {
-            providerCode = TaskProviderOperationAdapter.INTERNAL_PROVIDER_CODE;
-            legacyOperationCode = remaining;
-        } else {
-            providerCode = operationAdapter.requireSupportedProvider(remaining);
-        }
+        String providerCode = operationAdapter.endpointProviderCode(remaining);
         TaskProviderEndpoint endpoint = new TaskProviderEndpoint(
                 uri,
                 this,
                 providerCode,
-                legacyOperationCode,
                 operationAdapter
         );
         setProperties(endpoint, parameters);

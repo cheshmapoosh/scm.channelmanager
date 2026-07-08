@@ -22,13 +22,12 @@ public class TaskWorkflowPayloadMapper {
     public JsonNode toSimpleRequest(Exchange exchange, TaskWorkflowRole role) {
         ObjectNode request = objectRequest(exchange, role);
         return switch (role) {
-            case START_PROCESS, FIND_PROCESSES, FIND_TASKS -> request;
+            case START_PROCESS, FIND_ALL_PROCESS, FIND_ALL_TASK -> request;
             case COMPLETE_TASK -> withTaskId(exchange, request);
             case CANCEL_PROCESS, UPDATE_PROCESS_DESCRIPTION -> withProcessId(exchange, request);
-            case FIND_TASKS_BY_PROCESS_ID -> findTasksByProcessId(exchange, request);
-            case APPROVE_PROCESS, BUSINESS_OPERATION, COMPLETE_PROCESS ->
-                    throw new IllegalStateException("Role " + role
-                            + " requires the coordinated APPROVE_AND_EXECUTE flow");
+            case FIND_TASK_BY_PROCESS_ID -> findTasksByProcessId(exchange, request);
+            case APPROVE_PROCESS, BUSINESS_OPERATION, COMPLETE_PROCESS -> throw new IllegalStateException("Role " + role
+                    + " requires the coordinated APPROVE_AND_EXECUTE flow");
         };
     }
 

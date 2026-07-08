@@ -377,45 +377,45 @@ Service:
 ```
 
 When `routingStrategy = TASK_WORKFLOW`, the generic service router selects the
-`TASK_WORKFLOW` routing handler. `scm-web` does not call task services directly
-and does not own workflow engine state.
+`TASK_WORKFLOW` routing handler. `scm-web` selects workflow behavior and
+operation routes; it does not call task services directly and does not own
+workflow engine state.
 
 ### 5.2) RoutingStrategy = TASK_WORKFLOW
 
-`TASK_WORKFLOW` is a service-layer strategy. It selects workflow steps from the
-service configuration and invokes operation routes. The routing strategy is
-responsible for deciding what operation should run for the current workflow
-command.
+`TASK_WORKFLOW` is a service-layer strategy. It selects workflow steps from
+service configuration and invokes operation routes. Each task provider step must
+carry a semantic `TaskWorkflowRole`, either as exchange metadata or as operation
+metadata that the provider can resolve.
 
 ### 5.3) Operation selection
 
-Each active service operation points to an `Operation` by operation name. The
-operation name is the `operationCode` that the provider later executes:
+Each active service operation points to an `Operation` by operation name. For
+new task workflow configuration, the semantic action is not the old operation
+name. The semantic action is `TaskWorkflowRole`.
 
 ```text
-Operation:
-  name     = SVC_CARTABLE_START_PROCESS
-  type     = PROVIDER
-  provider = TASK_INTERNAL
+TaskWorkflowRole examples:
+  START_PROCESS
+  APPROVE_PROCESS
+  COMPLETE_PROCESS
+  CANCEL_PROCESS
+  COMPLETE_TASK
+  FIND_ALL_TASK
+  FIND_ALL_PROCESS
+  FIND_TASK_BY_PROCESS_ID
+  UPDATE_PROCESS_DESCRIPTION
 ```
 
-For task workflow, define one provider per engine and many operations per
-provider. Do not split task workflow operations into separate
-`OperationProvider` rows.
-
-Expected internal task operations:
+SCM Web should set the role on the exchange when invoking a workflow step:
 
 ```text
-SVC_CARTABLE_START_PROCESS              -> provider TASK_INTERNAL
-SVC_CARTABLE_APPROVE_PROCESS            -> provider TASK_INTERNAL
-SVC_CARTABLE_COMPLETE_PROCESS           -> provider TASK_INTERNAL
-SVC_CARTABLE_CANCEL_PROCESS             -> provider TASK_INTERNAL
-SVC_CARTABLE_COMPLTE_TASK               -> provider TASK_INTERNAL
-SVC_CARTABLE_GET_ALL_TASK               -> provider TASK_INTERNAL
-SVC_CARTABLE_GET_ALL_PROCESS            -> provider TASK_INTERNAL
-SVC_CARTABLE_GET_TASK_BY_PROCESS_ID     -> provider TASK_INTERNAL
-SVC_CARTABLE_UPDATE_PROCESS_DESCRIPTION -> provider TASK_INTERNAL
+Message.TASK_WORKFLOW_ROLE = <TaskWorkflowRole>
 ```
+
+If the exchange property is not present, the provider can resolve
+`taskWorkflowRole` from operation metadata. Existing `SVC_CARTABLE_*` operation
+names are compatibility aliases only.
 
 ### 5.4) OperationProvider lookup
 
@@ -428,8 +428,8 @@ OperationProvider:
   uri   = scm-task:internal
 ```
 
-`TASK_INTERNAL` means the current internal workflow engine/provider. The
-endpoint URI `scm-task:internal` contains `providerCode = internal`.
+`TASK_INTERNAL` means the current internal workflow engine/provider. The URI
+`scm-task:internal` contains `providerCode = internal`.
 
 ### 5.5) Endpoint URI resolution
 
@@ -441,14 +441,18 @@ scm-task:internal
 ```
 
 Because the URI does not end with `:`, the generic provider handler routes to
-`scm-task:internal` as-is. The `operationCode` is carried on the `Exchange`
-using `Message.OPERATION_NAME` and/or `Message.OPERATION.name`.
+`scm-task:internal` as-is. The role is carried on the exchange using
+`Message.TASK_WORKFLOW_ROLE` or enough operation metadata for
+`scm-provider-task` to resolve `TaskWorkflowRole`.
+
+SVC_CARTABLE_* names are legacy operation-code aliases kept for compatibility.
+New TASK_WORKFLOW configuration should use TaskWorkflowRole as the semantic role
+and route to scm-task:internal.
 
 Legacy provider URI `scm-task:` may still resolve to
 `scm-task:SVC_CARTABLE_*` because the generic provider handler appends
 `Operation.name` when a provider URI ends with `:`. Treat that as backward
-compatibility only. New task workflow configuration should use
-`scm-task:internal`.
+compatibility only.
 
 ### 5.6) Runtime flow to scm-provider-task
 
@@ -460,9 +464,9 @@ Runtime flow:
 3. Service routingStrategy is TASK_WORKFLOW.
 4. scm-web resolves one or more Operations for that service/workflow.
 5. Each Operation points to OperationProvider TASK_INTERNAL.
-6. scm-web sets Message.OPERATION and/or Message.OPERATION_NAME on the Exchange.
+6. scm-web sets Message.TASK_WORKFLOW_ROLE or operation metadata on the Exchange.
 7. scm-web routes to provider URI scm-task:internal.
-8. scm-provider-task reads operationCode from the Exchange and executes the
+8. scm-provider-task reads TaskWorkflowRole from the Exchange and executes the
    internal stateful workflow action.
 ```
 

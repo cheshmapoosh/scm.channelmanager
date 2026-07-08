@@ -18,19 +18,16 @@ import org.apache.camel.support.DefaultEndpoint;
 )
 public class TaskProviderEndpoint extends DefaultEndpoint {
     private final String providerCode;
-    private final String legacyOperationCode;
     private final TaskProviderOperationAdapter operationAdapter;
 
     public TaskProviderEndpoint(
             String endpointUri,
             Component component,
             String providerCode,
-            String legacyOperationCode,
             TaskProviderOperationAdapter operationAdapter
     ) {
         super(endpointUri, component);
         this.providerCode = providerCode;
-        this.legacyOperationCode = legacyOperationCode;
         this.operationAdapter = operationAdapter;
     }
 
@@ -39,7 +36,6 @@ public class TaskProviderEndpoint extends DefaultEndpoint {
         return new TaskProviderProducer(
                 this,
                 providerCode,
-                legacyOperationCode,
                 operationAdapter
         );
     }
