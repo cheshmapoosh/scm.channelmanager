@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service.routing.customOperationApprovalPolicy;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.data.constant.ActionCode;
 import ir.daneshrefah.scm.core.integration.service.routing.OperationApprovalContext;
 import ir.daneshrefah.scm.core.integration.service.routing.OperationApprovalPolicy;
@@ -18,7 +19,17 @@ public class KarpardazPolicy implements OperationApprovalPolicy {
 
     @Override
     public boolean isApproved(OperationApprovalContext context) {
-        ActionCode actionCode = ActionCode.findByCode(context.payload().get("actionCode").asText());
-        return context != null && context.payload() != null && (Objects.isNull(actionCode) ? false : actionCode.getName().equals(CODE));
+        JsonNode requestBody = context == null ? null : context.requestBody();
+        if (requestBody == null || requestBody.isNull() || requestBody.isMissingNode()) {
+            return false;
+        }
+
+        JsonNode actionCodeNode = requestBody.get("actionCode");
+        if (actionCodeNode == null || actionCodeNode.isNull()) {
+            return false;
+        }
+
+        ActionCode actionCode = ActionCode.findByCode(actionCodeNode.asText());
+        return Objects.nonNull(actionCode) && actionCode.getName().equals(CODE);
     }
 }

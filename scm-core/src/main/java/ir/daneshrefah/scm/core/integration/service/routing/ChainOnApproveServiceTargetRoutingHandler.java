@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.core.integration.service.routing;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
-import ir.daneshrefah.scm.common.model.message.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -53,16 +52,16 @@ public class ChainOnApproveServiceTargetRoutingHandler implements ServiceTargetR
             ChainOnApproveRoutePlan plan,
             ChainOnApproveStepPlan step
     ) {
-        Message message = exchange.getMessage().getBody(Message.class);
-        if (message == null) {
-            throw new IllegalStateException("CHAIN_ON_APPROVE requires Message body after operation "
+        Object body = exchange.getMessage().getBody();
+        if (!(body instanceof JsonNode requestBody)) {
+            throw new IllegalStateException("CHAIN_ON_APPROVE requires JsonNode body after operation "
                     + step.serviceOperation().getOperationName());
         }
         return step.approvalPolicy().isApproved(new OperationApprovalContext(
                 plan.service(),
                 step.serviceOperation(),
                 step.approvalDefinition(),
-                message
+                requestBody
         ));
     }
 }
