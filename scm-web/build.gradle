@@ -16,7 +16,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.named("bootJar") {
-    mainClass = 'ir.daneshrefah.scm.web.App'
+    mainClass = 'ir.daneshrefah.scm.web.ScmWebApplication'
     archiveClassifier = ''
 }
 bootJar {
