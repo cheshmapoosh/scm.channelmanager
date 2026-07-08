@@ -542,9 +542,9 @@ APPROVE_PROCESS
 BUSINESS_OPERATION
 COMPLETE_PROCESS
 CANCEL_PROCESS
-FIND_PROCESSES
-FIND_TASKS
-FIND_TASKS_BY_PROCESS_ID
+FIND_ALL_PROCESS
+FIND_ALL_TASK
+FIND_TASK_BY_PROCESS_ID
 UPDATE_PROCESS_DESCRIPTION
 ```
 
@@ -590,34 +590,37 @@ At route construction, `TaskWorkflowRoutePlanFactory` combines active operation
 roles with all command step definitions and resolves each step to:
 
 ```text
-DB Operation.name:                    SVC_CARTABLE_APPROVE_PROCESS
-ServiceOperation.operationName:       SVC_CARTABLE_APPROVE_PROCESS
-Generated operation route id:         op.SVC_CARTABLE_APPROVE_PROCESS
-Operation route endpoint:             direct:op.SVC_CARTABLE_APPROVE_PROCESS
+TaskWorkflowRole:                     APPROVE_PROCESS
+Generated operation route id:         op.<operationName>
+Operation route endpoint:             direct:op.<operationName>
 OperationProvider.name:               TASK_INTERNAL
 OperationProvider.uri:                scm-task:internal
 Task provider endpoint:               scm-task:internal
 ```
 
-Store only the operation code in `ServiceOperation.operationName`; never store
+Store only the operation name in `ServiceOperation.operationName`; never store
 `op.` in the database field. A task provider operation delegates from that
 operation route to its provider endpoint. Configure the corresponding
-`Operation` with `type = PROVIDER` and provider `TASK_INTERNAL`.
+`Operation` with `type = PROVIDER` and provider `TASK_INTERNAL`, and configure
+or propagate the semantic `TaskWorkflowRole`.
 
 `TASK_INTERNAL` is one provider for the internal workflow engine. Define one
 provider per engine and many operations per provider. Do not split task workflow
 operations into separate `OperationProvider` rows.
 
 For canonical configuration, `OperationProvider.uri = scm-task:internal`.
-`scm-web`/core puts the `operationCode` on the Exchange through
-`Message.OPERATION_NAME` and/or `Message.OPERATION.name`, then routes to the
-provider URI as-is:
+`scm-web`/core puts `Message.TASK_WORKFLOW_ROLE` on the Exchange, then routes
+to the provider URI as-is:
 
 ```text
-direct:op.SVC_CARTABLE_APPROVE_PROCESS
+direct:op.<operationName>
   -> scm-task:internal
-  -> operationCode = SVC_CARTABLE_APPROVE_PROCESS
+  -> TaskWorkflowRole = APPROVE_PROCESS
 ```
+
+SVC_CARTABLE_* names are legacy operation-code aliases kept for compatibility.
+New TASK_WORKFLOW configuration should use TaskWorkflowRole as the semantic role
+and route to scm-task:internal.
 
 Legacy provider URI `scm-task:` may still resolve to
 `scm-task:SVC_CARTABLE_APPROVE_PROCESS` because the generic provider handler

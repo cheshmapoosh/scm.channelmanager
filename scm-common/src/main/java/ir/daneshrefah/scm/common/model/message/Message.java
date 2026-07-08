@@ -51,6 +51,7 @@ public class Message implements Serializable {
     public static final String SPAN_ID = "scmSpanId";
     public static final String CORRELATION_ID = "scmCorrelationId";
     public static final String OPERATION_NAME = "scmOperationName";
+    public static final String TASK_WORKFLOW_ROLE = "scmTaskWorkflowRole";
     public static final String TEMPLATE_VARIABLES = "scmTemplateVariables";
     public static final String TEMPLATE_ENGINE = "scmTemplateEngine";
     public static final String STATUS_HANDLER = "scmStatusHandler";

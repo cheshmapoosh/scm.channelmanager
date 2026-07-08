@@ -3,11 +3,7 @@
 ## 1. Purpose
 
 `scm-provider-task` exposes task and process workflow operations through the
-`scm-task` Camel component.
-
-This module is a provider module. It executes task/workflow operations after a
-caller has already selected the target `Operation` and routed an exchange to the
-provider endpoint.
+`scm-task` Camel component. It is a provider module, not the service router.
 
 ```text
 Module name:            scm-provider-task
@@ -15,11 +11,13 @@ Java package:           ir.daneshrefah.scm.provider.task
 Camel component scheme: scm-task
 Current providerCode:   internal
 Current provider URI:   scm-task:internal
+Current engine-type:    internal
 ```
 
 The module owns the internal task/process APIs, entities, repositories, DTO
-conversion, and dispatch from `operationCode` to the existing task services. It
-does not decide which business service should use `TASK_WORKFLOW`.
+conversion, `TaskWorkflowRole` resolution, and delegation to a configured
+workflow engine. It does not decide which business service should use
+`TASK_WORKFLOW`.
 
 Spring Boot loads:
 
@@ -42,27 +40,28 @@ scm:
 owns or delegates workflow state transitions such as start, approve, complete,
 cancel, and task completion.
 
-The state may currently be managed by the internal implementation. In the
-future, the same provider component can delegate to engines such as Camunda,
-Spring StateMachine, Flowable, or legacy CM.
-
-The wrapper boundary is:
+The current stateful implementation is the internal engine. Future engines can
+be selected by configuration and can own or delegate the same semantic workflow
+roles.
 
 ```text
 Camel component/endpoint
-  -> providerCode selection
-  -> operationCode resolution
-  -> task provider dispatch
-  -> workflow/state-machine engine
+  -> providerCode
+  -> provider config
+  -> engine-type
+  -> TaskWorkflowRole
+  -> TaskWorkflowEngine
 ```
 
 ## 3. Current provider: scm-task:internal
 
-The current engine/provider is `internal`.
+The current provider is:
 
 ```text
-Provider URI: scm-task:internal
-providerCode: internal
+OperationProvider.name = TASK_INTERNAL
+OperationProvider.uri  = scm-task:internal
+providerCode           = internal
+engine-type            = internal
 ```
 
 The URI shape is:
@@ -72,181 +71,182 @@ scm-task:<providerCode>
 ```
 
 For the current implementation, `scm-task:internal` is canonical. The endpoint
-segment is the `providerCode`; it is not the task operation name.
+segment is `providerCode`; it is not a task operation name.
 
-Runtime relationship:
+## 4. Provider engine configuration
 
-```text
-Operation route
-  -> OperationProvider.uri = scm-task:internal
-  -> TaskProviderComponent
-  -> TaskProviderEndpoint(providerCode=internal)
-  -> TaskProviderProducer
-  -> TaskProviderOperationAdapter
-  -> ProcessInstanceService / TaskInstanceService
+Provider code to engine selection is configuration-based:
+
+```yaml
+scm:
+  provider:
+    task:
+      enabled: true
+      providers:
+        internal:
+          enabled: true
+          engine-type: internal
 ```
 
-The internal dispatcher still executes the existing task services. There is no
-Camunda, Spring StateMachine, Flowable, or legacy CM implementation in this
-module yet.
+If no `providers` map is configured, `internal -> internal` is used as the
+default provider mapping for backward-compatible startup.
 
-## 4. Why the provider is stateful
+Future providers are modeled the same way, but their engines are not
+implemented yet:
 
-Task workflow operations are not simple stateless calls. They change or depend
-on process/task state:
-
-- `START_PROCESS` creates process state.
-- `APPROVE_PROCESS` advances an approval state.
-- `COMPLETE_PROCESS` moves a process into a terminal state.
-- `CANCEL_PROCESS` cancels an active process.
-- `COMPLETE_TASK` changes task state.
-- Query operations read the current process/task state.
-
-The internal implementation stores and validates these transitions through the
-existing process and task services. Future engines may own the state directly or
-the provider may delegate state changes to them.
-
-## 5. How operationCode is resolved
-
-With canonical URI `scm-task:internal`, the provider resolves the
-`operationCode` from the `Exchange` at runtime:
-
-```text
-1. Message.OPERATION_NAME
-2. Message.OPERATION.name
-3. legacy URI operationCode, only for scm-task:SVC_CARTABLE_*
+```yaml
+scm:
+  provider:
+    task:
+      providers:
+        internal:
+          enabled: true
+          engine-type: internal
+        camunda:
+          enabled: false
+          engine-type: camunda
+        spring-statemachine:
+          enabled: false
+          engine-type: spring-statemachine
+        flowable:
+          enabled: false
+          engine-type: flowable
+        legacy-cm:
+          enabled: false
+          engine-type: legacy-cm
 ```
 
-If the `operationCode` is missing, the provider fails fast with a clear error.
-If the `providerCode` is unknown, endpoint creation fails fast with a clear
-error. If the `operationCode` is not one of the supported internal operations,
-the provider fails fast with the supported operation list.
+Only `internal` engine-type is implemented now. Unknown `providerCode` fails
+fast when the endpoint is created or used. Unknown enabled `engine-type` fails
+fast during provider configuration validation. Disabled future provider entries
+are configuration placeholders only.
 
-Backward-compatible legacy URI form:
+## 5. Semantic dispatch: TaskWorkflowRole
 
-```text
-scm-task:SVC_CARTABLE_START_PROCESS
-```
-
-is interpreted as:
+`TaskWorkflowRole` is the semantic dispatch contract inside
+`scm-provider-task`:
 
 ```text
-providerCode  = internal
-operationCode = SVC_CARTABLE_START_PROCESS
+START_PROCESS
+APPROVE_PROCESS
+COMPLETE_PROCESS
+CANCEL_PROCESS
+COMPLETE_TASK
+FIND_ALL_TASK
+FIND_ALL_PROCESS
+FIND_TASK_BY_PROCESS_ID
+UPDATE_PROCESS_DESCRIPTION
 ```
 
-This compatibility exists only for old `scm-task:SVC_CARTABLE_*` provider URIs.
-New configuration should use `scm-task:internal`.
+The internal engine switches on `TaskWorkflowRole`, not on
+`SVC_CARTABLE_*` operation codes.
 
-## 6. Supported internal operations
-
-The current internal provider supports these `operationCode` values:
+Role resolution order:
 
 ```text
-SVC_CARTABLE_START_PROCESS
-SVC_CARTABLE_APPROVE_PROCESS
-SVC_CARTABLE_COMPLETE_PROCESS
-SVC_CARTABLE_CANCEL_PROCESS
-SVC_CARTABLE_COMPLTE_TASK
-SVC_CARTABLE_GET_ALL_TASK
-SVC_CARTABLE_GET_ALL_PROCESS
-SVC_CARTABLE_GET_TASK_BY_PROCESS_ID
-SVC_CARTABLE_UPDATE_PROCESS_DESCRIPTION
+1. Exchange property Message.TASK_WORKFLOW_ROLE
+2. Exchange property scmTaskWorkflowRole
+3. ServiceOperation or Operation definition metadata field taskWorkflowRole
+4. Operation.name / Message.OPERATION_NAME when already a TaskWorkflowRole
+5. Deprecated SVC_CARTABLE_* operation-code alias
 ```
 
-The existing spelling `SVC_CARTABLE_COMPLTE_TASK` is preserved for
-compatibility.
+If the role is missing, the provider fails fast:
 
-## 7. How to configure OperationProvider for internal engine
+```text
+scm-task:<providerCode> requires TaskWorkflowRole from exchange context or operation metadata.
+```
 
-Define one `OperationProvider` for the internal workflow engine:
+## 6. Deprecated SVC_CARTABLE aliases
+
+SVC_CARTABLE_* names are legacy operation-code aliases kept for compatibility.
+New TASK_WORKFLOW configuration should use TaskWorkflowRole as the semantic role
+and route to scm-task:internal.
+
+Deprecated alias mapping:
+
+```text
+SVC_CARTABLE_START_PROCESS              -> START_PROCESS
+SVC_CARTABLE_APPROVE_PROCESS            -> APPROVE_PROCESS
+SVC_CARTABLE_COMPLETE_PROCESS           -> COMPLETE_PROCESS
+SVC_CARTABLE_CANCEL_PROCESS             -> CANCEL_PROCESS
+SVC_CARTABLE_COMPLTE_TASK               -> COMPLETE_TASK
+SVC_CARTABLE_GET_ALL_TASK               -> FIND_ALL_TASK
+SVC_CARTABLE_GET_ALL_PROCESS            -> FIND_ALL_PROCESS
+SVC_CARTABLE_GET_TASK_BY_PROCESS_ID     -> FIND_TASK_BY_PROCESS_ID
+SVC_CARTABLE_UPDATE_PROCESS_DESCRIPTION -> UPDATE_PROCESS_DESCRIPTION
+```
+
+The existing spelling `SVC_CARTABLE_COMPLTE_TASK` is preserved as a deprecated
+alias. Do not remove these aliases until all old database rows and routes have
+migrated.
+
+Old provider URI forms such as `scm-task:SVC_CARTABLE_START_PROCESS` are not
+canonical. They are accepted only as deprecated compatibility for old route
+startup; runtime dispatch still resolves a `TaskWorkflowRole` from exchange
+context or metadata.
+
+## 7. OperationProvider and Operation rows
+
+Define one `OperationProvider` per workflow engine/provider:
 
 ```text
 OperationProvider.name  = TASK_INTERNAL
 OperationProvider.title = SCM Internal Task Provider
 OperationProvider.uri   = scm-task:internal
-providerCode            = internal
 ```
 
-Then define many `Operation` rows under the same provider:
-
-```text
-SVC_CARTABLE_START_PROCESS              -> provider TASK_INTERNAL
-SVC_CARTABLE_APPROVE_PROCESS            -> provider TASK_INTERNAL
-SVC_CARTABLE_COMPLETE_PROCESS           -> provider TASK_INTERNAL
-SVC_CARTABLE_CANCEL_PROCESS             -> provider TASK_INTERNAL
-SVC_CARTABLE_COMPLTE_TASK               -> provider TASK_INTERNAL
-SVC_CARTABLE_GET_ALL_TASK               -> provider TASK_INTERNAL
-SVC_CARTABLE_GET_ALL_PROCESS            -> provider TASK_INTERNAL
-SVC_CARTABLE_GET_TASK_BY_PROCESS_ID     -> provider TASK_INTERNAL
-SVC_CARTABLE_UPDATE_PROCESS_DESCRIPTION -> provider TASK_INTERNAL
-```
-
-Each task `Operation` should use:
+Define many `Operation` rows under the same provider. The provider endpoint is
+the engine boundary; the semantic action is `TaskWorkflowRole`.
 
 ```text
 Operation.type     = PROVIDER
 Operation.provider = TASK_INTERNAL
-Operation.name     = <operationCode>
 ```
 
-Define one provider per engine and many operations per provider. Do not split
-task workflow operations into separate `OperationProvider` rows.
+Do not split task workflow actions into separate `OperationProvider` rows.
 
-Legacy configuration with provider URI `scm-task:` may still route to
-`scm-task:SVC_CARTABLE_*` because the generic provider handler appends
-`Operation.name` when a provider URI ends with `:`. Keep that only for backward
-compatibility; new task workflow configuration should use `scm-task:internal`.
+## 8. Future engines
 
-## 8. How future engines can be added
-
-Future workflow engines can be added by registering a new `providerCode` and
-delegating from the same `scm-task` component to the new engine implementation.
-
-Possible future `OperationProvider` rows:
+Future workflow engines can be added by registering a provider config and a
+`TaskWorkflowEngine` implementation:
 
 ```text
-TASK_CAMUNDA             -> scm-task:camunda
-TASK_SPRING_STATEMACHINE -> scm-task:spring-statemachine
-TASK_FLOWABLE            -> scm-task:flowable
-TASK_LEGACY_CM           -> scm-task:legacy-cm
+TASK_CAMUNDA             -> providerCode camunda             -> scm-task:camunda
+TASK_SPRING_STATEMACHINE -> providerCode spring-statemachine -> scm-task:spring-statemachine
+TASK_FLOWABLE            -> providerCode flowable            -> scm-task:flowable
+TASK_LEGACY_CM           -> providerCode legacy-cm          -> scm-task:legacy-cm
 ```
 
-The extension rule remains the same:
+The extension rule remains:
 
 ```text
 one provider per engine
 many operations per provider
-operationCode resolved from the Exchange
+TaskWorkflowRole resolved from exchange context or metadata
 ```
 
-Unknown `providerCode` values fail fast until an engine implementation is
-registered. This README documents the extension point only; it does not add a
-future engine implementation.
+This module does not implement Camunda, Spring StateMachine, Flowable, or
+legacy CM yet.
 
 ## 9. Boundary with scm-web
 
 `scm-web` decides what service and operation should run. `scm-provider-task`
 executes the workflow/state-machine operation.
 
-`scm-provider-task` does not decide which business service should use
-`TASK_WORKFLOW`. It only executes task/workflow operations after
-`scm-web`/routing sends an exchange to the task provider endpoint.
-
-Keep the boundary clear:
-
 ```text
 scm-web / routing
   -> resolves Service
   -> applies RoutingStrategy = TASK_WORKFLOW
   -> selects Operation
-  -> sets Message.OPERATION and/or Message.OPERATION_NAME
+  -> sets Message.TASK_WORKFLOW_ROLE or operation metadata
   -> routes to OperationProvider.uri = scm-task:internal
 
 scm-provider-task
-  -> validates providerCode = internal
-  -> resolves operationCode
-  -> dispatches to the internal workflow/state-machine implementation
+  -> validates providerCode
+  -> resolves configured engine-type
+  -> resolves TaskWorkflowRole
+  -> dispatches to TaskWorkflowEngine
 ```
 
 `scm-provider-task` should not document business service routing rules except
@@ -265,28 +265,12 @@ There is no secondary persistence enablement switch. If
 its API/service beans, `scm-task` component, operation adapter, repositories, or
 JPA managed package contribution.
 
-The auto-configuration uses focused scanning for task provider APIs, services,
-and mappers. Persistence has two supported modes.
-
 Default mode uses the host primary persistence beans:
-
-```yaml
-scm:
-  provider:
-    task:
-      enabled: true
-```
-
-In default mode, task provider repositories bind to:
 
 ```text
 entityManagerFactory
 transactionManager
 ```
-
-The task provider entity package may be contributed to the host main
-`entityManagerFactory` through `JpaManagedPackageContributor`. The provider does
-not create a datasource, `EntityManagerFactory`, or `TransactionManager`.
 
 Dedicated mode uses configured bean names:
 
@@ -298,20 +282,6 @@ scm:
       entity-manager-factory: taskProviderEntityManagerFactory
       transaction-manager: taskProviderTransactionManager
 ```
-
-In dedicated mode:
-
-- `entity-manager-factory` is the bean name of the task provider
-  `EntityManagerFactory`.
-- `transaction-manager` is the bean name of the task provider
-  `TransactionManager`.
-- Task provider repositories bind to `taskProviderEntityManagerFactory` and
-  `taskProviderTransactionManager`.
-- The task provider does not use host primary persistence and does not
-  contribute `ir.daneshrefah.scm.provider.task.entity` to the host main
-  `entityManagerFactory`.
-- The host creates any dedicated datasource and wires it into the dedicated
-  `EntityManagerFactory`.
 
 If neither `entity-manager-factory` nor `transaction-manager` is configured,
 default mode is used. If either one is configured, both are required and the
@@ -344,26 +314,8 @@ signal itself.
 ## Logging
 
 SLF4J is allowed for technical diagnostics with useful boundary context.
-Do not add repeated catch/log/rethrow blocks that only repeat an exception
-message. Semantic lifecycle boundaries should use the common event provider.
+Safe fields include correlation id, process id, task id, process code, status,
+outcome, command, role, operation name, and sanitized error type/message.
 
-Safe fields include:
-
-- correlation id
-- process id
-- task id
-- process code
-- status
-- outcome
-- command
-- role
-- operation name
-- sanitized and truncated error type/message
-
-Never log or publish:
-
-- OTP
-- authorization token
-- password
-- raw financial payload
-- full request or response body that may contain sensitive data
+Never log or publish OTP, authorization token, password, raw financial payload,
+or full request/response bodies that may contain sensitive data.

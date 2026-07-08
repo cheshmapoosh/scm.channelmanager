@@ -40,12 +40,18 @@ public enum OperationCode {
     SVC_SERVICE_BY_ID(ServiceImplementationType.JAVA),
     SVC_SERVICE_CREATE(ServiceImplementationType.JAVA),
     SVC_SERVICE_UPDATE(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_APPROVE_PROCESS(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_START_PROCESS(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_GET_ALL_PROCESS(ServiceImplementationType.JAVA),
     SVC_SERVICE_PROVIDER_CREATE(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_COMPLETE_PROCESS(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_CANCEL_PROCESS(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_GET_ALL_TASK(ServiceImplementationType.JAVA),
     SVC_JOB_CLASS_NAME(ServiceImplementationType.JAVA),
     SVC_ASSETS_SYNC(ServiceImplementationType.JAVA),
@@ -121,9 +127,12 @@ public enum OperationCode {
     SVC_PARAMETER_FIND(ServiceImplementationType.JAVA),
     SVC_PARAMETER_FIND_TREE(ServiceImplementationType.JAVA),
     SVC_RESPONSE_FIND(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_COMPLTE_TASK(ServiceImplementationType.JAVA),
     SVC_ASSETS_LIST(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_UPDATE_PROCESS_DESCRIPTION(ServiceImplementationType.JAVA),
+    @Deprecated
     SVC_CARTABLE_GET_TASK_BY_PROCESS_ID(ServiceImplementationType.JAVA),
     SVC_SERVICE_PROVIDER_CHANGE(ServiceImplementationType.JAVA),
     SVC_SERVICE_PROVIDER_DELETE(ServiceImplementationType.JAVA),
