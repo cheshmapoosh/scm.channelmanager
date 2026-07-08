@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.constant.OperationCode;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.provider.task.api.ProcessInstanceService;
 import ir.daneshrefah.scm.provider.task.api.TaskInstanceService;
 import ir.daneshrefah.scm.provider.task.model.ProcessInstanceApproveRequest;
@@ -21,6 +22,10 @@ import java.util.Map;
 import java.util.Set;
 
 public class TaskProviderOperationAdapter {
+    public static final String INTERNAL_PROVIDER_CODE = "internal";
+    private static final Set<String> SUPPORTED_PROVIDER_CODES = Set.of(
+            INTERNAL_PROVIDER_CODE
+    );
     private static final Set<OperationCode> SUPPORTED_OPERATIONS = Set.of(
             OperationCode.SVC_CARTABLE_START_PROCESS,
             OperationCode.SVC_CARTABLE_APPROVE_PROCESS,
@@ -47,7 +52,13 @@ public class TaskProviderOperationAdapter {
         this.taskInstanceService = taskInstanceService;
     }
 
-    public void execute(String operationCode, Exchange exchange) {
+    public void execute(
+            String providerCode,
+            String legacyOperationCode,
+            Exchange exchange
+    ) {
+        requireSupportedProvider(providerCode);
+        String operationCode = resolveOperationCode(exchange, legacyOperationCode);
         OperationCode operation = requireSupportedOperation(operationCode);
 
         Object response = switch (operation) {
@@ -168,6 +179,32 @@ public class TaskProviderOperationAdapter {
         return body;
     }
 
+    String requireSupportedProvider(String providerCode) {
+        if (providerCode == null || providerCode.isBlank()) {
+            throw new IllegalArgumentException(
+                    TaskProviderComponent.SCHEME
+                            + " endpoint requires a non-blank providerCode");
+        }
+        if (!providerCode.equals(providerCode.trim())) {
+            throw invalidProviderCode(providerCode,
+                    "leading or trailing whitespace is not allowed");
+        }
+        if (!SUPPORTED_PROVIDER_CODES.contains(providerCode)) {
+            throw invalidProviderCode(providerCode,
+                    "providerCode is not registered");
+        }
+        return providerCode;
+    }
+
+    boolean supportsOperation(String operationCode) {
+        try {
+            requireSupportedOperation(operationCode);
+            return true;
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
+    }
+
     OperationCode requireSupportedOperation(String operationCode) {
         if (operationCode == null || operationCode.isBlank()) {
             throw new IllegalArgumentException(
@@ -194,6 +231,57 @@ public class TaskProviderOperationAdapter {
                     "OperationCode is not exposed by the task provider");
         }
         return operation;
+    }
+
+    private String resolveOperationCode(
+            Exchange exchange,
+            String legacyOperationCode
+    ) {
+        String operationCode = nonBlank(exchange.getProperty(Message.OPERATION_NAME));
+        if (operationCode != null) {
+            return operationCode;
+        }
+
+        Object operationValue = exchange.getProperty(Message.OPERATION);
+        if (operationValue instanceof Operation operationModel) {
+            operationCode = nonBlank(operationModel.getName());
+            if (operationCode != null) {
+                return operationCode;
+            }
+        } else if (operationValue instanceof OperationCode operationEnum) {
+            return operationEnum.name();
+        }
+
+        operationCode = nonBlank(legacyOperationCode);
+        if (operationCode != null) {
+            return operationCode;
+        }
+
+        throw new IllegalArgumentException(
+                TaskProviderComponent.SCHEME + ":" + INTERNAL_PROVIDER_CODE
+                        + " requires operationCode from Exchange property "
+                        + Message.OPERATION_NAME + " or " + Message.OPERATION
+                        + ".name; legacy URI operationCode is supported only by "
+                        + TaskProviderComponent.SCHEME + ":<operationCode>");
+    }
+
+    private String nonBlank(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = value.toString();
+        return text.isBlank() ? null : text;
+    }
+
+    private IllegalArgumentException invalidProviderCode(
+            String providerCode,
+            String reason
+    ) {
+        String message = "Invalid " + TaskProviderComponent.SCHEME
+                + " providerCode=" + providerCode
+                + ": " + reason
+                + "; expected one of " + SUPPORTED_PROVIDER_CODES;
+        return new IllegalArgumentException(message);
     }
 
     private IllegalArgumentException invalidOperationName(
