@@ -594,23 +594,35 @@ DB Operation.name:                    SVC_CARTABLE_APPROVE_PROCESS
 ServiceOperation.operationName:       SVC_CARTABLE_APPROVE_PROCESS
 Generated operation route id:         op.SVC_CARTABLE_APPROVE_PROCESS
 Operation route endpoint:             direct:op.SVC_CARTABLE_APPROVE_PROCESS
-Task provider endpoint:               scm-task:SVC_CARTABLE_APPROVE_PROCESS
+OperationProvider.name:               TASK_INTERNAL
+OperationProvider.uri:                scm-task:internal
+Task provider endpoint:               scm-task:internal
 ```
 
 Store only the operation code in `ServiceOperation.operationName`; never store
 `op.` in the database field. A task provider operation delegates from that
 operation route to its provider endpoint. Configure the corresponding
-`Operation` with `type = PROVIDER` and task provider base URI
-`scm-task:`:
+`Operation` with `type = PROVIDER` and provider `TASK_INTERNAL`.
 
-For this provider URI, `Operation.name` must exactly match a supported task
-`OperationCode`. Unknown codes, leading/trailing whitespace, and names prefixed
-with `op.` fail endpoint creation during route startup.
+`TASK_INTERNAL` is one provider for the internal workflow engine. Define one
+provider per engine and many operations per provider. Do not split task workflow
+operations into separate `OperationProvider` rows.
+
+For canonical configuration, `OperationProvider.uri = scm-task:internal`.
+`scm-web`/core puts the `operationCode` on the Exchange through
+`Message.OPERATION_NAME` and/or `Message.OPERATION.name`, then routes to the
+provider URI as-is:
 
 ```text
 direct:op.SVC_CARTABLE_APPROVE_PROCESS
-  -> scm-task:SVC_CARTABLE_APPROVE_PROCESS
+  -> scm-task:internal
+  -> operationCode = SVC_CARTABLE_APPROVE_PROCESS
 ```
+
+Legacy provider URI `scm-task:` may still resolve to
+`scm-task:SVC_CARTABLE_APPROVE_PROCESS` because the generic provider handler
+appends `Operation.name` when a provider URI ends with `:`. Treat that as
+backward compatibility only; new configuration should use `scm-task:internal`.
 
 `scm-core` maps workflow requests with generic `Map`/`JsonNode` payloads. DTO
 conversion and task API invocation belong to `scm-provider-task`.

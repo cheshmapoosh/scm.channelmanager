@@ -4,21 +4,24 @@ import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
 
 public class TaskProviderProducer extends DefaultProducer {
-    private final String operationCode;
+    private final String providerCode;
+    private final String legacyOperationCode;
     private final TaskProviderOperationAdapter operationAdapter;
 
     public TaskProviderProducer(
             TaskProviderEndpoint endpoint,
-            String operationCode,
+            String providerCode,
+            String legacyOperationCode,
             TaskProviderOperationAdapter operationAdapter
     ) {
         super(endpoint);
-        this.operationCode = operationCode;
+        this.providerCode = providerCode;
+        this.legacyOperationCode = legacyOperationCode;
         this.operationAdapter = operationAdapter;
     }
 
     @Override
     public void process(Exchange exchange) {
-        operationAdapter.execute(operationCode, exchange);
+        operationAdapter.execute(providerCode, legacyOperationCode, exchange);
     }
 }

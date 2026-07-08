@@ -12,28 +12,36 @@ import org.apache.camel.support.DefaultEndpoint;
         firstVersion = "1.0.0",
         scheme = TaskProviderComponent.SCHEME,
         title = "SCM Task Provider",
-        syntax = "scm-task:operationCode",
+        syntax = "scm-task:providerCode",
         producerOnly = true,
         category = {Category.CORE}
 )
 public class TaskProviderEndpoint extends DefaultEndpoint {
-    private final String operationCode;
+    private final String providerCode;
+    private final String legacyOperationCode;
     private final TaskProviderOperationAdapter operationAdapter;
 
     public TaskProviderEndpoint(
             String endpointUri,
             Component component,
-            String operationCode,
+            String providerCode,
+            String legacyOperationCode,
             TaskProviderOperationAdapter operationAdapter
     ) {
         super(endpointUri, component);
-        this.operationCode = operationCode;
+        this.providerCode = providerCode;
+        this.legacyOperationCode = legacyOperationCode;
         this.operationAdapter = operationAdapter;
     }
 
     @Override
     public Producer createProducer() {
-        return new TaskProviderProducer(this, operationCode, operationAdapter);
+        return new TaskProviderProducer(
+                this,
+                providerCode,
+                legacyOperationCode,
+                operationAdapter
+        );
     }
 
     @Override

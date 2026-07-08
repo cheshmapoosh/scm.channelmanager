@@ -359,7 +359,127 @@ direct:<operationName>
 
 ---
 
-## 5) مسیر واقعی پردازش یک درخواست
+## 5) TASK_WORKFLOW routing
+
+This section describes `TASK_WORKFLOW` from the `scm-web` service routing
+perspective only.
+
+### 5.1) Service layer
+
+`scm-web` receives the inbound request through a gateway route, resolves the
+target `Service`, and enters the service routing layer. The service row decides
+which routing handler is used:
+
+```text
+Service:
+  code            = business service code
+  routingStrategy = TASK_WORKFLOW
+```
+
+When `routingStrategy = TASK_WORKFLOW`, the generic service router selects the
+`TASK_WORKFLOW` routing handler. `scm-web` does not call task services directly
+and does not own workflow engine state.
+
+### 5.2) RoutingStrategy = TASK_WORKFLOW
+
+`TASK_WORKFLOW` is a service-layer strategy. It selects workflow steps from the
+service configuration and invokes operation routes. The routing strategy is
+responsible for deciding what operation should run for the current workflow
+command.
+
+### 5.3) Operation selection
+
+Each active service operation points to an `Operation` by operation name. The
+operation name is the `operationCode` that the provider later executes:
+
+```text
+Operation:
+  name     = SVC_CARTABLE_START_PROCESS
+  type     = PROVIDER
+  provider = TASK_INTERNAL
+```
+
+For task workflow, define one provider per engine and many operations per
+provider. Do not split task workflow operations into separate
+`OperationProvider` rows.
+
+Expected internal task operations:
+
+```text
+SVC_CARTABLE_START_PROCESS              -> provider TASK_INTERNAL
+SVC_CARTABLE_APPROVE_PROCESS            -> provider TASK_INTERNAL
+SVC_CARTABLE_COMPLETE_PROCESS           -> provider TASK_INTERNAL
+SVC_CARTABLE_CANCEL_PROCESS             -> provider TASK_INTERNAL
+SVC_CARTABLE_COMPLTE_TASK               -> provider TASK_INTERNAL
+SVC_CARTABLE_GET_ALL_TASK               -> provider TASK_INTERNAL
+SVC_CARTABLE_GET_ALL_PROCESS            -> provider TASK_INTERNAL
+SVC_CARTABLE_GET_TASK_BY_PROCESS_ID     -> provider TASK_INTERNAL
+SVC_CARTABLE_UPDATE_PROCESS_DESCRIPTION -> provider TASK_INTERNAL
+```
+
+### 5.4) OperationProvider lookup
+
+The current internal task provider is configured once:
+
+```text
+OperationProvider:
+  name  = TASK_INTERNAL
+  title = SCM Internal Task Provider
+  uri   = scm-task:internal
+```
+
+`TASK_INTERNAL` means the current internal workflow engine/provider. The
+endpoint URI `scm-task:internal` contains `providerCode = internal`.
+
+### 5.5) Endpoint URI resolution
+
+For canonical configuration, `OperationProvider.uri` is already the complete
+provider endpoint:
+
+```text
+scm-task:internal
+```
+
+Because the URI does not end with `:`, the generic provider handler routes to
+`scm-task:internal` as-is. The `operationCode` is carried on the `Exchange`
+using `Message.OPERATION_NAME` and/or `Message.OPERATION.name`.
+
+Legacy provider URI `scm-task:` may still resolve to
+`scm-task:SVC_CARTABLE_*` because the generic provider handler appends
+`Operation.name` when a provider URI ends with `:`. Treat that as backward
+compatibility only. New task workflow configuration should use
+`scm-task:internal`.
+
+### 5.6) Runtime flow to scm-provider-task
+
+Runtime flow:
+
+```text
+1. Request enters scm-web.
+2. scm-web resolves the target Service.
+3. Service routingStrategy is TASK_WORKFLOW.
+4. scm-web resolves one or more Operations for that service/workflow.
+5. Each Operation points to OperationProvider TASK_INTERNAL.
+6. scm-web sets Message.OPERATION and/or Message.OPERATION_NAME on the Exchange.
+7. scm-web routes to provider URI scm-task:internal.
+8. scm-provider-task reads operationCode from the Exchange and executes the
+   internal stateful workflow action.
+```
+
+Boundary:
+
+```text
+scm-web decides what service and operation should run.
+scm-provider-task executes the workflow/state-machine operation.
+```
+
+`scm-web` must not document internal task engine details.
+`scm-provider-task` must not document business service routing rules except as
+context.
+
+---
+
+## 6) مسیر واقعی پردازش یک درخواست
 
 برای درک بهتر، ترتیب دقیق اجرای runtime:
 
@@ -375,7 +495,7 @@ direct:<operationName>
 
 ---
 
-## 6) چک‌لیست نهایی قبل از تحویل
+## 7) چک‌لیست نهایی قبل از تحویل
 
 1. operation فعال است.
 2. service فعال و منتشرشده است.
@@ -390,7 +510,7 @@ direct:<operationName>
 
 ---
 
-## 7) خطاهای رایج و محل بررسی
+## 8) خطاهای رایج و محل بررسی
 
 1. خطا: عملیات route نشد.
 2. بررسی:
@@ -415,7 +535,7 @@ direct:<operationName>
 
 ---
 
-## 8) نقطه شروع پیشنهادی برای کارشناس تازه‌وارد
+## 9) نقطه شروع پیشنهادی برای کارشناس تازه‌وارد
 
 ترتیب پیشنهادی کار:
 
