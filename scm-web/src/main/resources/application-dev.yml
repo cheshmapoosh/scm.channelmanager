@@ -1,13 +1,12 @@
-spring:
-  cloud:
-    config:
-      enabled: false
-
 SCM_ENV: dev
 SCM_APPLICATION_NAME: scm-web
 SCM_INSTANCE_ID: local-scm-web
 SCM_CHANNEL_CODE: IB
 SCM_GATEWAY_NAME: channel.nib
+
+SCM_CONFIG_ENABLED: false
+SCM_CONFIG_SERVER_IMPORT: ""
+SCM_CONFIG_FAIL_FAST: false
 
 SCM_UAA_BASE_URL: http://localhost:8000
 
@@ -21,8 +20,11 @@ SCM_DB_MAX_CONNECTION: 10
 SCM_OBS_ROOT_DIR: ${user.home}/scm/obs
 SCM_OBS_LOG_CONSOLE_ENABLED: true
 SCM_OBS_LOG_FILE_ENABLED: true
+SCM_OBS_TRACE_CONSOLE_ENABLED: true
 SCM_OBS_TRACE_FILE_ENABLED: true
 SCM_OBS_AUDIT_ENABLED: true
+SCM_OBS_AUDIT_CONSOLE_ENABLED: true
+SCM_OBS_AUDIT_FILE_ENABLED: true
 
 SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS: 3000
 SCM_PROVIDER_DEFAULT_SOCKET_TIMEOUT_MS: 1000
@@ -49,22 +51,3 @@ SCM_CACHE_ADDRESS: 10.10.4.122:5701
 SCM_LOGOUT_JMS_ENABLED: false
 SCM_LOGOUT_JMS_HOST: localhost
 SCM_LOGOUT_JMS_QUEUE_MANAGER: ""
-
-scm:
-  observation:
-    log:
-      console:
-        enabled: true
-      file:
-        enabled: true
-    trace:
-      console:
-        enabled: true
-      file:
-        enabled: true
-    audit:
-      enabled: true
-      console:
-        enabled: true
-      file:
-        enabled: true

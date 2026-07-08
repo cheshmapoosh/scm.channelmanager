@@ -431,6 +431,10 @@ OperationProvider:
 `TASK_INTERNAL` means the current internal workflow engine/provider. The URI
 `scm-task:internal` contains `providerCode = internal`.
 
+The selected task provider, such as `scm-task:internal`, resolves its configured
+engine type inside `scm-provider-task`; SCM Web does not select the engine
+directly.
+
 ### 5.5) Endpoint URI resolution
 
 For canonical configuration, `OperationProvider.uri` is already the complete

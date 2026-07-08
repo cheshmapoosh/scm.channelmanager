@@ -77,16 +77,36 @@ segment is `providerCode`; it is not a task operation name.
 
 Provider code to engine selection is configuration-based:
 
+| Concept | Example | Description |
+| --- | --- | --- |
+| providerCode | internal | The provider instance selected by `scm-task:<providerCode>`. |
+| engineType / engine-type | internal | The workflow engine implementation used by that provider. Java property is `engineType`; YAML property is `engine-type`. |
+| OperationProvider.uri | scm-task:internal | The DB provider URI used by routing. |
+| SCM_TASK_PROVIDER_INTERNAL_ENGINE_TYPE | internal | Variable that sets the engine type for the internal provider. |
+
+The selected variable convention is:
+
+```yaml
+SCM_PROVIDER_TASK_ENABLED: true
+SCM_TASK_PROVIDER_INTERNAL_ENABLED: true
+SCM_TASK_PROVIDER_INTERNAL_ENGINE_TYPE: internal
+```
+
+Base `application.yml` maps those variables to the actual Spring properties:
+
 ```yaml
 scm:
   provider:
     task:
-      enabled: true
+      enabled: ${SCM_PROVIDER_TASK_ENABLED:true}
       providers:
         internal:
-          enabled: true
-          engine-type: internal
+          enabled: ${SCM_TASK_PROVIDER_INTERNAL_ENABLED:true}
+          engine-type: ${SCM_TASK_PROVIDER_INTERNAL_ENGINE_TYPE:internal}
 ```
+
+`providerCode = internal` and `engine-type = internal` means the `internal`
+task provider uses the `internal` workflow engine implementation.
 
 If no `providers` map is configured, `internal -> internal` is used as the
 default provider mapping for backward-compatible startup.
@@ -95,31 +115,21 @@ Future providers are modeled the same way, but their engines are not
 implemented yet:
 
 ```yaml
-scm:
-  provider:
-    task:
-      providers:
-        internal:
-          enabled: true
-          engine-type: internal
-        camunda:
-          enabled: false
-          engine-type: camunda
-        spring-statemachine:
-          enabled: false
-          engine-type: spring-statemachine
-        flowable:
-          enabled: false
-          engine-type: flowable
-        legacy-cm:
-          enabled: false
-          engine-type: legacy-cm
+SCM_TASK_PROVIDER_CAMUNDA_ENABLED: false
+SCM_TASK_PROVIDER_CAMUNDA_ENGINE_TYPE: camunda
+SCM_TASK_PROVIDER_SPRING_STATEMACHINE_ENABLED: false
+SCM_TASK_PROVIDER_SPRING_STATEMACHINE_ENGINE_TYPE: spring-statemachine
+SCM_TASK_PROVIDER_FLOWABLE_ENABLED: false
+SCM_TASK_PROVIDER_FLOWABLE_ENGINE_TYPE: flowable
+SCM_TASK_PROVIDER_LEGACY_CM_ENABLED: false
+SCM_TASK_PROVIDER_LEGACY_CM_ENGINE_TYPE: legacy-cm
 ```
 
 Only `internal` engine-type is implemented now. Unknown `providerCode` fails
 fast when the endpoint is created or used. Unknown enabled `engine-type` fails
-fast during provider configuration validation. Disabled future provider entries
-are configuration placeholders only.
+fast during provider configuration validation. Future values such as `camunda`,
+`spring-statemachine`, `flowable`, and `legacy-cm` are design placeholders only
+unless their `TaskWorkflowEngine` implementation exists.
 
 ## 5. Semantic dispatch: TaskWorkflowRole
 

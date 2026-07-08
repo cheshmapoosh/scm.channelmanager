@@ -1,12 +1,11 @@
-spring:
-  cloud:
-    config:
-      enabled: false
-
 SCM_ENV: dev
 SCM_APPLICATION_NAME: scm-cm-connector
 SCM_INSTANCE_ID: local-scm-cm-connector
 SCM_SERVER_PORT: ${SERVER_PORT:8080}
+
+SCM_CONFIG_ENABLED: false
+SCM_CONFIG_SERVER_IMPORT: ""
+SCM_CONFIG_FAIL_FAST: false
 
 SCM_UAA_BASE_URL: http://localhost:8000
 
@@ -18,24 +17,8 @@ SCM_CM_CONNECTOR_ADMIN_CACHE_ENDPOINTS_ENABLED: false
 SCM_OBS_ROOT_DIR: ${user.home}/scm/obs
 SCM_OBS_LOG_CONSOLE_ENABLED: true
 SCM_OBS_LOG_FILE_ENABLED: true
+SCM_OBS_TRACE_CONSOLE_ENABLED: true
 SCM_OBS_TRACE_FILE_ENABLED: true
 SCM_OBS_AUDIT_ENABLED: true
-
-scm:
-  observation:
-    log:
-      console:
-        enabled: true
-      file:
-        enabled: true
-    trace:
-      console:
-        enabled: true
-      file:
-        enabled: true
-    audit:
-      enabled: true
-      console:
-        enabled: true
-      file:
-        enabled: true
+SCM_OBS_AUDIT_CONSOLE_ENABLED: true
+SCM_OBS_AUDIT_FILE_ENABLED: true
