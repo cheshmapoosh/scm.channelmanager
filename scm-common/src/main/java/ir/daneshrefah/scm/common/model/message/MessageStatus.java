@@ -19,7 +19,7 @@ public enum MessageStatus {
     SC_NOT_FOUND("sc_nfd"), SC_ERROR_VALIDATION("sc_evl"), SC_ERROR_SYSTEM("sc_esy"), SC_ERROR_BUSINESS("sc_ebz"),
     SC_ERROR_UNREACHABLE_PROVIDER("sc_eup"), SC_ERROR_DATA_INTEGRITY_VIOLATION("sc_div"),
     INVALID_SOURCE_ACCOUNT("nab_acc"),
-    KARPARDAZ_NOT_EXSIST("nab_krprdz_del"),
+    KARPARDAZ_NOT_FOUND("nab_krprdz_del"),
     EMPTY_PRIVILEGES("mt_tt"),
     EMPTY_PERMIT_SERVICE_ID("mt_ps"),
     ERROR_VERIFYING_SIGNATORIES("err_emz"),

@@ -1,4 +1,5 @@
 import groovy.json.JsonOutput
+import ir.daneshrefah.scm.common.transformerUtil.converter.DateAndTimeConverter
 
 def nabResponse = exchange.in.body
 println("5p nab response : " + nabResponse)
@@ -17,7 +18,7 @@ def responseList = []
 for (def body in bodyRawList) {
     println("5p response body : " + body);
     def accountNo = body.accountNo
-    def transDate = body.transDate
+    def transDate = DateAndTimeConverter.convertPersianDateToMs(body.transDate)
     def transRefNo = body.refNo
     def transSeq = body.refSeq
     def creditDebit = body.debitCredit

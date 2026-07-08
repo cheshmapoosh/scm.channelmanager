@@ -7,8 +7,10 @@ import ir.daneshrefah.scm.common.annotation.JavaService;
 import ir.daneshrefah.scm.common.constant.CustomerRelationType;
 import ir.daneshrefah.scm.common.constant.OperationCode;
 import ir.daneshrefah.scm.common.data.entity.asset.*;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.MembershipMapper;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
+import ir.daneshrefah.scm.common.data.repository.PersonRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.AccountRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.CustomerAccountRepository;
 import ir.daneshrefah.scm.common.data.repository.assets.CustomerRepository;
@@ -18,9 +20,14 @@ import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.membership.MembershipType;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.person.GeneralPerson;
+import ir.daneshrefah.scm.common.model.person.PersonType;
+import ir.daneshrefah.scm.core.services.auth.UaaApi;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
+//import ir.daneshrefah.scm.uaa.repository.authentication.UserChannelAuthentication;
+//import ir.daneshrefah.scm.uaa.repository.authentication.UserChannelAuthenticationRepository;
+//import ir.daneshrefah.scm.uaa.service.user.XUserDetailService;
 import ir.daneshrefah.scm.utils.validation.ValidationUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -35,23 +42,33 @@ import java.util.Optional;
 public class DelegatorMembershipManagementService extends AbstractJavaService {
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
-    private final PersonMapper personMapper;
+    private final PersonRepository personRepository;
     private final MembershipRepository membershipRepository;
     private final CustomerAccountRepository customerAccountRepository;
+    private final UaaApi uaaApi;
+//    private final XUserDetailService xUserDetailService;
+//    private UserChannelAuthenticationRepository authenticationRepository;
 
     public DelegatorMembershipManagementService(ServiceProducerTemplate producerTemplate,
                                                 ObjectMapper objectMapper,
                                                 CustomerRepository customerRepository,
                                                 AccountRepository accountRepository,
+                                                PersonRepository personRepository,
                                                 MembershipRepository membershipRepository,
                                                 CustomerAccountRepository customerAccountRepository,
-                                                PersonMapper personMapper) {
+                                                UaaApi uaaApi
+//                                                XUserDetailService xUserDetailService,
+//                                                UserChannelAuthenticationRepository authenticationRepository
+    ) {
         super(producerTemplate, objectMapper);
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
+        this.personRepository = personRepository;
         this.membershipRepository = membershipRepository;
         this.customerAccountRepository = customerAccountRepository;
-        this.personMapper = personMapper;
+        this.uaaApi = uaaApi;
+//        this.xUserDetailService = xUserDetailService;
+//        this.authenticationRepository = authenticationRepository;
     }
 
     @JavaService(operationCode = OperationCode.SVC_GRANT_FUND_TRANSFER)
@@ -61,21 +78,39 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         log.info("Delegating to membership management service started!");
         String accountNo = getText(body, "accountNo");
         String customerNo = getFirstCustomer(body);
+        String nationalCode = getText(body, "nationalCode");
         Boolean isCreate = parseCreateFlag(body);
 
         validate(accountNo, customerNo, isCreate);
 
-        GeneralPerson person = getCurrentPerson();
+        GeneralPersonEntity person = getKarpardaz(nationalCode);
         log.info("current personId (karpardaz) is {}", person.getId());
 
         if (!isCreate) {
             return deactivateDelegator(person, customerNo);
         }
         Long memId = createDelegator(person, customerNo, accountNo);
+        removeXuserDetail(person.getId());
         return memId;
     }
 
-    private Long createDelegator(GeneralPerson person, String customerNo, String accountNo) {
+    private void removeXuserDetail(int userId) {
+        uaaApi.removeXUserByUsername(userId);
+//        String nickName = getKarpardazNickName(userId);
+//        xUserDetailService.removeXUserByUsername(nickName);
+    }
+
+    private String getKarpardazNickName(int userId) {
+        return "";
+//        UserChannelAuthentication userChannelAuthentication = authenticationRepository.findByUserId(userId);
+//        if (Objects.isNull(userChannelAuthentication)) {
+//            log.info("user channel authentication with userId {} does not exist", userId);
+//            throw new NoMatchRecordFoundException("user channel authentication with userId {} does not exist", userId+"");
+//        }
+//        return userChannelAuthentication.getNickName();
+    }
+
+    private Long createDelegator(GeneralPersonEntity person, String customerNo, String accountNo) {
         log.info("creating delegator membership for customerNo={}", customerNo);
 
         MembershipEntity membershipEntity = getMembership(person, customerNo);
@@ -83,7 +118,7 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
             membershipEntity = new MembershipEntity();
             membershipEntity.setArchiveNumber(0);
             membershipEntity.setDefaultAccount(false);
-            membershipEntity.setPerson(personMapper.toPersonEntity(person));
+            membershipEntity.setPerson(person);
             membershipEntity.setCustomerNo(customerNo);
             membershipEntity.setMembershipType(MembershipType.DELEGATOR);
             membershipEntity.setCustomerAccount(getCustomerAccount(customerNo, accountNo));
@@ -93,7 +128,7 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         return membershipRepository.save(membershipEntity).getId();
     }
 
-    private MembershipEntity getMembership(GeneralPerson person, String customerNo) {
+    private MembershipEntity getMembership(GeneralPersonEntity person, String customerNo) {
         MembershipEntity membershipEntity = membershipRepository.findMembershipListByUserIdAndMembershipTypeAndCustomerNo(
                 person.getId(),
                 MembershipType.DELEGATOR,
@@ -101,7 +136,7 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         return membershipEntity;
     }
 
-    private Long deactivateDelegator(GeneralPerson person, String customerNo) {
+    private Long deactivateDelegator(GeneralPersonEntity person, String customerNo) {
         MembershipEntity membershipEntity = getMembership(person, customerNo);
 
         if (Objects.isNull(membershipEntity)) {
@@ -119,7 +154,7 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         CustomerEntity customer = getLegalCustomer(customerNo);
         AccountEntity account = getLegalAccount(accountNo);
         Optional<CustomerAccountEntity> opt = customerAccountRepository.findByCustomerAndAccount(customer, account);
-        if(opt.isPresent()) {
+        if (opt.isPresent()) {
             return opt.get();
         }
         customerAccount = new CustomerAccountEntity();
@@ -149,11 +184,12 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         return customer.get();
     }
 
-    private GeneralPerson getCurrentPerson() {
-        var loggedInUser = AuthenticationUtils.getLoggedInUser();
-        ValidationUtils.checkNull(loggedInUser, AuthenticationRequiredException::new);
-        var person = Objects.requireNonNull(loggedInUser).getPerson();
-        ValidationUtils.checkNull(person, () -> new NoMatchRecordFoundException("nationalId"));
+    private GeneralPersonEntity getKarpardaz(String nationalCode) {
+        GeneralPersonEntity person = personRepository.findRealPersonByNationalCodeAndPersonType(nationalCode, PersonType.REAL);
+        if (Objects.isNull(person)) {
+            log.info("user (karpardaz) with national code {} does not exist", nationalCode);
+            throw new NoMatchRecordFoundException("legal customer not found! customerNo : " + nationalCode);
+        }
         return person;
     }
 

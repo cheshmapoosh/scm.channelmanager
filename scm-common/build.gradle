@@ -28,4 +28,5 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    implementation("com.github.mfathi91:persian-date-time:4.2.1")
 }

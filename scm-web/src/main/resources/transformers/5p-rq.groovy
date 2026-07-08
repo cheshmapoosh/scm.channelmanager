@@ -2,6 +2,7 @@ package transformers
 
 import ir.daneshrefah.scm.common.model.person.GeneralPerson
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson
+import ir.daneshrefah.scm.common.transformerUtil.converter.DateAndTimeConverter
 import ir.daneshrefah.scm.uaa.common.model.user.User
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils
 
@@ -109,8 +110,8 @@ def nabRequest = [
         "data"    : [
                 "accountNo"               : body.accountNo,
                 "pageSize"                : pageSize,
-                "startDate"               : body.startDate,
-                "endDate"                 : body.endDate,
+                "startDate"               : DateAndTimeConverter.convertMsToPersianDate(body.startDate),
+                "endDate"                 : DateAndTimeConverter.convertMsToPersianDate(body.endDate),
                 "transType"               : transType,
                 "creditDebit"             : creditDebit,
                 "bankIdentificationNumber": bankIdentificationNumber,

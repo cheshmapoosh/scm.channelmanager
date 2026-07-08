@@ -38,7 +38,7 @@ public class HttpStatusMapper {
         statusMappingMap.put(MessageStatus.NO_SUCH_CARD, 404);
         statusMappingMap.put(MessageStatus.UNKNOWN_CARD, 404);
         statusMappingMap.put(MessageStatus.ISSUER_NOT_FOUND, 404);
-        statusMappingMap.put(MessageStatus.KARPARDAZ_NOT_EXSIST, 404);
+        statusMappingMap.put(MessageStatus.KARPARDAZ_NOT_FOUND, 404);
 
         // Validation / Business Error
         statusMappingMap.put(MessageStatus.SC_ERROR_VALIDATION, 400);
