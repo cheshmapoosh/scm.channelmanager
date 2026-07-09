@@ -1,8 +1,9 @@
 package ir.daneshrefah.scm.observation;
 
-import ir.daneshrefah.scm.observation.policy.ObservationSignal;
-import ir.daneshrefah.scm.observation.policy.ObservationSignalPolicy;
-import ir.daneshrefah.scm.observation.trace.StructuredTraceObservationSink;
+import ir.daneshrefah.scm.observation.starter.*;
+import ir.daneshrefah.scm.observation.starter.policy.ObservationSignal;
+import ir.daneshrefah.scm.observation.starter.policy.ObservationSignalPolicy;
+import ir.daneshrefah.scm.observation.starter.trace.StructuredTraceObservationSink;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

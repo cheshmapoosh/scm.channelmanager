@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.web.observation;
 
-import ir.daneshrefah.scm.observation.ObservationAttributeContributor;
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeContributor;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
 import ir.daneshrefah.scm.web.observation.attributes.WebMetricTags;
 import ir.daneshrefah.scm.web.observation.attributes.WebTraceAttributes;
 import org.springframework.stereotype.Component;

@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.observation;
 
+import ir.daneshrefah.scm.observation.starter.ElasticFieldType;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeType;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeTypes;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

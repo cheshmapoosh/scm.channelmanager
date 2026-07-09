@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.provider.rest.autoconfigure;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimiterUtility;
 import ir.daneshrefah.scm.provider.rest.camel.RestProviderComponent;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
 import ir.daneshrefah.scm.provider.rest.ratelimit.CacheClientRestProviderRateLimiter;

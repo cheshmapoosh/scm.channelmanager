@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.provider.shetab.lease;
 
-import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLease;
-import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLeaseUtility;
+import ir.daneshrefah.scm.cache.starter.utility.resourcelease.ResourceLease;
+import ir.daneshrefah.scm.cache.starter.utility.resourcelease.ResourceLeaseUtility;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

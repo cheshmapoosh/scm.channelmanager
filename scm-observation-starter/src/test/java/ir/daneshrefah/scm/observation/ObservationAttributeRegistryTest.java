@@ -1,7 +1,11 @@
 package ir.daneshrefah.scm.observation;
 
-import ir.daneshrefah.scm.observation.attributes.log.LogAttribute;
-import ir.daneshrefah.scm.observation.attributes.trace.TraceAttribute;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributePresence;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.starter.ObservationStream;
+import ir.daneshrefah.scm.observation.starter.attributes.log.LogAttribute;
+import ir.daneshrefah.scm.observation.starter.attributes.trace.TraceAttribute;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

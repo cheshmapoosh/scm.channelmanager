@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.integration.observability;
 
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
-import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;

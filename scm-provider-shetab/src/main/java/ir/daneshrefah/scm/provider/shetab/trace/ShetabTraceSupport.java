@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.provider.shetab.trace;
 
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
-import ir.daneshrefah.scm.observation.ObservationScope;
-import ir.daneshrefah.scm.observation.ScmObservation;
+import ir.daneshrefah.scm.observation.starter.ObservationScope;
+import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import org.apache.camel.Exchange;
 import org.jpos.iso.ISOMsg;

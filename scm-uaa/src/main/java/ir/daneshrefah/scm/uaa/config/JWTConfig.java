@@ -5,7 +5,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
+import ir.daneshrefah.scm.cache.starter.connector.spring.TtlAwareCache;
 import ir.daneshrefah.scm.common.exception.NoMatchRecordFoundException;
 import ir.daneshrefah.scm.common.model.person.*;
 import ir.daneshrefah.scm.uaa.common.core.AuthorizationGrantType;

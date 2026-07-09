@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.cache.observation.attributes;
 
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
-import ir.daneshrefah.scm.observation.ObservationAttributePresence;
-import ir.daneshrefah.scm.observation.attributes.trace.TraceAttribute;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributePresence;
+import ir.daneshrefah.scm.observation.starter.attributes.trace.TraceAttribute;
 
 import java.util.List;
 

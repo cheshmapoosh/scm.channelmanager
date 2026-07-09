@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.config;
 
-import ir.daneshrefah.scm.observation.ObservationScope;
+import ir.daneshrefah.scm.observation.starter.ObservationScope;
 import ir.daneshrefah.scm.uaa.observation.UaaObservation;
 import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.observation;
 
-import ir.daneshrefah.scm.observation.ObservationScope;
+import ir.daneshrefah.scm.observation.starter.ObservationScope;
 import ir.daneshrefah.scm.uaa.security.authentication.token.PreAuthenticationToken;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -27,7 +27,6 @@ public class UaaSecurityObservationAspect {
     private final UaaObservation observation;
 
     @Around("""
-            execution(public * ir.daneshrefah.scm.uaa.security.converter..*.convert(..)) ||
             execution(public * ir.daneshrefah.scm.uaa.security.oauth2.grant..*AuthenticationConverter.convert(..))
             """)
     public Object observeConverter(ProceedingJoinPoint joinPoint) throws Throwable {

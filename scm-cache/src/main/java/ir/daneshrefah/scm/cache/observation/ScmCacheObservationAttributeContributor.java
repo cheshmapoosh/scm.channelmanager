@@ -4,8 +4,8 @@ import ir.daneshrefah.scm.cache.observation.attributes.CacheAuditAttributes;
 import ir.daneshrefah.scm.cache.observation.attributes.CacheLogAttributes;
 import ir.daneshrefah.scm.cache.observation.attributes.CacheMetricTags;
 import ir.daneshrefah.scm.cache.observation.attributes.CacheTraceAttributes;
-import ir.daneshrefah.scm.observation.ObservationAttributeContributor;
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeContributor;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;

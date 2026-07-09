@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.uaa.observation.attributes;
 
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
-import ir.daneshrefah.scm.observation.ObservationAttributePresence;
-import ir.daneshrefah.scm.observation.attributes.log.LogAttribute;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributePresence;
+import ir.daneshrefah.scm.observation.starter.attributes.log.LogAttribute;
 
 import java.util.List;
 

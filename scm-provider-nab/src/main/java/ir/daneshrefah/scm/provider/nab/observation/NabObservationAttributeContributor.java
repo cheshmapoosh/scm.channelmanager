@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.provider.nab.observation;
 
-import ir.daneshrefah.scm.observation.ObservationAttributeContributor;
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeContributor;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
 import ir.daneshrefah.scm.provider.nab.observation.attributes.NabMetricTags;
 import ir.daneshrefah.scm.provider.nab.observation.attributes.NabTraceAttributes;
 import org.springframework.stereotype.Component;

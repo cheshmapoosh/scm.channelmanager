@@ -3,8 +3,8 @@ package ir.daneshrefah.scm.core.integration.observability;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreLogAttributes;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreMetricTags;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreTraceAttributes;
-import ir.daneshrefah.scm.observation.ObservationAttributeContributor;
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeContributor;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;

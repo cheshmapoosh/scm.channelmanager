@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.uaa.service.activation.nib;
 
-import ir.daneshrefah.scm.cache.client.connector.QueueTemplate;
-import ir.daneshrefah.scm.cache.client.model.Message;
+import ir.daneshrefah.scm.cache.starter.connector.QueueTemplate;
+import ir.daneshrefah.scm.cache.starter.model.Message;
 import ir.daneshrefah.scm.common.constant.TerminalType;
 import ir.daneshrefah.scm.common.data.service.person.PersonService;
 import ir.daneshrefah.scm.common.exception.InvalidInputException;

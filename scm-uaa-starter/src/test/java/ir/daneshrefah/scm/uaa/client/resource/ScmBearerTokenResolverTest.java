@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.client.resource;
 
-import ir.daneshrefah.scm.uaa.client.properties.ScmResourceServerProperties;
+import ir.daneshrefah.scm.uaa.starter.properties.ScmResourceServerProperties;
+import ir.daneshrefah.scm.uaa.starter.resource.ScmBearerTokenResolver;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;

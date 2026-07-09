@@ -9,7 +9,7 @@
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
                         <file>${AUDIT_LOG_FILE}</file>
                         <append>true</append>
-                        <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                        <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                             <marker>SCM_OBSERVATION_AUDIT</marker>
                         </filter>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -21,7 +21,7 @@
                         </rollingPolicy>
                         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
                             <providers>
-                                <provider class="ir.daneshrefah.scm.observation.logging.ScmObservationEventJsonProvider"/>
+                                <provider class="ir.daneshrefah.scm.observation.starter.logging.ScmObservationEventJsonProvider"/>
                             </providers>
                         </encoder>
                     </appender>
@@ -39,7 +39,7 @@
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
                         <file>${AUDIT_LOG_FILE}</file>
                         <append>true</append>
-                        <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                        <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                             <marker>SCM_OBSERVATION_AUDIT</marker>
                         </filter>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -51,7 +51,7 @@
                         </rollingPolicy>
                         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
                             <providers>
-                                <provider class="ir.daneshrefah.scm.observation.logging.ScmObservationEventJsonProvider"/>
+                                <provider class="ir.daneshrefah.scm.observation.starter.logging.ScmObservationEventJsonProvider"/>
                             </providers>
                         </encoder>
                     </appender>

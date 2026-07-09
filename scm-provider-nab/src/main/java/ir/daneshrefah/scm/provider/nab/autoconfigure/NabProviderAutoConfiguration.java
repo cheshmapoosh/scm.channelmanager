@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.provider.nab.autoconfigure;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimiterUtility;
 import ir.daneshrefah.scm.provider.nab.camel.NabComponent;
 import ir.daneshrefah.scm.provider.nab.metrics.NabProviderMetrics;
 import ir.daneshrefah.scm.provider.nab.ratelimit.CacheClientNabRateLimiter;

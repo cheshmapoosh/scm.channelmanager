@@ -5,7 +5,7 @@ import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.config.ratelimit.RateLimitBuckets;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.annotation.WithRateLimit;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.annotation.WithRateLimit;
 import ir.daneshrefah.scm.uaa.service.activation.nib.UserActivationMessagePublisherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

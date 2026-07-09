@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.web.observation.propagation;
 
-import ir.daneshrefah.scm.observation.TraceContextHolder;
+import ir.daneshrefah.scm.observation.starter.TraceContextHolder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;

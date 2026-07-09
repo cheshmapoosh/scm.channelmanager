@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.cache.observation.attributes;
 
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
-import ir.daneshrefah.scm.observation.ObservationAttributePresence;
-import ir.daneshrefah.scm.observation.attributes.audit.AuditAttribute;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributePresence;
+import ir.daneshrefah.scm.observation.starter.attributes.audit.AuditAttribute;
 
 import java.util.List;
 

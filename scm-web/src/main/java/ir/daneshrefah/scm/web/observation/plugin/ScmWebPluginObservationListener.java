@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.web.observation.plugin;
 
 import ir.daneshrefah.scm.common.event.plugin.ScmPluginEvent;
-import ir.daneshrefah.scm.observation.ScmObservation;
+import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationEvent;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationTraceEventAdapter;
 import lombok.extern.slf4j.Slf4j;

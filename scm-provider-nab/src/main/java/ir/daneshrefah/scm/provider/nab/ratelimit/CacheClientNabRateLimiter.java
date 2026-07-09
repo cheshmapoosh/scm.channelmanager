@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.provider.nab.ratelimit;
 
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimitResult;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimiterUtility;
 import ir.daneshrefah.scm.provider.nab.config.NabResolvedConfig;
 import ir.daneshrefah.scm.provider.nab.metrics.NabProviderMetrics;
 import lombok.RequiredArgsConstructor;

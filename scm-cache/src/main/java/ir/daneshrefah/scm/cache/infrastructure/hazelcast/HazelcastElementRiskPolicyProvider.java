@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.cache.infrastructure.hazelcast;
 
-import ir.daneshrefah.scm.observation.element.ScmElementRiskEngine;
-import ir.daneshrefah.scm.observation.element.ScmElementRiskPolicy;
+import ir.daneshrefah.scm.observation.starter.element.ScmElementRiskEngine;
+import ir.daneshrefah.scm.observation.starter.element.ScmElementRiskPolicy;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

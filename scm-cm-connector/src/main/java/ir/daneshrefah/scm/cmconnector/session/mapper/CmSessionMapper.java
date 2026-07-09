@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.cmconnector.session.mapper;
 
 import ir.daneshrefah.scm.cmconnector.session.model.CmSessionResponse;
-import ir.daneshrefah.scm.uaa.client.session.ScmSessionView;
+import ir.daneshrefah.scm.uaa.starter.session.ScmSessionView;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;

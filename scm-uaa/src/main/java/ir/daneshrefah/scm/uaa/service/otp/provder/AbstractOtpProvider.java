@@ -3,7 +3,7 @@ package ir.daneshrefah.scm.uaa.service.otp.provder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
+import ir.daneshrefah.scm.cache.starter.connector.spring.TtlAwareCache;
 import ir.daneshrefah.scm.common.constant.otp.OtpPattern;
 import ir.daneshrefah.scm.common.constant.otp.OtpType;
 import ir.daneshrefah.scm.common.exception.MethodNotSupportedException;
