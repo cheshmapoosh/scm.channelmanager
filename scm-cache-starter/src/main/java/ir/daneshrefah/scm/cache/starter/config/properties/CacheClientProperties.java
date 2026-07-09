@@ -5,7 +5,9 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -26,15 +28,19 @@ public class CacheClientProperties {
     private CacheType defaultType = CacheType.REMOTE;
 
     /**
-     * Default ttl applied by template operations when ttl is not provided.
-     * zero or negative => no ttl.
+     * Remote distributed cache connection settings. REMOTE means Hazelcast remote map.
      */
-    private Duration defaultTtl = Duration.ZERO;
+    private RemoteProperties remote = new RemoteProperties();
 
     /**
-     * Default max size for local (Caffeine) caches.
+     * Local cache defaults. LOCAL means process-local Caffeine.
      */
-    private long defaultMaximumSize = 10_000L;
+    private LocalProperties local = new LocalProperties();
+
+    /**
+     * Hazelcast client-side Near Cache defaults. NEAR means remote map plus near cache.
+     */
+    private NearProperties near = new NearProperties();
 
     /**
      * Per cache configuration.
@@ -56,6 +62,40 @@ public class CacheClientProperties {
     public enum UtilityBackendType {
         LOCAL,
         REMOTE
+    }
+
+    @Getter
+    @Setter
+    public static class RemoteProperties {
+
+        private String clusterName = "scm-cache";
+        private List<String> addresses = new ArrayList<>(List.of("127.0.0.1:5701"));
+    }
+
+    @Getter
+    @Setter
+    public static class LocalProperties {
+
+        /**
+         * Default ttl applied by local cache routes when ttl is not provided.
+         * zero or negative => no ttl.
+         */
+        private Duration ttl = Duration.ZERO;
+
+        /**
+         * Default max size for local Caffeine caches.
+         */
+        private long maximumSize = 10_000L;
+    }
+
+    @Getter
+    @Setter
+    public static class NearProperties {
+
+        private boolean enabled = true;
+        private long maximumSize = 10_000L;
+        private boolean invalidateOnChange = true;
+        private String inMemoryFormat = "OBJECT";
     }
 
     @Getter

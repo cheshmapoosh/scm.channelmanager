@@ -177,8 +177,6 @@ scm:
       member:
         instance-name: ${SCM_CACHE_MEMBER_NAME:scm-cache-local}
         cluster-name: ${SCM_CACHE_CLUSTER_NAME:scm}
-        management-center-config:
-          enabled: ${SCM_CACHE_MANAGEMENT_ENABLED:false}
         properties:
           hazelcast:
             socket:
