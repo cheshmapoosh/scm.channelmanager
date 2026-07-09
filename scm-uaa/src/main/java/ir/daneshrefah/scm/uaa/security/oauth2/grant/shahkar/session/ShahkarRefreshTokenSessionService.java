@@ -4,7 +4,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.security.oauth2.grant.shahkar.ShahkarGrantAuthenticationToken;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -24,7 +23,7 @@ public class ShahkarRefreshTokenSessionService {
     private final long sessionTtlMillis;
 
     public ShahkarRefreshTokenSessionService(
-            @Qualifier("hazelcastClient") HazelcastInstance hazelcast,
+            HazelcastInstance hazelcast,
             @Value("${scm.super-app.session-ttl}") Long sessionTtlMillis
     ) {
         Assert.notNull(sessionTtlMillis, "Shahkar session TTL must be configured");
