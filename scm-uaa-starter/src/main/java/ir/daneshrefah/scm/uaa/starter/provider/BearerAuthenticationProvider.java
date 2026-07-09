@@ -33,7 +33,7 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
     private final JwtDecoder jwtDecoder;
     private final JwtTokenConverter jwtTokenConverter;
     private static final String JWT_ID_CACHE_NAME = "jwt:jti";
-    @Autowired
+    @Autowired(required = false)
     private LogoutService logoutService;
 
     public BearerAuthenticationProvider(JwtDecoder jwtDecoder,
@@ -95,7 +95,9 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
         String cacheKey = String.format("%s%s%s", username, "::", terminalCode);
         String cachedTokenId = cachedJwtId(cacheKey);
         if (StringUtils.isBlank(jwtTokenId) || !jwtTokenId.equals(cachedTokenId)) {
-            logoutService.sendLogoutMessage(authentication);
+            if(logoutService != null) {
+                logoutService.sendLogoutMessage(authentication);
+            }
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_TOKEN, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
         }
     }

@@ -13,6 +13,7 @@ import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -26,7 +27,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.*;
 @RequiredArgsConstructor
 public class AuthenticationPluginHandler implements PluginHandler {
 
-    private final AuthenticationClientTemplate authenticationClientTemplate;
+    private final ObjectProvider<AuthenticationClientTemplate> authenticationClientTemplateProvider;
     private final HeaderContextResolver headerContextResolver;
     private final PersonProfileLoader profileLoader;
     private final JwtDecoder jwtDecoder;
@@ -49,6 +50,10 @@ public class AuthenticationPluginHandler implements PluginHandler {
         }
         String token = authValue.substring("Bearer ".length());
         try {
+            AuthenticationClientTemplate authenticationClientTemplate = authenticationClientTemplateProvider.getIfAvailable();
+            if (authenticationClientTemplate == null) {
+                throw new AuthenticationRequiredException();
+            }
             ClientAuthenticationRequest authenticationRequest = convertToClientAuthenticationRequest(exchange);
             UserAuthentication authentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
             SecurityContextHolder.getContext().setAuthentication(authentication);
