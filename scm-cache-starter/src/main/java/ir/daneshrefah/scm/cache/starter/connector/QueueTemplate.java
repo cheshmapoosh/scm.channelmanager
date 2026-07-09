@@ -10,5 +10,9 @@ public interface QueueTemplate {
 
     <T> Optional<Message<T>> pop(String queueName);
 
+    default <T> Optional<Message<T>> take(String queueName) {
+        return pop(queueName);
+    }
+
     boolean hasAnyMessages(String queueName);
 }
