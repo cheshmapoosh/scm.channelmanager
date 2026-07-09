@@ -18,7 +18,11 @@ class CommonAttributeCatalogTest {
     void logCatalogContainsOnlyTrueCommonFields() {
         assertEquals(Set.of(
                 "@timestamp", "log.level", "log.logger", "process.thread.name", "message",
+                "event.stream", "scm.observation.target.namespace", "scm.observation.target.index",
+                "scm.platform", "service.name",
                 "deployment.service.name", "deployment.service.version", "deployment.environment", "scm.runtime",
+                "scm.channel.code", "scm.observation.legacy.enabled",
+                "scm.observation.legacy.service.code", "scm.observation.legacy.operation.code",
                 "correlation.id", "correlation.type", "event.category", "event.action", "event.outcome",
                 "trace.id", "span.id", "error.type", "error.message", "error.stack_trace", "error.code", "error.category"
         ), names(CommonLogAttributes.attributes()));
@@ -28,10 +32,16 @@ class CommonAttributeCatalogTest {
     void traceCatalogContainsOnlyTrueCommonFields() {
         assertEquals(Set.of(
                 "@timestamp", "message",
+                "event.stream", "scm.observation.target.namespace", "scm.observation.target.index",
+                "scm.platform", "service.name",
                 "deployment.service.name", "deployment.service.version", "deployment.environment", "scm.runtime",
+                "scm.channel.code", "scm.observation.legacy.enabled",
+                "scm.observation.legacy.service.code", "scm.observation.legacy.operation.code",
                 "correlation.id", "correlation.type", "trace.id", "span.id", "parent.span.id",
                 "span.name", "span.kind", "span.start_time", "span.end_time", "span.duration_ms",
-                "http.method", "http.route", "url.path", "http.status_code", "client.ip",
+                "http.method", "http.route", "url.path", "http.status_code", "http.query.present",
+                "client.ip", "client.address",
+                "scm.gateway.name", "scm.protocol", "scm.request.name", "scm.message.id", "scm.route.id",
                 "event.category", "event.action", "event.outcome",
                 "error.type", "error.message", "error.stack_trace", "error.code", "error.category"
         ), names(CommonTraceAttributes.attributes()));
@@ -48,14 +58,15 @@ class CommonAttributeCatalogTest {
                 "change.old.value.masked", "change.new.value.masked")));
         assertTrue(serviceNames.containsAll(Set.of(
                 "audit.type", "actor.type", "actor.id", "actor.username.masked",
-                "resource.type", "resource.id", "channel.code", "scm.service.code", "scm.operation.code",
+                "resource.type", "resource.id", "scm.channel.code", "scm.service.code", "scm.operation.code",
                 "request.id", "message.sequence.id", "client.ip", "status.code")));
     }
 
     @Test
     void metricCatalogContainsOnlyApprovedLowCardinalityTags() {
         assertEquals(Set.of(
-                "service_name", "environment", "channel_code", "operation_code", "outcome", "error_code", "status_code"
+                "service_name", "environment", "channel_code", "operation_code", "outcome", "error_code", "status_code",
+                "http.method", "http.route", "http.status_code", "scm.operation.type", "protocol", "request_name"
         ), names(CommonMetricTags.attributes()));
     }
 

@@ -53,13 +53,13 @@ public class GatewayObservationLifecycle {
                     .correlationId(context.correlationId())
                     .traceId(context.traceId())
                     .spanId(context.gatewaySpanId())
-                    .attribute("scm.gateway.name", context.gatewayName())
-                    .attribute("scm.channel.code", businessChannelCode(context.channelCode()))
-                    .attribute("scm.protocol", context.protocol().value())
-                    .attribute("scm.request.name", context.requestName())
-                    .attribute("scm.message.id", context.messageId())
-                    .attribute("scm.route.id", safeRequest.routeId())
-                    .attribute("client.address", safeRequest.clientAddress())
+                    .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, context.gatewayName())
+                    .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, businessChannelCode(context.channelCode()))
+                    .attribute(CommonTraceAttributes.SCM_PROTOCOL, context.protocol().value())
+                    .attribute(CommonTraceAttributes.SCM_REQUEST_NAME, context.requestName())
+                    .attribute(CommonTraceAttributes.SCM_MESSAGE_ID, context.messageId())
+                    .attribute(CommonTraceAttributes.SCM_ROUTE_ID, safeRequest.routeId())
+                    .attribute(CommonTraceAttributes.CLIENT_ADDRESS, safeRequest.clientAddress())
                     .attributes(safeRequest.attributes())
                     .start();
         } catch (RuntimeException ex) {
@@ -126,8 +126,8 @@ public class GatewayObservationLifecycle {
                 .tag("platform", observationContext.platform())
                 .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
                 .tag("gateway_name", context.gatewayName())
-                .tag("protocol", context.protocol().value())
-                .tag("request_name", context.requestName())
+                .tag(CommonMetricTags.PROTOCOL, context.protocol().value())
+                .tag(CommonMetricTags.REQUEST_NAME, context.requestName())
                 .tag(CommonMetricTags.OUTCOME, outcome)
                 .increment();
 
@@ -139,8 +139,8 @@ public class GatewayObservationLifecycle {
                 .tag("platform", observationContext.platform())
                 .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
                 .tag("gateway_name", context.gatewayName())
-                .tag("protocol", context.protocol().value())
-                .tag("request_name", context.requestName())
+                .tag(CommonMetricTags.PROTOCOL, context.protocol().value())
+                .tag(CommonMetricTags.REQUEST_NAME, context.requestName())
                 .tag(CommonMetricTags.OUTCOME, outcome)
                 .record(durationMs, TimeUnit.MILLISECONDS);
 
@@ -153,8 +153,8 @@ public class GatewayObservationLifecycle {
                     .tag("platform", observationContext.platform())
                     .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
                     .tag("gateway_name", context.gatewayName())
-                    .tag("protocol", context.protocol().value())
-                    .tag("request_name", context.requestName())
+                    .tag(CommonMetricTags.PROTOCOL, context.protocol().value())
+                    .tag(CommonMetricTags.REQUEST_NAME, context.requestName())
                     .tag(CommonMetricTags.OUTCOME, outcome)
                     .tag(CommonMetricTags.ERROR_CODE, result.errorCode())
                     .increment();

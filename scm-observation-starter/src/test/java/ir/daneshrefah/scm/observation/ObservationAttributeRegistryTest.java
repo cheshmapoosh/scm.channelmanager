@@ -39,8 +39,13 @@ class ObservationAttributeRegistryTest {
         ObservationAttributeKey<String> incompatible = TraceAttribute.keyword(
                 "message", "scm-host", ObservationAttributePresence.EVENT_OPTIONAL, "Conflicting message metadata.");
 
-        assertThrows(IllegalStateException.class,
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> new ObservationAttributeRegistry(List.of(() -> List.of(incompatible))));
+        assertTrue(exception.getMessage().contains("TRACE:message"));
+        assertTrue(exception.getMessage().contains("existing={"));
+        assertTrue(exception.getMessage().contains("incoming={"));
+        assertTrue(exception.getMessage().contains("owner=common"));
+        assertTrue(exception.getMessage().contains("owner=scm-host"));
     }
 
     @Test

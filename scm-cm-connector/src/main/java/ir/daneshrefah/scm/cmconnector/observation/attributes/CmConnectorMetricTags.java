@@ -6,8 +6,10 @@ import ir.daneshrefah.scm.observation.attributes.metric.MetricTag;
 import java.util.List;
 
 public final class CmConnectorMetricTags {
+    private static final String OWNER = "scm-cm-connector";
+
     public static final ObservationAttributeKey<String> OPERATION_NAME = MetricTag.lowCardinality(
-            "scm.operation.name", "CM connector operation name.");
+            "scm.operation.name", OWNER, "CM connector operation name.");
 
     private CmConnectorMetricTags() {
     }

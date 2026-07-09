@@ -53,14 +53,14 @@ public class CoreObservationTraceSupport {
                 .spanKind("internal")
                 .action("service.execute")
                 .correlationId(fields.get("correlationId"))
-                .attribute(CoreTraceAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(CoreTraceAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
+                .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, fields.get("channelCode"))
                 .attribute(CoreTraceAttributes.SERVICE_CODE, service != null ? service.getCode() : fields.get("serviceCode"))
                 .attribute(CoreTraceAttributes.SERVICE_NAME, service != null ? service.getName() : null)
                 .attribute(CoreTraceAttributes.SERVICE_VERSION, fields.get("serviceVersion"))
                 .attribute(CoreTraceAttributes.OPERATION_CODE, fields.get("operationName"))
                 .attribute(CoreTraceAttributes.OPERATION_NAME, fields.get("operationName"))
-                .attribute(CoreTraceAttributes.ROUTE_ID, fields.get("routeId"))
+                .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))
                 .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
                 .start();
         exchange.setProperty(SERVICE_SCOPE_PROPERTY, scope);
@@ -85,13 +85,13 @@ public class CoreObservationTraceSupport {
                 .spanKind(operationSpanKind(operation))
                 .action("operation.call")
                 .correlationId(fields.get("correlationId"))
-                .attribute(CoreTraceAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(CoreTraceAttributes.CHANNEL_CODE, fields.get("channelCode"))
+                .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
+                .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, fields.get("channelCode"))
                 .attribute(CoreTraceAttributes.SERVICE_CODE, fields.get("serviceCode"))
                 .attribute(CoreTraceAttributes.OPERATION_CODE, operationCode(operation))
                 .attribute(CoreTraceAttributes.OPERATION_NAME, operationName(operation, fields))
                 .attribute(CoreTraceAttributes.OPERATION_TYPE, operationType(operation))
-                .attribute(CoreTraceAttributes.ROUTE_ID, fields.get("routeId"))
+                .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))
                 .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
                 .start();
         exchange.setProperty(OPERATION_SCOPE_PROPERTY, scope);
@@ -154,15 +154,15 @@ public class CoreObservationTraceSupport {
                 .action(action)
                 .outcome(outcome)
                 .correlationId(fields.get("correlationId"))
-                .attribute(CoreTraceAttributes.GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(CoreTraceAttributes.CHANNEL_CODE, fields.get("channelCode"))
-                .attribute(CoreTraceAttributes.ROUTE_ID, fields.get("routeId"))
+                .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
+                .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, fields.get("channelCode"))
+                .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))
                 .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
-                .attribute(CoreTraceAttributes.PROTOCOL, RouteLogSupport.protocol(exchange))
+                .attribute(CommonTraceAttributes.SCM_PROTOCOL, RouteLogSupport.protocol(exchange))
                 .attribute(CoreTraceAttributes.TARGET_KIND, RouteLogSupport.targetKind(exchange))
-                .attribute("http.method", header(exchange, Constants.CAMEL_PARAMETER_HTTP_METHOD))
-                .attribute("url.path", safePath(header(exchange, Constants.CAMEL_PARAMETER_HTTP_URI)))
-                .attribute("http.status_code", exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class));
+                .attribute(CommonTraceAttributes.HTTP_METHOD, header(exchange, Constants.CAMEL_PARAMETER_HTTP_METHOD))
+                .attribute(CommonTraceAttributes.URL_PATH, safePath(header(exchange, Constants.CAMEL_PARAMETER_HTTP_URI)))
+                .attribute(CommonTraceAttributes.HTTP_STATUS_CODE, exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class));
 
         Service resolvedService = service != null ? service : exchange.getProperty(Message.SERVICE, Service.class);
         if (resolvedService != null) {

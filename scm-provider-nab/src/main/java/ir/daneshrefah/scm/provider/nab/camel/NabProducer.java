@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.observation.ObservationScope;
 import ir.daneshrefah.scm.observation.ScmObservation;
 import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.provider.nab.observation.attributes.NabMetricTags;
 import ir.daneshrefah.scm.provider.nab.observation.attributes.NabTraceAttributes;
 import ir.daneshrefah.scm.provider.nab.observation.NabMetricNames;
@@ -136,7 +137,7 @@ public class NabProducer extends DefaultProducer {
                 .attribute(NabTraceAttributes.PROVIDER_ERROR_CODE, errorCode(exception))
                 .attribute(NabTraceAttributes.PROVIDER_ERROR_MESSAGE, safeMessage(exception))
                 .failure(exception)
-                .attribute("error.message", safeMessage(exception));
+                .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(exception));
     }
 
     private void recordObservationMetrics(

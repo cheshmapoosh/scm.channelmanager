@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.observation.TraceContext;
 import ir.daneshrefah.scm.observation.TraceContextHolder;
 import ir.daneshrefah.scm.observation.TraceObservationBuilder;
 import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.uaa.observation.attributes.UaaLogAttributes;
 import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
 import org.springframework.core.env.Environment;
@@ -179,7 +180,7 @@ public class UaaObservation {
         putLegacyProjectionAttributes(builder, LEGACY_LOGIN);
         String channelCode = channelCodeForClient(ctx == null ? null : ctx.clientId());
         if (channelCode != null) {
-            builder.attribute("scm.channel.code", channelCode);
+            builder.attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, channelCode);
         }
         return builder.start();
     }
@@ -196,7 +197,7 @@ public class UaaObservation {
                 .traceId(ObservationIds.traceId())
                 .parentSpanId("");
         putLegacyProjectionAttributes(builder, operation);
-        builder.attribute("scm.channel.code", resolveBusinessChannelCode(channelCode));
+        builder.attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, resolveBusinessChannelCode(channelCode));
         builder.attribute(UaaTraceAttributes.AUTH_STEP, operation);
         return builder.start();
     }

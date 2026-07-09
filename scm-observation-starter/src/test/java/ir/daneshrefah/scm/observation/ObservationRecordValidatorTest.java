@@ -67,6 +67,12 @@ class ObservationRecordValidatorTest {
         Map<String, Object> document = new LinkedHashMap<>();
         document.put("@timestamp", "2026-06-27T00:00:01Z");
         document.put("message", "test");
+        document.put("event.stream", "test");
+        document.put("scm.observation.target.namespace", "test");
+        document.put("scm.observation.target.index", "test-index");
+        document.put("scm.platform", "scm");
+        document.put("service.name", "test-service");
+        document.put("deployment.environment", "test");
         document.put("correlation.id", "correlation-1");
         document.put("correlation.type", CorrelationType.OPERATION.value());
         document.put("event.category", "test");

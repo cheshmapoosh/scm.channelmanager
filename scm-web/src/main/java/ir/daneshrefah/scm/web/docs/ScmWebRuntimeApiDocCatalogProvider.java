@@ -872,10 +872,11 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
             return;
         }
 
-        log.debug("event={} moduleCode={} cacheName={} gatewayNames={} cacheKey={} outcome=skipped reason={}",
+        log.debug("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} outcome=skipped reason={}",
                 API_DOC_CACHE_UNAVAILABLE,
                 MODULE_CODE,
                 API_DOC_CATALOG_CACHE_NAME,
+                runtimeMode(),
                 cacheKey.gatewayNames(),
                 cacheKeyValue,
                 reason);
@@ -892,12 +893,14 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                                boolean warn) {
         int groupCount = catalog != null ? catalog.groupsById().size() : 0;
         int itemCount = catalog != null ? catalog.documentsById().size() : 0;
+        String runtimeMode = runtimeMode();
 
         if (warn) {
-            log.warn("event={} moduleCode={} cacheName={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
+            log.warn("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
                     event,
                     MODULE_CODE,
                     API_DOC_CATALOG_CACHE_NAME,
+                    runtimeMode,
                     cacheKey.gatewayNames(),
                     cacheKeyValue,
                     groupCount,
@@ -909,10 +912,11 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
             return;
         }
 
-        log.info("event={} moduleCode={} cacheName={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
+        log.info("event={} moduleCode={} cacheName={} runtimeMode={} gatewayNames={} cacheKey={} groupCount={} itemCount={} outcome={} reason={} failureType={} failureMessage={}",
                 event,
                 MODULE_CODE,
                 API_DOC_CATALOG_CACHE_NAME,
+                runtimeMode,
                 cacheKey.gatewayNames(),
                 cacheKeyValue,
                 groupCount,
@@ -921,6 +925,17 @@ public class ScmWebRuntimeApiDocCatalogProvider implements ScmApiDocGroupCatalog
                 reason,
                 failureType,
                 failureMessage);
+    }
+
+    private String runtimeMode() {
+        List<String> modes = scmRuntimeProperties.runtimeTargets()
+                .stream()
+                .filter(RuntimeTargetProperties::enabled)
+                .map(runtimeTarget -> runtimeTarget.targetKind().name().toLowerCase(Locale.ROOT))
+                .distinct()
+                .sorted()
+                .toList();
+        return modes.isEmpty() ? "none" : String.join(",", modes);
     }
 
     private void logDetailsRefEvent(String event,

@@ -78,7 +78,7 @@ class TraceContextHolderTest {
         ObservationEventDispatcher dispatcher = new ObservationEventDispatcher(signalPolicy, List.of(sink));
         ObservationAttributeRegistry registry = ObservationAttributeRegistry.commonOnly();
         ObservationSanitizer sanitizer = (fieldName, value) -> value;
-        ObservationDocumentFactory documentFactory = new ObservationDocumentFactory(null, registry, sanitizer);
+        ObservationDocumentFactory documentFactory = new ObservationDocumentFactory(context(), registry, sanitizer);
         ObservationRecordValidator validator = new ObservationRecordValidator(registry);
         return new ScmObservation(
                 null,
@@ -91,6 +91,22 @@ class TraceContextHolderTest {
                 documentFactory,
                 validator,
                 CLOCK
+        );
+    }
+
+    private ObservationContext context() {
+        return new ObservationContext(
+                true,
+                "scm",
+                "test",
+                "test-service",
+                "test",
+                "default",
+                "default",
+                "default",
+                "1.0.0",
+                "standalone",
+                ZoneOffset.UTC
         );
     }
 
