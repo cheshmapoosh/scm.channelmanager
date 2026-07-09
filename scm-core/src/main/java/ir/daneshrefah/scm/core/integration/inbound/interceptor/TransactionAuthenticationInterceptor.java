@@ -18,6 +18,7 @@ import ir.daneshrefah.scm.utils.MessageInputContext;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean(AuthenticationClientTemplate.class)
 @Deprecated
 public class TransactionAuthenticationInterceptor extends MessageInterceptor {
 

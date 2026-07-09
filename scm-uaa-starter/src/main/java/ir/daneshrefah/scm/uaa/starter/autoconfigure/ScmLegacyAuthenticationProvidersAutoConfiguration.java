@@ -19,6 +19,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +39,14 @@ import java.util.Map;
         havingValue = "true",
         matchIfMissing = false
 )
+@ConditionalOnBean(SessionCache.class)
 public class ScmLegacyAuthenticationProvidersAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(RestTemplate.class)
+    public RestTemplate scmLegacyAuthenticationRestTemplate(RestTemplateBuilder restTemplateBuilder) {
+        return restTemplateBuilder.build();
+    }
 
     @Bean
     @ConditionalOnMissingBean(RemoteSecurityServiceProvider.class)
@@ -157,7 +165,6 @@ public class ScmLegacyAuthenticationProvidersAutoConfiguration {
     }
 
     @Bean
-
     public AuthenticationClientTemplate authenticationClientTemplate(
             AuthenticationManager authenticationManager,
             SecurityServiceProvider securityServiceProvider
