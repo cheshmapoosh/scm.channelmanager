@@ -14,14 +14,29 @@ scm:
     client:
       distributed: true
       default-type: remote
-      config:
+      remote:
         cluster-name: scm-cache-dev
-        network-config:
-          addresses:
-            - 127.0.0.1:5701
+        addresses:
+          - 127.0.0.1:5701
+      local:
+        ttl: 0s
+        maximum-size: 10000
+      near:
+        enabled: true
+        maximum-size: 10000
+        invalidate-on-change: true
+        in-memory-format: OBJECT
 ```
 
 The default mode is a remote distributed Hazelcast client. Embedded Hazelcast is used only when explicitly configured with `scm.cache.client.distributed=false`.
+
+Backend names are stable public contract names:
+
+- `LOCAL` is process-local Caffeine.
+- `REMOTE` is a Hazelcast remote map.
+- `NEAR` is a Hazelcast remote map with Hazelcast Near Cache enabled on the client side.
+
+Do not configure provider selection under `local` or `remote`; provider selection is not public configuration.
 
 ## Security Caches
 
@@ -38,8 +53,14 @@ scm:
       caches:
         session_cache:
           type: near
+          remote-name: session_cache
+          ttl: 30m
+          maximum-size: 10000
         user_cache:
           type: near
+          remote-name: user_cache
+          ttl: 30m
+          maximum-size: 10000
 ```
 
 Do not use local-only cache for `session_cache` or `user_cache`.

@@ -26,8 +26,6 @@ public class CacheRouteResolver {
 
         CacheType type = properties.getDefaultType();
         String targetName = cacheName;
-        Duration ttl = properties.getDefaultTtl();
-        long maximumSize = properties.getDefaultMaximumSize();
 
         if (definition != null) {
             if (definition.getType() != null) {
@@ -36,6 +34,12 @@ public class CacheRouteResolver {
             if (StringUtils.hasText(definition.getRemoteName())) {
                 targetName = definition.getRemoteName();
             }
+        }
+
+        Duration ttl = defaultTtl(type);
+        long maximumSize = defaultMaximumSize(type);
+
+        if (definition != null) {
             if (definition.getTtl() != null) {
                 ttl = definition.getTtl();
             }
@@ -48,5 +52,19 @@ public class CacheRouteResolver {
         log.info("Cache route resolved: cache='{}', target='{}', type={}, ttl={}, maxSize={}",
                 route.cacheName(), route.targetName(), route.type(), route.ttl(), route.maximumSize());
         return route;
+    }
+
+    private Duration defaultTtl(CacheType type) {
+        if (type == CacheType.LOCAL) {
+            return properties.getLocal().getTtl();
+        }
+        return Duration.ZERO;
+    }
+
+    private long defaultMaximumSize(CacheType type) {
+        if (type == CacheType.NEAR) {
+            return properties.getNear().getMaximumSize();
+        }
+        return properties.getLocal().getMaximumSize();
     }
 }

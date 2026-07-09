@@ -22,7 +22,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -38,9 +37,20 @@ import java.util.Map;
 public class CacheClientAutoConfiguration {
 
     @Bean
-    @ConfigurationProperties(prefix = "scm.cache.client.config", ignoreUnknownFields = false)
-    public ClientConfig clientConfig() {
-        return new ClientConfig();
+    @ConditionalOnMissingBean
+    public ClientConfig clientConfig(CacheClientProperties cacheProperties) {
+        ClientConfig clientConfig = new ClientConfig();
+        CacheClientProperties.RemoteProperties remote = cacheProperties.getRemote();
+        if (remote != null) {
+            if (StringUtils.hasText(remote.getClusterName())) {
+                clientConfig.setClusterName(remote.getClusterName().trim());
+            }
+            if (remote.getAddresses() != null && !remote.getAddresses().isEmpty()) {
+                clientConfig.getNetworkConfig().setAddresses(remote.getAddresses());
+            }
+        }
+        configureNearCaches(clientConfig, cacheProperties);
+        return clientConfig;
     }
 
     @Bean
@@ -48,7 +58,6 @@ public class CacheClientAutoConfiguration {
     @ConditionalOnProperty(prefix = "scm.cache.client", name = "distributed", havingValue = "true", matchIfMissing = true)
     public HazelcastInstance hazelcastClient(ClientConfig clientConfig, CacheClientProperties cacheProperties) {
         try {
-            configureNearCaches(clientConfig, cacheProperties);
             log.info("Starting distributed Hazelcast client");
             return HazelcastClient.newHazelcastClient(clientConfig);
         } catch (Exception exception) {
@@ -60,7 +69,8 @@ public class CacheClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(HazelcastInstance.class)
     @ConditionalOnProperty(prefix = "scm.cache.client", name = "distributed", havingValue = "false")
-    public HazelcastInstance hazelcastEmbed() {
+    public HazelcastInstance hazelcastEmbed(CacheClientProperties cacheProperties) {
+        validateNearCachesDisabled(cacheProperties);
         log.info("Starting embedded Hazelcast instance because scm.cache.client.distributed=false");
         return Hazelcast.newHazelcastInstance();
     }
@@ -98,6 +108,13 @@ public class CacheClientAutoConfiguration {
     }
 
     private void configureNearCaches(ClientConfig clientConfig, CacheClientProperties cacheProperties) {
+        if (!hasNearCache(cacheProperties)) {
+            return;
+        }
+        CacheClientProperties.NearProperties near = cacheProperties.getNear();
+        if (near == null || !near.isEnabled()) {
+            throw new IllegalStateException("Cache type NEAR requires scm.cache.client.near.enabled=true.");
+        }
         for (Map.Entry<String, CacheClientProperties.CacheDefinition> entry : cacheProperties.getCaches().entrySet()) {
             String cacheName = entry.getKey();
             CacheClientProperties.CacheDefinition definition = entry.getValue();
@@ -105,13 +122,21 @@ public class CacheClientAutoConfiguration {
                 continue;
             }
             String targetName = StringUtils.hasText(definition.getRemoteName()) ? definition.getRemoteName() : cacheName;
-            NearCacheConfig nearCacheConfig = resolveOrCreateNearCache(clientConfig, targetName, cacheProperties.getDefaultMaximumSize());
+            long maximumSize = definition.getMaximumSize() != null && definition.getMaximumSize() > 0
+                    ? definition.getMaximumSize()
+                    : near.getMaximumSize();
+            NearCacheConfig nearCacheConfig = resolveOrCreateNearCache(clientConfig, targetName, near, maximumSize);
             clientConfig.addNearCacheConfig(nearCacheConfig);
             log.info("Near cache enabled for remote cache '{}' (target='{}')", cacheName, targetName);
         }
     }
 
-    private NearCacheConfig resolveOrCreateNearCache(ClientConfig clientConfig, String targetName, long defaultMaximumSize) {
+    private NearCacheConfig resolveOrCreateNearCache(
+            ClientConfig clientConfig,
+            String targetName,
+            CacheClientProperties.NearProperties near,
+            long maximumSize
+    ) {
         Map<String, NearCacheConfig> nearCacheConfigMap = clientConfig.getNearCacheConfigMap();
         NearCacheConfig existing = nearCacheConfigMap == null ? null : nearCacheConfigMap.get(targetName);
         if (existing != null) {
@@ -121,12 +146,28 @@ public class CacheClientAutoConfiguration {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
-                .setSize(defaultMaximumSize > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) defaultMaximumSize);
+                .setSize(maximumSize > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) maximumSize);
 
         return new NearCacheConfig(targetName)
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setInvalidateOnChange(true)
+                .setInMemoryFormat(inMemoryFormat(near.getInMemoryFormat()))
+                .setInvalidateOnChange(near.isInvalidateOnChange())
                 .setCacheLocalEntries(false)
                 .setEvictionConfig(evictionConfig);
+    }
+
+    private void validateNearCachesDisabled(CacheClientProperties cacheProperties) {
+        if (hasNearCache(cacheProperties)) {
+            throw new IllegalStateException("Cache type NEAR requires scm.cache.client.distributed=true and a remote Hazelcast client.");
+        }
+    }
+
+    private boolean hasNearCache(CacheClientProperties cacheProperties) {
+        return cacheProperties.getCaches().values().stream()
+                .anyMatch(definition -> definition != null && definition.getType() == CacheType.NEAR);
+    }
+
+    private InMemoryFormat inMemoryFormat(String value) {
+        String normalized = StringUtils.hasText(value) ? value.trim().toUpperCase(java.util.Locale.ROOT) : "OBJECT";
+        return InMemoryFormat.valueOf(normalized);
     }
 }

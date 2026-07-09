@@ -383,32 +383,41 @@ scm:
 
   cache:
     client:
-      distributed: ${SCM_CACHE_DISTRIBUTED:true}
+      distributed: ${SCM_CACHE_CLIENT_DISTRIBUTED:true}
+      default-type: ${SCM_CACHE_CLIENT_DEFAULT_TYPE:remote}
+      remote:
+        cluster-name: ${SCM_CACHE_REMOTE_CLUSTER_NAME:scm-cache}
+        addresses: ${SCM_CACHE_REMOTE_ADDRESSES:127.0.0.1:5701}
+      local:
+        ttl: ${SCM_CACHE_LOCAL_TTL:0s}
+        maximum-size: ${SCM_CACHE_LOCAL_MAXIMUM_SIZE:10000}
+      near:
+        enabled: ${SCM_CACHE_NEAR_ENABLED:true}
+        maximum-size: ${SCM_CACHE_NEAR_MAXIMUM_SIZE:10000}
+        invalidate-on-change: ${SCM_CACHE_NEAR_INVALIDATE_ON_CHANGE:true}
+        in-memory-format: ${SCM_CACHE_NEAR_IN_MEMORY_FORMAT:OBJECT}
       caches:
         ebServiceByCode:
           type: local
+        session_cache:
+          type: ${SCM_CACHE_SESSION_TYPE:near}
+          remote-name: ${SCM_CACHE_SESSION_REMOTE_NAME:session_cache}
+          ttl: ${SCM_CACHE_SESSION_TTL:30m}
+          maximum-size: ${SCM_CACHE_SESSION_MAXIMUM_SIZE:10000}
+        user_cache:
+          type: ${SCM_CACHE_USER_TYPE:near}
+          remote-name: ${SCM_CACHE_USER_REMOTE_NAME:user_cache}
+          ttl: ${SCM_CACHE_USER_TTL:30m}
+          maximum-size: ${SCM_CACHE_USER_MAXIMUM_SIZE:10000}
         scm-web-api-doc-catalog:
           type: ${SCM_CACHE_API_DOC_CATALOG_TYPE:local}
           ttl: ${SCM_CACHE_API_DOC_CATALOG_TTL:60s}
           maximum-size: ${SCM_CACHE_API_DOC_CATALOG_MAXIMUM_SIZE:128}
-        user_cache:
-          type: ${SCM_CACHE_USER_TYPE:near}
-        session_cache:
-          type: ${SCM_CACHE_SESSION_TYPE:near}
         bank:
           type: ${SCM_CACHE_BANK_TYPE:local}
         userCards:
           type: ${SCM_CACHE_USER_CARDS_TYPE:remote}
           ttl: ${SCM_USER_CARDS_CACHE_TTL:10m}
-      config:
-        clusterName: ${SCM_CACHE_CLUSTER_NAME:scm}
-        network-config:
-          addresses:
-            - ${SCM_CACHE_ADDRESS}
-        nearCacheConfigMap:
-          myMap:
-            in-memory-format: ${SCM_CACHE_NEAR_MAP_IN_MEMORY_FORMAT:object}
-            time-to-live-seconds: ${SCM_CACHE_NEAR_MAP_TTL_SECONDS:10}
 
   membership-access:
     default-services: ${SCM_MEMBERSHIP_DEFAULT_SERVICES:TAccListInq,AcctInq}

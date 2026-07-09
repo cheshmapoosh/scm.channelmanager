@@ -1,8 +1,8 @@
-ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration
-ir.daneshrefah.scm.cache.client.config.CacheClientEventAutoConfiguration
-ir.daneshrefah.scm.cache.client.config.CacheClientSpringCacheAutoConfiguration
-ir.daneshrefah.scm.cache.client.config.CacheClientRateLimitAutoConfiguration
-ir.daneshrefah.scm.cache.client.config.CacheClientLockAutoConfiguration
-ir.daneshrefah.scm.cache.client.config.CacheClientConcurrencyAutoConfiguration
-ir.daneshrefah.scm.cache.client.config.CacheClientResourceLeaseAutoConfiguration
-ir.daneshrefah.scm.cache.client.config.CacheClientQueueAutoConfiguration
+ir.daneshrefah.scm.cache.starter.config.CacheClientAutoConfiguration
+ir.daneshrefah.scm.cache.starter.config.CacheClientEventAutoConfiguration
+ir.daneshrefah.scm.cache.starter.config.CacheClientSpringCacheAutoConfiguration
+ir.daneshrefah.scm.cache.starter.config.CacheClientRateLimitAutoConfiguration
+ir.daneshrefah.scm.cache.starter.config.CacheClientLockAutoConfiguration
+ir.daneshrefah.scm.cache.starter.config.CacheClientConcurrencyAutoConfiguration
+ir.daneshrefah.scm.cache.starter.config.CacheClientResourceLeaseAutoConfiguration
+ir.daneshrefah.scm.cache.starter.config.CacheClientQueueAutoConfiguration
