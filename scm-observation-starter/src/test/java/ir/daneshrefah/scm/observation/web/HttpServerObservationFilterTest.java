@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.observation.web;
 
 import ir.daneshrefah.scm.observation.ObsTargetIndexResolver;
 import ir.daneshrefah.scm.observation.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.ObservationContext;
 import ir.daneshrefah.scm.observation.ObservationDocumentFactory;
 import ir.daneshrefah.scm.observation.ObservationEvent;
 import ir.daneshrefah.scm.observation.ObservationEventDispatcher;
@@ -113,7 +114,7 @@ class HttpServerObservationFilterTest {
         ObservationEventDispatcher dispatcher = new ObservationEventDispatcher(signalPolicy, List.of(sink));
         ObservationAttributeRegistry registry = ObservationAttributeRegistry.commonOnly();
         SecretScrubbingObservationSanitizer sanitizer = new SecretScrubbingObservationSanitizer();
-        ObservationDocumentFactory documentFactory = new ObservationDocumentFactory(null, registry, sanitizer);
+        ObservationDocumentFactory documentFactory = new ObservationDocumentFactory(context(), registry, sanitizer);
         ObservationRecordValidator validator = new ObservationRecordValidator(registry);
         return new ScmObservation(
                 null,
@@ -126,6 +127,22 @@ class HttpServerObservationFilterTest {
                 documentFactory,
                 validator,
                 CLOCK
+        );
+    }
+
+    private ObservationContext context() {
+        return new ObservationContext(
+                true,
+                "scm",
+                "test",
+                "test-service",
+                "test",
+                "default",
+                "default",
+                "default",
+                "1.0.0",
+                "standalone",
+                ZoneOffset.UTC
         );
     }
 }

@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.observation.gateway.GatewayObservationRequest;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationResult;
 import ir.daneshrefah.scm.observation.gateway.GatewayObservationScope;
 import ir.daneshrefah.scm.observation.gateway.GatewayProtocol;
-import ir.daneshrefah.scm.web.observation.attributes.WebTraceAttributes;
+import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParent;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParentParser;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParentWriter;
@@ -134,10 +134,10 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
                 .spanId(ObservationIds.spanId())
                 .requestName(requestName(request))
                 .clientAddress(clientIp(request))
-                .attribute(WebTraceAttributes.HTTP_METHOD, textOrDefault(request.getMethod()))
-                .attribute(WebTraceAttributes.URL_PATH, safePath(request))
-                .attribute(WebTraceAttributes.QUERY_PRESENT, hasQuery(request))
-                .attribute(WebTraceAttributes.CLIENT_IP, clientIp(request));
+                .attribute(CommonTraceAttributes.HTTP_METHOD, textOrDefault(request.getMethod()))
+                .attribute(CommonTraceAttributes.URL_PATH, safePath(request))
+                .attribute(CommonTraceAttributes.HTTP_QUERY_PRESENT, hasQuery(request))
+                .attribute(CommonTraceAttributes.CLIENT_IP, clientIp(request));
         putLegacyProjectionAttributes(requestBuilder, request);
         GatewayObservationRequest observationRequest = requestBuilder.build();
 
@@ -154,7 +154,7 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
             observationScope.success(GatewayObservationResult.builder()
                     .outcome("success")
                     .statusCode(response.getStatus())
-                    .attribute(WebTraceAttributes.HTTP_STATUS_CODE, response.getStatus())
+                    .attribute(CommonTraceAttributes.HTTP_STATUS_CODE, response.getStatus())
                     .build());
         } catch (Throwable ex) {
             int statusCode = statusCode(response, ex);
@@ -163,7 +163,7 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
                     .statusCode(statusCode)
                     .errorCode(errorCode(statusCode, ex))
                     .error(ex)
-                    .attribute(WebTraceAttributes.HTTP_STATUS_CODE, statusCode)
+                    .attribute(CommonTraceAttributes.HTTP_STATUS_CODE, statusCode)
                     .build());
             rethrow(ex);
         } finally {

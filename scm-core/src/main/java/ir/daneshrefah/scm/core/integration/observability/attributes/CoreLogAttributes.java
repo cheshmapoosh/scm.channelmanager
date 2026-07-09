@@ -10,7 +10,6 @@ public final class CoreLogAttributes {
     private static final String OWNER = "scm-core";
 
     public static final ObservationAttributeKey<String> GATEWAY_NAME = keyword("scm.gateway.name", "Gateway name.");
-    public static final ObservationAttributeKey<String> CHANNEL_CODE = keyword("scm.channel.code", "Channel code.");
     public static final ObservationAttributeKey<String> ROUTE_ID = keyword("scm.route.id", "Gateway route or flow identifier.");
     public static final ObservationAttributeKey<String> SERVICE_CODE = keyword("scm.service.code", "Service code.");
     public static final ObservationAttributeKey<String> OPERATION_CODE = keyword("scm.operation.code", "Operation code.");
@@ -30,7 +29,7 @@ public final class CoreLogAttributes {
 
     public static List<ObservationAttributeKey<?>> attributes() {
         return List.of(
-                GATEWAY_NAME, CHANNEL_CODE, ROUTE_ID, SERVICE_CODE, OPERATION_CODE, OPERATION_NAME,
+                GATEWAY_NAME, ROUTE_ID, SERVICE_CODE, OPERATION_CODE, OPERATION_NAME,
                 EXCHANGE_ID, PROTOCOL, PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_PHASE, PLUGIN_LAYER, PLUGIN_DURATION_MS
         );
     }

@@ -141,10 +141,23 @@ public class ObservationAttributeRegistry {
             ObservationAttributeKey<?> existing = streamAttributes.get(key.name());
             if (existing != null && !existing.compatibleWith(key)) {
                 throw new IllegalStateException("Observation attribute has incompatible duplicate metadata: "
-                        + stream + ":" + key.name());
+                        + stream + ":" + key.name()
+                        + "; existing={" + metadata(stream, existing) + "}"
+                        + "; incoming={" + metadata(stream, key) + "}");
             }
             streamAttributes.putIfAbsent(key.name(), key);
         }
+    }
+
+    private String metadata(ObservationStream stream, ObservationAttributeKey<?> key) {
+        return "stream=" + stream
+                + ", name=" + key.name()
+                + ", type=" + key.type()
+                + ", owner=" + key.owner()
+                + ", presence=" + key.presence()
+                + ", sensitivity=" + key.sensitivity()
+                + ", visiblePrefixLength=" + key.visiblePrefixLength()
+                + ", visibleSuffixLength=" + key.visibleSuffixLength();
     }
 
     private Object mask(String value, ObservationAttributeKey<?> key) {
