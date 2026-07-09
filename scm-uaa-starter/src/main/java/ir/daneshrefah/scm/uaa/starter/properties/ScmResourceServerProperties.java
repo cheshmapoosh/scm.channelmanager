@@ -16,10 +16,10 @@ public class ScmResourceServerProperties {
     private String jwkSetUri;
     private List<String> audiences = new ArrayList<>();
     private List<String> requiredClaims = new ArrayList<>(List.of(
-            "sub",
-            "sid",
+            "sub"
+            /*"sid",
             "nickname",
-            "terminalCode"
+            "terminalCode"*/
     ));
     private Claims claims = new Claims();
     private List<String> publicPaths = new ArrayList<>(List.of(
