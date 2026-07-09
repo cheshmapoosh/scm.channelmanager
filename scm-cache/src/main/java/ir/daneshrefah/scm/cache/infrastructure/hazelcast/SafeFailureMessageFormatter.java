@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.cache.infrastructure.hazelcast;
 
-import ir.daneshrefah.scm.observation.ObservationSanitizer;
+import ir.daneshrefah.scm.observation.starter.ObservationSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

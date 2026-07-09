@@ -1,6 +1,8 @@
 package ir.daneshrefah.scm.observation.metrics;
 
-import ir.daneshrefah.scm.observation.attributes.metric.MetricTag;
+import ir.daneshrefah.scm.observation.starter.attributes.metric.MetricTag;
+import ir.daneshrefah.scm.observation.starter.metrics.MetricObservationBuilder;
+import ir.daneshrefah.scm.observation.starter.metrics.MetricObservationSink;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;

@@ -1,10 +1,11 @@
 package ir.daneshrefah.scm.observation;
 
-import ir.daneshrefah.scm.observation.attributes.audit.ChangeEntityAuditAttributes;
-import ir.daneshrefah.scm.observation.attributes.audit.ServiceExecuteAuditAttributes;
-import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
-import ir.daneshrefah.scm.observation.attributes.metric.CommonMetricTags;
-import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.attributes.audit.ChangeEntityAuditAttributes;
+import ir.daneshrefah.scm.observation.starter.attributes.audit.ServiceExecuteAuditAttributes;
+import ir.daneshrefah.scm.observation.starter.attributes.log.CommonLogAttributes;
+import ir.daneshrefah.scm.observation.starter.attributes.metric.CommonMetricTags;
+import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;

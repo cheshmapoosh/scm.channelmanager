@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.web.observation.security;
 
 import ir.daneshrefah.scm.common.event.ScmSafeEventAttributes;
-import ir.daneshrefah.scm.uaa.client.security.event.ScmSecurityEvent;
+import ir.daneshrefah.scm.uaa.starter.security.event.ScmSecurityEvent;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationEvent;
 import org.springframework.stereotype.Component;
 

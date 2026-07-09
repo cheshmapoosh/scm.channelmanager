@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.integration.observability.attributes;
 
-import ir.daneshrefah.scm.observation.ObservationAttributeKey;
-import ir.daneshrefah.scm.observation.attributes.metric.MetricTag;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.attributes.metric.MetricTag;
 
 import java.util.List;
 

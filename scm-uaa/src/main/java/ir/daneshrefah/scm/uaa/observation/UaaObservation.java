@@ -1,15 +1,15 @@
 package ir.daneshrefah.scm.uaa.observation;
 
-import ir.daneshrefah.scm.observation.CorrelationType;
-import ir.daneshrefah.scm.observation.LogObservationBuilder;
-import ir.daneshrefah.scm.observation.ObservationIds;
-import ir.daneshrefah.scm.observation.ObservationScope;
-import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.observation.TraceContext;
-import ir.daneshrefah.scm.observation.TraceContextHolder;
-import ir.daneshrefah.scm.observation.TraceObservationBuilder;
-import ir.daneshrefah.scm.observation.attributes.log.CommonLogAttributes;
-import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
+import ir.daneshrefah.scm.observation.starter.CorrelationType;
+import ir.daneshrefah.scm.observation.starter.LogObservationBuilder;
+import ir.daneshrefah.scm.observation.starter.ObservationIds;
+import ir.daneshrefah.scm.observation.starter.ObservationScope;
+import ir.daneshrefah.scm.observation.starter.ScmObservation;
+import ir.daneshrefah.scm.observation.starter.TraceContext;
+import ir.daneshrefah.scm.observation.starter.TraceContextHolder;
+import ir.daneshrefah.scm.observation.starter.TraceObservationBuilder;
+import ir.daneshrefah.scm.observation.starter.attributes.log.CommonLogAttributes;
+import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.uaa.observation.attributes.UaaLogAttributes;
 import ir.daneshrefah.scm.uaa.observation.attributes.UaaTraceAttributes;
 import org.springframework.core.env.Environment;

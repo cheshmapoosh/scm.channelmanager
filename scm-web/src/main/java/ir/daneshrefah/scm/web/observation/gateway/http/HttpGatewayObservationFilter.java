@@ -1,16 +1,16 @@
 package ir.daneshrefah.scm.web.observation.gateway.http;
 
-import ir.daneshrefah.scm.observation.ObservationContext;
-import ir.daneshrefah.scm.observation.ObservationIds;
-import ir.daneshrefah.scm.observation.TraceContext;
-import ir.daneshrefah.scm.observation.TraceContextHolder;
-import ir.daneshrefah.scm.observation.gateway.GatewayObservationContext;
-import ir.daneshrefah.scm.observation.gateway.GatewayObservationLifecycle;
-import ir.daneshrefah.scm.observation.gateway.GatewayObservationRequest;
-import ir.daneshrefah.scm.observation.gateway.GatewayObservationResult;
-import ir.daneshrefah.scm.observation.gateway.GatewayObservationScope;
-import ir.daneshrefah.scm.observation.gateway.GatewayProtocol;
-import ir.daneshrefah.scm.observation.attributes.trace.CommonTraceAttributes;
+import ir.daneshrefah.scm.observation.starter.ObservationContext;
+import ir.daneshrefah.scm.observation.starter.ObservationIds;
+import ir.daneshrefah.scm.observation.starter.TraceContext;
+import ir.daneshrefah.scm.observation.starter.TraceContextHolder;
+import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationContext;
+import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationLifecycle;
+import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationRequest;
+import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationResult;
+import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationScope;
+import ir.daneshrefah.scm.observation.starter.gateway.GatewayProtocol;
+import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParent;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParentParser;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParentWriter;

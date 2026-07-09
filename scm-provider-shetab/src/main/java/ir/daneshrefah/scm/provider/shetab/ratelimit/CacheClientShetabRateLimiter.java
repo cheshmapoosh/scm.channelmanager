@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.provider.shetab.ratelimit;
 
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimitResult;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimiterUtility;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
 import lombok.RequiredArgsConstructor;

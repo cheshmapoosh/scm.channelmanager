@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.web.observation.security;
 
-import ir.daneshrefah.scm.observation.ScmObservation;
-import ir.daneshrefah.scm.uaa.client.security.event.ScmSecurityEvent;
+import ir.daneshrefah.scm.observation.starter.ScmObservation;
+import ir.daneshrefah.scm.uaa.starter.security.event.ScmSecurityEvent;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationEvent;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationTraceEventAdapter;
 import lombok.extern.slf4j.Slf4j;

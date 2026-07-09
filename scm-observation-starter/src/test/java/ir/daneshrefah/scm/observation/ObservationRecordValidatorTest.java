@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.observation;
 
-import ir.daneshrefah.scm.observation.attributes.audit.ChangeEntityAuditAttributes;
-import ir.daneshrefah.scm.observation.attributes.audit.ServiceExecuteAuditAttributes;
+import ir.daneshrefah.scm.observation.starter.*;
+import ir.daneshrefah.scm.observation.starter.attributes.audit.ChangeEntityAuditAttributes;
+import ir.daneshrefah.scm.observation.starter.attributes.audit.ServiceExecuteAuditAttributes;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;

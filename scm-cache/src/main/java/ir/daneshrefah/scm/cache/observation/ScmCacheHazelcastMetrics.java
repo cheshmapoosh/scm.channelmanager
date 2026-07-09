@@ -5,11 +5,11 @@ import ir.daneshrefah.scm.cache.infrastructure.hazelcast.HazelcastBootstrapState
 import ir.daneshrefah.scm.cache.infrastructure.hazelcast.HazelcastElementHealthSampleProvider;
 import ir.daneshrefah.scm.cache.infrastructure.hazelcast.HazelcastElementRiskPolicyProvider;
 import ir.daneshrefah.scm.cache.infrastructure.hazelcast.HazelcastElementType;
-import ir.daneshrefah.scm.observation.element.ScmElementHealthEngine;
-import ir.daneshrefah.scm.observation.element.ScmElementHealthResult;
-import ir.daneshrefah.scm.observation.element.ScmElementRiskLevel;
-import ir.daneshrefah.scm.observation.element.ScmHealthElementId;
-import ir.daneshrefah.scm.observation.element.ScmHealthElementSample;
+import ir.daneshrefah.scm.observation.starter.element.ScmElementHealthEngine;
+import ir.daneshrefah.scm.observation.starter.element.ScmElementHealthResult;
+import ir.daneshrefah.scm.observation.starter.element.ScmElementRiskLevel;
+import ir.daneshrefah.scm.observation.starter.element.ScmHealthElementId;
+import ir.daneshrefah.scm.observation.starter.element.ScmHealthElementSample;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;

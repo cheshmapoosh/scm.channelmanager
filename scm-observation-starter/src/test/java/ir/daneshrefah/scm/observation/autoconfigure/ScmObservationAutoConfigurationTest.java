@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.observation.autoconfigure;
 
+import ir.daneshrefah.scm.observation.starter.autoconfigure.ScmObservationAutoConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

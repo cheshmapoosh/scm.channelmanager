@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.cmconnector.otp.service;
 
 import ir.daneshrefah.scm.cmconnector.otp.model.CmOtpVerifyRequest;
 import ir.daneshrefah.scm.cmconnector.otp.model.CmOtpVerifyResponse;
-import ir.daneshrefah.scm.uaa.client.security.ScmPrincipal;
+import ir.daneshrefah.scm.uaa.starter.security.ScmPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;

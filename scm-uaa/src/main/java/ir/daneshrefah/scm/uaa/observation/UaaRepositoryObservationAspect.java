@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.uaa.observation;
 
-import ir.daneshrefah.scm.observation.ObservationScope;
+import ir.daneshrefah.scm.observation.starter.ObservationScope;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

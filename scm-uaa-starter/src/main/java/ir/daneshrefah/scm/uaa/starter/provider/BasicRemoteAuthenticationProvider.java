@@ -1,0 +1,53 @@
+package ir.daneshrefah.scm.uaa.starter.provider;
+
+import ir.daneshrefah.scm.uaa.starter.provider.token.BaseAuthenticationToken;
+import ir.daneshrefah.scm.uaa.starter.provider.token.BasicAuthenticationToken;
+import ir.daneshrefah.scm.uaa.starter.remote.RemoteSecurityServiceProvider;
+import ir.daneshrefah.scm.uaa.common.core.SessionCache;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
+import org.springframework.cache.CacheManager;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.core.AuthenticationException;
+
+/**
+ * Description of the class or purpose of the file.
+ *
+ * @author reza jamshidi
+ * @version 1.0
+ * @since 2023-12-19
+ */
+public class BasicRemoteAuthenticationProvider extends AbstractRemoteClientAuthenticationProvider {
+
+
+    public BasicRemoteAuthenticationProvider(RemoteSecurityServiceProvider remoteSecurityServiceProvider,
+                                             SessionCache sessionCache,
+                                             CacheManager cacheManager) {
+        super(remoteSecurityServiceProvider, sessionCache, cacheManager);
+    }
+
+    @Override
+    protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
+        String authenticationResult = remoteSecurityServiceProvider.authenticateBasic((BasicAuthenticationToken) authentication);
+        if (null == authenticationResult) {
+            throw new InternalAuthenticationServiceException(
+                    "remoteServiceProvider returned null, which is an interface contract violation");
+        }
+//        UserDetails loadedUser = getSessionCache().getSessionFromCache(authentication.getId());
+//        if (loadedUser == null) {
+//            throw new InternalAuthenticationServiceException(
+//                    "userCache returned null, which is an interface contract violation");
+//        }
+        return null;
+    }
+
+    @Override
+    protected void additionalAuthenticationChecks(UserAuthentication userAuthentication, BaseAuthenticationToken authentication) throws AuthenticationException {
+
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return BasicAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+
+}

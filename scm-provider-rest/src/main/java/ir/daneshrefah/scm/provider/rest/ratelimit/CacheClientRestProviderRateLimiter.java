@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.provider.rest.ratelimit;
 
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimitResult;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimitResult;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimiterUtility;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderResolvedConfig;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
 import lombok.RequiredArgsConstructor;

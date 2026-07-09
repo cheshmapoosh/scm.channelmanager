@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.web.observation.propagation;
 
-import ir.daneshrefah.scm.observation.TraceContext;
+import ir.daneshrefah.scm.observation.starter.TraceContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 

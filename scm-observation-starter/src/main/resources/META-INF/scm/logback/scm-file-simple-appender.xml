@@ -7,11 +7,11 @@
                       class="ch.qos.logback.core.rolling.RollingFileAppender">
                 <file>${APPLICATION_LOG_FILE}</file>
                 <append>true</append>
-                <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                     <marker>SCM_OBSERVATION_TRACE</marker>
                     <inverse>true</inverse>
                 </filter>
-                <filter class="ir.daneshrefah.scm.observation.logback.ObservationMarkerFilter">
+                <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                     <marker>SCM_OBSERVATION_AUDIT</marker>
                     <inverse>true</inverse>
                 </filter>

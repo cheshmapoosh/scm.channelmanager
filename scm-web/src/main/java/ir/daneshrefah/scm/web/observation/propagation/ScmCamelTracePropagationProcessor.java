@@ -1,6 +1,6 @@
 package ir.daneshrefah.scm.web.observation.propagation;
 
-import ir.daneshrefah.scm.observation.TraceContextHolder;
+import ir.daneshrefah.scm.observation.starter.TraceContextHolder;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;

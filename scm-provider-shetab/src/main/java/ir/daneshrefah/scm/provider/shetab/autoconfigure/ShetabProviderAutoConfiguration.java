@@ -1,8 +1,7 @@
 package ir.daneshrefah.scm.provider.shetab.autoconfigure;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.cache.client.utility.ratelimit.RateLimiterUtility;
-import ir.daneshrefah.scm.cache.client.utility.resourcelease.ResourceLeaseUtility;
+import ir.daneshrefah.scm.cache.starter.utility.ratelimit.RateLimiterUtility;
+import ir.daneshrefah.scm.cache.starter.utility.resourcelease.ResourceLeaseUtility;
 import ir.daneshrefah.scm.provider.shetab.camel.ShetabComponent;
 import ir.daneshrefah.scm.provider.shetab.lease.CacheClientShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.lease.NoopShetabEndpointLeaseManager;
