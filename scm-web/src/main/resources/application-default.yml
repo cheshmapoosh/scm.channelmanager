@@ -1,12 +1,12 @@
 SCM_APPLICATION_NAME: scm-web
 scm:
-  app-name: channel.nib
-  channels: IB4TEST
+  app-name: domain.card
+  channels: MB4TEST
   runtime:
     target:
-      kind: CHANNEL
+      kind: SERVICE_DOMAIN
       gateway-names:
-        - channel.nib
+        - domain.card
   gateway:
     client-contracts:
       defaults:
