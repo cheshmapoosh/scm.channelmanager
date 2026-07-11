@@ -11,6 +11,7 @@ import org.springframework.core.env.Environment;
 
 import java.nio.file.Path;
 import java.time.ZoneId;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -40,6 +41,7 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
         validateScmEnvironment();
         validateConfigLabel();
         validateMetadata();
+        validateSharedFileConfiguration();
         validateLogbackAvailability();
         validateLogConfiguration();
         validateTraceConfiguration();
@@ -145,6 +147,43 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
         if (value != null && !value.isBlank() && !FILE_SIZE.matcher(value.trim()).matches()) {
             throw new IllegalStateException(property + " must be a valid file size such as 100MB or 10GB.");
         }
+    }
+
+    private void validateSharedFileConfiguration() {
+        if (!fileOutputEnabled()) {
+            return;
+        }
+        String rootDirectory = textOrNull(property("scm.observation.file.root-directory"));
+        if (rootDirectory == null) {
+            throw new IllegalStateException("scm.observation.file.root-directory must be configured when observation file output is enabled.");
+        }
+        String baseNamePattern = textOrNull(property("scm.observation.file.base-name-pattern"));
+        if (baseNamePattern == null) {
+            throw new IllegalStateException("scm.observation.file.base-name-pattern must be configured when observation file output is enabled.");
+        }
+        if (baseNamePattern.contains("/") || baseNamePattern.contains("\\")) {
+            throw new IllegalStateException("scm.observation.file.base-name-pattern must not contain path separators.");
+        }
+        if (baseNamePattern.contains("%d") || baseNamePattern.contains("%i")) {
+            throw new IllegalStateException("scm.observation.file.base-name-pattern must not contain Logback date or roll-index tokens.");
+        }
+        String lowerCaseBaseName = baseNamePattern.toLowerCase(Locale.ROOT);
+        if (lowerCaseBaseName.endsWith(".jsonl")
+                || lowerCaseBaseName.endsWith(".log")
+                || lowerCaseBaseName.endsWith(".gz")
+                || lowerCaseBaseName.endsWith(".zip")) {
+            throw new IllegalStateException("scm.observation.file.base-name-pattern must not include a file extension.");
+        }
+    }
+
+    private boolean fileOutputEnabled() {
+        return fileEnabled(properties.getLog() == null ? null : properties.getLog().getFile())
+                || fileEnabled(properties.getTrace() == null ? null : properties.getTrace().getFile())
+                || fileEnabled(properties.getAudit() == null ? null : properties.getAudit().getFile());
+    }
+
+    private boolean fileEnabled(ObservationProperties.FileProperties file) {
+        return file != null && file.isEnabled();
     }
 
     private boolean traceOrAuditEnabled() {
