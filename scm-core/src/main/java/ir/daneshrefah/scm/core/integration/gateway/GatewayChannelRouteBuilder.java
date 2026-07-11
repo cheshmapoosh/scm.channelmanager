@@ -274,36 +274,40 @@ public class GatewayChannelRouteBuilder extends RouteBuilder {
     }
 
     private void applyBeforePlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
-        if (orderedBeforePluginDetails == null) {
+        if (orderedBeforePluginDetails == null || orderedBeforePluginDetails.isEmpty()) {
+
+            log.warn("applyBeforePlugins: No before plugins to apply for route {}", route.getRouteId());
             return;
         }
 
         orderedBeforePluginDetails.forEach(definition -> {
             PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
-
-            if (pluginHandler == null) {
-                log.warn("Plugin '{}' not found. Ignoring.", definition.getName());
+            if (pluginHandler==null) {
+                log.warn("applyBeforePlugins: No plugin handler found for plugin {} in route {}", definition.getName(), route.getRouteId());
                 return;
             }
-
-            route.process(exchange -> pluginHandler.handle(exchange, definition));
+            route.process(exchange -> {
+                pluginHandler.handle(exchange, definition);
+            });
         });
+
     }
 
-    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails) {
-        if (orderedAfterPluginDetails == null) {
+    private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedBeforePluginDetails) {
+        if (orderedBeforePluginDetails == null ||  orderedBeforePluginDetails.isEmpty()) {
+            log.warn("applyAfterPlugins: No after plugins to apply for route {}", route.getRouteId());
             return;
         }
 
-        orderedAfterPluginDetails.forEach(definition -> {
+        orderedBeforePluginDetails.forEach(definition -> {
             PluginHandler pluginHandler = pluginHandlers.get(definition.getName());
-
-            if (pluginHandler == null) {
-                log.warn("Plugin '{}' not found. Ignoring.", definition.getName());
+            if (pluginHandler==null) {
+                log.warn("applyAfterPlugins: No plugin handler found for plugin {} in route {}", definition.getName(), route.getRouteId());
                 return;
             }
-
-            route.process(exchange -> pluginHandler.handle(exchange, definition));
+            route.process(exchange -> {
+                pluginHandler.handle(exchange, definition);
+            });
         });
     }
 
