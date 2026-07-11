@@ -74,8 +74,8 @@ public class ScmObservationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ObsTargetIndexResolver obsTargetIndexResolver(ObservationProperties properties) {
-        return new ObsTargetIndexResolver(properties.getTarget());
+    public ObsTargetIndexResolver obsTargetIndexResolver() {
+        return new ObsTargetIndexResolver();
     }
 
     @Bean
@@ -194,9 +194,10 @@ public class ScmObservationAutoConfiguration {
     public ObservationConfigurationValidator observationConfigurationValidator(
             ObservationProperties properties,
             ObservationSignalPolicy signalPolicy,
-            ObjectProvider<LogbackObservationEventPublisher> publisherProvider
+            ObjectProvider<LogbackObservationEventPublisher> publisherProvider,
+            Environment environment
     ) {
-        return new ObservationConfigurationValidator(properties, signalPolicy, publisherProvider);
+        return new ObservationConfigurationValidator(properties, signalPolicy, publisherProvider, environment);
     }
 
     @Configuration(proxyBeanMethods = false)

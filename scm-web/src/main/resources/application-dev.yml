@@ -1,6 +1,8 @@
-SCM_ENV: dev
-SCM_APPLICATION_NAME: scm-web
-SCM_INSTANCE_ID: local-scm-web
+scm:
+  metadata:
+    namespace: ${SCM_METADATA_NAMESPACE:local}
+    instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-web}
+
 SCM_CHANNEL_CODE: IB
 SCM_GATEWAY_NAME: channel.nib
 

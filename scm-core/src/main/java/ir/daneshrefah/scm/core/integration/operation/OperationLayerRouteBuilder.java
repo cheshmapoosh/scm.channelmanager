@@ -320,8 +320,6 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     ) {
         builder.tag(CoreMetricTags.APP_NAME, context != null ? context.appName() : null)
                 .tag(CoreMetricTags.APP_PROFILE, context != null ? context.appProfile() : null)
-                .tag(CoreMetricTags.APP_LABEL, context != null ? context.appLabel() : null)
-                .tag(CoreMetricTags.PLATFORM, context != null ? context.platform() : null)
                 .tag(CoreMetricTags.GATEWAY_NAME, fields.get("gatewayName"))
                 .tag(CommonMetricTags.CHANNEL_CODE, fields.get("channelCode"))
                 .tag(CoreMetricTags.SERVICE_CODE, fields.get("serviceCode"))
@@ -342,8 +340,6 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     ) {
         builder.tag(CoreMetricTags.APP_NAME, context != null ? context.appName() : null)
                 .tag(CoreMetricTags.APP_PROFILE, context != null ? context.appProfile() : null)
-                .tag(CoreMetricTags.APP_LABEL, context != null ? context.appLabel() : null)
-                .tag(CoreMetricTags.PLATFORM, context != null ? context.platform() : null)
                 .tag(CoreMetricTags.GATEWAY_NAME, fields.get("gatewayName"))
                 .tag(CommonMetricTags.CHANNEL_CODE, fields.get("channelCode"))
                 .tag(CoreMetricTags.SERVICE_CODE, fields.get("serviceCode"))

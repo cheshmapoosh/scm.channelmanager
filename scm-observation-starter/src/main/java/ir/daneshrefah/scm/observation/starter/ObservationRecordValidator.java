@@ -86,9 +86,11 @@ public class ObservationRecordValidator {
 
     private void validateStandardTargetFields(ObservationStream stream, Map<String, Object> document) {
         require(stream, document, "event.stream");
-        require(stream, document, "scm.observation.target.namespace");
+        require(stream, document, "scm.metadata.namespace");
+        require(stream, document, "scm.metadata.instance_id");
+        require(stream, document, "scm.metadata.time_zone");
+        require(stream, document, "scm.config.label");
         require(stream, document, "scm.observation.target.index");
-        require(stream, document, "scm.platform");
         require(stream, document, "service.name");
         require(stream, document, "deployment.environment");
     }

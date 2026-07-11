@@ -120,9 +120,9 @@ tolerations:
 affinity: {}
 
 env:
-  - name: SPRING_PROFILES_ACTIVE
+  - name: SCM_ENV
     value: dev
-  - name: SPRING_APPLICATION_NAME
+  - name: SCM_APP
     value: scm-config
   - name: VERSION
     value: 8.3.0

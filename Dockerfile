@@ -6,9 +6,9 @@ ENV SERVER_PORT=8080
 
 ARG VERSION="9.0.0"
 ENV VERSION=$VERSION
-ARG SPRING_APPLICATION_NAME="scm-web"
+ARG SCM_APP="scm-web"
 
-ENV SPRING_APPLICATION_NAME=$SPRING_APPLICATION_NAME
+ENV SCM_APP=$SCM_APP
 
 EXPOSE 8080
 EXPOSE 8888
@@ -24,12 +24,12 @@ COPY scm-uaa/build/libs/scm-uaa-${VERSION}.jar .
 COPY scm-web/build/libs/scm-web-${VERSION}.jar .
 COPY scm-logging/build/libs/scm-logging-${VERSION}.jar .
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS $JDWP_OPTS -jar /app/$SPRING_APPLICATION_NAME-$VERSION.jar --server.port=$SERVER_PORT"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS $JDWP_OPTS -jar /app/$SCM_APP-$VERSION.jar --server.port=$SERVER_PORT"]
 
 
 #docker run -d \
 #  --name scm-config \
-#  -e SPRING_APPLICATION_NAME=scm-config \
+#  -e SCM_APP=scm-config \
 #  -e VERSION=8.5.4 \
 #  -p 8081:8080 \
 #  reg.daneshrefah.ir/modern-banking/scm-all-in-one:8.5.4

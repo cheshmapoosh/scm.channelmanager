@@ -6,60 +6,38 @@ import java.time.ZoneId;
 
 public record ObservationContext(
         boolean enabled,
-        String platform,
         String namespace,
+        String instanceId,
+        ZoneId timeZone,
         String appName,
         String appProfile,
-        String appLabel,
+        String configLabel,
         String channelCode,
         String gatewayName,
         String serviceVersion,
-        String runtime,
-        ZoneId observationZoneId
+        String runtime
 ) {
-    private static final ZoneId OBSERVATION_ZONE_ID = ZoneId.of("UTC");
-
     public static ObservationContext from(ObservationProperties properties, Environment environment) {
         ObservationProperties safeProperties = properties == null ? new ObservationProperties() : properties;
+        String appName = firstText(environmentValue(environment, "spring.application.name"), "application");
         String runtime = runtime(environment);
         return new ObservationContext(
                 safeProperties.isEnabled(),
-                "scm",
-                namespace(safeProperties, environment, runtime),
-                firstText(environmentValue(environment, "spring.application.name"), "application"),
-                firstText(environmentValue(environment, "deployment.environment"),
-                        environmentValue(environment, "scm.env"),
-                        firstActiveProfile(environment), "default"),
-                "default",
+                firstText(environmentValue(environment, "scm.metadata.namespace"), "local"),
+                firstText(environmentValue(environment, "scm.metadata.instance-id"), "local-" + appName),
+                timeZone(environment),
+                appName,
+                firstText(firstActiveProfile(environment), environmentValue(environment, "spring.profiles.active"), "dev"),
+                firstText(
+                        environmentValue(environment, "spring.cloud.config.label"),
+                        environmentValue(environment, "spring.cloud.config.server.git.default-label"),
+                        "master"
+                ),
                 "default",
                 "default",
                 firstText(environmentValue(environment, "scm.deployment.service-version"), System.getenv("VERSION"), "unknown"),
-                runtime,
-                OBSERVATION_ZONE_ID
+                runtime
         );
-    }
-
-    private static String namespace(ObservationProperties properties, Environment environment, String runtime) {
-        String namespace = textOrNull(environmentValue(environment, "scm.observation.target.namespace"));
-        if (namespace == null && properties != null && properties.getTarget() != null) {
-            namespace = textOrNull(properties.getTarget().getNamespace());
-        }
-        if (namespace == null) {
-            namespace = textOrNull(environmentValue(environment, "SCM_OBSERVATION_TARGET_NAMESPACE"));
-        }
-        if (namespace == null) {
-            namespace = textOrNull(System.getenv("SCM_OBSERVATION_TARGET_NAMESPACE"));
-        }
-        if (namespace == null) {
-            namespace = textOrNull(environmentValue(environment, "SCM_OBS_NAMESPACE"));
-        }
-        if (namespace == null) {
-            namespace = textOrNull(System.getenv("SCM_OBS_NAMESPACE"));
-        }
-        if ("kubernetes".equals(runtime)) {
-            return namespace;
-        }
-        return namespace == null ? "default" : namespace;
     }
 
     private static String runtime(Environment environment) {
@@ -77,6 +55,18 @@ public record ObservationContext(
         }
         String[] activeProfiles = environment.getActiveProfiles();
         return activeProfiles.length == 0 ? null : activeProfiles[0];
+    }
+
+    private static ZoneId timeZone(Environment environment) {
+        String configured = textOrNull(environmentValue(environment, "scm.metadata.time-zone"));
+        if (configured == null) {
+            return ZoneId.systemDefault();
+        }
+        try {
+            return ZoneId.of(configured);
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException("scm.metadata.time-zone must be a valid Java ZoneId.", ex);
+        }
     }
 
     private static String environmentValue(Environment environment, String key) {

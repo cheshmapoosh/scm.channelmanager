@@ -52,9 +52,11 @@ Every LOG, TRACE, and AUDIT record includes:
 
 ```text
 event.stream
-scm.observation.target.namespace
+scm.metadata.namespace
+scm.metadata.instance_id
+scm.metadata.time_zone
+scm.config.label
 scm.observation.target.index
-scm.platform
 service.name
 deployment.environment
 ```
@@ -62,7 +64,7 @@ deployment.environment
 `scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Physical files are namespace-based and do not use channel code:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
 CM connector spans are not legacy by default. If a request already started at `scm-web.gateway.receive`, connector spans should keep `scm.observation.legacy.enabled=false`. If CM connector is later configured as the direct business entry point for a legacy-reportable flow, only the root business span may set:

@@ -101,8 +101,7 @@ public class ScmCacheInitLogging implements ApplicationContextInitializer<Config
         return firstPresent(
                 String.join(",", environment.getActiveProfiles()),
                 environment.getProperty("spring.profiles.active"),
-                environment.getProperty("deployment.environment"),
-                "default"
+                "dev"
         );
     }
 

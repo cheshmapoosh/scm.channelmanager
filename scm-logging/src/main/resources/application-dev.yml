@@ -1,6 +1,8 @@
-SCM_ENV: dev
-SCM_APPLICATION_NAME: scm-logging
-SCM_INSTANCE_ID: local-scm-logging
+scm:
+  metadata:
+    namespace: ${SCM_METADATA_NAMESPACE:local}
+    instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-logging}
+
 SCM_SERVER_PORT: ${SERVER_PORT:9090}
 
 SCM_CONFIG_ENABLED: false

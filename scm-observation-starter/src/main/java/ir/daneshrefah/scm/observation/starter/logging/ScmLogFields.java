@@ -9,9 +9,11 @@ public final class ScmLogFields {
     public static final String PROCESS_THREAD_NAME = CommonLogAttributes.PROCESS_THREAD_NAME.name();
     public static final String MESSAGE = CommonLogAttributes.MESSAGE.name();
     public static final String EVENT_STREAM = CommonLogAttributes.EVENT_STREAM.name();
-    public static final String SCM_OBS_TARGET_NAMESPACE = CommonLogAttributes.SCM_OBS_TARGET_NAMESPACE.name();
+    public static final String SCM_METADATA_NAMESPACE = CommonLogAttributes.SCM_METADATA_NAMESPACE.name();
+    public static final String SCM_METADATA_INSTANCE_ID = CommonLogAttributes.SCM_METADATA_INSTANCE_ID.name();
+    public static final String SCM_METADATA_TIME_ZONE = CommonLogAttributes.SCM_METADATA_TIME_ZONE.name();
+    public static final String CONFIG_LABEL = CommonLogAttributes.CONFIG_LABEL.name();
     public static final String SCM_OBS_TARGET_INDEX = CommonLogAttributes.SCM_OBS_TARGET_INDEX.name();
-    public static final String SCM_PLATFORM = CommonLogAttributes.SCM_PLATFORM.name();
     public static final String SERVICE_NAME = CommonLogAttributes.SERVICE_NAME.name();
     public static final String EVENT_CATEGORY = CommonLogAttributes.EVENT_CATEGORY.name();
     public static final String EVENT_ACTION = CommonLogAttributes.EVENT_ACTION.name();

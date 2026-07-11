@@ -32,8 +32,10 @@
 | کلید | عنوان | توضیحات |
 |---|---|---|
 | `SCM_ENV` | نام محیط | محیط اجرای Config Server است. مقدار اشتباه باعث label اشتباه در log و trace میشود. |
-| `SCM_APPLICATION_NAME` | نام برنامه | نام Spring application است و معمولاً باید `scm-config` باشد. |
-| `SCM_INSTANCE_ID` | شناسه نمونه | شناسه node یا pod است و برای عیب یابی استفاده میشود. |
+| `SCM_APP` | نام برنامه | نام Spring application است و معمولاً باید `scm-config` باشد. |
+| `SCM_METADATA_NAMESPACE` | namespace اجرا | در Kubernetes از metadata.namespace میآید و در dev مقدار local دارد. |
+| `SCM_METADATA_INSTANCE_ID` | شناسه نمونه | شناسه node یا pod است و برای عیب یابی استفاده میشود. |
+| `SCM_METADATA_TIME_ZONE` | timezone فایل | اگر خالی باشد timezone سیستم JVM استفاده میشود و فقط برای نام فایلهای observation است. |
 | `SCM_CONFIG_SERVER_PORT` | پورت Config Server | پورت HTTP سرویس است. مقدار اشتباه باعث شکست دسترسی clientها میشود. |
 | `SCM_CONFIG_SERVER_PREFIX` | prefix endpoint | مسیر endpoint Config Server است و باید با clientها هماهنگ باشد. |
 | `SCM_CONFIG_LOG_PATH` | مسیر log قدیمی Spring | مسیر log file مربوط به Spring logging است. برای observation از `SCM_OBS_ROOT_DIR` استفاده میشود. |
@@ -44,7 +46,7 @@
 |---|---|---|
 | `SCM_CONFIG_REPO_URI` | آدرس config repo | آدرس git یا مسیر repo تنظیمات است. مقدار اشتباه باعث نشدن دریافت config توسط clientها میشود. |
 | `SCM_CONFIG_REPO_SEARCH_PATHS` | مسیر جستجوی repo | مسیر جستجو برای applicationها است. مقدار معمول `{application}` است. |
-| `SCM_CONFIG_REPO_BRANCH` | شاخه repo | نام branch config repo است. مقدار اشتباه باعث خواندن config از branch نادرست میشود. |
+| `SCM_LABEL` | label کانفیگ | label مربوط به Spring Cloud Config است و میتواند branch، tag یا commit باشد. |
 | `SCM_CONFIG_REPO_BASEDIR` | مسیر checkout | مسیر local checkout repo است. اگر دسترسی یا فضا مشکل داشته باشد Config Server خطا میدهد. |
 | `SCM_CONFIG_REPO_USERNAME` | کاربر repo | نام کاربری repo است و حساس محسوب میشود. نباید در ticket، screenshot یا chat ارسال شود. |
 | `SCM_CONFIG_REPO_PASSWORD` | رمز repo | رمز repo است و کاملاً حساس است. باید از Secret یا محیط امن بیاید. |

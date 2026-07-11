@@ -1,456 +1,149 @@
 # SCM Observation Contract
 
-## Purpose
+SCM observability writes LOG, TRACE, and AUDIT as JSONL files for Filebeat. Metrics stay on the Actuator and Micrometer path.
 
-This contract defines the shared observation output model for SCM and legacy CM. SCM and CM must produce compatible log, trace, and audit events as JSONL files, while metrics remain a separate observability signal exposed through Micrometer/Actuator and scraped by Prometheus.
+## External Contract
 
-The JSONL files are written locally and shipped through the final delivery pipeline for analytics/search and, where required, legacy table projection.
-
-This spiral defines documentation and examples only. It does not define Java implementation, dependencies, runtime wiring, Kafka topic design, or an observation starter module.
-
-## Supported Streams
-
-The JSONL observation streams are:
-
-| Stream | Purpose |
+| Variable | Spring property |
 | --- | --- |
-| `log` | Application log events. |
-| `trace` | Distributed trace span events and trace-based service transaction projection events. |
-| `audit` | Service/business audit and user/admin/config/security change audit events. |
+| `SCM_APP` | `spring.application.name` |
+| `SCM_ENV` | `spring.profiles.active` |
+| `SCM_LABEL` | `spring.cloud.config.label` for Config Clients |
+| `SCM_LABEL` | `spring.cloud.config.server.git.default-label` for `scm-config` |
+| `SCM_METADATA_NAMESPACE` | `scm.metadata.namespace` |
+| `SCM_METADATA_INSTANCE_ID` | `scm.metadata.instance-id` |
+| `SCM_METADATA_TIME_ZONE` | `scm.metadata.time-zone` |
 
-Metrics are part of SCM observability, but metrics are not JSONL streams.
+`SCM_ENV` must be exactly one of `dev`, `test`, `pilot`, or `prod`. It is lowercase and case-sensitive. Comma-separated profiles are not part of the SCM contract.
 
-## Supported Platforms
+`SCM_LABEL` is the Spring Cloud Config label and may be a branch, tag, or commit. It must be nonblank and must contain exactly one label. The default is `master`.
 
-| Platform | Meaning |
-| --- | --- |
-| `scm` | New SCM platform. |
-| `cm` | Legacy CM platform. |
+## Runtime Metadata
 
-## Observation Delivery Pipeline
+Deployable services define:
 
-Trace and audit analytics/search path:
-
-```text
-JSONL file -> Filebeat -> Kafka -> Logstash -> Elasticsearch -> Kibana
+```yaml
+scm:
+  metadata:
+    namespace: ${SCM_METADATA_NAMESPACE:}
+    instance-id: ${SCM_METADATA_INSTANCE_ID:}
+    time-zone: ${SCM_METADATA_TIME_ZONE:}
 ```
 
-Trace and audit legacy compatibility path:
+Development profiles provide local defaults:
 
-```text
-JSONL file -> Filebeat -> Kafka -> scm-logging -> legacy tables
+```yaml
+scm:
+  metadata:
+    namespace: ${SCM_METADATA_NAMESPACE:local}
+    instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-web}
 ```
 
-Log analytics/search path:
+For `test`, `pilot`, and `prod`, namespace and instance id must be supplied by the runtime. Kubernetes deployments use the Downward API:
 
-```text
-JSONL file -> Filebeat -> Kafka -> Logstash -> Elasticsearch -> Kibana
+```yaml
+env:
+  - name: SCM_METADATA_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+  - name: SCM_METADATA_INSTANCE_ID
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
 ```
 
-Observability signals:
+`scm.metadata.time-zone` is optional. When it is blank or absent, the JVM system timezone is used for physical file naming metadata. Invalid timezone values fail startup.
 
-| Signal | Delivery |
-| --- | --- |
-| `log` | JSONL -> Filebeat -> Kafka -> Logstash -> Elasticsearch -> Kibana |
-| `trace` | JSONL -> Filebeat -> Kafka -> Logstash -> Elasticsearch -> Kibana, and optionally `scm-logging` legacy transaction projection |
-| `audit` | JSONL -> Filebeat -> Kafka -> Logstash -> Elasticsearch -> Kibana, and optionally `scm-logging` user action projection |
-| `metric` | Micrometer/Actuator -> Prometheus -> Grafana |
+## Standard Fields
 
-Rules:
-
-- `log`, `trace`, and `audit` are the only JSONL observation streams in this contract.
-- `metric` is a separate signal and must not create JSONL sample files, JSONL folders, `scm.observation.target.index` values, or metric target indexes.
-- Kafka topic requirements are out of scope for this spiral.
-- `scm-logging` consumes trace and audit JSONL events from Kafka and projects only explicitly targeted events to legacy tables.
-- Legacy transaction tables are populated from trace events, not from audit events.
-- Audit events with `scm.audit.type=CHANGE` may be projected to `cm.user_action_log`.
-
-## SCM JSONL Writing Model
-
-SCM Java 21 uses the standard Spring Boot logging stack for observation JSONL file writing:
-
-```text
-ScmObservation -> document builder -> compact JSON serializer -> dedicated SLF4J logger -> Logback AsyncAppender -> Logback RollingFileAppender / TimeBasedRollingPolicy -> hourly JSONL file
-```
-
-Dedicated SCM observation logger names:
-
-- `ir.daneshrefah.scm.observation.log`
-- `ir.daneshrefah.scm.observation.trace`
-- `ir.daneshrefah.scm.observation.audit`
-
-Rules:
-
-- Observation loggers must be isolated from normal application logging with `additivity=false`.
-- Observation appenders must use a message-only Logback pattern: `%msg%n`.
-- Observation file appenders are wrapped with standard Logback `AsyncAppender`.
-- Logback must not add timestamp, level, logger name, or JSON wrappers around observation messages.
-- The observation code serializes each complete JSON document before it is sent to SLF4J and explicitly disables pretty printing.
-- SCM must use Logback standard rolling capabilities for hourly active files; SCM must not implement custom low-level file writing or custom rollover logic.
-- Target index hour buckets and observation file hour buckets use `scm.observation.time-zone`; the default is `UTC`.
-
-## Future CM Writing Model
-
-CM Java 7 observation is out of scope for this spiral. A later CM implementation must use this shape:
-
-```text
-LegacyObservation -> org.apache.commons.logging.Log -> Log4j 1.2.14 compatible rolling file appender -> hourly JSONL files
-```
-
-Rules for the future CM implementation:
-
-- CM business code must use `org.apache.commons.logging.Log`, not direct `org.apache.log4j.Logger`.
-- Keep Log4j at `1.2.14` for this compatibility path.
-- Do not migrate CM to Logback or Log4j2 as part of the observation rollout.
-- Prefer a production-safer compatible Log4j 1.x rolling companion appender over `DailyRollingFileAppender` if a small compatible dependency can be safely added later.
-- Do not use `JMSAppender`, `SocketAppender`, `SMTPAppender`, or `JDBCAppender` for observation.
-- Observation appenders must be file-only and use message-only layout equivalent to `%m%n`.
-
-## Metrics Contract
-
-Metrics are part of SCM observability but are not written to JSONL files.
-
-Rules:
-
-- SCM Java 21 services expose metrics through Micrometer and Spring Boot Actuator.
-- Prometheus scrapes metrics from the Actuator metrics endpoint.
-- Grafana is used for metric dashboards and alerting.
-- CM Java 7 metrics are out of scope for the initial legacy rollout.
-- CM derived metrics may be calculated from trace and audit documents in Elasticsearch.
-- A future CM metric adapter may be added later if required.
-
-Recommended metric labels:
-
-| Label | Description |
-| --- | --- |
-| `app_name` | Application name. |
-| `app_profile` | Runtime profile or environment label. |
-| `app_label` | Low-cardinality deployment label. |
-| `platform` | `scm` or `cm`. |
-| `channel_code` | Channel code. |
-| `gateway_name` | Gateway name. |
-| `service_code` | Service code. |
-| `operation_code` | Operation code. |
-| `provider_code` | Provider code. |
-| `provider_type` | Provider type. |
-| `outcome` | Result label such as `success` or `failure`. |
-| `error_code` | Safe error/status code. |
-
-Recommended SCM metric names:
-
-- `scm.requests`
-- `scm.request.duration`
-- `scm.gateway.requests`
-- `scm.service.executions`
-- `scm.service.duration`
-- `scm.operation.calls`
-- `scm.operation.duration`
-- `scm.provider.calls`
-- `scm.provider.duration`
-- `scm.plugin.executions`
-- `scm.transform.executions`
-- `scm.faults`
-
-SCM Java 21 exposes typed Java constants for the shared attribute catalog. Future CM Java 7 can provide compatible constants in its own implementation without changing the field names.
-
-## JSONL Rules
-
-- Files are UTF-8 JSONL.
-- Each line is one complete compact JSON object.
-- Do not pretty-print JSONL files.
-- Each event must include `event.stream`.
-- Each event must include `scm.observation.target.namespace`.
-- Each event must include `scm.observation.target.index`.
-- Each event must include `scm.platform`.
-- Each event must include `service.name`.
-- Each event must include `deployment.environment`.
-- Each event must include `scm.observation.legacy.enabled`.
-- When `scm.observation.legacy.enabled=true`, `scm.observation.legacy.service.code` and `scm.observation.legacy.operation.code` are mandatory.
-- Omit fields that are not applicable instead of writing `null`, unless a downstream consumer explicitly requires the field.
-- Field names are case-sensitive.
-- Timestamps use ISO-8601 UTC format where possible, for example `2026-06-10T14:15:30.123Z`.
-- Numeric durations use milliseconds.
-
-## File Path Contract
-
-Active file:
-
-```text
-/var/obs/{appName}/{env}/{namespace}/{stream}/{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
-```
-
-Archive file:
-
-```text
-/var/obs/{appName}/{env}/{namespace}/{stream}/archive/{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl.gz
-```
-
-Notes:
-
-- `{stream}` is one of `log`, `trace`, or `audit`.
-- `{appName}` is the emitting application name, for example `scm-web` or `cm`.
-- `{env}` is the runtime environment label, for example `prod`.
-- `{namespace}` is the Kubernetes namespace. Outside Kubernetes it defaults to `default`.
-- `{instanceId}` identifies the pod, VM, or legacy node, for example `pod01` or `cm01`.
-- The `-scm-` segment is the compatibility namespace in the file name and stays literal for both SCM and CM emitters.
-- Archive files use the same file name contract under the stream `archive` directory and append the rolling index before `.jsonl.gz`.
-- Physical file names are namespace-based and must not use `scm.channel.code`.
-
-Examples:
-
-```text
-/var/obs/scm-web/prod/mb/trace/trace-scm-scm-web-prod-mb-pod01-20260610-14.jsonl
-/var/obs/scm-web/prod/mb/log/log-scm-scm-web-prod-mb-pod01-20260610-14.jsonl
-/var/obs/scm-web/prod/mb/audit/audit-scm-scm-web-prod-mb-pod01-20260610-14.jsonl
-${user.home}/scm/obs/scm-web/prod/default/log/log-scm-scm-web-prod-default-local-20260610-14.jsonl
-```
-
-## Target Fields
-
-Every JSONL observation event must include:
+Every LOG, TRACE, and AUDIT document includes:
 
 ```text
 event.stream
-scm.observation.target.namespace
-scm.observation.target.index
-scm.platform
 service.name
+deployment.service.name
+deployment.service.version
 deployment.environment
-scm.observation.legacy.enabled
+scm.runtime
+scm.metadata.namespace
+scm.metadata.instance_id
+scm.metadata.time_zone
+scm.config.label
+scm.observation.target.index
 ```
 
-`scm.observation.target.index` is mandatory for every JSONL event and is used for Elasticsearch and analytics routing.
-`scm.observation.target.namespace` is mandatory for every JSONL event and is used for file layout and index routing.
+`@timestamp` remains UTC. The metadata timezone is not used for JSON event timestamps and is not used for the Elasticsearch index hour.
 
-Index patterns:
+## Elasticsearch Indexes
+
+Index naming is starter-owned and not configurable by host applications.
+
+With a real business channel:
 
 ```text
 {stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}
+```
+
+Without a real business channel:
+
+```text
 {stream}-scm-{namespace}-{env}-{yyyy.MM.dd.HH}
+```
+
+The literal `scm` is fixed. Index names are normalized to lowercase and invalid characters are replaced. Missing channel values include null, blank, `unknown`, `default`, `none`, `n/a`, and `n-a`.
+
+Examples:
+
+```text
+log-scm-payment-prod-mb-2026.07.11.06
+trace-scm-payment-prod-mb-2026.07.11.06
+audit-scm-payment-prod-2026.07.11.06
+```
+
+The index hour is always UTC.
+
+## File Names
+
+Host applications configure only the base identity pattern:
+
+```yaml
+scm:
+  observation:
+    file:
+      root-directory: ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
+      base-name-pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
+```
+
+The starter owns stream prefix, hour token, roll index, and extension:
+
+```text
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+```
+
+Directory layout:
+
+```text
+{root}/{appName}/{env}/{namespace}/{stream}/
 ```
 
 Examples:
 
 ```text
-trace-scm-ib-prod-ib-2026.06.10.14
-log-scm-shared-prod-mb-2026.06.10.14
-audit-scm-shared-prod-2026.06.10.14
+log-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
+trace-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
+audit-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
 ```
 
-Index rules:
+File names never include channel code or Config label. Observation files are not gzipped and do not use a separate archive directory. Current and rolled files use final names while Filebeat reads them.
 
-- `stream` is `log`, `trace`, or `audit`.
-- `namespace` is the normalized target namespace.
-- `channelCode` is included only when a real business channel code exists.
-- `env` is the normalized deployment environment, for example `prod`.
-- The hour bucket is based on the event timestamp.
-- The hour bucket uses `scm.observation.time-zone`; the default is `UTC`.
-- Missing channel values are `null`, blank, `unknown`, `default`, `none`, `n/a`, and `n-a`.
-- All rendered index parts are lower-case.
-- Application code must treat this as a routing hint, not as an Elastic-specific API contract.
+## Legacy Projection
 
-Legacy projection target fields:
+Legacy database projection remains separate from the runtime metadata and file/index naming contract. When `scm.observation.legacy.enabled=true`, both of these fields must be present:
 
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `scm.observation.legacy.enabled` | boolean | Yes | Whether this event must be projected by `scm-logging` to a legacy table. |
-| `scm.observation.legacy.service.code` | keyword | Conditional | Required only when `scm.observation.legacy.enabled=true`. Must come from an explicit attribute or configured mapping. |
-| `scm.observation.legacy.operation.code` | keyword | Conditional | Required only when `scm.observation.legacy.enabled=true`. Must come from an explicit attribute or configured mapping. |
-
-Defaults:
-
-- Log events set `scm.observation.legacy.enabled=false`.
-- Trace events set `scm.observation.legacy.enabled=false` unless they represent a service transaction that must be projected to a legacy transaction table.
-- Audit events with `scm.audit.type=SERVICE` set `scm.observation.legacy.enabled=false` by default unless explicitly required.
-- Audit events with `scm.audit.type=CHANGE` set `scm.observation.legacy.enabled=true` when they must be written to `cm.user_action_log`.
-
-## Legacy Projection Routing
-
-Trace-based legacy projection rules:
-
-| Condition | Target fields |
-| --- | --- |
-| `event.stream=trace` and the event represents an internet banking service transaction | `scm.observation.legacy.enabled=true`, explicit `scm.observation.legacy.service.code`, explicit `scm.observation.legacy.operation.code` |
-| `event.stream=trace` and the event represents a mobile or PWA gateway service transaction | `scm.observation.legacy.enabled=true`, explicit `scm.observation.legacy.service.code`, explicit `scm.observation.legacy.operation.code` |
-| `event.stream=trace` and the event represents a CM service transaction | `scm.observation.legacy.enabled=true`, explicit `scm.observation.legacy.service.code`, explicit `scm.observation.legacy.operation.code` |
-
-Audit-based legacy projection rules:
-
-| Condition | Target fields |
-| --- | --- |
-| `event.stream=audit` and `scm.audit.type=CHANGE` | `scm.observation.legacy.enabled=true`, explicit `scm.observation.legacy.service.code`, explicit `scm.observation.legacy.operation.code` |
-
-If a producer cannot resolve the legacy service and operation codes unambiguously, it must leave `scm.observation.legacy.enabled=false` or fail validation. Producers must not parse `span.name` to create legacy service codes.
-
-## Mandatory Common Fields
-
-These fields are mandatory for every JSONL event in every JSONL stream:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `@timestamp` | date | Event timestamp. |
-| `event.stream` | keyword | `log`, `trace`, or `audit`. |
-| `event.kind` | keyword | Event kind, usually `event`. |
-| `event.category` | keyword | High-level category such as `application`, `trace`, `audit`, `service`, or `transaction`. |
-| `event.action` | keyword | Action name, for example `operation.call` or `service.audit`. |
-| `event.outcome` | keyword | Event result. See outcome values below. |
-| `scm.observation.target.namespace` | keyword | Target namespace used for file layout and index routing. |
-| `scm.observation.target.index` | keyword | Target index routing name. |
-| `scm.observation.legacy.enabled` | boolean | Whether legacy projection is enabled for this event. |
-| `scm.platform` | keyword | `scm` or `cm`. |
-| `service.name` | keyword | Emitting service/application name. |
-| `deployment.environment` | keyword | Runtime environment, for example `prod`. |
-| `scm.app.name` | keyword | Application name used in file path. |
-| `scm.app.profile` | keyword | Application profile used in file path. |
-| `scm.app.label` | keyword | Low-cardinality app label, for example `mobile`. |
-| `scm.gateway.name` | keyword | Gateway name. |
-| `scm.correlation_id` | keyword | Correlation ID shared across events for one request or transaction. |
-
-`scm.channel.code` is an optional business attribute. It must be present only when the producer resolved a real business channel code such as `ib` or `mb`.
-
-## Mandatory Log Fields
-
-Log events must include all common fields and:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `log.level` | keyword | Log level such as `INFO`, `WARN`, or `ERROR`. |
-| `logger.name` | keyword | Logger name. |
-| `thread.name` | keyword | Thread name. |
-| `message` | text | Log message. |
-
-## Mandatory Trace Fields
-
-Trace events must include all common fields and:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `trace.id` | keyword | Trace identifier. |
-| `span.id` | keyword | Span identifier. |
-| `parent.span.id` | keyword | Parent span identifier. Empty string is allowed for a root span. |
-| `span.name` | keyword | Canonical span name. |
-| `span.kind` | keyword | Span kind such as `server`, `internal`, or `client`. |
-| `span.start_time` | date | Span start time. |
-| `span.end_time` | date | Span end time. |
-| `span.duration_ms` | double | Span duration in milliseconds. |
-
-Projected trace events must also include `scm.message.sequence_id`, `scm.status.code`, `scm.transaction.status`, and either `scm.transaction.type` or `scm.service.code`.
-
-## Mandatory Audit Fields
-
-Audit events must include all common fields and:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `scm.audit.type` | keyword | Audit type. Allowed values are `SERVICE` and `CHANGE`. |
-| `user.name` | keyword | User name or system principal. |
-
-Audit type rules:
-
-- `scm.audit.type=SERVICE` may be used for service/business audit events when needed.
-- `scm.audit.type=CHANGE` is used for user, admin, configuration, and security change audit events.
-- Legacy transaction table projection is trace-based and must not be driven by audit events.
-
-## Service Transaction Fields
-
-Service transaction context should include these fields when applicable:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `scm.transaction.type` | keyword | Transaction type or business transaction name. |
-| `scm.transaction.status` | keyword | Business transaction status. |
-| `scm.message.sequence_id` | keyword | Message sequence ID. |
-| `scm.status.code` | keyword | SCM status code. |
-| `scm.csp.username` | keyword | CSP username from the business context. |
-| `client.ip` | ip | Client IP address. |
-| `scm.client.phone_number` | keyword | Client phone number. |
-| `scm.access_parameter` | keyword | Access parameter used by the transaction. |
-| `scm.amount` | double | Transaction amount. |
-| `scm.card.no` | keyword | Card number field. |
-| `scm.account.no` | keyword | Account number field. |
-| `scm.destination` | keyword | Destination card, account, IBAN, or business destination. |
-| `scm.legacy.source_table` | keyword | Source table for legacy compatibility. |
-
-## Legacy Compatibility Fields
-
-These fields preserve CM, IB, and Mobile gateway compatibility where the source data exists:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `scm.legacy.source_table` | keyword | Legacy table that produced the event. |
-| `scm.legacy.transaction_log_id` | keyword | Legacy transaction log ID. |
-| `scm.legacy.message_log_id` | keyword | Legacy message log ID. |
-| `scm.legacy.archive_no` | keyword | Legacy archive number. |
-| `scm.legacy.eb_service_id` | keyword | Legacy EB service ID. |
-| `scm.legacy.transaction_state_id` | keyword | Legacy transaction state ID. |
-| `scm.external_sequence_id` | keyword | External sequence ID. |
-| `scm.original_sequence_id` | keyword | Original sequence ID. |
-| `scm.document.no` | keyword | Document number. |
-| `scm.terminal.id` | keyword | Terminal ID. |
-| `scm.terminal.type` | keyword | Terminal type. |
-| `scm.transaction.inter_bank` | boolean | Whether the transaction is inter-bank. |
-| `scm.transaction.duplicate` | boolean | Whether the transaction is a duplicate. |
-
-## Security Rules
-
-- Do not use masking fields in the contract.
-- Card, account, and destination values may be stored with direct names: `scm.card.no`, `scm.account.no`, and `scm.destination`.
-- Full JWT tokens must never be written to any observation output.
-- Full Authorization headers must never be written.
-- Do not write provider secrets, PIN, CVV2, MAC keys, PIN keys, or raw sensitive headers.
-- If JWT information is needed later, only derived metadata is allowed:
-  - `scm.auth.type`
-  - `scm.auth.jwt.present`
-  - `scm.auth.jwt.issuer`
-  - `scm.auth.jwt.subject`
-  - `scm.auth.jwt.username`
-  - `scm.auth.jwt.exp`
-  - `scm.auth.jwt.hash`
-
-## Field Naming Conventions
-
-- Use dot-separated lowercase names for SCM-specific fields under `scm.*`.
-- Use common event names under `event.*`.
-- Use standard names where they already exist, for example `trace.id`, `span.id`, `service.name`, `client.ip`, `log.level`, and `user.name`.
-- Keep fields stable and low-cardinality unless they are business identifiers.
-- Prefer explicit names over generic names, for example `scm.provider.code` instead of `provider`.
-- Use snake_case for metric labels to match Prometheus conventions.
-
-## Span Naming Conventions
-
-Canonical span names:
-
-- `gateway.receive`
-- `service.execute`
-- `operation.call`
-
-Rules:
-
-- Use canonical names for cross-platform trace compatibility.
-- Put detailed business identity in attributes such as `scm.service.code`, `scm.operation.name`, and `scm.provider.code`.
-- In the initial SCM Java 21 model, provider execution is not emitted as a separate `provider.call` span.
-- Provider details and provider timing are recorded as attributes on the same `operation.call` span.
-- Do not encode card number, account number, customer identifier, or provider secrets in `span.name`.
-
-## Event Outcome Values
-
-Allowed values:
-
-| Value | Meaning |
-| --- | --- |
-| `success` | Completed successfully. |
-| `failure` | Failed. |
-| `unknown` | Outcome is not known at emission time. |
-| `partial` | Partially completed. Use only when the business flow explicitly supports partial completion. |
-
-## SCM Example
-
-```json
-{"@timestamp":"2026-06-10T14:15:30.310Z","event.stream":"trace","event.kind":"event","event.category":"transaction","event.action":"operation.call","event.outcome":"success","scm.observation.target.namespace":"mb","scm.observation.target.index":"trace-scm-mb-prod-mb-2026.06.10.14","scm.observation.legacy.enabled":true,"scm.observation.legacy.service.code":"CARD_INQUIRY","scm.observation.legacy.operation.code":"SVC_CARD_INQUIRY_REST","scm.platform":"scm","service.name":"scm-web","deployment.environment":"prod","scm.app.name":"scm-web","scm.app.profile":"prod","scm.app.label":"mobile","scm.gateway.name":"mobile","scm.channel.code":"mb","scm.correlation_id":"corr-20260610-0001","trace.id":"4d2f8a6b0e7c4a1db8f4d2f1a9c00101","span.id":"2f54b2a7c9e40003","parent.span.id":"1d8c0b7a44ef0002","span.name":"operation.call","span.kind":"client","span.start_time":"2026-06-10T14:15:30.221Z","span.end_time":"2026-06-10T14:15:30.310Z","span.duration_ms":89,"scm.service.code":"cardInquiry","scm.transaction.type":"CARD_INQUIRY","scm.transaction.status":"DONE","scm.message.sequence_id":"SCM-SEQ-0001","scm.status.code":"00"}
+```text
+scm.observation.legacy.service.code
+scm.observation.legacy.operation.code
 ```
 
-## CM Example
-
-```json
-{"@timestamp":"2026-06-10T14:18:12.390Z","event.stream":"trace","event.kind":"event","event.category":"transaction","event.action":"operation.call","event.outcome":"success","scm.observation.target.namespace":"shared","scm.observation.target.index":"trace-scm-shared-prod-mb-2026.06.10.14","scm.observation.legacy.enabled":true,"scm.observation.legacy.service.code":"CARD_INQUIRY","scm.observation.legacy.operation.code":"CM_TRANSACTION_LOG","scm.platform":"cm","service.name":"cm","deployment.environment":"prod","scm.app.name":"cm","scm.app.profile":"prod","scm.app.label":"mobile","scm.gateway.name":"mobile-gateway","scm.channel.code":"mb","scm.correlation_id":"cm-corr-20260610-7788","trace.id":"8e2f8a6b0e7c4a1db8f4d2f1a9c00778","span.id":"cm-op-7788","parent.span.id":"cm-service-7788","span.name":"operation.call","span.kind":"client","span.start_time":"2026-06-10T14:18:12.300Z","span.end_time":"2026-06-10T14:18:12.390Z","span.duration_ms":90,"scm.service.code":"CARD_INQUIRY","scm.transaction.type":"CARD_INQUIRY","scm.transaction.status":"DONE","scm.message.sequence_id":"CM-SEQ-7788","scm.status.code":"00","scm.legacy.transaction_log_id":"984512"}
-```
+Host modules decide where legacy projection is appropriate. The starter does not infer legacy service or operation codes from span names.

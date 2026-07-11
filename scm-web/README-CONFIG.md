@@ -32,8 +32,10 @@
 | کلید | عنوان | توضیحات |
 |---|---|---|
 | `SCM_ENV` | نام محیط | محیط اجرای سرویس است. اگر اشتباه باشد labelهای لاگ و trace و رفتارهای محیطی اشتباه ثبت میشوند. |
-| `SCM_APPLICATION_NAME` | نام برنامه | نام Spring application است و معمولاً باید `scm-web` باشد. |
-| `SCM_INSTANCE_ID` | شناسه نمونه | شناسه node یا pod است. اگر تکراری باشد تشخیص مشکل در لاگ و trace سخت میشود. |
+| `SCM_APP` | نام برنامه | نام Spring application است و معمولاً باید `scm-web` باشد. |
+| `SCM_METADATA_NAMESPACE` | namespace اجرا | در Kubernetes از metadata.namespace میآید و در dev مقدار local دارد. |
+| `SCM_METADATA_INSTANCE_ID` | شناسه نمونه | شناسه node یا pod است. اگر تکراری باشد تشخیص مشکل در لاگ و trace سخت میشود. |
+| `SCM_METADATA_TIME_ZONE` | timezone فایل | اگر خالی باشد timezone سیستم JVM استفاده میشود و فقط برای نام فایلهای observation است. |
 | `SCM_CHANNEL_CODE` | کد کانال | کد کانال فعال را مشخص میکند. مقدار اشتباه باعث route شدن درخواستها به کانال نادرست میشود. |
 | `SCM_GATEWAY_NAME` | نام gateway | نام عملیاتی gateway است. اگر اشتباه باشد هویت سرویس در runtime و گزارشها اشتباه میشود. |
 | `SCM_DB_URL` | آدرس دیتابیس | آدرس JDBC دیتابیس اصلی است. اگر اشتباه باشد سرویس بالا نمیآید یا داده نمیخواند. |
@@ -76,6 +78,7 @@
 | کلید | عنوان | توضیحات |
 |---|---|---|
 | `SCM_CONFIG_SERVER_URL` | آدرس Config Server | آدرس Config Server است. در test/pilot/prod اگر اشتباه باشد سرویس config را دریافت نمیکند. |
+| `SCM_LABEL` | label کانفیگ | label مربوط به Spring Cloud Config است و میتواند branch، tag یا commit باشد. |
 | `SCM_CONFIG_USERNAME` | کاربر Config Server | نام کاربری Config Server است و حساس محسوب میشود. نباید در ticket، screenshot یا chat ارسال شود. |
 | `SCM_CONFIG_PASSWORD` | رمز Config Server | رمز Config Server است و حساس است. در pilot/prod باید از Secret Management تأمین شود. |
 | `SCM_CONFIG_FAIL_FAST` | توقف هنگام خطا | در pilot/prod باید باعث توقف سرویس هنگام نبود Config Server شود تا برنامه با config ناقص بالا نیاید. |
