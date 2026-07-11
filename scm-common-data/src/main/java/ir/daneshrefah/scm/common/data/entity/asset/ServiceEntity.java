@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.common.data.entity.asset;
 
+import ir.daneshrefah.scm.common.data.converter.RoutingStrategyConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import jakarta.persistence.*;
@@ -57,8 +58,8 @@ public class ServiceEntity extends AbstractEntity<Short> {
     private ServiceCategoryEntity serviceCategory;
 
 //    @Size(max = 20)
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(name = "ROUTING_STRATEGY", length = 20)
+    @Convert(converter = RoutingStrategyConverter.class)
     private RoutingStrategy routingStrategy;
 
 }
