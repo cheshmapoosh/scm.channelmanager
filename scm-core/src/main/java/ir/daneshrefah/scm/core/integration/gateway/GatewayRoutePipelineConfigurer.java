@@ -19,6 +19,7 @@ import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
+import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +43,7 @@ public class GatewayRoutePipelineConfigurer {
         RuntimeRoutePlan routePlan = context.routePlan();
         RuntimeServicePlan servicePlan = context.servicePlan();
         RouteDefinition route = inboundRoute.route();
+        ProcessorDefinition<?> pipeline = inboundRoute.pipeline();
         Service service = servicePlan.service();
 
         log.info("event={} layer=gateway routeId={} gatewayName={} targetKind={} channelCode={} serviceCode={} serviceVersion={} protocol={} outcome=started",
@@ -54,20 +56,20 @@ public class GatewayRoutePipelineConfigurer {
                 inboundRoute.serviceVersion(),
                 servicePlan.gatewayChannel().getProtocolType());
 
-        route.setProperty(Message.RUNTIME_ROUTE_PLAN, constant(routePlan));
-        route.setProperty(Message.RUNTIME_SERVICE_PLAN, constant(servicePlan));
-        route.setProperty(Message.SERVICE, constant(service));
-        route.setProperty(Message.GATEWAY_CHANNEL, constant(servicePlan.gatewayChannel()));
-        route.setProperty(Message.GATEWAY_NAME, constant(servicePlan.gatewayChannel().getName()));
-        route.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(servicePlan.gatewayChannel().getProtocolType()));
-        route.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(inboundRoute.channelServiceDefinition()));
-        route.setProperty(Message.SERVICE_VERSION, constant(inboundRoute.serviceVersion()));
+        pipeline.setProperty(Message.RUNTIME_ROUTE_PLAN, constant(routePlan));
+        pipeline.setProperty(Message.RUNTIME_SERVICE_PLAN, constant(servicePlan));
+        pipeline.setProperty(Message.SERVICE, constant(service));
+        pipeline.setProperty(Message.GATEWAY_CHANNEL, constant(servicePlan.gatewayChannel()));
+        pipeline.setProperty(Message.GATEWAY_NAME, constant(servicePlan.gatewayChannel().getName()));
+        pipeline.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(servicePlan.gatewayChannel().getProtocolType()));
+        pipeline.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(inboundRoute.channelServiceDefinition()));
+        pipeline.setProperty(Message.SERVICE_VERSION, constant(inboundRoute.serviceVersion()));
 
         defineExceptionHandler(route);
         route.onCompletion()
                 .process(exchange -> scmExchangeMdc.clear())
                 .end();
-        route.process(exchange -> {
+        pipeline.process(exchange -> {
             exchange.setProperty(RouteLogSupport.GATEWAY_START_NANOS, System.nanoTime());
             applyIncomingChannel(exchange, routePlan, servicePlan, inboundRoute);
             Map<String, String> fields = scmExchangeMdc.put(exchange);
@@ -88,7 +90,7 @@ public class GatewayRoutePipelineConfigurer {
                     fields.get("correlationId"));
         });
 
-        route.process(exchange -> {
+        pipeline.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.put(exchange);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.GATEWAY_CONTRACT_RESOLUTION_STARTED,
@@ -154,7 +156,7 @@ public class GatewayRoutePipelineConfigurer {
         });
 
         String targetUri = serviceRouteUriResolver.resolve(routePlan, servicePlan);
-        route.process(exchange -> {
+        pipeline.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.GATEWAY_DISPATCH_STARTED,
@@ -169,8 +171,8 @@ public class GatewayRoutePipelineConfigurer {
                     exchange.getExchangeId(),
                     fields.get("correlationId"));
         });
-        route.to(targetUri);
-        route.process(exchange -> {
+        pipeline.to(targetUri);
+        pipeline.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=success",
                     RouteLogEvents.GATEWAY_DISPATCH_FINISHED,
@@ -196,8 +198,8 @@ public class GatewayRoutePipelineConfigurer {
                     exchange.getExchangeId(),
                     fields.get("correlationId"));
         });
-        route.to(Routes.GLOBAL_RESPONSE_HANDLER);
-        route.process(exchange -> {
+        pipeline.to(Routes.GLOBAL_RESPONSE_HANDLER);
+        pipeline.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
             long durationMs = RouteLogSupport.durationMs(exchange, RouteLogSupport.GATEWAY_START_NANOS);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=success",
@@ -244,7 +246,17 @@ public class GatewayRoutePipelineConfigurer {
                     scmExchangeMdc.put(exchange);
                     TraceUtils traceUtils = TraceUtils.getInstance();
                     if (traceUtils != null) {
-                        traceUtils.traceException(exchange, exception);
+                        try {
+                            traceUtils.traceException(exchange, exception);
+                        } catch (Exception traceException) {
+                            log.warn("event={} layer=gateway routeId={} exchangeId={} outcome=trace_failed failureType={} failureMessage={}",
+                                    RouteLogEvents.GATEWAY_REQUEST_FAILED,
+                                    exchange.getFromRouteId(),
+                                    exchange.getExchangeId(),
+                                    RouteLogSupport.failureType(traceException),
+                                    RouteLogSupport.failureMessage(traceException),
+                                    traceException);
+                        }
                     }
                     Map<String, String> fields = scmExchangeMdc.fields(exchange);
                     log.warn("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",

@@ -31,6 +31,7 @@ dependencies {
     api 'org.apache.camel.springboot:camel-servlet-starter'
     api 'org.apache.camel.springboot:camel-resilience4j-starter'
     api 'org.apache.camel.springboot:camel-rest-openapi-starter'
+    api 'org.apache.camel:camel-hazelcast'
     api 'org.apache.camel:camel-openapi-java'
     api 'com.bucket4j:bucket4j_jdk17-core'
     api 'org.springframework.boot:spring-boot-starter-web'

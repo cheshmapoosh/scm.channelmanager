@@ -8,6 +8,11 @@ scm:
       gateway-names:
         - domain.card
   gateway:
+    idempotency:
+      enabled: true
+      map-name: rest-gateway-idempotent-repository
+      api-paths:
+        - card/cardPasswordInquiry
     client-contracts:
       defaults:
         REST:
