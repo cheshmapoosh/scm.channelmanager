@@ -39,22 +39,41 @@ public class GlobalErrorHandlerRouteBuilder extends RouteBuilder {
             Operation operation = exchange.getProperty(Message.OPERATION, Operation.class);
             GatewayChannel gatewayChannel = exchange.getProperty(Message.GATEWAY_CHANNEL, GatewayChannel.class);
             ChannelServiceAccess channelServiceAccess = exchange.getProperty(Message.CHANNEL_SERVICE_ACCESS, ChannelServiceAccess.class);
-            List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluginDetails(gatewayChannel.getChannel());
-            List<PluginDetail> operationAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER_THROWING);
-            List<PluginDetail> gatewayAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails, channelServiceAccess.getService(), PluginPhase.AFTER_THROWING);
-            boolean hasAnyCustomErrorHandlerPlugin = checkCustomErrorHandlerPlugin(operationAfterThrowingPluginDetails, gatewayAfterThrowingPluginDetails);
-            if (hasAnyCustomErrorHandlerPlugin) {
-                Map<String, Object> properties = exchange.getIn().getHeaders();
-                properties.put(Message.OPERATION, operation);
-                properties.put(Message.SERVICE, service);
-                properties.put(Message.GATEWAY_CHANNEL, gatewayChannel);
-                invokeCustomErrorHandlerPlugin(route, operationAfterThrowingPluginDetails, properties);
-                invokeCustomErrorHandlerPlugin(route, gatewayAfterThrowingPluginDetails, properties);
-            } else {
+            if (operation == null
+                    || gatewayChannel == null
+                    || channelServiceAccess == null
+                    || channelServiceAccess.getService() == null) {
                 globalErrorHandler.handle(exchange);
+            } else {
+                List<PluginDetail> channelPluginDetails = pluginResolverService.resolveOrderedPluginDetails(gatewayChannel.getChannel());
+                List<PluginDetail> operationAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER_THROWING);
+                List<PluginDetail> gatewayAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails, channelServiceAccess.getService(), PluginPhase.AFTER_THROWING);
+                boolean hasAnyCustomErrorHandlerPlugin = checkCustomErrorHandlerPlugin(operationAfterThrowingPluginDetails, gatewayAfterThrowingPluginDetails);
+                if (hasAnyCustomErrorHandlerPlugin) {
+                    Map<String, Object> properties = exchange.getIn().getHeaders();
+                    properties.put(Message.OPERATION, operation);
+                    properties.put(Message.SERVICE, service);
+                    properties.put(Message.GATEWAY_CHANNEL, gatewayChannel);
+                    invokeCustomErrorHandlerPlugin(route, operationAfterThrowingPluginDetails, properties);
+                    invokeCustomErrorHandlerPlugin(route, gatewayAfterThrowingPluginDetails, properties);
+                } else {
+                    globalErrorHandler.handle(exchange);
+                }
             }
             Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
-            TraceUtils.getInstance().traceException(exchange,exception);
+            TraceUtils traceUtils = TraceUtils.getInstance();
+            if (traceUtils != null) {
+                try {
+                    traceUtils.traceException(exchange, exception);
+                } catch (Exception traceException) {
+                    log.warn("Global error trace failed routeId={} exchangeId={} failureType={} failureMessage={}",
+                            exchange.getFromRouteId(),
+                            exchange.getExchangeId(),
+                            traceException.getClass().getName(),
+                            traceException.getMessage(),
+                            traceException);
+                }
+            }
         }).to(Routes.GLOBAL_RESPONSE_HANDLER);
     }
 

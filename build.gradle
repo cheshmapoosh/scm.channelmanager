@@ -117,6 +117,7 @@ subprojects {
             dependency "org.apache.camel.springboot:camel-bean-validator-starter:${camelVersion}"
             dependency "org.apache.camel.springboot:camel-jsonpath-starter:${camelVersion}"
             dependency "org.apache.camel:camel-openapi-java:${camelVersion}"
+            dependency "org.apache.camel:camel-hazelcast:${camelVersion}"
             dependency "org.apache.camel.springboot:camel-spring-security-starter:${camelVersion}"
             dependency "org.apache.camel.springboot:camel-netty-starter:${camelVersion}"
             dependency "org.apache.camel:camel-bean:${camelVersion}"
