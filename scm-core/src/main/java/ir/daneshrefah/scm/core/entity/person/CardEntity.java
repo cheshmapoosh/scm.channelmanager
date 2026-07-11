@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.entity.person;
 
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
+import ir.daneshrefah.scm.common.data.entity.asset.MembershipEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,6 +32,9 @@ public class CardEntity extends AbstractEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "CARD_TYPE")
     private CardTypeEntity cardType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "MEMBERSHIP_ID")
+    private MembershipEntity membership;
 //    CREATION_DATE               TIMESTAMP(6) not null,
 //    LAST_UPDATE_DATE            TIMESTAMP(6),
 //    FIXED_MEMBERSHIP            SMALLINT,
