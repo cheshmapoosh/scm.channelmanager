@@ -35,11 +35,15 @@
     <root level="${ROOT_LEVEL}">
         <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
         <appender-ref ref="SCM_CONSOLE_JSONL"/>
+        <appender-ref ref="SCM_TRACE_CONSOLE_SIMPLE"/>
         <appender-ref ref="SCM_TRACE_CONSOLE_JSONL"/>
+        <appender-ref ref="SCM_AUDIT_CONSOLE_SIMPLE"/>
         <appender-ref ref="SCM_AUDIT_CONSOLE_JSONL"/>
         <appender-ref ref="SCM_FILE_SIMPLE"/>
         <appender-ref ref="SCM_FILE_JSONL"/>
+        <appender-ref ref="SCM_TRACE_SIMPLE"/>
         <appender-ref ref="SCM_TRACE_JSONL"/>
+        <appender-ref ref="SCM_AUDIT_SIMPLE"/>
         <appender-ref ref="SCM_AUDIT_JSONL"/>
     </root>
 </configuration>

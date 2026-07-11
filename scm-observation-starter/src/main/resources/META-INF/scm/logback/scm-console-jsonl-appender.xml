@@ -1,7 +1,8 @@
 <included>
-    <if condition='property("LOG_ENABLED").equalsIgnoreCase("true")
+    <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("LOG_ENABLED").equalsIgnoreCase("true")
         &amp;&amp; property("LOG_CONSOLE_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("LOG_CONSOLE_FORMAT").equalsIgnoreCase("jsonl")'>
+        &amp;&amp; property("LOG_CONSOLE_FORMAT").equals("jsonl")'>
         <then>
             <appender name="SCM_CONSOLE_JSONL"
                       class="ch.qos.logback.core.ConsoleAppender">
@@ -25,9 +26,10 @@
                       class="ch.qos.logback.core.helpers.NOPAppender"/>
         </else>
     </if>
-    <if condition='property("TRACE_ENABLED").equalsIgnoreCase("true")
+    <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("TRACE_ENABLED").equalsIgnoreCase("true")
         &amp;&amp; property("TRACE_CONSOLE_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("TRACE_CONSOLE_FORMAT").equalsIgnoreCase("jsonl")'>
+        &amp;&amp; property("TRACE_CONSOLE_FORMAT").equals("jsonl")'>
         <then>
             <appender name="SCM_TRACE_CONSOLE_JSONL"
                       class="ch.qos.logback.core.ConsoleAppender">
@@ -46,9 +48,10 @@
                       class="ch.qos.logback.core.helpers.NOPAppender"/>
         </else>
     </if>
-    <if condition='property("AUDIT_ENABLED").equalsIgnoreCase("true")
+    <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("AUDIT_ENABLED").equalsIgnoreCase("true")
         &amp;&amp; property("AUDIT_CONSOLE_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("AUDIT_CONSOLE_FORMAT").equalsIgnoreCase("jsonl")'>
+        &amp;&amp; property("AUDIT_CONSOLE_FORMAT").equals("jsonl")'>
         <then>
             <appender name="SCM_AUDIT_CONSOLE_JSONL"
                       class="ch.qos.logback.core.ConsoleAppender">

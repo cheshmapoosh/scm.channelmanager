@@ -2,6 +2,16 @@ scm:
   metadata:
     namespace: ${SCM_METADATA_NAMESPACE:local}
     instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-cm-connector}
+  observation:
+    log:
+      console:
+        enabled: true
+    trace:
+      console:
+        enabled: true
+    audit:
+      console:
+        enabled: true
 
 SCM_SERVER_PORT: ${SERVER_PORT:8080}
 
@@ -15,12 +25,3 @@ SCM_CACHE_DISTRIBUTED: true
 SCM_CACHE_CLUSTER_NAME: scm-cache-dev
 SCM_CACHE_ADDRESS: 127.0.0.1:5701
 SCM_CM_CONNECTOR_ADMIN_CACHE_ENDPOINTS_ENABLED: false
-
-SCM_OBS_ROOT_DIR: ${user.home}/scm/obs
-SCM_OBS_LOG_CONSOLE_ENABLED: true
-SCM_OBS_LOG_FILE_ENABLED: true
-SCM_OBS_TRACE_CONSOLE_ENABLED: true
-SCM_OBS_TRACE_FILE_ENABLED: true
-SCM_OBS_AUDIT_ENABLED: true
-SCM_OBS_AUDIT_CONSOLE_ENABLED: true
-SCM_OBS_AUDIT_FILE_ENABLED: true

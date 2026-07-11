@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 public class ObservationConfigurationValidator implements SmartInitializingSingleton {
     private static final Pattern FILE_SIZE = Pattern.compile("(?i)^\\d+\\s*(B|KB|MB|GB|TB)?$");
     private static final Set<String> ALLOWED_ENVIRONMENTS = Set.of("dev", "test", "pilot", "prod");
+    private static final Set<String> ALLOWED_FORMATS = Set.of("simple", "jsonl");
 
     private final ObservationProperties properties;
     private final ObservationSignalPolicy signalPolicy;
@@ -38,6 +39,7 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
 
     @Override
     public void afterSingletonsInstantiated() {
+        validateFormats();
         validateScmEnvironment();
         validateConfigLabel();
         validateMetadata();
@@ -46,6 +48,31 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
         validateLogConfiguration();
         validateTraceConfiguration();
         validateAuditConfiguration();
+    }
+
+    private void validateFormats() {
+        ObservationProperties.LogProperties log = properties.getLog();
+        ObservationProperties.TraceProperties trace = properties.getTrace();
+        ObservationProperties.AuditProperties audit = properties.getAudit();
+
+        validateFormat("scm.observation.log.console.format",
+                log == null || log.getConsole() == null ? null : log.getConsole().getFormat());
+        validateFormat("scm.observation.log.file.format",
+                log == null || log.getFile() == null ? null : log.getFile().getFormat());
+        validateFormat("scm.observation.trace.console.format",
+                trace == null || trace.getConsole() == null ? null : trace.getConsole().getFormat());
+        validateFormat("scm.observation.trace.file.format",
+                trace == null || trace.getFile() == null ? null : trace.getFile().getFormat());
+        validateFormat("scm.observation.audit.console.format",
+                audit == null || audit.getConsole() == null ? null : audit.getConsole().getFormat());
+        validateFormat("scm.observation.audit.file.format",
+                audit == null || audit.getFile() == null ? null : audit.getFile().getFormat());
+    }
+
+    private void validateFormat(String property, String value) {
+        if (value == null || !ALLOWED_FORMATS.contains(value)) {
+            throw new IllegalStateException(property + " must be one of: simple, jsonl.");
+        }
     }
 
     private void validateLogbackAvailability() {

@@ -12,6 +12,8 @@
     <springProperty scope="context" name="OBS_FILE_BASE_NAME"
                     source="scm.observation.file.base-name-pattern"
                     defaultValue="scm-${OBS_APP_NAME}-${OBS_ENV}-${OBS_NAMESPACE}-${OBS_INSTANCE_ID}"/>
+    <springProperty scope="context" name="OBSERVATION_ENABLED"
+                    source="scm.observation.enabled" defaultValue="false"/>
     <springProperty scope="context" name="OBS_CONFIGURED_TIME_ZONE"
                     source="scm.metadata.time-zone" defaultValue=""/>
     <define name="OBS_SYSTEM_TIME_ZONE"
@@ -26,13 +28,13 @@
     </if>
 
     <springProperty scope="context" name="LOG_ENABLED"
-                    source="scm.observation.log.enabled" defaultValue="true"/>
+                    source="scm.observation.log.enabled" defaultValue="false"/>
     <springProperty scope="context" name="LOG_CONSOLE_ENABLED"
                     source="scm.observation.log.console.enabled" defaultValue="false"/>
     <springProperty scope="context" name="LOG_CONSOLE_FORMAT"
                     source="scm.observation.log.console.format" defaultValue="simple"/>
     <springProperty scope="context" name="LOG_FILE_ENABLED"
-                    source="scm.observation.log.file.enabled" defaultValue="true"/>
+                    source="scm.observation.log.file.enabled" defaultValue="false"/>
     <springProperty scope="context" name="LOG_FILE_FORMAT"
                     source="scm.observation.log.file.format" defaultValue="jsonl"/>
     <springProperty scope="context" name="LOG_FILE_DIRECTORY"
@@ -46,13 +48,6 @@
     <springProperty scope="context" name="LOG_CLEAN_HISTORY_ON_START"
                     source="scm.observation.log.rolling.clean-history-on-start" defaultValue="false"/>
 
-    <springProperty scope="context" name="SCM_RUNTIME"
-                    source="scm.runtime" defaultValue="standalone"/>
-    <springProperty scope="context" name="CONTAINER_IMAGE_NAME"
-                    source="scm.runtime.image.name" defaultValue=""/>
-    <springProperty scope="context" name="CONTAINER_IMAGE_TAG"
-                    source="scm.runtime.image.tag" defaultValue=""/>
-
     <property name="LOG_JSONL_FILE_PATTERN"
               value="${LOG_FILE_DIRECTORY}/log-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
     <property name="LOG_SIMPLE_FILE_PATTERN"
@@ -63,9 +58,9 @@
     <springProperty scope="context" name="TRACE_CONSOLE_ENABLED"
                     source="scm.observation.trace.console.enabled" defaultValue="false"/>
     <springProperty scope="context" name="TRACE_CONSOLE_FORMAT"
-                    source="scm.observation.trace.console.format" defaultValue="jsonl"/>
+                    source="scm.observation.trace.console.format" defaultValue="simple"/>
     <springProperty scope="context" name="TRACE_FILE_ENABLED"
-                    source="scm.observation.trace.file.enabled" defaultValue="true"/>
+                    source="scm.observation.trace.file.enabled" defaultValue="false"/>
     <springProperty scope="context" name="TRACE_FILE_FORMAT"
                     source="scm.observation.trace.file.format" defaultValue="jsonl"/>
     <springProperty scope="context" name="TRACE_FILE_DIRECTORY"
@@ -91,15 +86,17 @@
 
     <property name="TRACE_JSONL_FILE_PATTERN"
               value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
+    <property name="TRACE_SIMPLE_FILE_PATTERN"
+              value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
 
     <springProperty scope="context" name="AUDIT_ENABLED"
                     source="scm.observation.audit.enabled" defaultValue="false"/>
     <springProperty scope="context" name="AUDIT_CONSOLE_ENABLED"
                     source="scm.observation.audit.console.enabled" defaultValue="false"/>
     <springProperty scope="context" name="AUDIT_CONSOLE_FORMAT"
-                    source="scm.observation.audit.console.format" defaultValue="jsonl"/>
+                    source="scm.observation.audit.console.format" defaultValue="simple"/>
     <springProperty scope="context" name="AUDIT_FILE_ENABLED"
-                    source="scm.observation.audit.file.enabled" defaultValue="true"/>
+                    source="scm.observation.audit.file.enabled" defaultValue="false"/>
     <springProperty scope="context" name="AUDIT_FILE_FORMAT"
                     source="scm.observation.audit.file.format" defaultValue="jsonl"/>
     <springProperty scope="context" name="AUDIT_FILE_DIRECTORY"
@@ -125,4 +122,6 @@
 
     <property name="AUDIT_JSONL_FILE_PATTERN"
               value="${AUDIT_FILE_DIRECTORY}/audit-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
+    <property name="AUDIT_SIMPLE_FILE_PATTERN"
+              value="${AUDIT_FILE_DIRECTORY}/audit-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
 </included>

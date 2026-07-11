@@ -18,18 +18,69 @@ AUDIT  -> NDJSON file -> Filebeat -> Elasticsearch -> Kibana
 METRIC -> Actuator -> Micrometer -> Prometheus -> Grafana
 ```
 
-صرف اضافه‌کردن dependency این starter نباید همهٔ سیگنال‌ها را خودکار فعال کند. رفتار ماژول `opt-in` و `fail-closed` است و ماژول میزبان باید سیگنال‌های موردنیاز را صریحاً فعال کند:
+Technical defaults are owned by this starter and loaded from
+`META-INF/scm/observation-defaults.yml` as a lowest-precedence property source. Host applications contain only service policy, profile behavior, service-specific HTTP settings, and real exceptional overrides.
+
+The default signal policy is:
+
+| Signal | Enabled |
+| --- | --- |
+| LOG | `true` |
+| TRACE | `true` |
+| AUDIT | `false` |
+| METRIC | `false` |
+
+Destination defaults are:
+
+| Stream | Console enabled | Console format | File enabled | File format |
+| --- | --- | --- | --- | --- |
+| LOG | `false` | `simple` | `true` | `jsonl` |
+| TRACE | `false` | `simple` | `true` | `jsonl` |
+| AUDIT | `false` | `simple` | `true` | `jsonl` |
+
+`scm.observation.enabled` is the global switch. When it is `false`, the starter creates no LOG, TRACE, AUDIT, or METRIC signal and no SCM observation console or file appender emits output. Enabling a destination never enables its parent signal; in particular, enabling the AUDIT console does not enable AUDIT.
+
+The effective precedence, from highest to lowest, is:
+
+1. command-line argument
+2. system property
+3. OS environment variable
+4. Spring Cloud Config
+5. external or profile-specific application configuration
+6. host application configuration
+7. starter observation defaults
+8. hard fail-safe Java and Logback defaults
+
+The defaults are not imported with `spring.config.import`. The starter loads them after normal Config Data processing and adds them at lowest precedence, so every host and runtime source can override them. If that resource cannot be loaded, hard fail-safe enablement defaults remain `false`.
+
+The six `scm.observation.{log,trace,audit}.{console,file}.format` properties accept exactly lowercase, case-sensitive `simple` or `jsonl`. Blank, uppercase, comma-separated, or other values fail startup even when the destination is disabled. `jsonl` is the default structured file-ingestion contract. `simple` is optional human-readable output and is not automatically compatible with the JSONL Filebeat pipeline.
+
+A compact host policy override is sufficient:
 
 ```yaml
 scm:
   observation:
-    enabled: true
+    audit:
+      enabled: true
+    http:
+      server:
+        span-name: uaa.http.request
+```
+
+The `dev` profile enables destinations, not the AUDIT signal:
+
+```yaml
+scm:
+  observation:
     log:
-      enabled: true
+      console:
+        enabled: true
     trace:
-      enabled: true
-    metric:
-      enabled: true
+      console:
+        enabled: true
+    audit:
+      console:
+        enabled: true
 ```
 
 Metric در فایل نوشته نمی‌شود و همان مسیر استاندارد Actuator، Micrometer، Prometheus و Grafana را طی می‌کند. مدل Audit نیز از Application Log جدا باقی می‌ماند.
@@ -345,29 +396,29 @@ trace-scm-payment-prod-mb-2026.07.07.19
 audit-scm-shared-prod-2026.07.07.19
 ```
 
-Physical file routing is separate from Elasticsearch routing. Host applications configure only the stable base-name pattern:
+Physical file routing is separate from Elasticsearch routing. The starter owns the default root directory, base-name pattern, and stream-directory derivation. Hosts override them only for an actual deployment requirement. The defaults are:
 
-```yaml
-scm:
-  observation:
-    file:
-      root-directory: ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
-      base-name-pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
+```text
+root directory:    ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
+base-name pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
 ```
 
-`scm.observation.file.root-directory` controls the shared physical root directory. `SCM_OBS_LOG_DIR`, `SCM_OBS_TRACE_DIR`, and `SCM_OBS_AUDIT_DIR` remain optional per-stream directory overrides. Directory resolution is:
+`scm.observation.file.root-directory` controls the shared physical root directory. The supported `SCM_OBS_LOG_DIR`, `SCM_OBS_TRACE_DIR`, and `SCM_OBS_AUDIT_DIR` variables remain optional per-stream directory overrides. Directory resolution is:
 
 ```text
 stream-specific directory override -> scm.observation.file.root-directory -> ${user.home}/scm/obs
 ```
 
-`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The starter appends stream, hour, roll index, and extension:
+`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The starter appends stream, hour, roll index, and a format-specific extension:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
+jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
-Files are under `{root}/{appName}/{env}/{namespace}/{stream}/`. The root directory is part of the physical path, not the filename. File names never include `scm.channel.code` or the Config label. Observation files are not gzipped and do not use a separate archive directory.
+Files are under `{root}/{appName}/{env}/{namespace}/{stream}/`. The root directory is part of the physical path, not the filename. File names never include `scm.channel.code` or the Config label. Both patterns retain the hour token and roll index. Observation files are not gzipped and do not use a separate archive directory.
+
+Every simple line is UTF-8, single-line `key=value` output and contains exactly one canonical stream identity: `stream=log`, `stream=trace`, or `stream=audit`. Text values are safely quoted and escaped; null values are omitted. Simple TRACE and AUDIT output is not JSON with a stream prefix.
 
 `scm.channel.code` is a business attribute only. It may affect the target index when it is a real business channel code such as `ib` or `mb`, but it must not be used for physical file naming.
 
@@ -380,7 +431,7 @@ Host modules apply legacy projection at their business entry points only:
 - `scm-cache`: default behavior is `scm.observation.legacy.enabled=false`.
 - `scm-cm-connector`: provider/technical spans are not legacy by default; a root span can be legacy only when CM connector is the direct business entry point and configured service/operation codes are supplied.
 
-Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Common, `test`, `pilot`, and `prod` configuration keeps console output disabled and file output enabled. `clean-history-on-start=false` remains the default; current and rolled observation files keep final names while Filebeat reads them.
+Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Enabling the AUDIT console does not change the default `audit.enabled=false` policy. Starter defaults keep consoles disabled and files enabled in other profiles. `clean-history-on-start=false` remains the default; current and rolled JSONL files keep final names while Filebeat reads them. Optional simple `.log` files are for human use and are not part of that ingestion contract.
 
 Generic HTTP server tracing is disabled by default:
 
@@ -689,9 +740,9 @@ Metric nameها جداگانه در `metrics.CommonMetricNames` قرار دار�
 - `SECURE`: جایگزینی کامل با `[SECURE]`؛
 - حالت‌های prefix/suffix: نمایش فقط بخش مجاز مقدار.
 
-### JSONL و Logback
+### Simple، JSONL و Logback
 
-Provider مربوط به JSONL، document نهایی LOG را از Logback event، `MDC`، structured fieldهای ثبت‌شده، marker و throwable می‌سازد. Field ثبت‌نشده حذف می‌شود و برای نام field ناشناخته warning کنترل‌شده ثبت می‌شود.
+LOG simple and JSONL rendering use the same final observation document built from the Logback event, `MDC`, registered structured fields, marker, and throwable. An unregistered field is removed and an unknown field name produces a controlled warning. This keeps metadata, validation, exception handling, and secret sanitization identical across formats.
 
 TRACE و AUDIT از مسیر `ObservationDocumentFactory` ساخته و با `ObservationRecordValidator` بررسی می‌شوند. Markerهای routing زیر فقط برای هدایت خروجی TRACE و AUDIT به appenderهای اختصاصی هستند:
 
@@ -699,6 +750,8 @@ TRACE و AUDIT از مسیر `ObservationDocumentFactory` ساخته و با `Ob
 SCM_OBSERVATION_TRACE
 SCM_OBSERVATION_AUDIT
 ```
+
+For TRACE and AUDIT simple output, the existing JSON event payload is parsed and rendered as deterministic `key=value` fields. Malformed payloads fail safely inside Logback and still emit the trusted `stream=trace` or `stream=audit` identity. For each enabled destination, exact format selection activates only one appender.
 
 ### Metric و element risk
 
@@ -715,12 +768,14 @@ health: 1=healthy, 0=unhealthy
 
 ## چک‌لیست پیاده‌سازی
 
-- آیا host سیگنال‌های موردنیاز را صریحاً فعال کرده است؟
+- آیا host فقط policy و override واقعی را نگه داشته و technical defaultها را تکرار نکرده است؟
 - آیا starter یا provider فقط event خنثی منتشر می‌کند؟
 - آیا observation رسمی در host انجام می‌شود؟
 - آیا همهٔ رکوردهای LOG، TRACE و AUDIT مقدارهای `event.stream`، `scm.metadata.namespace`، `scm.metadata.instance_id`، `scm.metadata.time_zone`، `scm.config.label`، `scm.observation.target.index`، `service.name` و `deployment.environment` را دارند؟
 - آیا file routing از namespace استفاده می‌کند و از `scm.channel.code` برای نام فایل استفاده نمی‌شود؟
-- آیا console output فقط در profile `dev` روشن است و file output در profileهای غیر dev روشن مانده است؟
+- آیا console output فقط در profile `dev` روشن است، بدون آن‌که AUDIT فقط به‌خاطر console فعال شود؟
+- آیا formatها فقط lowercase و case-sensitive `simple|jsonl` هستند و simple line دقیقاً یک `stream=` دارد؟
+- آیا فقط فایل‌های `.jsonl` به pipeline فعلی Filebeat داده می‌شوند و `.log` به‌عنوان خروجی human-readable باقی می‌ماند؟
 - آیا `correlation.id` محلی است و به downstream ارسال نمی‌شود؟
 - آیا فقط `traceparent` برای distributed trace ارسال می‌شود؟
 - آیا ساختار `gateway.receive -> service.execute -> operation.call` حفظ شده است؟

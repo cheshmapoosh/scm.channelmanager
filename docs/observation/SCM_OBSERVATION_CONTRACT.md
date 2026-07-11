@@ -1,6 +1,6 @@
 # SCM Observation Contract
 
-SCM observability writes LOG, TRACE, and AUDIT as JSONL files for Filebeat. Metrics stay on the Actuator and Micrometer path.
+SCM observability writes LOG, TRACE, and AUDIT as JSONL files by default. JSONL is the structured Filebeat ingestion contract; optional simple `.log` output is human-readable and is not ingested by the current JSONL pipeline. Metrics stay on the Actuator and Micrometer path.
 
 ## External Contract
 
@@ -17,6 +17,46 @@ SCM observability writes LOG, TRACE, and AUDIT as JSONL files for Filebeat. Metr
 `SCM_ENV` must be exactly one of `dev`, `test`, `pilot`, or `prod`. It is lowercase and case-sensitive. Comma-separated profiles are not part of the SCM contract.
 
 `SCM_LABEL` is the Spring Cloud Config label and may be a branch, tag, or commit. It must be nonblank and must contain exactly one label. The default is `master`.
+
+## Configuration Ownership
+
+`scm-observation-starter` owns technical defaults in `META-INF/scm/observation-defaults.yml`. It loads that resource as a lowest-precedence property source; hosts must not import it with `spring.config.import`.
+
+Effective precedence, highest first:
+
+1. command-line argument
+2. system property
+3. OS environment variable
+4. Spring Cloud Config
+5. external or profile-specific application configuration
+6. host application configuration
+7. starter observation defaults
+8. hard fail-safe Java and Logback defaults
+
+Host applications retain only service signal policy, profile behavior, service-specific HTTP settings, actual exceptional overrides, and unrelated application configuration. Supported `SCM_OBS_*` environment variables continue to override the starter values.
+
+The global switch is `scm.observation.enabled`. When it is `false`, the starter creates no LOG, TRACE, AUDIT, or METRIC signal, and no SCM observation console or file appender writes output. Destination enablement never enables its parent signal.
+
+Default signal policy:
+
+| Signal | Enabled |
+| --- | --- |
+| LOG | `true` |
+| TRACE | `true` |
+| AUDIT | `false` |
+| METRIC | `false` |
+
+Default destinations:
+
+| Stream | Console enabled | Console format | File enabled | File format |
+| --- | --- | --- | --- | --- |
+| LOG | `false` | `simple` | `true` | `jsonl` |
+| TRACE | `false` | `simple` | `true` | `jsonl` |
+| AUDIT | `false` | `simple` | `true` | `jsonl` |
+
+All six `scm.observation.{log,trace,audit}.{console,file}.format` properties accept exactly lowercase, case-sensitive `simple` or `jsonl`. Blank, uppercase, comma-separated, and other values fail startup even if the destination is disabled. If the starter defaults resource is unavailable, hard Java and Logback enablement fallbacks are `false`.
+
+The starter README contains the canonical compact host-policy and `dev` profile examples. The `dev` profile enables all three console destinations without enabling the AUDIT signal.
 
 ## Runtime Metadata
 
@@ -105,15 +145,14 @@ The index hour is always UTC.
 
 ## File Names
 
-Host applications configure only the base identity pattern:
+The starter owns the default root directory, base identity pattern, and stream-directory derivation:
 
-```yaml
-scm:
-  observation:
-    file:
-      root-directory: ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
-      base-name-pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
+```text
+root directory:    ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
+base-name pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
 ```
+
+Hosts override these only for an actual deployment requirement.
 
 `scm.observation.file.root-directory` controls the shared physical root directory. The stream directory properties `scm.observation.log.file.directory`, `scm.observation.trace.file.directory`, and `scm.observation.audit.file.directory` are optional per-stream overrides. Directory resolution is:
 
@@ -121,10 +160,11 @@ scm:
 stream-specific directory override -> shared observation root directory -> ${user.home}/scm/obs
 ```
 
-`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The starter owns stream prefix, hour token, roll index, and extension:
+`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The starter owns stream prefix, hour token, roll index, and format-specific extension:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
+jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
 Directory layout:
@@ -139,9 +179,16 @@ Examples:
 log-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
 trace-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
 audit-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
+log-scm-scm-web-dev-local-local-scm-web-20260711-10-0.log
 ```
 
-File names never include channel code or Config label. Observation files are not gzipped and do not use a separate archive directory. Current and rolled files use final names while Filebeat reads them.
+File names never include channel code or Config label. Observation files are not gzipped and do not use a separate archive directory. Both formats retain `%d` and `%i` through the hour and roll-index tokens. Current and rolled JSONL files use final names while Filebeat reads them.
+
+## Simple Output
+
+Every simple line is UTF-8, exactly one physical line, and contains exactly one canonical stream identity: `stream=log`, `stream=trace`, or `stream=audit`. Field order is deterministic, null values are omitted, numeric and boolean values remain unquoted, and textual values are safely quoted and escaped. Simple TRACE and AUDIT are real `key=value` output, not JSON prefixed with a stream name.
+
+JSONL files remain the default machine-ingestion format. Simple `.log` files are optional debugging output and must not be added to the current Filebeat JSON parser inputs.
 
 ## Legacy Projection
 

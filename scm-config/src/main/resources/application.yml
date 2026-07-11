@@ -66,69 +66,16 @@ scm:
   runtime: ${SCM_RUNTIME:standalone}
 
   observation:
-    enabled: ${SCM_OBS_ENABLED:true}
-    file:
-      root-directory: ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
-      base-name-pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
     http:
       server:
         span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:config.http.request}
     log:
-      enabled: ${SCM_OBS_LOG_ENABLED:true}
-      console:
-        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:false}
-        format: ${SCM_OBS_LOG_CONSOLE_FORMAT:simple}
-      file:
-        enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
-        format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_LOG_DIR:${scm.observation.file.root-directory}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/log}
-      rolling:
-        max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
-        total-size-cap: ${SCM_OBS_LOG_TOTAL_SIZE_CAP:10GB}
-        clean-history-on-start: ${SCM_OBS_LOG_CLEAN_HISTORY_ON_START:false}
       level:
         root: ${SCM_LOG_LEVEL_ROOT:INFO}
         application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
         spring: ${SCM_LOG_LEVEL_SPRING:INFO}
         hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
         hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
-    trace:
-      enabled: ${SCM_OBS_TRACE_ENABLED:true}
-      file:
-        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
-        format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_TRACE_DIR:${scm.observation.file.root-directory}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/trace}
-      rolling:
-        max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
-        total-size-cap: ${SCM_OBS_TRACE_TOTAL_SIZE_CAP:10GB}
-        clean-history-on-start: ${SCM_OBS_TRACE_CLEAN_HISTORY_ON_START:false}
-      async:
-        enabled: ${SCM_OBS_TRACE_ASYNC_ENABLED:false}
-        queue-size: ${SCM_OBS_TRACE_ASYNC_QUEUE_SIZE:8192}
-        discarding-threshold: ${SCM_OBS_TRACE_ASYNC_DISCARDING_THRESHOLD:0}
-        never-block: ${SCM_OBS_TRACE_ASYNC_NEVER_BLOCK:false}
-        max-flush-time: ${SCM_OBS_TRACE_ASYNC_MAX_FLUSH_TIME:1000}
-    audit:
-      enabled: ${SCM_OBS_AUDIT_ENABLED:false}
-      file:
-        enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
-        format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_AUDIT_DIR:${scm.observation.file.root-directory}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/audit}
-      rolling:
-        max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
-        max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}
-        total-size-cap: ${SCM_OBS_AUDIT_TOTAL_SIZE_CAP:20GB}
-        clean-history-on-start: ${SCM_OBS_AUDIT_CLEAN_HISTORY_ON_START:false}
-      async:
-        enabled: ${SCM_OBS_AUDIT_ASYNC_ENABLED:false}
-        queue-size: ${SCM_OBS_AUDIT_ASYNC_QUEUE_SIZE:8192}
-        discarding-threshold: ${SCM_OBS_AUDIT_ASYNC_DISCARDING_THRESHOLD:0}
-        never-block: ${SCM_OBS_AUDIT_ASYNC_NEVER_BLOCK:false}
-        max-flush-time: ${SCM_OBS_AUDIT_ASYNC_MAX_FLUSH_TIME:1000}
-    metric:
-      enabled: ${SCM_OBS_METRIC_ENABLED:true}
 
   config:
     applications:

@@ -136,15 +136,18 @@ deployment.environment
 
 `scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Cache records normally do not represent a legacy business entry point, so `scm.observation.legacy.enabled` defaults to `false`.
 
-Files are namespace-based and do not use channel code:
+Files are namespace-based and do not use channel code. The starter owns technical defaults; Cache keeps only service policy and real overrides:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
+jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
+
+JSONL is the default Filebeat ingestion contract. Simple output is optional human-readable `key=value` output, always includes exactly one `stream=` identity, and is not consumed by the current JSONL pipeline.
 
 In Kubernetes, `SCM_METADATA_NAMESPACE` comes from `metadata.namespace` and `SCM_METADATA_INSTANCE_ID` comes from `metadata.name` through the Downward API.
 
-Console output for LOG, TRACE, and AUDIT is enabled only in `dev`. Test, pilot, and prod keep console disabled and file output enabled.
+Console output for LOG, TRACE, and AUDIT is enabled only in `dev`. Enabling the AUDIT console does not enable the default-disabled AUDIT signal. Starter defaults keep consoles disabled and files enabled in test, pilot, and prod.
 
 Distributed tracing uses W3C `traceparent`; custom `X-SCM-*` trace headers are not distributed trace sources of truth.
 

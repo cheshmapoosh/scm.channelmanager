@@ -2,6 +2,16 @@ scm:
   metadata:
     namespace: ${SCM_METADATA_NAMESPACE:local}
     instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-web}
+  observation:
+    log:
+      console:
+        enabled: true
+    trace:
+      console:
+        enabled: true
+    audit:
+      console:
+        enabled: true
 
 SCM_CHANNEL_CODE: IB
 SCM_GATEWAY_NAME: channel.nib
@@ -18,15 +28,6 @@ SCM_DB_PASSWORD: ${SCM_DEV_DB_PASSWORD:a}
 SCM_DB_DRIVER: com.ibm.db2.jcc.DB2Driver
 SCM_DB_SCHEMA: REF
 SCM_DB_MAX_CONNECTION: 10
-
-SCM_OBS_ROOT_DIR: ${user.home}/scm/obs
-SCM_OBS_LOG_CONSOLE_ENABLED: true
-SCM_OBS_LOG_FILE_ENABLED: true
-SCM_OBS_TRACE_CONSOLE_ENABLED: true
-SCM_OBS_TRACE_FILE_ENABLED: true
-SCM_OBS_AUDIT_ENABLED: true
-SCM_OBS_AUDIT_CONSOLE_ENABLED: true
-SCM_OBS_AUDIT_FILE_ENABLED: true
 
 SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS: 3000
 SCM_PROVIDER_DEFAULT_SOCKET_TIMEOUT_MS: 1000

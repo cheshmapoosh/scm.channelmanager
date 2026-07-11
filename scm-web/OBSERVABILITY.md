@@ -109,11 +109,14 @@ deployment.environment
 
 `scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and real business channel code when present. `scm.channel.code` remains a business attribute and is not used for physical file names.
 
-Files are namespace-based:
+Files are namespace-based. The starter owns the technical defaults; hosts keep only policy and real overrides. JSONL is the default ingestion format, while simple output is optional human-readable output:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
+jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
+
+Every simple line contains exactly one `stream=log`, `stream=trace`, or `stream=audit`. Only JSONL files are compatible with the current Filebeat JSON ingestion configuration. The `dev` profile enables all three console destinations, but does not enable the AUDIT signal.
 
 In Kubernetes, `SCM_METADATA_NAMESPACE` comes from `metadata.namespace` and `SCM_METADATA_INSTANCE_ID` comes from `metadata.name` through the Downward API.
 

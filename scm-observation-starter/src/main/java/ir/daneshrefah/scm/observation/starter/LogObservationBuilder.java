@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.observation.starter;
 
 import ir.daneshrefah.scm.observation.starter.attributes.log.CommonLogAttributes;
 import ir.daneshrefah.scm.observation.starter.logging.ScmLogMarkers;
+import ir.daneshrefah.scm.observation.starter.policy.ObservationSignal;
 import net.logstash.logback.argument.StructuredArguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,6 +154,9 @@ public class LogObservationBuilder extends AbstractObservationBuilder<LogObserva
     }
 
     public void write() {
+        if (!observation.isEnabled(ObservationSignal.LOG)) {
+            return;
+        }
         Instant timestamp = observation.now();
         ObservationDocumentBuilder builder = observation.documentFactory().log(
                 timestamp,

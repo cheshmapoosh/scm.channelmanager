@@ -61,11 +61,14 @@ service.name
 deployment.environment
 ```
 
-`scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Physical files are namespace-based and do not use channel code:
+`scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Physical files are namespace-based and do not use channel code. The starter owns technical defaults; CM Connector keeps only policy and real overrides:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
+jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
+
+JSONL is the default Filebeat ingestion contract. Simple output is optional human-readable `key=value` output, includes exactly one canonical `stream=`, and is not consumed by the current JSONL pipeline.
 
 CM connector spans are not legacy by default. If a request already started at `scm-web.gateway.receive`, connector spans should keep `scm.observation.legacy.enabled=false`. If CM connector is later configured as the direct business entry point for a legacy-reportable flow, only the root business span may set:
 
@@ -75,4 +78,4 @@ scm.observation.legacy.operation.code
 scm.observation.legacy.service.code
 ```
 
-Console output for LOG, TRACE, and AUDIT is enabled only in `dev`. Test, pilot, and prod keep console disabled and file output enabled. Distributed tracing uses W3C `traceparent`; custom `X-SCM-*` trace headers are not distributed trace sources of truth.
+Console output for LOG, TRACE, and AUDIT is enabled only in `dev`; the AUDIT console does not enable the AUDIT signal. Starter defaults keep consoles disabled and files enabled in test, pilot, and prod. Distributed tracing uses W3C `traceparent`; custom `X-SCM-*` trace headers are not distributed trace sources of truth.
