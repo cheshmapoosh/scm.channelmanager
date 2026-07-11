@@ -115,7 +115,13 @@ scm:
       base-name-pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
 ```
 
-The starter owns stream prefix, hour token, roll index, and extension:
+`scm.observation.file.root-directory` controls the shared physical root directory. The stream directory properties `scm.observation.log.file.directory`, `scm.observation.trace.file.directory`, and `scm.observation.audit.file.directory` are optional per-stream overrides. Directory resolution is:
+
+```text
+stream-specific directory override -> shared observation root directory -> ${user.home}/scm/obs
+```
+
+`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The starter owns stream prefix, hour token, roll index, and extension:
 
 ```text
 {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl

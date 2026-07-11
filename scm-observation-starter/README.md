@@ -355,13 +355,19 @@ scm:
       base-name-pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
 ```
 
-The starter appends stream, hour, roll index, and extension:
+`scm.observation.file.root-directory` controls the shared physical root directory. `SCM_OBS_LOG_DIR`, `SCM_OBS_TRACE_DIR`, and `SCM_OBS_AUDIT_DIR` remain optional per-stream directory overrides. Directory resolution is:
+
+```text
+stream-specific directory override -> scm.observation.file.root-directory -> ${user.home}/scm/obs
+```
+
+`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The starter appends stream, hour, roll index, and extension:
 
 ```text
 {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
-Files are under `{root}/{appName}/{env}/{namespace}/{stream}/`. File names never include `scm.channel.code` or the Config label. Observation files are not gzipped and do not use a separate archive directory.
+Files are under `{root}/{appName}/{env}/{namespace}/{stream}/`. The root directory is part of the physical path, not the filename. File names never include `scm.channel.code` or the Config label. Observation files are not gzipped and do not use a separate archive directory.
 
 `scm.channel.code` is a business attribute only. It may affect the target index when it is a real business channel code such as `ib` or `mb`, but it must not be used for physical file naming.
 

@@ -112,7 +112,7 @@ scm:
       file:
         enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
         format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/log}
+        directory: ${SCM_OBS_LOG_DIR:${scm.observation.file.root-directory}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/log}
       rolling:
         max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
@@ -132,7 +132,7 @@ scm:
       file:
         enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
         format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/trace}
+        directory: ${SCM_OBS_TRACE_DIR:${scm.observation.file.root-directory}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/trace}
       rolling:
         max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
@@ -152,7 +152,7 @@ scm:
       file:
         enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
         format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/audit}
+        directory: ${SCM_OBS_AUDIT_DIR:${scm.observation.file.root-directory}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/audit}
       rolling:
         max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}
