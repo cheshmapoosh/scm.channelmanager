@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.observation.starter;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -73,22 +74,23 @@ public class ObservationDocumentBuilder {
         Instant timestamp = timestamp();
         String channelCode = firstText(document.get("scm.channel.code"), context.channelCode());
         String namespace = targetIndexResolver.normalizeNamespace(context.namespace());
-        String platform = targetIndexResolver.normalizePlatform(context.platform());
         String environment = targetIndexResolver.normalizeEnvironment(context.appProfile());
+        String instanceId = firstText(context.instanceId(), "local-" + context.appName());
+        ZoneId timeZone = context.timeZone() == null ? ZoneId.systemDefault() : context.timeZone();
         put("event.stream", stream.value());
-        put("scm.observation.target.namespace", namespace);
-        put("scm.platform", platform);
+        put("scm.metadata.namespace", namespace);
+        put("scm.metadata.instance_id", instanceId);
+        put("scm.metadata.time_zone", timeZone.getId());
+        put("scm.config.label", context.configLabel());
         put("service.name", context.appName());
         put("deployment.environment", environment);
         put("scm.observation.legacy.enabled", document.getOrDefault("scm.observation.legacy.enabled", Boolean.FALSE));
         put("scm.observation.target.index", targetIndexResolver.resolve(
                 stream,
-                platform,
                 namespace,
                 environment,
                 channelCode,
-                timestamp,
-                context.observationZoneId()
+                timestamp
         ));
     }
 
@@ -107,6 +109,13 @@ public class ObservationDocumentBuilder {
     private String firstText(Object first, String second) {
         if (first != null && !String.valueOf(first).isBlank()) {
             return String.valueOf(first).trim();
+        }
+        return second;
+    }
+
+    private String firstText(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first.trim();
         }
         return second;
     }

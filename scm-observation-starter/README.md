@@ -282,43 +282,50 @@ gateway.receive
 - پس از دریافت نتیجه یا failure پایین‌دست بسته می‌شود.
 - برای call خارجی معمولاً `span.kind=client` دارد.
 
-## ۹. Observation target, routing, and legacy projection
+## ۹. SCM runtime metadata, routing, and legacy projection
 
-Every LOG, TRACE, and AUDIT document must include these common routing fields:
+Every LOG, TRACE, and AUDIT document must include these common routing and runtime metadata fields:
 
 ```text
 event.stream
-scm.observation.target.namespace
+scm.metadata.namespace
+scm.metadata.instance_id
+scm.metadata.time_zone
+scm.config.label
 scm.observation.target.index
-scm.platform
 service.name
 deployment.environment
 ```
 
-The deprecated target namespace, target index, and legacy-enabled names from the previous schema are not emitted. The replacement fields are:
+SCM deployment variables map to Spring properties as follows:
 
 ```text
-scm.observation.target.index
-scm.observation.target.namespace
-scm.observation.legacy.enabled
-scm.observation.legacy.service.code
-scm.observation.legacy.operation.code
+SCM_APP                  -> spring.application.name
+SCM_ENV                  -> spring.profiles.active
+SCM_LABEL                -> spring.cloud.config.label
+SCM_LABEL                -> spring.cloud.config.server.git.default-label
+SCM_METADATA_NAMESPACE   -> scm.metadata.namespace
+SCM_METADATA_INSTANCE_ID -> scm.metadata.instance-id
+SCM_METADATA_TIME_ZONE   -> scm.metadata.time-zone
 ```
 
-`scm.observation.target.namespace` resolves in this order: `scm.observation.target.namespace`, `SCM_OBSERVATION_TARGET_NAMESPACE`, compatibility fallback `SCM_OBS_NAMESPACE`, then `default` outside Kubernetes. Kubernetes deployments must set `SCM_OBSERVATION_TARGET_NAMESPACE` from `metadata.namespace` and `SCM_INSTANCE_ID` from `metadata.name` through the Downward API.
+`SCM_ENV` must be exactly one of `dev`, `test`, `pilot`, or `prod`. `SCM_LABEL` must be a single nonblank Config label. `scm.metadata.time-zone` is optional; blank values use the JVM system timezone for physical file naming metadata.
+
+Kubernetes deployments provide namespace and instance id through the Downward API:
 
 ```yaml
-scm:
-  observation:
-    target:
-      namespace: ${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}
-      index:
-        enabled: true
-        pattern-with-channel: "{stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}"
-        pattern-without-channel: "{stream}-scm-{namespace}-{env}-{yyyy.MM.dd.HH}"
+env:
+  - name: SCM_METADATA_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+  - name: SCM_METADATA_INSTANCE_ID
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
 ```
 
-`scm.observation.target.index` is the final Elasticsearch routing index. The resolver uses stream, platform, namespace, environment, channel code, and timestamp. All rendered parts are normalized to lower-case. When a real business channel code exists, the pattern is:
+`scm.observation.target.index` is the final Elasticsearch routing index. The resolver is starter-owned, uses UTC for the hour bucket, and is not configurable by host applications. When a real business channel code exists, the pattern is:
 
 ```text
 {stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}
@@ -333,33 +340,28 @@ When the channel code is missing, blank, `unknown`, `default`, `none`, `n/a`, or
 Examples:
 
 ```text
-log-scm-shared-prod-mb-2026.07.07.19
-trace-scm-ib-prod-ib-2026.07.07.19
+log-scm-payment-prod-mb-2026.07.07.19
+trace-scm-payment-prod-mb-2026.07.07.19
 audit-scm-shared-prod-2026.07.07.19
 ```
 
-Kubernetes deployments should provide the namespace and instance id through the Downward API:
+Physical file routing is separate from Elasticsearch routing. Host applications configure only the stable base-name pattern:
 
 ```yaml
-env:
-  - name: SCM_OBSERVATION_TARGET_NAMESPACE
-    valueFrom:
-      fieldRef:
-        fieldPath: metadata.namespace
-  - name: SCM_INSTANCE_ID
-    valueFrom:
-      fieldRef:
-        fieldPath: metadata.name
+scm:
+  observation:
+    file:
+      root-directory: ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
+      base-name-pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
 ```
 
-Physical file routing is separate from Elasticsearch routing. File names are namespace-based and must not use `scm.channel.code`:
+The starter appends stream, hour, roll index, and extension:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl.gz
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
-In Kubernetes files are under `/var/obs/{appName}/{env}/{namespace}/{stream}/`. Outside Kubernetes they are under `${user.home}/scm/obs/{appName}/{env}/default/{stream}/`. A single physical file can contain records for multiple Elasticsearch indexes because routing is based on `scm.observation.target.index` inside each record.
+Files are under `{root}/{appName}/{env}/{namespace}/{stream}/`. File names never include `scm.channel.code` or the Config label. Observation files are not gzipped and do not use a separate archive directory.
 
 `scm.channel.code` is a business attribute only. It may affect the target index when it is a real business channel code such as `ib` or `mb`, but it must not be used for physical file naming.
 
@@ -372,7 +374,7 @@ Host modules apply legacy projection at their business entry points only:
 - `scm-cache`: default behavior is `scm.observation.legacy.enabled=false`.
 - `scm-cm-connector`: provider/technical spans are not legacy by default; a root span can be legacy only when CM connector is the direct business entry point and configured service/operation codes are supplied.
 
-Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Common, `test`, `pilot`, and `prod` configuration keeps console output disabled and file output enabled. `clean-history-on-start=false` remains the default and affects archived files only; active LOG, TRACE, and AUDIT files must not be deleted.
+Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Common, `test`, `pilot`, and `prod` configuration keeps console output disabled and file output enabled. `clean-history-on-start=false` remains the default; current and rolled observation files keep final names while Filebeat reads them.
 
 Generic HTTP server tracing is disabled by default:
 
@@ -710,7 +712,7 @@ health: 1=healthy, 0=unhealthy
 - آیا host سیگنال‌های موردنیاز را صریحاً فعال کرده است؟
 - آیا starter یا provider فقط event خنثی منتشر می‌کند؟
 - آیا observation رسمی در host انجام می‌شود؟
-- آیا همهٔ رکوردهای LOG، TRACE و AUDIT مقدارهای `event.stream`، `scm.observation.target.namespace`، `scm.observation.target.index`، `scm.platform`، `service.name` و `deployment.environment` را دارند؟
+- آیا همهٔ رکوردهای LOG، TRACE و AUDIT مقدارهای `event.stream`، `scm.metadata.namespace`، `scm.metadata.instance_id`، `scm.metadata.time_zone`، `scm.config.label`، `scm.observation.target.index`، `service.name` و `deployment.environment` را دارند؟
 - آیا file routing از namespace استفاده می‌کند و از `scm.channel.code` برای نام فایل استفاده نمی‌شود؟
 - آیا console output فقط در profile `dev` روشن است و file output در profileهای غیر dev روشن مانده است؟
 - آیا `correlation.id` محلی است و به downstream ارسال نمی‌شود؟

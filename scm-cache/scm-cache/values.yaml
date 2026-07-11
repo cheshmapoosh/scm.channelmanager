@@ -129,9 +129,9 @@ persistence:
   enabled: false
 
 env:
-  - name: SPRING_PROFILES_ACTIVE
+  - name: SCM_ENV
     value: dev
-  - name: SPRING_APPLICATION_NAME
+  - name: SCM_APP
     value: scm-cache
   - name: VERSION
     value: 8.3.0

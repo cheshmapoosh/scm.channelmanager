@@ -6,9 +6,11 @@ Every LOG, TRACE, and AUDIT record includes:
 
 ```text
 event.stream
-scm.observation.target.namespace
+scm.metadata.namespace
+scm.metadata.instance_id
+scm.metadata.time_zone
+scm.config.label
 scm.observation.target.index
-scm.platform
 service.name
 deployment.environment
 ```
@@ -18,10 +20,10 @@ deployment.environment
 Files are namespace-based, not channel-based:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}.jsonl
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
-In Kubernetes, `SCM_OBSERVATION_TARGET_NAMESPACE` and `SCM_INSTANCE_ID` come from pod metadata through the Downward API. `SCM_OBS_NAMESPACE` is accepted only as a compatibility fallback. Outside Kubernetes, namespace defaults to `default`.
+In Kubernetes, `SCM_METADATA_NAMESPACE` comes from `metadata.namespace` and `SCM_METADATA_INSTANCE_ID` comes from `metadata.name` through the Downward API.
 
 Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Test, pilot, and prod keep console disabled and file output enabled.
 

@@ -5,7 +5,6 @@
         <then>
             <appender name="SCM_FILE_SIMPLE"
                       class="ch.qos.logback.core.rolling.RollingFileAppender">
-                <file>${APPLICATION_LOG_FILE}</file>
                 <append>true</append>
                 <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                     <marker>SCM_OBSERVATION_TRACE</marker>
@@ -16,7 +15,7 @@
                     <inverse>true</inverse>
                 </filter>
                 <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                    <fileNamePattern>${APPLICATION_ARCHIVE_PATTERN}</fileNamePattern>
+                    <fileNamePattern>${LOG_SIMPLE_FILE_PATTERN}</fileNamePattern>
                     <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
                     <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
                     <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>

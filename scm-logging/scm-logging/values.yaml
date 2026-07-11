@@ -138,9 +138,9 @@ nodeSelector:
 affinity: {}
 
 env:
-  - name: SPRING_PROFILES_ACTIVE
+  - name: SCM_ENV
     value: test
-  - name: SPRING_APPLICATION_NAME
+  - name: SCM_APP
     value: scm-logging
   - name: VERSION
     value: 8.3.0

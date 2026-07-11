@@ -56,11 +56,11 @@ spec:
           image: "reg.daneshrefah.ir/modern-banking/scm-app:8.3.0-b0720T1100"
           imagePullPolicy: IfNotPresent
           env:
-            - name: SCM_OBSERVATION_TARGET_NAMESPACE
+            - name: SCM_METADATA_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: SCM_INSTANCE_ID
+            - name: SCM_METADATA_INSTANCE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
@@ -68,9 +68,9 @@ spec:
               value: /var/obs
             - name: JDWP_OPTS
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
-            - name: SPRING_PROFILES_ACTIVE
+            - name: SCM_ENV
               value: test
-            - name: SPRING_APPLICATION_NAME
+            - name: SCM_APP
               value: scm-web
             - name: VERSION
               value: 8.3.0

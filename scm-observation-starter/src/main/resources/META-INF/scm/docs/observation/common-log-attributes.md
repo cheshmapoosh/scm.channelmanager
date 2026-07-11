@@ -11,9 +11,11 @@ Use `lifecycle` only for startup, shutdown, bootstrap, and runtime context creat
 | `process.thread.name` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Thread name that emitted the log. |
 | `message` | String | text | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Rendered log message. |
 | `event.stream` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Observation stream: log, trace, or audit. |
-| `scm.observation.target.namespace` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Observation target namespace. |
+| `scm.metadata.namespace` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | SCM runtime metadata namespace. |
+| `scm.metadata.instance_id` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | SCM runtime metadata instance id. |
+| `scm.metadata.time_zone` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | SCM runtime metadata timezone. |
+| `scm.config.label` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Spring Cloud Config label. |
 | `scm.observation.target.index` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Final Elasticsearch routing index. |
-| `scm.platform` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | SCM platform code. |
 | `service.name` | String | keyword | common | LOG | ALWAYS_REQUIRED | RAW | 0 | 0 | Service name used by observability backends. |
 | `deployment.service.name` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service name. |
 | `deployment.service.version` | String | keyword | common | LOG | CONTEXT_REQUIRED | RAW | 0 | 0 | Running SCM service version. |

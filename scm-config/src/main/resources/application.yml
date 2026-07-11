@@ -1,8 +1,8 @@
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SCM_ENV:dev}
   application:
-    name: ${SCM_APPLICATION_NAME:scm-config}
+    name: ${SCM_APP:scm-config}
   security:
     user:
       name: ${SCM_CONFIG_ADMIN_USERNAME:admin}
@@ -17,7 +17,7 @@ spring:
           uri: ${SCM_CONFIG_REPO_URI:/mnt/config-repo-server}
           search-paths: ${SCM_CONFIG_REPO_SEARCH_PATHS}
           clone-on-start: ${SCM_CONFIG_REPO_CLONE_ON_START:true}
-          default-label: ${SCM_CONFIG_REPO_BRANCH:master}
+          default-label: ${SCM_LABEL:master}
           basedir: ${SCM_CONFIG_REPO_BASEDIR:/app/config-repo}
           username: ${SCM_CONFIG_REPO_USERNAME:}
           password: ${SCM_CONFIG_REPO_PASSWORD:}
@@ -51,8 +51,10 @@ logging:
     org.springframework: ${SCM_LOG_LEVEL_SPRING:INFO}
 
 scm:
-  env: ${SCM_ENV:${spring.profiles.active}}
-  instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-config}}
+  metadata:
+    namespace: ${SCM_METADATA_NAMESPACE:}
+    instance-id: ${SCM_METADATA_INSTANCE_ID:}
+    time-zone: ${SCM_METADATA_TIME_ZONE:}
 
   deployment:
     service-version: ${SCM_SERVICE_VERSION:${VERSION:8.6.0}}
@@ -65,17 +67,9 @@ scm:
 
   observation:
     enabled: ${SCM_OBS_ENABLED:true}
-    target:
-      namespace: ${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}
-      index:
-        enabled: true
-        pattern-with-channel: "{stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}"
-        pattern-without-channel: "{stream}-scm-{namespace}-{env}-{yyyy.MM.dd.HH}"
-    platform: ${SCM_OBS_PLATFORM:scm}
-    app-name: ${SCM_OBS_APP_NAME:${spring.application.name}}
-    app-label: ${SCM_OBS_APP_LABEL:${spring.profiles.active:dev}}
-    instance-id: ${SCM_INSTANCE_ID:${HOSTNAME:local-scm-config}}
-    time-zone: ${SCM_OBS_TIME_ZONE:UTC}
+    file:
+      root-directory: ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
+      base-name-pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
     http:
       server:
         span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:config.http.request}
@@ -87,9 +81,7 @@ scm:
       file:
         enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
         format: ${SCM_OBS_LOG_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}/log}
-        archive-directory: ${SCM_OBS_LOG_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}/log/archive}
-        archive-file-name: log-scm-${spring.application.name}-${scm.env}-${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}-${scm.instance-id}-%d{yyyyMMdd-HH}-%i.jsonl.gz
+        directory: ${SCM_OBS_LOG_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/log}
       rolling:
         max-file-size: ${SCM_OBS_LOG_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_LOG_MAX_HISTORY:30}
@@ -106,9 +98,7 @@ scm:
       file:
         enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
         format: ${SCM_OBS_TRACE_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}/trace}
-        archive-directory: ${SCM_OBS_TRACE_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}/trace/archive}
-        archive-file-name: trace-scm-${spring.application.name}-${scm.env}-${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}-${scm.instance-id}-%d{yyyyMMdd-HH}-%i.jsonl.gz
+        directory: ${SCM_OBS_TRACE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/trace}
       rolling:
         max-file-size: ${SCM_OBS_TRACE_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_TRACE_MAX_HISTORY:30}
@@ -125,9 +115,7 @@ scm:
       file:
         enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
         format: ${SCM_OBS_AUDIT_FILE_FORMAT:jsonl}
-        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}/audit}
-        archive-directory: ${SCM_OBS_AUDIT_ARCHIVE_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${scm.env}/${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}/audit/archive}
-        archive-file-name: audit-scm-${spring.application.name}-${scm.env}-${SCM_OBSERVATION_TARGET_NAMESPACE:${SCM_OBS_NAMESPACE:default}}-${scm.instance-id}-%d{yyyyMMdd-HH}-%i.jsonl.gz
+        directory: ${SCM_OBS_AUDIT_DIR:${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}/${spring.application.name}/${spring.profiles.active}/${scm.metadata.namespace}/audit}
       rolling:
         max-file-size: ${SCM_OBS_AUDIT_MAX_FILE_SIZE:100MB}
         max-history: ${SCM_OBS_AUDIT_MAX_HISTORY:90}

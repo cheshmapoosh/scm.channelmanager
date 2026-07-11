@@ -1,16 +1,16 @@
 package ir.daneshrefah.scm.observation.starter;
 
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
 
 public class ObsTargetIndexResolver {
     private static final DateTimeFormatter INDEX_HOUR = DateTimeFormatter.ofPattern("yyyy.MM.dd.HH");
-    private static final String DEFAULT_PATTERN_WITH_CHANNEL = "{stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}";
-    private static final String DEFAULT_PATTERN_WITHOUT_CHANNEL = "{stream}-scm-{namespace}-{env}-{yyyy.MM.dd.HH}";
+    public static final String WITH_CHANNEL = "{stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}";
+    public static final String WITHOUT_CHANNEL = "{stream}-scm-{namespace}-{env}-{yyyy.MM.dd.HH}";
+    private static final Set<String> VALID_ENVIRONMENTS = Set.of("dev", "test", "pilot", "prod");
     private static final Set<String> MISSING_CHANNEL_CODES = Set.of(
             "null",
             "blank",
@@ -21,84 +21,51 @@ public class ObsTargetIndexResolver {
             "n-a"
     );
 
-    private final ObservationProperties.TargetIndexProperties indexProperties;
-
-    public ObsTargetIndexResolver() {
-        this(null);
-    }
-
-    public ObsTargetIndexResolver(ObservationProperties.TargetProperties targetProperties) {
-        ObservationProperties.TargetProperties safeTarget =
-                targetProperties == null ? new ObservationProperties.TargetProperties() : targetProperties;
-        this.indexProperties = safeTarget.getIndex() == null
-                ? new ObservationProperties.TargetIndexProperties()
-                : safeTarget.getIndex();
-    }
-
     public String resolve(ObservationStream stream, ObservationContext context, Instant timestamp) {
         if (context == null) {
             throw new IllegalArgumentException("Observation context is required to resolve scm.observation.target.index.");
         }
-        return resolve(stream, context.platform(), context.namespace(), context.appProfile(),
-                context.channelCode(), timestamp, context.observationZoneId());
+        return resolve(stream, context.namespace(), context.appProfile(), context.channelCode(), timestamp);
     }
 
     public String resolve(
             ObservationStream stream,
-            String platform,
             String namespace,
             String environment,
             String channelCode,
             Instant timestamp
     ) {
-        return resolve(stream, platform, namespace, environment, channelCode, timestamp, ZoneId.of("UTC"));
-    }
-
-    public String resolve(
-            ObservationStream stream,
-            String platform,
-            String namespace,
-            String environment,
-            String channelCode,
-            Instant timestamp,
-            ZoneId zoneId
-    ) {
         if (stream == null) {
             throw new IllegalArgumentException("Observation stream is required to resolve scm.observation.target.index.");
         }
-        if (!indexProperties.isEnabled()) {
-            throw new IllegalStateException("scm.observation.target.index.enabled must be true to resolve scm.observation.target.index.");
-        }
-        String resolvedNamespace = normalizeRequired(namespace, "scm.observation.target.namespace");
-        String resolvedEnvironment = normalizeRequired(environment, "deployment.environment");
-        String resolvedPlatform = normalizeRequired(platform, "scm.platform");
+        String resolvedNamespace = normalizeRequired(namespace, "scm.metadata.namespace");
+        String resolvedEnvironment = normalizeEnvironment(environment);
         Instant resolvedTimestamp = timestamp == null ? Instant.now() : timestamp;
-        ZoneId resolvedZone = zoneId == null ? ZoneId.of("UTC") : zoneId;
-        String hour = INDEX_HOUR.withZone(resolvedZone).format(resolvedTimestamp);
+        String hour = INDEX_HOUR.withZone(ZoneOffset.UTC).format(resolvedTimestamp);
         String resolvedChannelCode = normalizeChannelCode(channelCode);
-        String pattern = resolvedChannelCode == null
-                ? textOrDefault(indexProperties.getPatternWithoutChannel(), DEFAULT_PATTERN_WITHOUT_CHANNEL)
-                : textOrDefault(indexProperties.getPatternWithChannel(), DEFAULT_PATTERN_WITH_CHANNEL);
-        return render(pattern, Map.of(
-                "stream", normalize(stream.value()),
-                "platform", resolvedPlatform,
-                "namespace", resolvedNamespace,
-                "env", resolvedEnvironment,
-                "channelCode", resolvedChannelCode == null ? "" : resolvedChannelCode,
-                "yyyy.MM.dd.HH", hour
-        ));
+        String streamValue = normalize(stream.value());
+        if (resolvedChannelCode == null) {
+            return normalizeRequired("%s-scm-%s-%s-%s".formatted(streamValue, resolvedNamespace, resolvedEnvironment, hour),
+                    "scm.observation.target.index");
+        }
+        return normalizeRequired("%s-scm-%s-%s-%s-%s".formatted(
+                        streamValue, resolvedNamespace, resolvedEnvironment, resolvedChannelCode, hour),
+                "scm.observation.target.index");
     }
 
     public String normalizeNamespace(String value) {
-        return normalizeRequired(value, "scm.observation.target.namespace");
-    }
-
-    public String normalizePlatform(String value) {
-        return normalizeRequired(value, "scm.platform");
+        return normalizeRequired(value, "scm.metadata.namespace");
     }
 
     public String normalizeEnvironment(String value) {
-        return normalizeRequired(value, "deployment.environment");
+        String resolved = textOrNull(value);
+        if (resolved == null) {
+            throw new IllegalArgumentException("spring.profiles.active/SCM_ENV is required to resolve scm.observation.target.index.");
+        }
+        if (!VALID_ENVIRONMENTS.contains(resolved)) {
+            throw new IllegalArgumentException("spring.profiles.active/SCM_ENV must be one of dev, test, pilot, prod to resolve scm.observation.target.index.");
+        }
+        return resolved;
     }
 
     public String normalizeChannelCode(String value) {
@@ -128,15 +95,7 @@ public class ObsTargetIndexResolver {
         return normalized;
     }
 
-    private String render(String pattern, Map<String, String> parts) {
-        String rendered = pattern;
-        for (Map.Entry<String, String> entry : parts.entrySet()) {
-            rendered = rendered.replace("{" + entry.getKey() + "}", entry.getValue());
-        }
-        return normalizeRequired(rendered, "scm.observation.target.index");
-    }
-
-    private String textOrDefault(String value, String defaultValue) {
-        return value == null || value.isBlank() ? defaultValue : value.trim();
+    private String textOrNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

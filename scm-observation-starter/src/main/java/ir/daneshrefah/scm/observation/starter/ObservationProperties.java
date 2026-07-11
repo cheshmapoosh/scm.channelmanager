@@ -7,7 +7,6 @@ import java.nio.file.Path;
 @ConfigurationProperties(prefix = "scm.observation")
 public class ObservationProperties {
     private boolean enabled;
-    private TargetProperties target = new TargetProperties();
     private LogProperties log = new LogProperties();
     private TraceProperties trace = new TraceProperties();
     private AuditProperties audit = new AuditProperties();
@@ -20,14 +19,6 @@ public class ObservationProperties {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public TargetProperties getTarget() {
-        return target;
-    }
-
-    public void setTarget(TargetProperties target) {
-        this.target = target == null ? new TargetProperties() : target;
     }
 
     public LogProperties getLog() {
@@ -226,57 +217,6 @@ public class ObservationProperties {
         }
     }
 
-    public static class TargetProperties {
-        private String namespace;
-        private TargetIndexProperties index = new TargetIndexProperties();
-
-        public String getNamespace() {
-            return namespace;
-        }
-
-        public void setNamespace(String namespace) {
-            this.namespace = namespace;
-        }
-
-        public TargetIndexProperties getIndex() {
-            return index;
-        }
-
-        public void setIndex(TargetIndexProperties index) {
-            this.index = index == null ? new TargetIndexProperties() : index;
-        }
-    }
-
-    public static class TargetIndexProperties {
-        private boolean enabled = true;
-        private String patternWithChannel = "{stream}-scm-{namespace}-{env}-{channelCode}-{yyyy.MM.dd.HH}";
-        private String patternWithoutChannel = "{stream}-scm-{namespace}-{env}-{yyyy.MM.dd.HH}";
-
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-
-        public String getPatternWithChannel() {
-            return patternWithChannel;
-        }
-
-        public void setPatternWithChannel(String patternWithChannel) {
-            this.patternWithChannel = patternWithChannel;
-        }
-
-        public String getPatternWithoutChannel() {
-            return patternWithoutChannel;
-        }
-
-        public void setPatternWithoutChannel(String patternWithoutChannel) {
-            this.patternWithoutChannel = patternWithoutChannel;
-        }
-    }
-
     public static class ConsoleProperties {
         private boolean enabled;
 
@@ -292,9 +232,6 @@ public class ObservationProperties {
     public static class FileProperties {
         private boolean enabled;
         private Path directory;
-        private String fileName;
-        private Path archiveDirectory;
-        private String archiveFileName;
 
         public boolean isEnabled() {
             return enabled;
@@ -310,30 +247,6 @@ public class ObservationProperties {
 
         public void setDirectory(Path directory) {
             this.directory = directory;
-        }
-
-        public String getFileName() {
-            return fileName;
-        }
-
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
-        }
-
-        public Path getArchiveDirectory() {
-            return archiveDirectory;
-        }
-
-        public void setArchiveDirectory(Path archiveDirectory) {
-            this.archiveDirectory = archiveDirectory;
-        }
-
-        public String getArchiveFileName() {
-            return archiveFileName;
-        }
-
-        public void setArchiveFileName(String archiveFileName) {
-            this.archiveFileName = archiveFileName;
         }
     }
 

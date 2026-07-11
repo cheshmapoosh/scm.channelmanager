@@ -1,6 +1,8 @@
-SCM_ENV: dev
-SCM_APPLICATION_NAME: scm-cache
-SCM_INSTANCE_ID: local-scm-cache
+scm:
+  metadata:
+    namespace: ${SCM_METADATA_NAMESPACE:local}
+    instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-cache}
+
 SCM_SERVER_PORT: ${SERVER_PORT:8080}
 
 SCM_CONFIG_ENABLED: false

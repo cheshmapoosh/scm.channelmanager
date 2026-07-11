@@ -1,12 +1,13 @@
-SCM_ENV: dev
-SCM_APPLICATION_NAME: scm-config
-SCM_INSTANCE_ID: local-scm-config
+scm:
+  metadata:
+    namespace: ${SCM_METADATA_NAMESPACE:local}
+    instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-config}
+
 SCM_CONFIG_SERVER_PORT: ${SERVER_PORT:8888}
 SCM_CONFIG_SERVER_PREFIX: /config
 
 SCM_CONFIG_REPO_URI: /mnt/config-repo-server
 SCM_CONFIG_REPO_SEARCH_PATHS: "{application}"
-SCM_CONFIG_REPO_BRANCH: master
 SCM_CONFIG_REPO_BASEDIR: /app/config-repo
 SCM_CONFIG_REPO_CLONE_ON_START: true
 SCM_CONFIG_NATIVE_SEARCH_LOCATIONS: file:/mnt/config-repo-server

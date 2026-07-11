@@ -1,28 +1,38 @@
 # filebeat
 
-## هدف
+This folder keeps Filebeat examples for SCM LOG, TRACE, and AUDIT JSONL files.
 
-این فولدر فقط نمونه کانفیگ Filebeat مربوط به Trace/Log/Audit را نگه می‌دارد.
+Metrics are not collected by Filebeat. Metrics stay on the Actuator, Micrometer, Prometheus, and Grafana path.
 
-Metric توسط Filebeat جمع‌آوری نمی‌شود.
+SCM observation files use this directory layout:
 
-## نمونه inputها
+```text
+{root}/{appName}/{env}/{namespace}/{stream}/
+```
+
+Final JSONL file names use this shape:
+
+```text
+{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+```
+
+Example Filebeat inputs:
 
 ```yaml
 filebeat.inputs:
   - type: filestream
-    id: scm-trace-events
+    id: scm-log-events
     paths:
-      - /log/scm/*/trace*.ndjson
+      - /var/obs/*/*/*/log/log-scm-*.jsonl
     parsers:
       - ndjson:
           target: ""
           add_error_key: true
 
   - type: filestream
-    id: scm-application-logs
+    id: scm-trace-events
     paths:
-      - /log/scm/*/application*.ndjson
+      - /var/obs/*/*/*/trace/trace-scm-*.jsonl
     parsers:
       - ndjson:
           target: ""
@@ -31,13 +41,11 @@ filebeat.inputs:
   - type: filestream
     id: scm-audit-events
     paths:
-      - /log/scm/*/audit*.ndjson
+      - /var/obs/*/*/*/audit/audit-scm-*.jsonl
     parsers:
       - ndjson:
           target: ""
           add_error_key: true
 ```
 
-## ممنوع
-
-برای metric هیچ input تعریف نشود.
+Do not configure Filebeat to read compressed observation files or metric data.
