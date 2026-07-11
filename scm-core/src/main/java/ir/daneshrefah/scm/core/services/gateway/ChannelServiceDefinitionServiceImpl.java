@@ -25,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -40,20 +39,20 @@ public class ChannelServiceDefinitionServiceImpl implements ChannelServiceDefini
     private final DefinitionMapper definitionMapper;
 
     @Override
-    public List<ChannelServiceDefinition> findDefinitions(ChannelServiceAccess channelServiceAccess,
-                                                          GatewayChannel gatewayChannel) {
-        return channelServiceDefinitionRepository
-                .findByChannelServiceAccess_IdAndGatewayChannel_Id(
+    public List<ChannelServiceDefinition> findDefinitions(ChannelServiceAccess channelServiceAccess, GatewayChannel gatewayChannel) {
+        return channelServiceDefinitionRepository.findByChannelServiceAccess_IdAndGatewayChannel_Id(
                         channelServiceAccess.getId(),
                         gatewayChannel.getId())
                 .stream()
                 .map(channelServiceDefinitionMapper::toModel)
-                .filter(Objects::nonNull)
-                .peek(model -> {
-                    if (model instanceof RestMultipleChannelServiceDefinition restMultipleChannelServiceDefinition) {
-                        enrichRestDefinition(restMultipleChannelServiceDefinition);
-                    }
-                })
+                .toList();
+    }
+
+    @Override
+    public List<ChannelServiceDefinition> findDefinitions(GatewayChannel gatewayChannel) {
+        return channelServiceDefinitionRepository.findByGatewayChannel_Id(gatewayChannel.getId())
+                .stream()
+                .map(channelServiceDefinitionMapper::toModel)
                 .toList();
     }
 

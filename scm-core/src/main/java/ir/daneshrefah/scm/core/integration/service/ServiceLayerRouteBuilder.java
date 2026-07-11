@@ -395,6 +395,8 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
 
         pluginDetails.forEach(detail -> {
             PluginHandler handler = resolvePluginHandler(detail);
+            if(handler==null)
+                return;
             handler.init(route, detail, Map.of(Message.SERVICE, servicePlan.service()));
             route.process(exchange -> invokePlugin(exchange, detail, handler, servicePlan));
         });
@@ -596,7 +598,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
     private PluginHandler resolvePluginHandler(PluginDetail detail) {
         PluginHandler handler = pluginHandlers.get(detail.getName());
         if (handler == null) {
-            throw new IllegalArgumentException("Plugin handler not found: " + detail.getName());
+            log.warn("Plugin handler not found: " + detail.getName());
         }
         return handler;
     }
