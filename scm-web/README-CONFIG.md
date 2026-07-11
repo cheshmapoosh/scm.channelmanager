@@ -70,7 +70,7 @@
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | لاگ کنسول | فقط در profile `dev` باید روشن باشد. در test، pilot و prod خاموش است. |
 | `SCM_OBS_LOG_FILE_ENABLED` | لاگ فایل | روشن یا خاموش بودن فایل log را مشخص میکند. خاموش بودن اشتباه باعث از دست رفتن لاگ عملیاتی میشود. |
 | `SCM_OBS_TRACE_ENABLED` | trace برنامه | به صورت پیشفرض `true` است. اگر `false` شود trace کلی خاموش میشود. |
-| `SCM_OBS_TRACE_FILE_ENABLED` | فایل trace | اگر تنظیم نشود از `SCM_OBS_TRACE_ENABLED` پیروی میکند. مقدار اشتباه باعث تناقض بین trace کلی و فایل trace نمیشود. |
+| `SCM_OBS_TRACE_FILE_ENABLED` | فایل trace | مقصد فایل trace به صورت پیشفرض فعال است، اما فقط وقتی global observation و خود سیگنال trace فعال باشند خروجی تولید میکند. |
 | `SCM_OBS_AUDIT_ENABLED` | audit | روشن یا خاموش بودن audit را کنترل میکند. audit باید جدا از application log باقی بماند. |
 
 ## 7. متغیرهای اتصال به Config Server

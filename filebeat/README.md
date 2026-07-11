@@ -1,6 +1,8 @@
 # filebeat
 
-This folder keeps Filebeat examples for SCM LOG, TRACE, and AUDIT JSONL files.
+This folder keeps Filebeat examples for SCM LOG, TRACE, and AUDIT JSONL files. JSONL is the default structured ingestion contract.
+
+Optional simple `.log` observation files are human-readable `key=value` output. They are not JSONL-compatible and must not be added to these inputs.
 
 Metrics are not collected by Filebeat. Metrics stay on the Actuator, Micrometer, Prometheus, and Grafana path.
 
@@ -48,4 +50,4 @@ filebeat.inputs:
           add_error_key: true
 ```
 
-Do not configure Filebeat to read compressed observation files or metric data.
+Do not configure these JSON parsers to read simple `.log` files, compressed observation files, or metric data.

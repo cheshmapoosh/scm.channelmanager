@@ -9,9 +9,9 @@
 - Disabling `scm.uaa.datasource.activation.enabled` removes only legacy MB/PWA activation repositories, services, controllers, and adapters. It does not remove NIB activation, normal login, or token handling. The activation datasource will be deprecated after legacy migration.
 - UAA security explicitly selects `uaaCorsConfigurationSource`; it does not use `@Primary` to resolve CORS beans. Credentialed CORS rejects a wildcard, and the Kubernetes profiles also reject an empty origin list.
 - The dev profile supports HTTPS through `SCM_UAA_SSL_*`. Realistic cross-site cookie tests normally require `SameSite=None; Secure`; `Secure` requires HTTPS except for browser localhost exceptions. A `__Host-` cookie also requires `Path=/` and no `Domain` attribute.
-- Log, trace, and audit use separate NDJSON files. Only the `dev` profile logs observation streams to the console. Kubernetes profiles write files under `/var/obs/{appName}/{env}/{namespace}/{stream}`; the local fallback uses `${user.home}/scm/obs/{appName}/{env}/default/{stream}`.
+- Log, trace, and audit use separate files. JSONL is the default structured ingestion format; optional simple `.log` output is human-readable and is not consumed by the current Filebeat pipeline. Only the `dev` profile enables the three observation console destinations. Kubernetes profiles write files under `/var/obs/{appName}/{env}/{namespace}/{stream}`; the local fallback uses `${user.home}/scm/obs/{appName}/{env}/default/{stream}`.
 
-هدف این است که بدانید هر مسیر لاگین از کجا وارد می‌شود، کدام کلاس‌ها مسئول چه کاری هستند، کجا باید کد اضافه کنید، و چطور خروجی‌های JSONL برای LOG و TRACE تولید می‌شوند.
+هدف این است که بدانید هر مسیر لاگین از کجا وارد می‌شود، کدام کلاس‌ها مسئول چه کاری هستند، کجا باید کد اضافه کنید، و چطور خروجی‌های observation برای LOG و TRACE تولید می‌شوند؛ فایل پیش‌فرض JSONL است و `simple` فقط خروجی اختیاری انسانی است.
 
 ## ۱. لاگین قدیمی NIB - صفحه لاگین در فرانت NIB و دریافت توکن به صورت back-to-back
 
@@ -47,7 +47,7 @@ sequenceDiagram
 - `UaaPasswordAuthenticationFlowService` سیاست‌های کلاینت، IP، نسخه، activation، load شدن user، و روش password/OTP را هماهنگ می‌کند.
 - `AuthenticationResponseTokenGenerator` پاسخ OAuth2 token را می‌سازد.
 - `LegacyPwaOauthLoginResponseProxyAdvisor` شکل response قدیمی را نگه می‌دارد، اما برای NIB cookie نمی‌سازد.
-- `UaaObservation` و observation starter خروجی‌های JSONL برای LOG و TRACE تولید می‌کنند.
+- `UaaObservation` و observation starter خروجی‌های LOG و TRACE را تولید می‌کنند؛ قالب پیش‌فرض فایل JSONL است.
 
 TRACE/LOG مهم:
 
@@ -282,7 +282,7 @@ sequenceDiagram
 
 `scm-uaa` از `scm-observation-starter` استفاده می‌کند. هر inbound HTTP request یک root trace span دارد. کلاس‌های authentication و security برای operationهای داخلی child/application span یا structured event تولید می‌کنند.
 
-خروجی LOG و TRACE به صورت JSONL است: هر خط دقیقا یک JSON object فشرده است. pretty print، JSON array و multiline stack trace در فایل‌ها مجاز نیست. Filebeat، Kafka یا Logstash می‌توانند این فایل‌های JSONL را line by line مصرف کنند.
+خروجی فایل LOG و TRACE به صورت پیش‌فرض JSONL است: هر خط دقیقا یک JSON object فشرده است. pretty print، JSON array و multiline stack trace در فایل‌ها مجاز نیست. Filebeat، Kafka یا Logstash می‌توانند این فایل‌های JSONL را line by line مصرف کنند. قالب اختیاری `simple` خروجی تک‌خطی `key=value` با یک `stream=` صریح تولید می‌کند و بخشی از pipeline فعلی JSONL نیست.
 
 توسعه‌دهنده‌ها نباید writer دستی مثل `FileWriter`، `BufferedWriter` یا `ObjectMapper` line writer بسازند. برای log/trace از abstractionهای موجود مثل `UaaObservation` و زیرساخت observation استفاده کنید.
 

@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+ir.daneshrefah.scm.observation.starter.autoconfigure.environment.ScmObservationDefaultsEnvironmentPostProcessor

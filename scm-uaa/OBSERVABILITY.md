@@ -17,15 +17,18 @@ deployment.environment
 
 `scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Startup and platform logs normally do not have a channel code, so their index omits the channel segment.
 
-Files are namespace-based, not channel-based:
+Files are namespace-based, not channel-based. The starter owns technical defaults; UAA keeps its intentional audit policy and service-specific settings:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
+jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
+
+JSONL is the default Filebeat ingestion contract. Simple output is optional human-readable `key=value` output, contains exactly one canonical `stream=`, and is not consumed by the current JSONL pipeline.
 
 In Kubernetes, `SCM_METADATA_NAMESPACE` comes from `metadata.namespace` and `SCM_METADATA_INSTANCE_ID` comes from `metadata.name` through the Downward API.
 
-Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Test, pilot, and prod keep console disabled and file output enabled.
+Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. The AUDIT console setting does not independently enable the AUDIT signal. Starter defaults keep consoles disabled and files enabled in test, pilot, and prod.
 
 Distributed tracing uses W3C `traceparent` as the source of truth. Custom `X-SCM-*` trace headers are not used for distributed trace propagation.
 

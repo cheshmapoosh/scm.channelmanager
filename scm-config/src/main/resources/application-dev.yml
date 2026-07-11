@@ -2,6 +2,16 @@ scm:
   metadata:
     namespace: ${SCM_METADATA_NAMESPACE:local}
     instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-config}
+  observation:
+    log:
+      console:
+        enabled: true
+    trace:
+      console:
+        enabled: true
+    audit:
+      console:
+        enabled: true
 
 SCM_CONFIG_SERVER_PORT: ${SERVER_PORT:8888}
 SCM_CONFIG_SERVER_PREFIX: /config
@@ -23,12 +33,6 @@ SCM_CONFIG_OPR_PASSWORD: ${SCM_DEV_CONFIG_OPR_PASSWORD:change-me}
 SCM_CONFIG_ENCRYPT_KEY: ${SCM_DEV_CONFIG_ENCRYPT_KEY:change-me-local-only}
 
 SCM_CONFIG_LOG_PATH: /mnt/log
-SCM_OBS_ROOT_DIR: ${user.home}/scm/obs
-SCM_OBS_LOG_CONSOLE_ENABLED: true
-SCM_OBS_LOG_FILE_ENABLED: true
-SCM_OBS_TRACE_FILE_ENABLED: true
-SCM_OBS_AUDIT_ENABLED: false
-
 SCM_CONFIG_APPLICATIONS_SCM_WEB: dev, test, pilot, prod
 SCM_CONFIG_APPLICATIONS_SCM_CACHE: dev, test, pilot, prod
 SCM_CONFIG_APPLICATIONS_SCM_UAA: dev, test, pilot, prod

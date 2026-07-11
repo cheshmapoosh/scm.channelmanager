@@ -219,6 +219,7 @@ public class ObservationProperties {
 
     public static class ConsoleProperties {
         private boolean enabled;
+        private String format = "simple";
 
         public boolean isEnabled() {
             return enabled;
@@ -227,10 +228,19 @@ public class ObservationProperties {
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
         }
+
+        public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
+        }
     }
 
     public static class FileProperties {
         private boolean enabled;
+        private String format = "jsonl";
         private Path directory;
 
         public boolean isEnabled() {
@@ -239,6 +249,14 @@ public class ObservationProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
         }
 
         public Path getDirectory() {

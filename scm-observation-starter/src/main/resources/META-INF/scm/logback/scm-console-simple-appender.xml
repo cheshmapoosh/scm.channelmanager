@@ -1,7 +1,8 @@
 <included>
-    <if condition='property("LOG_ENABLED").equalsIgnoreCase("true")
+    <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("LOG_ENABLED").equalsIgnoreCase("true")
         &amp;&amp; property("LOG_CONSOLE_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("LOG_CONSOLE_FORMAT").equalsIgnoreCase("simple")'>
+        &amp;&amp; property("LOG_CONSOLE_FORMAT").equals("simple")'>
         <then>
             <appender name="SCM_CONSOLE_SIMPLE"
                       class="ch.qos.logback.core.ConsoleAppender">
@@ -13,14 +14,47 @@
                     <marker>SCM_OBSERVATION_AUDIT</marker>
                     <inverse>true</inverse>
                 </filter>
-                <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-                    <charset>UTF-8</charset>
-                    <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
-                </encoder>
+                <encoder class="ir.daneshrefah.scm.observation.starter.logging.ScmLogSimpleEncoder"/>
             </appender>
         </then>
         <else>
             <appender name="SCM_CONSOLE_SIMPLE"
+                      class="ch.qos.logback.core.helpers.NOPAppender"/>
+        </else>
+    </if>
+    <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("TRACE_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("TRACE_CONSOLE_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("TRACE_CONSOLE_FORMAT").equals("simple")'>
+        <then>
+            <appender name="SCM_TRACE_CONSOLE_SIMPLE"
+                      class="ch.qos.logback.core.ConsoleAppender">
+                <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
+                    <marker>SCM_OBSERVATION_TRACE</marker>
+                </filter>
+                <encoder class="ir.daneshrefah.scm.observation.starter.logging.ScmObservationSimpleEncoder"/>
+            </appender>
+        </then>
+        <else>
+            <appender name="SCM_TRACE_CONSOLE_SIMPLE"
+                      class="ch.qos.logback.core.helpers.NOPAppender"/>
+        </else>
+    </if>
+    <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("AUDIT_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("AUDIT_CONSOLE_ENABLED").equalsIgnoreCase("true")
+        &amp;&amp; property("AUDIT_CONSOLE_FORMAT").equals("simple")'>
+        <then>
+            <appender name="SCM_AUDIT_CONSOLE_SIMPLE"
+                      class="ch.qos.logback.core.ConsoleAppender">
+                <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
+                    <marker>SCM_OBSERVATION_AUDIT</marker>
+                </filter>
+                <encoder class="ir.daneshrefah.scm.observation.starter.logging.ScmObservationSimpleEncoder"/>
+            </appender>
+        </then>
+        <else>
+            <appender name="SCM_AUDIT_CONSOLE_SIMPLE"
                       class="ch.qos.logback.core.helpers.NOPAppender"/>
         </else>
     </if>
