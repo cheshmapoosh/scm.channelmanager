@@ -327,26 +327,24 @@ scm:
         in-memory-format: ${SCM_CACHE_NEAR_IN_MEMORY_FORMAT:OBJECT}
       caches:
         ebServiceByCode:
-          type: ${SCM_CACHE_EB_SERVICE_BY_CODE_TYPE:local}
+          type: local
         session_cache:
           type: ${SCM_CACHE_SESSION_TYPE:near}
           remote-name: ${SCM_CACHE_SESSION_REMOTE_NAME:session_cache}
-          ttl: ${SCM_CACHE_SESSION_TTL:30m}
-          maximum-size: ${SCM_CACHE_SESSION_MAXIMUM_SIZE:10000}
+          maximum-size: ${SCM_CACHE_SESSION_NEAR_MAXIMUM_SIZE:10000}
         user_cache:
           type: ${SCM_CACHE_USER_TYPE:near}
           remote-name: ${SCM_CACHE_USER_REMOTE_NAME:user_cache}
-          ttl: ${SCM_CACHE_USER_TTL:30m}
-          maximum-size: ${SCM_CACHE_USER_MAXIMUM_SIZE:10000}
+          maximum-size: ${SCM_CACHE_USER_NEAR_MAXIMUM_SIZE:10000}
         scm-web-api-doc-catalog:
-          type: ${SCM_CACHE_API_DOC_CATALOG_TYPE:local}
+          type: local
           ttl: ${SCM_CACHE_API_DOC_CATALOG_TTL:60s}
           maximum-size: ${SCM_CACHE_API_DOC_CATALOG_MAXIMUM_SIZE:128}
         bank:
-          type: ${SCM_CACHE_BANK_TYPE:local}
+          type: local
         userCards:
           type: ${SCM_CACHE_USER_CARDS_TYPE:remote}
-          ttl: ${SCM_USER_CARDS_CACHE_TTL:10m}
+          remote-name: ${SCM_CACHE_USER_CARDS_REMOTE_NAME:userCards}
 
   membership-access:
     default-services: ${SCM_MEMBERSHIP_DEFAULT_SERVICES:TAccListInq,AcctInq}

@@ -24,47 +24,91 @@ public class CacheRouteResolver {
     private CacheRoute buildRoute(String cacheName) {
         CacheClientProperties.CacheDefinition definition = properties.getCaches().get(cacheName);
 
-        CacheType type = properties.getDefaultType();
-        String targetName = cacheName;
+        CacheType type = effectiveType(definition);
 
-        if (definition != null) {
-            if (definition.getType() != null) {
-                type = definition.getType();
-            }
-            if (StringUtils.hasText(definition.getRemoteName())) {
-                targetName = definition.getRemoteName();
-            }
-        }
+        CacheRoute route = switch (type) {
+            case LOCAL -> localRoute(cacheName, definition);
+            case REMOTE -> remoteRoute(cacheName, definition);
+            case NEAR -> nearRoute(cacheName, definition);
+        };
 
-        Duration ttl = defaultTtl(type);
-        long maximumSize = defaultMaximumSize(type);
+        log.info("Cache route resolved: cache='{}', target='{}', type={}, {}",
+                route.cacheName(), route.targetName(), route.type(), describePolicy(route));
+        return route;
+    }
+
+    private CacheRoute localRoute(String cacheName, CacheClientProperties.CacheDefinition definition) {
+        Duration ttl = properties.getLocal().getTtl();
+        long maximumSize = properties.getLocal().getMaximumSize();
 
         if (definition != null) {
             if (definition.getTtl() != null) {
                 ttl = definition.getTtl();
             }
-            if (definition.getMaximumSize() != null && definition.getMaximumSize() > 0) {
+            if (definition.getMaximumSize() != null) {
                 maximumSize = definition.getMaximumSize();
             }
         }
 
-        CacheRoute route = new CacheRoute(cacheName, targetName, type, ttl, maximumSize);
-        log.info("Cache route resolved: cache='{}', target='{}', type={}, ttl={}, maxSize={}",
-                route.cacheName(), route.targetName(), route.type(), route.ttl(), route.maximumSize());
-        return route;
+        return new CacheRoute(
+                cacheName,
+                cacheName,
+                CacheType.LOCAL,
+                ttl,
+                maximumSize,
+                CacheRoute.TtlOwnership.HOST,
+                CacheRoute.SizeOwnership.LOCAL
+        );
     }
 
-    private Duration defaultTtl(CacheType type) {
-        if (type == CacheType.LOCAL) {
-            return properties.getLocal().getTtl();
-        }
-        return Duration.ZERO;
+    private CacheRoute remoteRoute(String cacheName, CacheClientProperties.CacheDefinition definition) {
+        return new CacheRoute(
+                cacheName,
+                targetName(cacheName, definition),
+                CacheType.REMOTE,
+                null,
+                0L,
+                CacheRoute.TtlOwnership.SERVER_MANAGED,
+                CacheRoute.SizeOwnership.NOT_APPLICABLE
+        );
     }
 
-    private long defaultMaximumSize(CacheType type) {
-        if (type == CacheType.NEAR) {
-            return properties.getNear().getMaximumSize();
+    private CacheRoute nearRoute(String cacheName, CacheClientProperties.CacheDefinition definition) {
+        long maximumSize = definition != null && definition.getMaximumSize() != null
+                ? definition.getMaximumSize()
+                : properties.getNear().getMaximumSize();
+        return new CacheRoute(
+                cacheName,
+                targetName(cacheName, definition),
+                CacheType.NEAR,
+                null,
+                maximumSize,
+                CacheRoute.TtlOwnership.SERVER_MANAGED,
+                CacheRoute.SizeOwnership.NEAR_CLIENT
+        );
+    }
+
+    private CacheType effectiveType(CacheClientProperties.CacheDefinition definition) {
+        if (definition != null && definition.getType() != null) {
+            return definition.getType();
         }
-        return properties.getLocal().getMaximumSize();
+        return properties.getDefaultType() == null ? CacheType.REMOTE : properties.getDefaultType();
+    }
+
+    private String targetName(String cacheName, CacheClientProperties.CacheDefinition definition) {
+        if (definition != null && StringUtils.hasText(definition.getRemoteName())) {
+            return definition.getRemoteName().trim();
+        }
+        return cacheName;
+    }
+
+    private String describePolicy(CacheRoute route) {
+        if (route.type() == CacheType.LOCAL) {
+            return "ttl=%s, maximumSize=%d".formatted(route.ttl(), route.maximumSize());
+        }
+        if (route.type() == CacheType.NEAR) {
+            return "ttl=server-managed, nearMaximumSize=%d".formatted(route.maximumSize());
+        }
+        return "ttl=server-managed, maximumSize=not-applicable";
     }
 }

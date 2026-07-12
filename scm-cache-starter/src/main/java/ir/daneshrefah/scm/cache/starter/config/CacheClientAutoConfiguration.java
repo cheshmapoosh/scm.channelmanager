@@ -12,6 +12,7 @@ import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.cache.starter.config.exception.HazelCastClientInitializationException;
 import ir.daneshrefah.scm.cache.starter.config.properties.CacheClientProperties;
 import ir.daneshrefah.scm.cache.starter.config.properties.CacheType;
+import ir.daneshrefah.scm.cache.starter.config.validation.CacheClientPropertiesValidator;
 import ir.daneshrefah.scm.cache.starter.connector.backend.CacheBackend;
 import ir.daneshrefah.scm.cache.starter.connector.backend.CacheBackendRouter;
 import ir.daneshrefah.scm.cache.starter.connector.backend.HazelcastCacheBackend;
@@ -39,6 +40,7 @@ public class CacheClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ClientConfig clientConfig(CacheClientProperties cacheProperties) {
+        CacheClientPropertiesValidator.validate(cacheProperties);
         ClientConfig clientConfig = new ClientConfig();
         CacheClientProperties.RemoteProperties remote = cacheProperties.getRemote();
         if (remote != null) {
@@ -70,6 +72,7 @@ public class CacheClientAutoConfiguration {
     @ConditionalOnMissingBean(HazelcastInstance.class)
     @ConditionalOnProperty(prefix = "scm.cache.client", name = "distributed", havingValue = "false")
     public HazelcastInstance hazelcastEmbed(CacheClientProperties cacheProperties) {
+        CacheClientPropertiesValidator.validate(cacheProperties);
         validateNearCachesDisabled(cacheProperties);
         log.info("Starting embedded Hazelcast instance because scm.cache.client.distributed=false");
         return Hazelcast.newHazelcastInstance();
@@ -78,6 +81,7 @@ public class CacheClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public CacheRouteResolver cacheRouteResolver(CacheClientProperties cacheProperties) {
+        CacheClientPropertiesValidator.validate(cacheProperties);
         return new CacheRouteResolver(cacheProperties);
     }
 
@@ -118,11 +122,11 @@ public class CacheClientAutoConfiguration {
         for (Map.Entry<String, CacheClientProperties.CacheDefinition> entry : cacheProperties.getCaches().entrySet()) {
             String cacheName = entry.getKey();
             CacheClientProperties.CacheDefinition definition = entry.getValue();
-            if (definition == null || definition.getType() != CacheType.NEAR) {
+            if (definition == null || effectiveType(cacheProperties, definition) != CacheType.NEAR) {
                 continue;
             }
-            String targetName = StringUtils.hasText(definition.getRemoteName()) ? definition.getRemoteName() : cacheName;
-            long maximumSize = definition.getMaximumSize() != null && definition.getMaximumSize() > 0
+            String targetName = StringUtils.hasText(definition.getRemoteName()) ? definition.getRemoteName().trim() : cacheName;
+            long maximumSize = definition.getMaximumSize() != null
                     ? definition.getMaximumSize()
                     : near.getMaximumSize();
             NearCacheConfig nearCacheConfig = resolveOrCreateNearCache(clientConfig, targetName, near, maximumSize);
@@ -162,8 +166,25 @@ public class CacheClientAutoConfiguration {
     }
 
     private boolean hasNearCache(CacheClientProperties cacheProperties) {
+        if (effectiveDefaultType(cacheProperties) == CacheType.NEAR) {
+            return true;
+        }
         return cacheProperties.getCaches().values().stream()
-                .anyMatch(definition -> definition != null && definition.getType() == CacheType.NEAR);
+                .anyMatch(definition -> definition != null && effectiveType(cacheProperties, definition) == CacheType.NEAR);
+    }
+
+    private CacheType effectiveType(
+            CacheClientProperties cacheProperties,
+            CacheClientProperties.CacheDefinition definition
+    ) {
+        if (definition != null && definition.getType() != null) {
+            return definition.getType();
+        }
+        return effectiveDefaultType(cacheProperties);
+    }
+
+    private CacheType effectiveDefaultType(CacheClientProperties cacheProperties) {
+        return cacheProperties.getDefaultType() == null ? CacheType.REMOTE : cacheProperties.getDefaultType();
     }
 
     private InMemoryFormat inMemoryFormat(String value) {

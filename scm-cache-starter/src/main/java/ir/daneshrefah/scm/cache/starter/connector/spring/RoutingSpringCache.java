@@ -78,8 +78,9 @@ public class RoutingSpringCache implements TtlAwareCache {
             publishGetResult(key, startedAt, null);
             T loadedValue = loadValue(key, valueLoader, startedAt);
             if (loadedValue != null) {
-                backend.putIfAbsent(route, cacheKey, loadedValue, route.ttl());
-                cacheEventSupport.cacheEvent(ScmCacheEventType.CACHE_PUT, route, "put_if_absent", key, route.ttl(), startedAt, "success", null, null);
+                Duration ttl = route.defaultOperationTtl();
+                backend.putIfAbsent(route, cacheKey, loadedValue, ttl);
+                cacheEventSupport.cacheEvent(ScmCacheEventType.CACHE_PUT, route, "put_if_absent", key, ttl, startedAt, "success", null, null);
             }
             return loadedValue;
         } catch (ValueRetrievalException exception) {
@@ -92,7 +93,7 @@ public class RoutingSpringCache implements TtlAwareCache {
 
     @Override
     public void put(Object key, Object value) {
-        put(key, value, route.ttl());
+        put(key, value, route.defaultOperationTtl());
     }
 
     @Override
@@ -109,7 +110,7 @@ public class RoutingSpringCache implements TtlAwareCache {
 
     @Override
     public ValueWrapper putIfAbsent(Object key, Object value) {
-        return putIfAbsent(key, value, route.ttl());
+        return putIfAbsent(key, value, route.defaultOperationTtl());
     }
 
     @Override
