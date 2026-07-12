@@ -17,9 +17,11 @@ import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.uaa.starter.security.event.ScmSecurityEventType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +36,7 @@ import static ir.daneshrefah.scm.utils.constant.Constants.*;
 
 @Component("jwtAuthPluginHandler")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthenticationPluginHandler implements PluginHandler {
 
     private final ObjectProvider<AuthenticationClientTemplate> authenticationClientTemplateProvider;
@@ -102,29 +105,53 @@ public class AuthenticationPluginHandler implements PluginHandler {
     private ValidatedJwtBusinessContext validatedBusinessContext(UserAuthentication authentication) {
         UserAuthentication.AuthenticationDetail details = authentication == null ? null : authentication.getDetails();
         Object loginData = details == null ? null : details.getLoginData();
+        List<String> roles = List.of();
         if (loginData instanceof Jwt jwt) {
-            return new ValidatedJwtBusinessContext(normalizedRoles(jwt.getClaim("aut")));
+            roles = normalizedClaimRoles(jwt.getClaim("aut"));
         }
-        return ValidatedJwtBusinessContext.empty();
+        if (roles.isEmpty()) {
+            roles = normalizedAuthorityRoles(authentication == null ? null : authentication.getAuthorities());
+        }
+        if (roles.isEmpty() && authentication != null && authentication.isAuthenticated() && !authentication.isAnonymous()) {
+            log.warn("Authenticated non-anonymous user produced no business roles authenticationType={}",
+                    authentication.getClass().getSimpleName());
+        }
+        return new ValidatedJwtBusinessContext(roles);
     }
 
-    private List<String> normalizedRoles(Object value) {
+    private List<String> normalizedClaimRoles(Object value) {
         Set<String> roles = new LinkedHashSet<>();
-        appendRoles(roles, value);
+        appendClaimRoles(roles, value);
         return List.copyOf(roles);
     }
 
-    private void appendRoles(Set<String> roles, Object value) {
+    private List<String> normalizedAuthorityRoles(Collection<? extends GrantedAuthority> authorities) {
+        Set<String> roles = new LinkedHashSet<>();
+        if (authorities != null) {
+            for (GrantedAuthority authority : authorities) {
+                if (authority == null) {
+                    continue;
+                }
+                String role = authority.getAuthority();
+                if (role != null && !role.isBlank()) {
+                    roles.add(role.trim());
+                }
+            }
+        }
+        return List.copyOf(roles);
+    }
+
+    private void appendClaimRoles(Set<String> roles, Object value) {
         if (value == null) {
             return;
         }
         if (value instanceof Collection<?> collection) {
-            collection.forEach(item -> appendRoles(roles, item));
+            collection.forEach(item -> appendClaimRoles(roles, item));
             return;
         }
         if (value.getClass().isArray()) {
             for (int index = 0; index < Array.getLength(value); index++) {
-                appendRoles(roles, Array.get(value, index));
+                appendClaimRoles(roles, Array.get(value, index));
             }
             return;
         }
