@@ -20,7 +20,7 @@ SCM observability writes LOG, TRACE, and AUDIT as JSONL files by default. JSONL 
 
 ## Configuration Ownership
 
-`scm-observation-starter` owns technical defaults in `META-INF/scm/observation-defaults.yml`. It loads that resource as a lowest-precedence property source; hosts must not import it with `spring.config.import`.
+`scm-observation-starter` owns transport-neutral technical defaults in `META-INF/scm/observation-defaults.yml`. It loads that resource as a lowest-precedence property source; hosts must not import it with `spring.config.import`. Transport adapters own and load their own defaults by the same low-precedence mechanism.
 
 Effective precedence, highest first:
 
@@ -33,9 +33,11 @@ Effective precedence, highest first:
 7. starter observation defaults
 8. hard fail-safe Java and Logback defaults
 
-Host applications retain only service signal policy, profile behavior, service-specific HTTP settings, actual exceptional overrides, and unrelated application configuration. Supported `SCM_OBS_*` environment variables continue to override the starter values.
+Host applications retain only service signal policy, profile behavior, adapter-specific service policy, actual exceptional overrides, and unrelated application configuration. Supported `SCM_OBS_*` environment variables continue to override the relevant starter values.
 
-The global switch is `scm.observation.enabled`. When it is `false`, the starter creates no LOG, TRACE, AUDIT, or METRIC signal, and no SCM observation console or file appender writes output. Destination enablement never enables its parent signal.
+The global switch is `scm.observation.enabled`. When it is `false`, the starter creates no LOG, TRACE, AUDIT, or METRIC signal, and no structured SCM observation console or file appender writes output. Destination enablement never enables its parent signal.
+
+Ordinary diagnostic logging remains available through the independent `SCM_FALLBACK_CONSOLE` when either `scm.observation.enabled=false` or `scm.observation.log.enabled=false`. The fallback is human-readable, writes no observation file, and excludes SCM TRACE and AUDIT markers. It is inactive when both switches are true, even if structured LOG console and file destinations are explicitly disabled, so it neither duplicates structured LOG output nor overrides explicit destination policy. The Logback hard defaults activate this fallback if starter defaults cannot be loaded.
 
 Default signal policy:
 
@@ -54,9 +56,18 @@ Default destinations:
 | TRACE | `false` | `simple` | `true` | `jsonl` |
 | AUDIT | `false` | `simple` | `true` | `jsonl` |
 
-All six `scm.observation.{log,trace,audit}.{console,file}.format` properties accept exactly lowercase, case-sensitive `simple` or `jsonl`. Blank, uppercase, comma-separated, and other values fail startup even if the destination is disabled. If the starter defaults resource is unavailable, hard Java and Logback enablement fallbacks are `false`.
+All six `scm.observation.{log,trace,audit}.{console,file}.format` properties accept exactly lowercase, case-sensitive `simple` or `jsonl`. Blank, uppercase, comma-separated, and other values fail startup even if the destination is disabled. If the starter defaults resource is unavailable, hard Java and structured Logback enablement fallbacks are `false`; the ordinary diagnostic fallback console consequently remains available.
 
 The starter README contains the canonical compact host-policy and `dev` profile examples. The `dev` profile enables all three console destinations without enabling the AUDIT signal.
+
+## Module Boundary
+
+| Module | Responsibility |
+| --- | --- |
+| `scm-observation-starter` | Transport-neutral signal policy, context and scope APIs, LOG/TRACE/AUDIT documents, sanitization, validation, metrics, and Logback integration |
+| `scm-observation-servlet-starter` | Servlet request correlation MDC and optional HTTP server observation |
+
+The core starter does not inspect HTTP, Servlet, SOAP, Camel, TCP, MQ, WebSocket, or gRPC traffic. A transport adapter extracts its protocol metadata, supplies protocol and span-kind values, and builds safe attributes through the core observation API. HTTP headers, method, path, route, status, client address, and Servlet filter registration therefore belong exclusively to the Servlet adapter. Other transports can add independent adapters without changing the core.
 
 ## Runtime Metadata
 
@@ -184,9 +195,15 @@ log-scm-scm-web-dev-local-local-scm-web-20260711-10-0.log
 
 File names never include channel code or Config label. Observation files are not gzipped and do not use a separate archive directory. Both formats retain `%d` and `%i` through the hour and roll-index tokens. Current and rolled JSONL files use final names while Filebeat reads them.
 
+## Structured LOG Event Identity
+
+One `ILoggingEvent` maps to one immutable structured LOG document. Resolution uses the event object's identity, not its message, logger, or timestamp, and keeps only weak event references. Concurrent destinations share the same resolution and `ScmLogDocumentFactory` is invoked at most once for that event. Consequently simple and JSONL destinations observe identical `@timestamp`, correlation and trace identifiers, event fields, runtime metadata, sanitized attributes, and exception fields. Two distinct events with identical visible values remain separate documents.
+
 ## Simple Output
 
 Every simple line is UTF-8, exactly one physical line, and contains exactly one canonical stream identity: `stream=log`, `stream=trace`, or `stream=audit`. Field order is deterministic, null values are omitted, numeric and boolean values remain unquoted, and textual values are safely quoted and escaped. Simple TRACE and AUDIT are real `key=value` output, not JSON prefixed with a stream name.
+
+If structured simple LOG rendering fails, the encoder emits a sanitized, primitive-only single line containing `stream=log` and `encoding.error=true` instead of empty output. That failure path does not reprocess structured arguments or emit a stack trace.
 
 JSONL files remain the default machine-ingestion format. Simple `.log` files are optional debugging output and must not be added to the current Filebeat JSON parser inputs.
 

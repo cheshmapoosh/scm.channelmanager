@@ -19,7 +19,9 @@ METRIC -> Actuator -> Micrometer -> Prometheus -> Grafana
 ```
 
 Technical defaults are owned by this starter and loaded from
-`META-INF/scm/observation-defaults.yml` as a lowest-precedence property source. Host applications contain only service policy, profile behavior, service-specific HTTP settings, and real exceptional overrides.
+`META-INF/scm/observation-defaults.yml` as a lowest-precedence property source. Host applications contain only service policy, profile behavior, and real exceptional overrides.
+
+`scm-observation-starter` is transport-neutral. It does not inspect HTTP, Servlet, SOAP, Camel, TCP, MQ, WebSocket, or gRPC traffic. Transport adapters translate their protocol metadata into the core `ObservationContext`, `ObservationScope`, builders, and registered attributes. Gateway protocol and span kind are adapter-supplied values rather than a closed transport enum. Servlet request correlation and HTTP server observation belong to `scm-observation-servlet-starter`.
 
 The default signal policy is:
 
@@ -38,7 +40,9 @@ Destination defaults are:
 | TRACE | `false` | `simple` | `true` | `jsonl` |
 | AUDIT | `false` | `simple` | `true` | `jsonl` |
 
-`scm.observation.enabled` is the global switch. When it is `false`, the starter creates no LOG, TRACE, AUDIT, or METRIC signal and no SCM observation console or file appender emits output. Enabling a destination never enables its parent signal; in particular, enabling the AUDIT console does not enable AUDIT.
+`scm.observation.enabled` is the global switch. When it is `false`, the starter creates no LOG, TRACE, AUDIT, or METRIC signal and no structured SCM observation console or file appender emits output. Enabling a destination never enables its parent signal; in particular, enabling the AUDIT console does not enable AUDIT.
+
+An independent `SCM_FALLBACK_CONSOLE` preserves ordinary diagnostic logging when either `scm.observation.enabled=false` or `scm.observation.log.enabled=false`. It uses a conventional human-readable pattern, writes no observation file, and rejects SCM TRACE and AUDIT marker events. It is disabled whenever both the global switch and structured LOG signal are enabled, including when the structured LOG console and file destinations are both explicitly disabled; therefore it neither duplicates structured output nor overrides an intentional destination policy.
 
 The effective precedence, from highest to lowest, is:
 
@@ -62,10 +66,9 @@ scm:
   observation:
     audit:
       enabled: true
-    http:
-      server:
-        span-name: uaa.http.request
 ```
+
+Servlet/HTTP policy is configured by hosts that depend on `scm-observation-servlet-starter` and is documented in that module.
 
 The `dev` profile enables destinations, not the AUDIT signal:
 
@@ -91,7 +94,11 @@ Metric در فایل نوشته نمی‌شود و همان مسیر استان�
 
 ```text
 scm-observation-starter:
-  ابزار عمومی log / trace / metric / audit
+  هستهٔ transport-neutral برای log / trace / metric / audit
+
+scm-observation-servlet-starter:
+  adapter مربوط به Servlet request correlation و HTTP server observation
+  وابسته به scm-observation-starter
 
 scm-uaa-starter:
   فقط security و resource-server
@@ -112,6 +119,8 @@ Providerها و starterهای دیگر نیز نباید برای ثبت log م�
 ```text
 scm-web -> scm-uaa-starter
 scm-web -> scm-observation-starter
+scm-web -> scm-observation-servlet-starter
+scm-observation-servlet-starter -> scm-observation-starter
 ```
 
 جهت dependency غیرمجاز:
@@ -120,6 +129,7 @@ scm-web -> scm-observation-starter
 scm-uaa-starter -> scm-observation-starter
 provider starter -> scm-observation-starter
 security starter -> scm-observation-starter
+scm-observation-starter -> scm-observation-servlet-starter
 ```
 
 ## ۳. تفاوت log معمولی، event، observation log، trace span و span event
@@ -129,6 +139,8 @@ security starter -> scm-observation-starter
 log معمولی با `log.info`، `log.warn` و `log.error` تولید می‌شود. تنظیمات `Logback` در ماژول میزبان تعیین می‌کند خروجی کجا و با چه قالبی نوشته شود. همهٔ ماژول‌ها می‌توانند از این روش استفاده کنند و فیلدهای `MDC` مانند `correlationId`، `traceId` و `spanId` نیز در الگوی log نمایش داده شوند.
 
 این روش برای پیام‌های عملیاتی روزمره، مانند شروع اتصال، retry، انتخاب endpoint یا خطای پیکربندی مناسب است.
+
+When structured LOG output is enabled, one `ILoggingEvent` is resolved to one immutable document. `ScmLogEventDocumentResolver` uses concurrent weak identity semantics and calls `ScmLogDocumentFactory` at most once for that event. Both `ScmLogJsonProvider` and `ScmLogSimpleEncoder` consume the resolved document, so console and file destinations share the same timestamp, correlation and trace identifiers, runtime metadata, sanitized attributes, and exception fields. Distinct events remain distinct even when their logger, timestamp, message, and other values are identical.
 
 ### ۳.۲. SCM application event
 
@@ -433,16 +445,7 @@ Host modules apply legacy projection at their business entry points only:
 
 Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Enabling the AUDIT console does not change the default `audit.enabled=false` policy. Starter defaults keep consoles disabled and files enabled in other profiles. `clean-history-on-start=false` remains the default; current and rolled JSONL files keep final names while Filebeat reads them. Optional simple `.log` files are for human use and are not part of that ingestion contract.
 
-Generic HTTP server tracing is disabled by default:
-
-```yaml
-scm:
-  observation:
-    http:
-      server:
-        enabled: false
-        mode: channel-only
-```
+The core starter defines no HTTP server properties, defaults, request filter, or Servlet auto-configuration. `scm-observation-servlet-starter` owns generic Servlet request MDC and HTTP server tracing. Other transports can add separate adapters without changing this core.
 
 Business TRACE should be created only for real end-user channel calls, not actuator, internal, admin/config, static, documentation, or background job endpoints.
 

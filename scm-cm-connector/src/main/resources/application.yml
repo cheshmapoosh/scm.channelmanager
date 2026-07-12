@@ -90,10 +90,6 @@ scm:
           addresses:
             - ${SCM_CACHE_ADDRESS:127.0.0.1:5701}
 
-  cm:
-    connector:
-      admin-cache-endpoints-enabled: ${SCM_CM_CONNECTOR_ADMIN_CACHE_ENDPOINTS_ENABLED:false}
-
   observation:
     http:
       server:

@@ -23,6 +23,7 @@ dependencies {
     implementation project(':scm-uaa-starter')
     implementation project(':scm-cache-starter')
     implementation project(':scm-observation-starter')
+    implementation project(':scm-observation-servlet-starter')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'

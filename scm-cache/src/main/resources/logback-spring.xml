@@ -1,5 +1,6 @@
 <configuration>
     <include resource="META-INF/scm/logback/scm-log-properties.xml"/>
+    <include resource="META-INF/scm/logback/scm-fallback-console-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-console-simple-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-console-jsonl-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-file-simple-appender.xml"/>
@@ -28,6 +29,7 @@
     <logger name="com.zaxxer.hikari" level="${HIKARI_LEVEL}"/>
 
     <root level="${ROOT_LEVEL}">
+        <appender-ref ref="SCM_FALLBACK_CONSOLE"/>
         <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
         <appender-ref ref="SCM_CONSOLE_JSONL"/>
         <appender-ref ref="SCM_TRACE_CONSOLE_SIMPLE"/>

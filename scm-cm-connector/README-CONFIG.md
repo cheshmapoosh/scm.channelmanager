@@ -26,7 +26,6 @@
 | `src/main/resources/application-test.yml` | تنظیمات test | فقط Config Server را bootstrap میکند و مقدارها باید از Config Server بیایند. |
 | `src/main/resources/application-pilot.yml` | تنظیمات pilot | فقط Config Server را bootstrap میکند و نبود Config Server باید startup را شکست دهد. |
 | `src/main/resources/application-prod.yml` | تنظیمات prod | فقط Config Server را bootstrap میکند و مقدارهای حساس باید از Secret Management بیایند. |
-| `scm-config/config-repo/scm-cm-connector/application-*.yml` | فایلهای متغیر Config Server | متغیرهای محیطی connector مثل UAA و cache را به صورت flat نگه میدارند. |
 
 ## 4. متغیرهای عمومی
 
@@ -51,7 +50,6 @@
 | `SCM_CM_CONNECTOR_RESOURCE_AUDIENCE` | audience مورد انتظار | audience مورد انتظار token است. مقدار اشتباه باعث reject شدن token معتبر میشود. |
 | `SCM_CM_CONNECTOR_REQUIRED_CLAIM_SUB` | claim کاربر | نام claim اجباری subject است. تغییر اشتباه باعث رد شدن requestها میشود. |
 | `SCM_CM_CONNECTOR_REQUIRED_CLAIM_SESSION` | claim session | نام claim session است. مقدار اشتباه باعث reject شدن token میشود. |
-| `SCM_CM_CONNECTOR_ADMIN_CACHE_ENDPOINTS_ENABLED` | endpointهای admin cache | دسترسی endpointهای مدیریتی cache را کنترل میکند. در prod باید طبق سیاست امنیتی تنظیم شود. |
 | `SCM_CACHE_DISTRIBUTED` | cache distributed | روشن یا خاموش بودن cache distributed client است. مقدار اشتباه روی session cache اثر میگذارد. |
 
 ## 6. متغیرهای Observation

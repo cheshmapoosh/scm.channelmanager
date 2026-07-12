@@ -36,6 +36,7 @@ dependencies {
     implementation project(':scm-gateway')
     implementation project(':scm-uaa-starter')
     implementation project(':scm-observation-starter')
+    implementation project(':scm-observation-servlet-starter')
     implementation project(':scm-docs-starter')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     runtimeOnly 'com.ibm.db2:db2jcc'

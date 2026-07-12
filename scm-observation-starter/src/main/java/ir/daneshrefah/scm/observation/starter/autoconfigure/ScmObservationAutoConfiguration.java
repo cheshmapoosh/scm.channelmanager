@@ -32,20 +32,15 @@ import ir.daneshrefah.scm.observation.starter.policy.ResolvedObservationSignalPo
 import ir.daneshrefah.scm.observation.starter.trace.NoopTraceObservationSink;
 import ir.daneshrefah.scm.observation.starter.trace.StructuredTraceObservationSink;
 import ir.daneshrefah.scm.observation.starter.trace.TraceObservationSink;
-import ir.daneshrefah.scm.observation.starter.web.HttpServerObservationFilter;
-import ir.daneshrefah.scm.observation.starter.web.ObservationMdcFilter;
-import jakarta.servlet.Filter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
 
 import java.time.Clock;
@@ -262,49 +257,6 @@ public class ScmObservationAutoConfiguration {
         }
     }
 
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass(Filter.class)
-    static class LogMdcConfiguration {
-        @Bean
-        @ConditionalOnLogEnabled
-        @ConditionalOnMissingBean(name = "observationMdcFilterRegistration")
-        public FilterRegistrationBean<ObservationMdcFilter> observationMdcFilterRegistration(
-                ObservationSignalPolicy signalPolicy,
-                ObservationContext context
-        ) {
-            FilterRegistrationBean<ObservationMdcFilter> registration = new FilterRegistrationBean<>();
-            registration.setFilter(new ObservationMdcFilter(signalPolicy, context));
-            registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 20);
-            registration.addUrlPatterns("/*");
-            return registration;
-        }
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass(Filter.class)
-    static class HttpServerTraceConfiguration {
-        @Bean
-        @ConditionalOnTraceEnabled
-        @ConditionalOnMissingBean(name = "httpServerObservationFilterRegistration")
-        public FilterRegistrationBean<HttpServerObservationFilter> httpServerObservationFilterRegistration(
-                ScmObservation observation,
-                ObservationSignalPolicy signalPolicy,
-                ObservationProperties properties
-        ) {
-            ObservationProperties.ServerProperties server = properties.getHttp().getServer();
-            FilterRegistrationBean<HttpServerObservationFilter> registration = new FilterRegistrationBean<>();
-            registration.setFilter(new HttpServerObservationFilter(
-                    observation,
-                    signalPolicy,
-                    server.getSpanName()
-            ));
-            registration.setEnabled(server.isEnabled() && !"channel-only".equalsIgnoreCase(server.getMode()));
-            registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 30);
-            registration.addUrlPatterns("/*");
-            return registration;
-        }
-    }
-
     @Conditional(TraceSignalCondition.class)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.TYPE})
@@ -321,12 +273,6 @@ public class ScmObservationAutoConfiguration {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.TYPE})
     @interface ConditionalOnMetricEnabled {
-    }
-
-    @Conditional(LogSignalCondition.class)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    @interface ConditionalOnLogEnabled {
     }
 
     static final class EventSignalCondition extends ObservationSignalConditionSupport {

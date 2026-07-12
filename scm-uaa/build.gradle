@@ -46,6 +46,7 @@ dependencies {
     api project(':scm-common')
 //    api project(':scm-notification')
     implementation project(':scm-observation-starter')
+    implementation project(':scm-observation-servlet-starter')
     implementation project(':scm-common-log')
     api project(':scm-notification-client')
     api project(':scm-common-error')

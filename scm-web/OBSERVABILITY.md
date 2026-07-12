@@ -13,11 +13,13 @@ GatewayObservationLifecycle
   -> ScmObservation.metric()
 ```
 
-HTTP is only the first adapter in this module:
+Generic Servlet request correlation and optional HTTP server observation come from `scm-observation-servlet-starter`. The gateway lifecycle remains owned by `scm-web`; its first protocol adapter is the module-local `HttpGatewayObservationFilter`:
 
 ```text
 HTTP request -> HttpGatewayObservationFilter -> GatewayObservationLifecycle
 ```
+
+The generic Servlet adapter is not the gateway lifecycle and does not replace this filter. Other gateway transports can call the same core lifecycle without adding transport behavior to `scm-observation-starter`.
 
 Future adapters should reuse the same lifecycle:
 

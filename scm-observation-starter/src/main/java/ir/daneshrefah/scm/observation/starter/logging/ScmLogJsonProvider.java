@@ -8,15 +8,13 @@ import java.io.IOException;
 import java.util.Map;
 
 public class ScmLogJsonProvider extends AbstractJsonProvider<ILoggingEvent> {
-    private final ScmLogDocumentFactory documentFactory = new ScmLogDocumentFactory();
-
     @Override
     public void writeTo(JsonGenerator generator, ILoggingEvent event) throws IOException {
         if (event == null) {
             return;
         }
 
-        Map<String, Object> document = documentFactory.create(event);
+        Map<String, Object> document = ScmLogEventDocumentResolver.resolve(event);
         for (Map.Entry<String, Object> entry : document.entrySet()) {
             generator.writeObjectField(entry.getKey(), entry.getValue());
         }
