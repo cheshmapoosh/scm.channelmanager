@@ -386,6 +386,11 @@ final class ShetabChannelSessionManager {
         return session == null ? -1L : session.generation();
     }
 
+    String activeEndpoint() {
+        ChannelSession session = activeSession;
+        return session == null ? null : session.endpoint();
+    }
+
     private ShetabEndpointLease ensureLease(BooleanSupplier running, ConnectionGuard guard) {
         ShetabEndpointLease leaseToClose = null;
         ShetabEndpointLease current;

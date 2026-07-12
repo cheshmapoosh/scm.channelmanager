@@ -108,8 +108,7 @@ public class ShetabProducer extends DefaultProducer {
                 responseFailure = exception;
                 throw exception;
             } finally {
-                traceSupport.finishAttempt(
-                        transportResponse.traceAttempt(), exchange, config, response, responseFailure);
+                traceSupport.finishAttempt(transportResponse.traceAttempt(), exchange, config, response, responseFailure);
             }
             providerMetrics.succeeded();
             Duration elapsed = Duration.ofNanos(Math.max(0L, System.nanoTime() - startedAt));

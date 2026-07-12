@@ -15,6 +15,7 @@ public record TraceObservationSpec(
         String traceId,
         String spanId,
         String parentSpanId,
+        String traceFlags,
         Map<String, Object> attributes
 ) {
     public TraceObservationSpec {

@@ -94,6 +94,8 @@ public class GatewayObservationLifecycle {
                 textOrGenerate(request.correlationId(), ObservationIds.correlationId()),
                 textOrGenerate(request.traceId(), ObservationIds.traceId()),
                 textOrGenerate(request.spanId(), ObservationIds.spanId()),
+                null,
+                null,
                 textOrDefault(request.gatewayName(), observationContext.gatewayName()),
                 textOrDefault(request.channelCode(), observationContext.channelCode()),
                 protocol,

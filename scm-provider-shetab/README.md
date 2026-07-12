@@ -624,7 +624,9 @@ rate-limit:
 هر تلاش واقعی transport برای request دقیقاً دو event مرتب در scope صریح
 `scm.observation.scope.operation` ایجاد می‌کند: `provider.request` هنگام شروع تلاش و
 `provider.response` دقیقاً یک‌بار هنگام پایان آن. فعالیت provider و customizer child span
-ایجاد نمی‌کند و ردشدن rate limit پیش از شروع transport هیچ‌یک از این دو event را نمی‌سازد.
+ایجاد نمی‌کند و ردشدن rate limit یا request پیش از شروع transport هیچ‌یک از این دو event را
+نمی‌سازد. transport production فقط lifecycle اجباری trace-aware را استفاده می‌کند تا هیچ
+`provider.request` بدون `provider.response` متناظر باقی نماند.
 
 مطابق قرارداد no-resend، هر request حداکثر یک تلاش transport دارد و مقدار
 `provider.attempt` برای آن `1` است. reconnectهای قبل از ورود به `ISOChannel.send()` بخشی از
@@ -639,7 +641,9 @@ schema امن event شامل `provider.name`، `provider.code`، `provider.type`
 `provider.duration_ms`، `provider.response_code`، `provider.error_code`، `event.outcome`،
 `error.type` و `error.code` است. `ShetabProviderTraceAttributeContributor` extension point
 افزودن attributeهای request/response است و هر field جدید باید صریحاً در قرارداد
-`ObservationAttributeContributor` ثبت شود.
+`ObservationAttributeContributor` ثبت شود. `provider.endpoint` فقط وقتی ثبت می‌شود که endpoint
+واقعی session متصل هنگام شروع تلاش مشخص باشد؛ reconnect و connection failure به‌جای fallback
+به اولین endpoint پیکربندی‌شده، آن را حذف می‌کنند.
 
 Trace و eventهای provider باید فقط metadata کنترل‌شده مانند موارد زیر را حمل کنند:
 

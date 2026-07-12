@@ -96,9 +96,22 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
         io.micrometer.tracing.TraceContext parent = tracer.traceContextBuilder()
                 .traceId(traceId)
                 .spanId(parentSpanId)
-                .sampled(Boolean.TRUE)
+                .sampled(sampled(spec.traceFlags()))
                 .build();
         spanBuilder.setParent(parent);
+    }
+
+    private Boolean sampled(String traceFlags) {
+        String flags = textOrNull(traceFlags);
+        if (flags == null) {
+            return Boolean.TRUE;
+        }
+        try {
+            int value = Integer.parseInt(flags, 16);
+            return (value & 0x01) == 0x01;
+        } catch (NumberFormatException exception) {
+            return Boolean.TRUE;
+        }
     }
 
     private Map<String, Object> eventAttributes(Map<String, ?> attributes) {

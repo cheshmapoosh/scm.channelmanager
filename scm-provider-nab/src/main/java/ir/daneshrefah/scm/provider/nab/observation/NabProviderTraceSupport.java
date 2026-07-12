@@ -10,9 +10,13 @@ import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -24,9 +28,11 @@ public class NabProviderTraceSupport {
     private static final String PROVIDER_TYPE = "tcp";
 
     private final List<NabProviderTraceAttributeContributor> contributors;
+    private final Set<String> registeredAttributeNames;
 
     public NabProviderTraceSupport(ObjectProvider<NabProviderTraceAttributeContributor> contributors) {
         this.contributors = contributors.orderedStream().toList();
+        this.registeredAttributeNames = registeredAttributeNames(this.contributors);
     }
 
     public ProviderAttempt startAttempt(
@@ -61,11 +67,16 @@ public class NabProviderTraceSupport {
         contributeResponseAttributes(exchange, config, response, failure, contributedAttributes);
         mergeContributed(attributes, contributedAttributes);
         put(attributes, NabTraceAttributes.PROVIDER_DURATION_MS.name(), elapsedMillis(attempt.startedAtNanos()));
-        put(attributes, NabTraceAttributes.PROVIDER_RESPONSE_CODE.name(), responseCode(response));
+        String responseCode = responseCode(response);
+        put(attributes, NabTraceAttributes.PROVIDER_RESPONSE_CODE.name(), responseCode);
 
         boolean successfulResponse = response != null && response.path("status").path("success").asBoolean(false);
         boolean success = failure == null && successfulResponse;
         put(attributes, "event.outcome", success ? "success" : "failure");
+        if (!success && failure == null) {
+            put(attributes, NabTraceAttributes.PROVIDER_ERROR_CODE.name(), responseCode);
+            put(attributes, "error.code", responseCode);
+        }
         if (failure != null) {
             String errorCode = errorCode(failure);
             put(attributes, NabTraceAttributes.PROVIDER_ERROR_CODE.name(), errorCode);
@@ -93,8 +104,10 @@ public class NabProviderTraceSupport {
             Map<String, Object> attributes
     ) {
         for (NabProviderTraceAttributeContributor contributor : contributors) {
+            Map<String, Object> contributed = new LinkedHashMap<>();
             try {
-                contributor.contributeRequestAttributes(exchange, config, request, attributes);
+                contributor.contributeRequestAttributes(exchange, config, request, contributed);
+                attributes.putAll(normalizeContributedAttributes(contributed));
             } catch (RuntimeException exception) {
                 log.warn("Ignoring NAB request trace attribute contributor failure contributor={} failureType={}",
                         contributor.getClass().getName(), exception.getClass().getSimpleName());
@@ -110,8 +123,10 @@ public class NabProviderTraceSupport {
             Map<String, Object> attributes
     ) {
         for (NabProviderTraceAttributeContributor contributor : contributors) {
+            Map<String, Object> contributed = new LinkedHashMap<>();
             try {
-                contributor.contributeResponseAttributes(exchange, config, response, failure, attributes);
+                contributor.contributeResponseAttributes(exchange, config, response, failure, contributed);
+                attributes.putAll(normalizeContributedAttributes(contributed));
             } catch (RuntimeException exception) {
                 log.warn("Ignoring NAB response trace attribute contributor failure contributor={} failureType={}",
                         contributor.getClass().getName(), exception.getClass().getSimpleName());
@@ -187,6 +202,86 @@ public class NabProviderTraceSupport {
         if (name != null && !name.isBlank() && value != null) {
             attributes.put(name, value);
         }
+    }
+
+    private Map<String, Object> normalizeContributedAttributes(Map<String, Object> attributes) {
+        if (attributes == null || attributes.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Object> safe = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            try {
+                String name = clean(entry.getKey());
+                if (name == null || !registeredAttributeNames.contains(name) || entry.getValue() == null) {
+                    continue;
+                }
+                Object value = immutableValue(entry.getValue());
+                if (value != null) {
+                    safe.put(name, value);
+                }
+            } catch (RuntimeException exception) {
+                log.warn("Ignoring unsafe NAB trace attribute name={} failureType={}",
+                        entry.getKey(), exception.getClass().getSimpleName());
+            }
+        }
+        return safe;
+    }
+
+    private Object immutableValue(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> safeMap = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (!(entry.getKey() instanceof String key) || key.isBlank() || entry.getValue() == null) {
+                    continue;
+                }
+                Object nested = immutableValue(entry.getValue());
+                if (nested != null) {
+                    safeMap.put(key.trim(), nested);
+                }
+            }
+            return Collections.unmodifiableMap(safeMap);
+        }
+        if (value instanceof Collection<?> collection) {
+            List<Object> safeList = collection.stream()
+                    .map(this::immutableValue)
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+            return List.copyOf(safeList);
+        }
+        if (value instanceof Object[] array) {
+            List<Object> safeList = java.util.Arrays.stream(array)
+                    .map(this::immutableValue)
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+            return List.copyOf(safeList);
+        }
+        return value;
+    }
+
+    private Set<String> registeredAttributeNames(List<NabProviderTraceAttributeContributor> contributors) {
+        Set<String> names = new LinkedHashSet<>();
+        for (var attribute : NabTraceAttributes.attributes()) {
+            names.add(attribute.name());
+        }
+        if (contributors != null) {
+            for (NabProviderTraceAttributeContributor contributor : contributors) {
+                try {
+                    Collection<?> attributes = contributor.attributes();
+                    if (attributes == null) {
+                        continue;
+                    }
+                    for (Object attribute : attributes) {
+                        if (attribute instanceof ir.daneshrefah.scm.observation.starter.ObservationAttributeKey<?> key) {
+                            names.add(key.name());
+                        }
+                    }
+                } catch (RuntimeException exception) {
+                    log.warn("Ignoring NAB trace attribute registration failure contributor={} failureType={}",
+                            contributor.getClass().getName(), exception.getClass().getSimpleName());
+                }
+            }
+        }
+        return Set.copyOf(names);
     }
 
     public static final class ProviderAttempt {

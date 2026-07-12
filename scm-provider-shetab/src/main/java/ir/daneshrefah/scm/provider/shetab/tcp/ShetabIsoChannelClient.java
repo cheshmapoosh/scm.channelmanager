@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.provider.shetab.iso.ShetabPackagerFactory;
 import ir.daneshrefah.scm.provider.shetab.iso.log.SafeIsoLogFormatter;
 import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
+import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderAttemptResult;
 import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
 import lombok.extern.slf4j.Slf4j;
 import org.jpos.iso.ISOMsg;
@@ -94,15 +95,12 @@ public class ShetabIsoChannelClient {
         log.trace("Stopped Shetab ISOChannel client provider={}", config.provider());
     }
 
-    public ISOMsg request(ISOMsg msg, int timeoutMs) {
-        return request(msg, timeoutMs, null).response();
-    }
-
     public ShetabTransportResponse request(
             ISOMsg msg,
             int timeoutMs,
             ShetabProviderTraceLifecycle traceLifecycle
     ) {
+        Objects.requireNonNull(traceLifecycle, "traceLifecycle");
         metrics.submitted();
 
         if (!running.get()) {
@@ -341,7 +339,7 @@ public class ShetabIsoChannelClient {
         ResponseTracker tracker = pending.tracker();
 
         verifyPending(tracker, "before transport attempt");
-        tracker.startAttempt();
+        tracker.startAttempt(sessionManager.activeEndpoint());
 
         while (running.get()) {
             verifyPending(tracker, "before connection");

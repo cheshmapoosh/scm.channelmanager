@@ -12,7 +12,7 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 
 @Slf4j
-final class NabPooledConnection implements AutoCloseable {
+final class NabTcpSession implements AutoCloseable {
     private static final String NAB_SUCCESS_CODE = "00000";
     private static final String NAB_SUCCESS_LIST_CODE = "10000";
 
@@ -22,7 +22,7 @@ final class NabPooledConnection implements AutoCloseable {
     private final BufferedInputStream input;
     private final BufferedOutputStream output;
 
-    private NabPooledConnection(
+    private NabTcpSession(
             NabEndpointAddress endpoint,
             Charset charset,
             Socket socket,
@@ -36,13 +36,13 @@ final class NabPooledConnection implements AutoCloseable {
         this.output = output;
     }
 
-    static NabPooledConnection open(NabEndpointAddress endpoint, NabResolvedConfig config, Charset charset) {
+    static NabTcpSession connect(NabEndpointAddress endpoint, NabResolvedConfig config, Charset charset) {
         try {
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(endpoint.host(), endpoint.port()), config.connectTimeoutMs());
             socket.setSoTimeout(config.socketTimeoutMs());
             log.info("Opened NAB connection provider={} endpoint={}", config.provider(), endpoint.value());
-            return new NabPooledConnection(
+            return new NabTcpSession(
                     endpoint,
                     charset,
                     socket,

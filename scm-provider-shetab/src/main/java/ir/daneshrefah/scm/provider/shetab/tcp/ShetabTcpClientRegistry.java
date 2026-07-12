@@ -26,16 +26,12 @@ public class ShetabTcpClientRegistry implements ShetabClientRegistry {
     private final Map<String, RegisteredClient> clients = new ConcurrentHashMap<>();
 
     @Override
-    public ISOMsg request(ShetabResolvedConfig config, ISOMsg request) {
-        return request(config, request, null).response();
-    }
-
-    @Override
     public ShetabTransportResponse request(
             ShetabResolvedConfig config,
             ISOMsg request,
             ShetabProviderTraceLifecycle traceLifecycle
     ) {
+        Objects.requireNonNull(traceLifecycle, "traceLifecycle");
         String providerKey = normalizeProviderKey(config.provider());
         RuntimeConfigSignature requestedSignature = RuntimeConfigSignature.from(providerKey, config);
         RegisteredClient registeredClient = clients.computeIfAbsent(
