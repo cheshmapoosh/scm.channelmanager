@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.security;
 
 import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
+import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.observation.starter.TraceContext;
 import ir.daneshrefah.scm.observation.starter.TraceContextHolder;
 import org.apache.camel.AsyncCallback;
@@ -20,6 +21,12 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ExchangeSecurityContextInterceptStrategy implements InterceptStrategy {
+    private final ScmExchangeMdc exchangeMdc;
+
+    public ExchangeSecurityContextInterceptStrategy(ScmExchangeMdc exchangeMdc) {
+        this.exchangeMdc = exchangeMdc;
+    }
+
     @Override
     public Processor wrapProcessorInInterceptors(
             CamelContext context,
@@ -32,7 +39,8 @@ public class ExchangeSecurityContextInterceptStrategy implements InterceptStrate
             @Override
             public boolean process(Exchange exchange, AsyncCallback callback) {
                 TraceContextHolder.Scope traceBinding = bindTraceContext(exchange);
-                try (ExchangeAuthenticationContext.Binding ignored = ExchangeAuthenticationContext.bind(exchange)) {
+                try (ScmExchangeMdc.Binding ignoredMdc = exchangeMdc.bind(exchange);
+                     ExchangeAuthenticationContext.Binding ignored = ExchangeAuthenticationContext.bind(exchange)) {
                     return delegate.process(exchange, callback);
                 } finally {
                     if (traceBinding != null) {

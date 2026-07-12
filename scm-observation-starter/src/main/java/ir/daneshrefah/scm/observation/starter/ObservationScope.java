@@ -2,11 +2,14 @@ package ir.daneshrefah.scm.observation.starter;
 
 import ir.daneshrefah.scm.observation.starter.trace.TraceObservationHandle;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ObservationScope implements AutoCloseable {
+    private static final Logger log = LoggerFactory.getLogger(ObservationScope.class);
     private static final ThreadLocal<ObservationScope> CURRENT = new ThreadLocal<>();
 
     private final TraceObservationHandle traceHandle;
@@ -145,7 +148,7 @@ public class ObservationScope implements AutoCloseable {
             finalThrowable = throwable;
         }
         try {
-            traceHandle.finish(finalOutcome, finalAttributes, finalThrowable);
+            finishTraceHandle(finalOutcome, finalAttributes, finalThrowable);
         } finally {
             if (threadBound) {
                 restorePreviousScope();
@@ -182,6 +185,19 @@ public class ObservationScope implements AutoCloseable {
             contextScope.close();
         } catch (Exception ignored) {
             // Restoring ThreadLocal trace context must not hide the original observation close result.
+        }
+    }
+
+    private void finishTraceHandle(String finalOutcome, Map<String, Object> finalAttributes, Throwable finalThrowable) {
+        try {
+            traceHandle.finish(finalOutcome, finalAttributes, finalThrowable);
+        } catch (RuntimeException exception) {
+            log.warn(
+                    "TRACE emission failed spanName={} phase={} failureType={}",
+                    finalAttributes == null ? null : finalAttributes.get(CommonTraceAttributes.SPAN_NAME.name()),
+                    "finalize",
+                    exception.getClass().getSimpleName()
+            );
         }
     }
 }

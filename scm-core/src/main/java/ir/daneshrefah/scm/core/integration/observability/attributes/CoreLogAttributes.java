@@ -12,6 +12,7 @@ public final class CoreLogAttributes {
     public static final ObservationAttributeKey<String> GATEWAY_NAME = keyword("scm.gateway.name", "Gateway name.");
     public static final ObservationAttributeKey<String> ROUTE_ID = keyword("scm.route.id", "Gateway route or flow identifier.");
     public static final ObservationAttributeKey<String> SERVICE_CODE = keyword("scm.service.code", "Service code.");
+    public static final ObservationAttributeKey<String> SERVICE_VERSION = keyword("scm.service.version", "Service version.");
     public static final ObservationAttributeKey<String> OPERATION_CODE = keyword("scm.operation.code", "Operation code.");
     public static final ObservationAttributeKey<String> OPERATION_NAME = LogAttribute.keyword(
             "scm.operation.name", ObservationAttributePresence.EVENT_OPTIONAL, "Operation name.");
@@ -30,7 +31,7 @@ public final class CoreLogAttributes {
     public static List<ObservationAttributeKey<?>> attributes() {
         return List.of(
                 GATEWAY_NAME, ROUTE_ID, SERVICE_CODE, OPERATION_CODE, OPERATION_NAME,
-                EXCHANGE_ID, PROTOCOL, PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_PHASE, PLUGIN_LAYER, PLUGIN_DURATION_MS
+                SERVICE_VERSION, EXCHANGE_ID, PROTOCOL, PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_PHASE, PLUGIN_LAYER, PLUGIN_DURATION_MS
         );
     }
 

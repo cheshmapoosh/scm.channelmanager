@@ -32,7 +32,7 @@ public final class TraceContextHolder {
     }
 
     public static TraceContext childContext() {
-        return childContext(current(), null, null, null, null);
+        return childContext(current(), null, null, null, null, null);
     }
 
     public static TraceContext childContext(
@@ -42,11 +42,23 @@ public final class TraceContextHolder {
             String correlationId,
             String correlationType
     ) {
+        return childContext(parent, traceId, spanId, correlationId, correlationType, null);
+    }
+
+    public static TraceContext childContext(
+            TraceContext parent,
+            String traceId,
+            String spanId,
+            String correlationId,
+            String correlationType,
+            String traceFlags
+    ) {
         return new TraceContext(
                 firstText(traceId, parent == null ? null : parent.traceId(), ObservationIds.traceId()),
                 firstText(spanId, ObservationIds.spanId()),
                 firstText(correlationId, parent == null ? null : parent.correlationId(), ObservationIds.correlationId()),
-                firstText(correlationType, parent == null ? null : parent.correlationType(), CorrelationType.OPERATION.value())
+                firstText(correlationType, parent == null ? null : parent.correlationType(), CorrelationType.OPERATION.value()),
+                firstText(traceFlags, parent == null ? null : parent.traceFlags(), TraceFlags.DEFAULT)
         );
     }
 

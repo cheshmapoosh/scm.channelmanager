@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.observation.starter.web;
 
 import ir.daneshrefah.scm.observation.starter.ObservationContext;
 import ir.daneshrefah.scm.observation.starter.ObservationIds;
+import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationContext;
+import ir.daneshrefah.scm.observation.starter.logging.ScmMdcKeys;
 import ir.daneshrefah.scm.observation.starter.policy.ObservationSignal;
 import ir.daneshrefah.scm.observation.starter.policy.ObservationSignalPolicy;
 import jakarta.servlet.FilterChain;
@@ -12,9 +14,22 @@ import org.slf4j.MDC;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ObservationMdcFilter extends OncePerRequestFilter {
     private static final String CORRELATION_HEADER = "X-Correlation-ID";
+    private static final String SCM_APP_NAME = "scmAppName";
+    private static final String SCM_APP_PROFILE = "scmAppProfile";
+    private static final List<String> OWNED_MDC_KEYS = List.of(
+            ScmMdcKeys.CORRELATION_ID,
+            ScmMdcKeys.CORRELATION_TYPE,
+            ScmMdcKeys.TRACE_ID,
+            ScmMdcKeys.SPAN_ID,
+            SCM_APP_NAME,
+            SCM_APP_PROFILE
+    );
 
     private final ObservationSignalPolicy signalPolicy;
     private final ObservationContext context;
@@ -34,22 +49,22 @@ public class ObservationMdcFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        String previousCorrelationId = MDC.get("correlationId");
-        String previousTraceId = MDC.get("traceId");
-        String previousSpanId = MDC.get("spanId");
+        MdcSnapshot snapshot = MdcSnapshot.capture(OWNED_MDC_KEYS);
         try {
-            String correlationId = correlationId(request);
-            MDC.put("correlationId", correlationId);
-            putIfPresent("scmAppName", context.appName());
-            putIfPresent("scmAppProfile", context.appProfile());
+            if (!gatewayOwnsCorrelation(request)) {
+                String correlationId = correlationId(request);
+                MDC.put(ScmMdcKeys.CORRELATION_ID, correlationId);
+            }
+            putIfPresent(SCM_APP_NAME, context.appName());
+            putIfPresent(SCM_APP_PROFILE, context.appProfile());
             filterChain.doFilter(request, response);
         } finally {
-            restore("correlationId", previousCorrelationId);
-            restore("traceId", previousTraceId);
-            restore("spanId", previousSpanId);
-            MDC.remove("scmAppName");
-            MDC.remove("scmAppProfile");
+            snapshot.restore();
         }
+    }
+
+    private boolean gatewayOwnsCorrelation(HttpServletRequest request) {
+        return request != null && request.getAttribute(GatewayObservationContext.REQUEST_ATTRIBUTE) instanceof GatewayObservationContext;
     }
 
     private String correlationId(HttpServletRequest request) {
@@ -63,11 +78,23 @@ public class ObservationMdcFilter extends OncePerRequestFilter {
         }
     }
 
-    private void restore(String key, String previousValue) {
-        if (previousValue == null) {
-            MDC.remove(key);
-        } else {
-            MDC.put(key, previousValue);
+    private record MdcSnapshot(Map<String, String> values) {
+        private static MdcSnapshot capture(List<String> keys) {
+            Map<String, String> values = new LinkedHashMap<>();
+            for (String key : keys) {
+                values.put(key, MDC.get(key));
+            }
+            return new MdcSnapshot(values);
+        }
+
+        private void restore() {
+            values.forEach((key, previousValue) -> {
+                if (previousValue == null) {
+                    MDC.remove(key);
+                } else {
+                    MDC.put(key, previousValue);
+                }
+            });
         }
     }
 }

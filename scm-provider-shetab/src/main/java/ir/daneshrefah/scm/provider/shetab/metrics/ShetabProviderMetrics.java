@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
+import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -102,17 +103,56 @@ public class ShetabProviderMetrics {
                 Duration duration,
                 String outcome
         ) {
+            recordProviderRequestDuration(config, context, duration, null, outcome);
+        }
+
+        public void recordProviderRequestDuration(
+                ShetabResolvedConfig config,
+                ProviderMessageCustomizerContext context,
+                Duration duration,
+                ProviderBusinessOutcome outcome
+        ) {
+            recordProviderRequestDuration(
+                    config,
+                    context,
+                    duration,
+                    outcome == null ? null : outcome.errorCode(),
+                    outcome == null ? null : outcome.eventOutcome()
+            );
+        }
+
+        private void recordProviderRequestDuration(
+                ShetabResolvedConfig config,
+                ProviderMessageCustomizerContext context,
+                Duration duration,
+                String errorCode,
+                String outcome
+        ) {
             if (meterRegistry == null || duration == null) {
                 return;
             }
             Timer.builder("provider.request.duration")
-                    .tags(tags(config, context, null, outcome))
+                    .tags(tags(config, context, null, errorCode, outcome))
                     .register(meterRegistry)
                     .record(duration.toNanos(), TimeUnit.NANOSECONDS);
         }
 
         public void recordProviderRequestError(ShetabResolvedConfig config, ProviderMessageCustomizerContext context) {
-            increment("provider.request.error", tags(config, context, null, "error"));
+            increment("provider.request.error", tags(config, context, null, null, "error"));
+        }
+
+        public void recordProviderRequestError(
+                ShetabResolvedConfig config,
+                ProviderMessageCustomizerContext context,
+                ProviderBusinessOutcome outcome
+        ) {
+            increment("provider.request.error", tags(
+                    config,
+                    context,
+                    null,
+                    outcome == null ? null : outcome.errorCode(),
+                    outcome == null ? "failure" : outcome.eventOutcome()
+            ));
         }
 
         public void customizerExecution(ProviderMessageCustomizerContext context, String customizerType, String phase) {
@@ -156,7 +196,13 @@ public class ShetabProviderMetrics {
             Counter.builder(name).tags(tags).register(meterRegistry).increment();
         }
 
-        private List<Tag> tags(ShetabResolvedConfig config, ProviderMessageCustomizerContext context, String customizerType, String outcome) {
+        private List<Tag> tags(
+                ShetabResolvedConfig config,
+                ProviderMessageCustomizerContext context,
+                String customizerType,
+                String errorCode,
+                String outcome
+        ) {
             return List.of(
                     Tag.of("providerCode", value(config == null ? provider : config.provider())),
                     Tag.of("scheme", value(config == null ? "" : config.scheme())),
@@ -164,6 +210,7 @@ public class ShetabProviderMetrics {
                     Tag.of("operationCode", value(context == null ? "" : context.operationCode())),
                     Tag.of("channelCode", value(context == null ? "" : context.channelCode())),
                     Tag.of("customizerType", value(customizerType)),
+                    Tag.of("errorCode", value(errorCode)),
                     Tag.of("outcome", value(outcome))
             );
         }

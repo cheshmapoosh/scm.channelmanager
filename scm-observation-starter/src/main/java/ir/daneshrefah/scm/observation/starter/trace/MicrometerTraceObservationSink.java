@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistryHolder
 import ir.daneshrefah.scm.observation.starter.ObservationSanitizer;
 import ir.daneshrefah.scm.observation.starter.ObservationStream;
 import ir.daneshrefah.scm.observation.starter.TraceContext;
+import ir.daneshrefah.scm.observation.starter.TraceFlags;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -102,16 +103,8 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
     }
 
     private Boolean sampled(String traceFlags) {
-        String flags = textOrNull(traceFlags);
-        if (flags == null) {
-            return Boolean.TRUE;
-        }
-        try {
-            int value = Integer.parseInt(flags, 16);
-            return (value & 0x01) == 0x01;
-        } catch (NumberFormatException exception) {
-            return Boolean.TRUE;
-        }
+        Boolean sampled = TraceFlags.sampled(traceFlags);
+        return sampled == null ? Boolean.TRUE : sampled;
     }
 
     private Map<String, Object> eventAttributes(Map<String, ?> attributes) {
@@ -304,7 +297,8 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
                     firstText(actual == null ? null : actual.traceId(), spec.traceId()),
                     firstText(actual == null ? null : actual.spanId(), spec.spanId()),
                     spec.correlationId(),
-                    spec.correlationType()
+                    spec.correlationType(),
+                    TraceFlags.withSamplingDecision(spec.traceFlags(), actual == null ? null : actual.sampled())
             );
         }
 

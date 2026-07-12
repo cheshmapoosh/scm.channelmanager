@@ -8,12 +8,15 @@ import ir.daneshrefah.scm.observation.starter.policy.ObservationSignalPolicy;
 import ir.daneshrefah.scm.observation.starter.trace.TraceObservationHandle;
 import ir.daneshrefah.scm.observation.starter.trace.TraceObservationSink;
 import ir.daneshrefah.scm.observation.starter.trace.TraceObservationSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 
 public class ScmObservation {
+    private static final Logger log = LoggerFactory.getLogger(ScmObservation.class);
     private static final MetricObservationSink NOOP_METRIC_SINK = new NoopMetricObservationSink();
 
     private final ObservationContext context;
@@ -86,14 +89,14 @@ public class ScmObservation {
         if (!isEnabled(ObservationSignal.TRACE) || traceSink == null) {
             return new ObservationScope(TraceObservationHandle.NOOP, contextScope);
         }
-        return new ObservationScope(traceSink.start(spec), contextScope);
+        return new ObservationScope(startTraceHandle(spec), contextScope);
     }
 
     ObservationScope startDetachedTrace(TraceObservationSpec spec) {
         if (!isEnabled(ObservationSignal.TRACE) || traceSink == null) {
             return ObservationScope.detached(TraceObservationHandle.NOOP);
         }
-        return ObservationScope.detached(traceSink.start(spec));
+        return ObservationScope.detached(startTraceHandle(spec));
     }
 
     boolean isEnabled(ObservationSignal signal) {
@@ -139,4 +142,18 @@ public class ScmObservation {
         }
     }
 
+    private TraceObservationHandle startTraceHandle(TraceObservationSpec spec) {
+        try {
+            TraceObservationHandle handle = traceSink.start(spec);
+            return handle == null ? TraceObservationHandle.NOOP : handle;
+        } catch (RuntimeException exception) {
+            log.warn(
+                    "TRACE emission failed spanName={} phase={} failureType={}",
+                    spec == null ? null : spec.spanName(),
+                    "start",
+                    exception.getClass().getSimpleName()
+            );
+            return TraceObservationHandle.NOOP;
+        }
+    }
 }

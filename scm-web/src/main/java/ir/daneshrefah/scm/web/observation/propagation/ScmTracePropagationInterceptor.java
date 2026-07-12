@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.web.observation.propagation;
 
+import ir.daneshrefah.scm.observation.starter.TraceContext;
 import ir.daneshrefah.scm.observation.starter.TraceContextHolder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Component
 public class ScmTracePropagationInterceptor implements ClientHttpRequestInterceptor {
+    private static final String CORRELATION_HEADER = "X-Correlation-Id";
     private static final List<String> REMOVED_PROPAGATION_HEADERS = List.of(
             ScmTraceParentWriter.TRACEPARENT,
             "tracestate",
@@ -39,7 +41,9 @@ public class ScmTracePropagationInterceptor implements ClientHttpRequestIntercep
     ) throws IOException {
         HttpHeaders headers = request.getHeaders();
         removePropagationHeaders(headers);
-        traceParentWriter.write(headers, TraceContextHolder.current());
+        TraceContext context = TraceContextHolder.current();
+        traceParentWriter.write(headers, context);
+        writeCorrelation(headers, context);
         return execution.execute(request, body);
     }
 
@@ -57,5 +61,11 @@ public class ScmTracePropagationInterceptor implements ClientHttpRequestIntercep
             }
         }
         keysToRemove.forEach(headers::remove);
+    }
+
+    private void writeCorrelation(HttpHeaders headers, TraceContext context) {
+        if (headers != null && context != null && context.correlationId() != null) {
+            headers.set(CORRELATION_HEADER, context.correlationId());
+        }
     }
 }

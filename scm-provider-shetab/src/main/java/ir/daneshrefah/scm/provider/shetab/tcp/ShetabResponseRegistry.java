@@ -1,7 +1,8 @@
 package ir.daneshrefah.scm.provider.shetab.tcp;
 
-import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
+import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
 import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderAttemptResult;
+import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
 import org.jpos.iso.ISOMsg;
 
 import java.util.ArrayList;
@@ -389,7 +390,11 @@ final class ResponseTracker {
         activeAttempt = null;
 
         if (attempt != null) {
-            attempt.finish(new ShetabProviderAttemptResult(null, null, false, failure));
+            attempt.finish(new ShetabProviderAttemptResult(
+                    null,
+                    ProviderBusinessOutcome.technicalFailure(null, failure),
+                    failure
+            ));
         }
     }
 

@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.observation.starter.attributes.metric.CommonMetricTags;
+import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
 import ir.daneshrefah.scm.provider.nab.observation.attributes.NabMetricTags;
 import ir.daneshrefah.scm.provider.nab.observation.NabMetricNames;
 import ir.daneshrefah.scm.provider.nab.observation.NabProviderTraceSupport;
@@ -27,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class NabProducer extends DefaultProducer {
     private static final String PROVIDER_TYPE = "tcp";
-    private static final String OUTCOME_SUCCESS = "success";
     private static final String OUTCOME_FAILURE = "failure";
 
     private final NabEndpoint endpoint;
@@ -78,29 +78,64 @@ public class NabProducer extends DefaultProducer {
             NabProviderTraceSupport.ProviderAttempt attempt = traceSupport.startAttempt(exchange, config, input, operation);
             JsonNode output = null;
             RuntimeException providerFailure = null;
+            ProviderBusinessOutcome outcome = null;
             try {
                 output = providerService.execute(input, config);
+                outcome = traceSupport.providerOutcome(output, null);
+                setProviderOutcome(exchange, outcome);
             } catch (RuntimeException exception) {
                 providerFailure = exception;
+                outcome = traceSupport.providerOutcome(output, exception);
+                setProviderOutcome(exchange, outcome);
                 throw exception;
             } finally {
-                traceSupport.finishAttempt(attempt, exchange, config, output, providerFailure);
+                ProviderBusinessOutcome finalOutcome = outcome == null
+                        ? traceSupport.providerOutcome(output, providerFailure)
+                        : outcome;
+                traceSupport.finishAttempt(attempt, exchange, config, output, finalOutcome, providerFailure);
             }
             exchange.getMessage().setBody(output);
-            providerMetrics.succeeded();
+            if (outcome != null && outcome.success()) {
+                providerMetrics.succeeded();
+            } else {
+                providerMetrics.failed();
+            }
             long durationMs = elapsedMillis(startedAt);
-            recordObservationMetrics(config, operationCode(input), OUTCOME_SUCCESS, durationMs, null);
-            log.info("NAB provider call finished provider={} operation={}", config.provider(), operation);
+            recordObservationMetrics(config, operationCode(input),
+                    outcome == null ? OUTCOME_FAILURE : outcome.eventOutcome(),
+                    durationMs,
+                    outcome == null ? null : outcome.errorCode());
+            log.info("NAB provider call finished provider={} operation={} outcome={} responseCode={} errorCode={} errorType={}",
+                    config.provider(), operation,
+                    outcome == null ? OUTCOME_FAILURE : outcome.eventOutcome(),
+                    outcome == null ? null : outcome.responseCode(),
+                    outcome == null ? null : outcome.errorCode(),
+                    outcome == null ? null : outcome.errorType());
         } catch (RuntimeException e) {
+            setProviderOutcomeIfAbsent(exchange, ProviderBusinessOutcome.technicalFailure(null, e));
+            ProviderBusinessOutcome failureOutcome = exchange.getProperty(
+                    ProviderBusinessOutcome.EXCHANGE_PROPERTY,
+                    ProviderBusinessOutcome.class
+            );
             if (isTimedOut(e)) {
                 providerMetrics.timedOut();
             } else {
                 providerMetrics.failed();
             }
             long durationMs = elapsedMillis(startedAt);
-            recordObservationMetrics(config, operationCode(input), OUTCOME_FAILURE, durationMs, errorCode(e));
-            log.error("NAB provider call failed provider={} operation={} failureType={} failureCode={}",
-                    config.provider(), operation, e.getClass().getSimpleName(), errorCode(e));
+            recordObservationMetrics(
+                    config,
+                    operationCode(input),
+                    failureOutcome == null ? OUTCOME_FAILURE : failureOutcome.eventOutcome(),
+                    durationMs,
+                    failureOutcome == null ? errorCode(e) : failureOutcome.errorCode()
+            );
+            log.error("NAB provider call failed provider={} operation={} outcome={} errorCode={} errorType={} failureType={} failureCode={}",
+                    config.provider(), operation,
+                    failureOutcome == null ? OUTCOME_FAILURE : failureOutcome.eventOutcome(),
+                    failureOutcome == null ? null : failureOutcome.errorCode(),
+                    failureOutcome == null ? null : failureOutcome.errorType(),
+                    e.getClass().getSimpleName(), errorCode(e));
             throw e;
         } finally {
             providerMetrics.addLatency(elapsedMillis(startedAt));
@@ -235,6 +270,20 @@ public class NabProducer extends DefaultProducer {
             }
         }
         return objectMapper.valueToTree(body);
+    }
+
+    private void setProviderOutcome(Exchange exchange, ProviderBusinessOutcome outcome) {
+        if (exchange != null && outcome != null) {
+            exchange.setProperty(ProviderBusinessOutcome.EXCHANGE_PROPERTY, outcome);
+        }
+    }
+
+    private void setProviderOutcomeIfAbsent(Exchange exchange, ProviderBusinessOutcome outcome) {
+        if (exchange != null
+                && outcome != null
+                && exchange.getProperty(ProviderBusinessOutcome.EXCHANGE_PROPERTY, ProviderBusinessOutcome.class) == null) {
+            exchange.setProperty(ProviderBusinessOutcome.EXCHANGE_PROPERTY, outcome);
+        }
     }
 
     private String serviceCode(Exchange exchange) {

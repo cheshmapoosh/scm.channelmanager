@@ -2,6 +2,8 @@ package ir.daneshrefah.scm.observation.starter.trace;
 
 import ir.daneshrefah.scm.observation.starter.*;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -13,6 +15,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class StructuredTraceObservationSink implements TraceObservationSink {
+    private static final Logger log = LoggerFactory.getLogger(StructuredTraceObservationSink.class);
+
     private final ObservationEventDispatcher eventDispatcher;
     private final ObservationDocumentFactory documentFactory;
     private final ObservationRecordValidator recordValidator;
@@ -54,26 +58,35 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
 
         @Override
         public void finish(String outcome, Map<String, Object> attributes, Throwable throwable) {
-            Instant endedAt;
-            long durationMs;
-            List<TraceObservationSpanEvent> recordedEvents;
-            synchronized (this) {
-                if (finished) {
-                    return;
+            try {
+                Instant endedAt;
+                long durationMs;
+                List<TraceObservationSpanEvent> recordedEvents;
+                synchronized (this) {
+                    if (finished) {
+                        return;
+                    }
+                    finished = true;
+                    long endedAtNanos = System.nanoTime();
+                    endedAt = Instant.now(clock);
+                    durationMs = elapsedMillis(startedAtNanos, endedAtNanos);
+                    recordedEvents = List.copyOf(events);
                 }
-                finished = true;
-                long endedAtNanos = System.nanoTime();
-                endedAt = Instant.now(clock);
-                durationMs = elapsedMillis(startedAtNanos, endedAtNanos);
-                recordedEvents = List.copyOf(events);
+                LinkedHashMap<String, Object> document = document(
+                        endedAt, durationMs, recordedEvents, outcome, attributes, throwable);
+                eventDispatcher.write(new ObservationEvent(
+                        ObservationEventSignal.TRACE,
+                        spec.sourceClass(),
+                        document
+                ));
+            } catch (RuntimeException exception) {
+                log.warn(
+                        "TRACE emission failed spanName={} phase={} failureType={}",
+                        spec.spanName(),
+                        "finish",
+                        exception.getClass().getSimpleName()
+                );
             }
-            LinkedHashMap<String, Object> document = document(
-                    endedAt, durationMs, recordedEvents, outcome, attributes, throwable);
-            eventDispatcher.write(new ObservationEvent(
-                    ObservationEventSignal.TRACE,
-                    spec.sourceClass(),
-                    document
-            ));
         }
 
         @Override
@@ -82,22 +95,32 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
                     spec.traceId(),
                     spec.spanId(),
                     spec.correlationId(),
-                    spec.correlationType()
+                    spec.correlationType(),
+                    spec.traceFlags()
             );
         }
 
         @Override
         public void event(String name, Map<String, ?> attributes) {
-            synchronized (this) {
-                String safeName = safeEventName(name);
-                if (finished || safeName == null) {
-                    return;
+            try {
+                synchronized (this) {
+                    String safeName = safeEventName(name);
+                    if (finished || safeName == null) {
+                        return;
+                    }
+                    events.add(new TraceObservationSpanEvent(
+                            safeName,
+                            Instant.now(clock),
+                            safeEventAttributes(attributes)
+                    ));
                 }
-                events.add(new TraceObservationSpanEvent(
-                        safeName,
-                        Instant.now(clock),
-                        safeEventAttributes(attributes)
-                ));
+            } catch (RuntimeException exception) {
+                log.warn(
+                        "TRACE emission failed spanName={} phase={} failureType={}",
+                        spec.spanName(),
+                        "event",
+                        exception.getClass().getSimpleName()
+                );
             }
         }
 

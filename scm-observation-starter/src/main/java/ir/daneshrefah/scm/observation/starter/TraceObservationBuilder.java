@@ -70,7 +70,8 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
                 firstText(traceId, ObservationIds.traceId()),
                 firstText(spanId, ObservationIds.spanId()),
                 firstText(correlationId, ObservationIds.correlationId()),
-                firstText(correlationType, CorrelationType.OPERATION.value())
+                firstText(correlationType, CorrelationType.OPERATION.value()),
+                firstText(traceFlags, TraceFlags.DEFAULT)
         );
         String resolvedParentSpanId = parentSpanIdProvided ? textOrNull(parentSpanId) : null;
         TraceObservationSpec spec = spec(context, resolvedParentSpanId);
@@ -85,7 +86,7 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
             return new ObservationScope(TraceObservationHandle.NOOP);
         }
         TraceContext current = TraceContextHolder.current();
-        TraceContext context = TraceContextHolder.childContext(current, traceId, spanId, correlationId, correlationType);
+        TraceContext context = TraceContextHolder.childContext(current, traceId, spanId, correlationId, correlationType, traceFlags);
         String resolvedParentSpanId = parentSpanIdProvided ? textOrNull(parentSpanId) : currentSpanId(current);
         TraceContextHolder.Scope contextScope = TraceContextHolder.open(context);
         try {
@@ -108,7 +109,7 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
                 context.traceId(),
                 context.spanId(),
                 resolvedParentSpanId,
-                traceFlags,
+                context.traceFlags(),
                 attributes
         );
     }

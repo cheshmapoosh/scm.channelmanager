@@ -16,6 +16,7 @@ import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.observation.starter.TraceContext;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationContext;
+import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
@@ -87,7 +88,8 @@ public class CoreObservationTraceSupport {
                 traceId,
                 spanId,
                 correlationId,
-                CorrelationType.REQUEST.value()
+                CorrelationType.REQUEST.value(),
+                preparedContext == null ? null : preparedContext.traceFlags()
         );
 
         Map<String, String> fields = exchangeMdc.fields(exchange);
@@ -99,7 +101,7 @@ public class CoreObservationTraceSupport {
                 .traceId(requestedContext.traceId())
                 .spanId(requestedContext.spanId())
                 .parentSpanId(preparedContext == null ? null : preparedContext.remoteParentSpanId())
-                .traceFlags(preparedContext == null ? null : preparedContext.traceFlags())
+                .traceFlags(requestedContext.traceFlags())
                 .correlationId(requestedContext.correlationId())
                 .correlationType(requestedContext.correlationType())
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, firstText(
@@ -168,7 +170,8 @@ public class CoreObservationTraceSupport {
         }
         Throwable failure = exchangeFailure(exchange);
         Integer statusCode = httpStatus(exchange);
-        boolean failed = hasBusinessFailure(exchange, failure);
+        FailureDetails failureDetails = failureDetails(exchange, failure);
+        boolean failed = failureDetails != null;
         exchange.removeProperty(BUSINESS_FAILURE_PROPERTY);
         exchange.removeProperty(GATEWAY_RESPONSE_EVENT_PROPERTY);
 
@@ -178,7 +181,7 @@ public class CoreObservationTraceSupport {
                 if (statusCode != null) {
                     scope.attribute(CommonTraceAttributes.HTTP_STATUS_CODE, statusCode);
                 }
-                finishScope(scope, failed ? failureOrSynthetic(failure) : null, 0L, null);
+                finishScope(scope, failed ? failure : null, failureDetails, 0L, null);
             }
         } finally {
             clearTraceMessageProperties(exchange);
@@ -202,6 +205,7 @@ public class CoreObservationTraceSupport {
                 .traceId(requestedContext.traceId())
                 .spanId(requestedContext.spanId())
                 .parentSpanId(parent == null ? null : parent.spanId())
+                .traceFlags(requestedContext.traceFlags())
                 .correlationId(requestedContext.correlationId())
                 .correlationType(requestedContext.correlationType())
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
@@ -221,12 +225,14 @@ public class CoreObservationTraceSupport {
 
     public void finishServiceExecutionSuccess(Exchange exchange) {
         Throwable failure = exchangeFailure(exchange);
+        FailureDetails failureDetails = failureDetails(exchange, failure);
         finishLayerScope(
                 exchange,
                 SERVICE_SCOPE_PROPERTY,
                 SERVICE_CONTEXT_PROPERTY,
                 GATEWAY_CONTEXT_PROPERTY,
-                hasBusinessFailure(exchange, failure) ? failureOrSynthetic(failure) : null,
+                failure,
+                failureDetails,
                 CoreTraceAttributes.SERVICE_DURATION_MS.name(),
                 serviceDurationMs(exchange)
         );
@@ -239,6 +245,7 @@ public class CoreObservationTraceSupport {
                 SERVICE_CONTEXT_PROPERTY,
                 GATEWAY_CONTEXT_PROPERTY,
                 exception,
+                failureDetails(exchange, exception),
                 CoreTraceAttributes.SERVICE_DURATION_MS.name(),
                 serviceDurationMs(exchange)
         );
@@ -263,6 +270,7 @@ public class CoreObservationTraceSupport {
                 .traceId(requestedContext.traceId())
                 .spanId(requestedContext.spanId())
                 .parentSpanId(parent == null ? null : parent.spanId())
+                .traceFlags(requestedContext.traceFlags())
                 .correlationId(requestedContext.correlationId())
                 .correlationType(requestedContext.correlationType())
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
@@ -281,12 +289,14 @@ public class CoreObservationTraceSupport {
 
     public void finishOperationCallSuccess(Exchange exchange, Operation operation) {
         Throwable failure = exchangeFailure(exchange);
+        FailureDetails failureDetails = failureDetails(exchange, failure);
         finishLayerScope(
                 exchange,
                 OPERATION_SCOPE_PROPERTY,
                 OPERATION_CONTEXT_PROPERTY,
                 SERVICE_CONTEXT_PROPERTY,
-                hasBusinessFailure(exchange, failure) ? failureOrSynthetic(failure) : null,
+                failure,
+                failureDetails,
                 CoreTraceAttributes.OPERATION_DURATION_MS.name(),
                 operationDurationMs(exchange)
         );
@@ -299,6 +309,7 @@ public class CoreObservationTraceSupport {
                 OPERATION_CONTEXT_PROPERTY,
                 SERVICE_CONTEXT_PROPERTY,
                 exception,
+                failureDetails(exchange, exception),
                 CoreTraceAttributes.OPERATION_DURATION_MS.name(),
                 operationDurationMs(exchange)
         );
@@ -340,13 +351,14 @@ public class CoreObservationTraceSupport {
             String contextProperty,
             String parentContextProperty,
             Throwable exception,
+            FailureDetails failureDetails,
             String durationField,
             long durationMs
     ) {
         if (exchange == null) {
             return;
         }
-        if (exception != null) {
+        if (failureDetails != null) {
             exchange.setProperty(BUSINESS_FAILURE_PROPERTY, Boolean.TRUE);
         }
         ObservationScope scope = removeScope(exchange, scopeProperty, contextProperty);
@@ -354,7 +366,7 @@ public class CoreObservationTraceSupport {
             return;
         }
         try {
-            finishScope(scope, exception, durationMs, durationField);
+            finishScope(scope, exception, failureDetails, durationMs, durationField);
         } finally {
             restoreMessageContext(exchange, parentContextProperty);
         }
@@ -367,18 +379,28 @@ public class CoreObservationTraceSupport {
         return scope;
     }
 
-    private void finishScope(ObservationScope scope, Throwable exception, long durationMs, String durationField) {
+    private void finishScope(
+            ObservationScope scope,
+            Throwable exception,
+            FailureDetails failureDetails,
+            long durationMs,
+            String durationField
+    ) {
         try {
             if (durationField != null) {
                 scope.attribute(durationField, Math.max(0L, durationMs));
             }
-            if (exception == null) {
+            if (failureDetails == null) {
                 scope.attribute(CommonTraceAttributes.EVENT_OUTCOME, OUTCOME_SUCCESS).success();
             } else {
                 scope.attribute(CommonTraceAttributes.EVENT_OUTCOME, OUTCOME_FAILURE)
-                        .attribute(CommonTraceAttributes.ERROR_TYPE, exception.getClass().getSimpleName())
-                        .attribute(CommonTraceAttributes.ERROR_CODE, errorCode(exception))
-                        .failure();
+                        .attribute(CommonTraceAttributes.ERROR_TYPE, failureDetails.errorType())
+                        .attribute(CommonTraceAttributes.ERROR_CODE, failureDetails.errorCode());
+                if (exception == null) {
+                    scope.failure();
+                } else {
+                    scope.failure(exception);
+                }
             }
         } finally {
             scope.close();
@@ -389,7 +411,8 @@ public class CoreObservationTraceSupport {
         String traceId = firstText(parent == null ? null : parent.traceId(), property(exchange, Message.TRACE_ID), ObservationIds.traceId());
         String correlationId = firstText(parent == null ? null : parent.correlationId(), correlationId(exchange), ObservationIds.correlationId());
         String correlationType = firstText(parent == null ? null : parent.correlationType(), CorrelationType.OPERATION.value());
-        return new TraceContext(traceId, ObservationIds.spanId(), correlationId, correlationType);
+        String traceFlags = firstText(parent == null ? null : parent.traceFlags());
+        return new TraceContext(traceId, ObservationIds.spanId(), correlationId, correlationType, traceFlags);
     }
 
     private TraceContext startedContext(ObservationScope scope, TraceContext requested) {
@@ -398,7 +421,8 @@ public class CoreObservationTraceSupport {
                 firstText(actual == null ? null : actual.traceId(), requested == null ? null : requested.traceId()),
                 firstText(actual == null ? null : actual.spanId(), requested == null ? null : requested.spanId()),
                 firstText(actual == null ? null : actual.correlationId(), requested == null ? null : requested.correlationId()),
-                firstText(actual == null ? null : actual.correlationType(), requested == null ? null : requested.correlationType())
+                firstText(actual == null ? null : actual.correlationType(), requested == null ? null : requested.correlationType()),
+                firstText(actual == null ? null : actual.traceFlags(), requested == null ? null : requested.traceFlags())
         );
     }
 
@@ -459,7 +483,8 @@ public class CoreObservationTraceSupport {
                 property(exchange, Message.TRACE_ID),
                 property(exchange, Message.SPAN_ID),
                 property(exchange, Message.CORRELATION_ID),
-                CorrelationType.REQUEST.value()
+                CorrelationType.REQUEST.value(),
+                null
         );
     }
 
@@ -546,30 +571,41 @@ public class CoreObservationTraceSupport {
         return failure == null ? exchange.getException() : failure;
     }
 
-    private boolean hasBusinessFailure(Exchange exchange, Throwable failure) {
+    private FailureDetails failureDetails(Exchange exchange, Throwable failure) {
+        if (failure != null) {
+            return new FailureDetails(errorCode(failure), failure.getClass().getSimpleName());
+        }
         if (exchange == null) {
-            return failure != null;
+            return null;
+        }
+        ProviderBusinessOutcome providerOutcome = exchange.getProperty(
+                ProviderBusinessOutcome.EXCHANGE_PROPERTY,
+                ProviderBusinessOutcome.class
+        );
+        if (providerOutcome != null && !providerOutcome.success()) {
+            return new FailureDetails(providerOutcome.safeErrorCode(), providerOutcome.errorType());
         }
         Integer statusCode = httpStatus(exchange);
-        return failure != null
-                || Boolean.TRUE.equals(exchange.getProperty(BUSINESS_FAILURE_PROPERTY, Boolean.class))
-                || statusCode != null && statusCode >= 400
-                || businessFailureBody(exchange.getMessage().getBody());
+        if (Boolean.TRUE.equals(exchange.getProperty(BUSINESS_FAILURE_PROPERTY, Boolean.class))) {
+            return new FailureDetails(null, ProviderBusinessOutcome.BUSINESS_ERROR_TYPE);
+        }
+        if (statusCode != null && statusCode >= 400) {
+            return new FailureDetails(String.valueOf(statusCode), ProviderBusinessOutcome.BUSINESS_ERROR_TYPE);
+        }
+        return businessFailureBody(exchange.getMessage().getBody());
     }
 
-    private Throwable failureOrSynthetic(Throwable failure) {
-        return failure == null ? new BusinessFailure() : failure;
-    }
-
-    private boolean businessFailureBody(Object body) {
+    private FailureDetails businessFailureBody(Object body) {
         if (body instanceof ScmFault) {
-            return true;
+            return new FailureDetails(null, ProviderBusinessOutcome.BUSINESS_ERROR_TYPE);
         }
         if (body instanceof Message message) {
             MessageStatus status = message.getStatus();
-            return status != null && status != MessageStatus.SC_SUCCESS && status != MessageStatus.SC_PROCESSING;
+            if (status != null && status != MessageStatus.SC_SUCCESS && status != MessageStatus.SC_PROCESSING) {
+                return new FailureDetails(status.name(), ProviderBusinessOutcome.BUSINESS_ERROR_TYPE);
+            }
         }
-        return false;
+        return null;
     }
 
     private String safePath(String value) {
@@ -632,9 +668,12 @@ public class CoreObservationTraceSupport {
         return null;
     }
 
-    private static final class BusinessFailure extends RuntimeException {
-        private BusinessFailure() {
-            super("SCM business failure", null, false, false);
+    private record FailureDetails(String errorCode, String errorType) {
+        private FailureDetails {
+            errorCode = errorCode == null || errorCode.isBlank() ? null : errorCode.trim();
+            errorType = errorType == null || errorType.isBlank()
+                    ? ProviderBusinessOutcome.BUSINESS_ERROR_TYPE
+                    : errorType.trim();
         }
     }
 }

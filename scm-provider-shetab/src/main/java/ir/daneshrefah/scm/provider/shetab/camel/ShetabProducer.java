@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerConte
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerPipeline;
 import ir.daneshrefah.scm.common.provider.message.ProviderRequest;
 import ir.daneshrefah.scm.common.provider.message.ProviderResponse;
+import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabConfigResolver;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabEndpointOverrides;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabHeaders;
@@ -19,6 +20,7 @@ import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
 import ir.daneshrefah.scm.provider.shetab.ratelimit.ShetabRateLimiter;
 import ir.daneshrefah.scm.provider.shetab.tcp.ShetabClientRegistry;
 import ir.daneshrefah.scm.provider.shetab.tcp.ShetabTransportResponse;
+import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderAttemptResult;
 import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
 import ir.daneshrefah.scm.provider.shetab.trace.ShetabTraceSupport;
 import lombok.extern.slf4j.Slf4j;
@@ -95,6 +97,8 @@ public class ShetabProducer extends DefaultProducer {
                     exchange, config, request, operationName);
             ShetabTransportResponse transportResponse = clientRegistry.request(config, request, traceLifecycle);
             ISOMsg response = transportResponse.response();
+            String responseCode = responseCode(response);
+            ProviderBusinessOutcome outcome = null;
             RuntimeException responseFailure = null;
             try {
                 ProviderResponse providerResponse = new ProviderResponse();
@@ -104,22 +108,55 @@ public class ShetabProducer extends DefaultProducer {
                 Map<String, Object> responseMap = isoMapConverter.toMap(response);
                 providerResponse.body(responseMap);
                 exchange.getMessage().setBody(responseMap);
+                outcome = traceSupport.providerOutcome(config, responseCode);
+                setProviderOutcome(exchange, outcome);
             } catch (RuntimeException exception) {
                 responseFailure = exception;
+                outcome = ProviderBusinessOutcome.technicalFailure(responseCode, exception);
+                setProviderOutcome(exchange, outcome);
                 throw exception;
             } finally {
-                traceSupport.finishAttempt(transportResponse.traceAttempt(), exchange, config, response, responseFailure);
+                ProviderBusinessOutcome finalOutcome = outcome == null
+                        ? ProviderBusinessOutcome.technicalFailure(responseCode, responseFailure)
+                        : outcome;
+                traceSupport.finishAttempt(
+                        transportResponse.traceAttempt(),
+                        exchange,
+                        config,
+                        new ShetabProviderAttemptResult(
+                                response,
+                                finalOutcome,
+                                responseFailure
+                        )
+                );
             }
-            providerMetrics.succeeded();
+            if (outcome != null && outcome.success()) {
+                providerMetrics.succeeded();
+            } else {
+                providerMetrics.failed();
+            }
             Duration elapsed = Duration.ofNanos(Math.max(0L, System.nanoTime() - startedAt));
             providerMetrics.addLatency(elapsed.toMillis());
-            providerMetrics.recordProviderRequestDuration(config, customizerContext, elapsed, "success");
-            log.info("Shetab provider done provider={} operation={} elapsedMs={}",
-                    config.provider(), operationName, elapsedMillis(startedAt));
+            providerMetrics.recordProviderRequestDuration(config, customizerContext, elapsed, outcome);
+            log.info("Shetab provider done provider={} operation={} elapsedMs={} outcome={} responseCode={} errorCode={} errorType={}",
+                    config.provider(), operationName, elapsedMillis(startedAt),
+                    outcome == null ? "failure" : outcome.eventOutcome(),
+                    outcome == null ? null : outcome.responseCode(),
+                    outcome == null ? null : outcome.errorCode(),
+                    outcome == null ? null : outcome.errorType());
         } catch (RuntimeException e) {
-            providerMetrics.recordProviderRequestError(config, customizerContext);
-            log.error("Shetab provider error provider={} operation={} elapsedMs={} failureType={}",
-                    config.provider(), operationName, elapsedMillis(startedAt), e.getClass().getSimpleName());
+            setProviderOutcomeIfAbsent(exchange, ProviderBusinessOutcome.technicalFailure(null, e));
+            ProviderBusinessOutcome failureOutcome = exchange.getProperty(
+                    ProviderBusinessOutcome.EXCHANGE_PROPERTY,
+                    ProviderBusinessOutcome.class
+            );
+            providerMetrics.recordProviderRequestError(config, customizerContext, failureOutcome);
+            log.error("Shetab provider error provider={} operation={} elapsedMs={} outcome={} errorCode={} errorType={} failureType={}",
+                    config.provider(), operationName, elapsedMillis(startedAt),
+                    failureOutcome == null ? "failure" : failureOutcome.eventOutcome(),
+                    failureOutcome == null ? null : failureOutcome.errorCode(),
+                    failureOutcome == null ? null : failureOutcome.errorType(),
+                    e.getClass().getSimpleName());
             throw e;
         }
     }
@@ -297,6 +334,29 @@ public class ShetabProducer extends DefaultProducer {
             return traceId;
         }
         return "";
+    }
+
+    private String responseCode(ISOMsg response) {
+        try {
+            String code = response == null ? null : response.getString(39);
+            return StringUtils.trimToNull(code);
+        } catch (RuntimeException exception) {
+            return null;
+        }
+    }
+
+    private void setProviderOutcome(Exchange exchange, ProviderBusinessOutcome outcome) {
+        if (exchange != null && outcome != null) {
+            exchange.setProperty(ProviderBusinessOutcome.EXCHANGE_PROPERTY, outcome);
+        }
+    }
+
+    private void setProviderOutcomeIfAbsent(Exchange exchange, ProviderBusinessOutcome outcome) {
+        if (exchange != null
+                && outcome != null
+                && exchange.getProperty(ProviderBusinessOutcome.EXCHANGE_PROPERTY, ProviderBusinessOutcome.class) == null) {
+            exchange.setProperty(ProviderBusinessOutcome.EXCHANGE_PROPERTY, outcome);
+        }
     }
 
     private <T> T first(T value, T fallback) {
