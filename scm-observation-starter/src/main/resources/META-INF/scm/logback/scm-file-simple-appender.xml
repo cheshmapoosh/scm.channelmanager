@@ -7,6 +7,7 @@
             <appender name="SCM_FILE_SIMPLE"
                       class="ch.qos.logback.core.rolling.RollingFileAppender">
                 <append>true</append>
+                <file>${LOG_SIMPLE_CURRENT_FILE}</file>
                 <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                     <marker>SCM_OBSERVATION_TRACE</marker>
                     <inverse>true</inverse>
@@ -16,7 +17,7 @@
                     <inverse>true</inverse>
                 </filter>
                 <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                    <fileNamePattern>${LOG_SIMPLE_FILE_PATTERN}</fileNamePattern>
+                    <fileNamePattern>${LOG_SIMPLE_ROLLED_FILE_PATTERN}</fileNamePattern>
                     <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
                     <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
                     <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
@@ -97,11 +98,12 @@
                     <appender name="SCM_AUDIT_SIMPLE_FILE"
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
                         <append>true</append>
+                        <file>${AUDIT_SIMPLE_CURRENT_FILE}</file>
                         <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                             <marker>SCM_OBSERVATION_AUDIT</marker>
                         </filter>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                            <fileNamePattern>${AUDIT_SIMPLE_FILE_PATTERN}</fileNamePattern>
+                            <fileNamePattern>${AUDIT_SIMPLE_ROLLED_FILE_PATTERN}</fileNamePattern>
                             <maxFileSize>${AUDIT_MAX_FILE_SIZE}</maxFileSize>
                             <maxHistory>${AUDIT_MAX_HISTORY}</maxHistory>
                             <totalSizeCap>${AUDIT_TOTAL_SIZE_CAP}</totalSizeCap>
@@ -122,11 +124,12 @@
                     <appender name="SCM_AUDIT_SIMPLE"
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
                         <append>true</append>
+                        <file>${AUDIT_SIMPLE_CURRENT_FILE}</file>
                         <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                             <marker>SCM_OBSERVATION_AUDIT</marker>
                         </filter>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                            <fileNamePattern>${AUDIT_SIMPLE_FILE_PATTERN}</fileNamePattern>
+                            <fileNamePattern>${AUDIT_SIMPLE_ROLLED_FILE_PATTERN}</fileNamePattern>
                             <maxFileSize>${AUDIT_MAX_FILE_SIZE}</maxFileSize>
                             <maxHistory>${AUDIT_MAX_HISTORY}</maxHistory>
                             <totalSizeCap>${AUDIT_TOTAL_SIZE_CAP}</totalSizeCap>

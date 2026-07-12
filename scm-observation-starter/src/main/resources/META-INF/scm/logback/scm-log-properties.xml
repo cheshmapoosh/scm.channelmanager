@@ -48,10 +48,14 @@
     <springProperty scope="context" name="LOG_CLEAN_HISTORY_ON_START"
                     source="scm.observation.log.rolling.clean-history-on-start" defaultValue="false"/>
 
-    <property name="LOG_JSONL_FILE_PATTERN"
-              value="${LOG_FILE_DIRECTORY}/log-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
-    <property name="LOG_SIMPLE_FILE_PATTERN"
-              value="${LOG_FILE_DIRECTORY}/log-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
+    <property name="LOG_JSONL_CURRENT_FILE"
+              value="${LOG_FILE_DIRECTORY}/log-${OBS_FILE_BASE_NAME}.jsonl"/>
+    <property name="LOG_JSONL_ROLLED_FILE_PATTERN"
+              value="${LOG_FILE_DIRECTORY}/archive/log-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
+    <property name="LOG_SIMPLE_CURRENT_FILE"
+              value="${LOG_FILE_DIRECTORY}/log-${OBS_FILE_BASE_NAME}.log"/>
+    <property name="LOG_SIMPLE_ROLLED_FILE_PATTERN"
+              value="${LOG_FILE_DIRECTORY}/archive/log-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
 
     <springProperty scope="context" name="TRACE_ENABLED"
                     source="scm.observation.trace.enabled" defaultValue="false"/>
@@ -87,11 +91,11 @@
     <property name="TRACE_JSONL_CURRENT_FILE"
               value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}.jsonl"/>
     <property name="TRACE_JSONL_ROLLED_FILE_PATTERN"
-              value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
+              value="${TRACE_FILE_DIRECTORY}/archive/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
     <property name="TRACE_SIMPLE_CURRENT_FILE"
               value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}.log"/>
     <property name="TRACE_SIMPLE_ROLLED_FILE_PATTERN"
-              value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
+              value="${TRACE_FILE_DIRECTORY}/archive/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
 
     <springProperty scope="context" name="AUDIT_ENABLED"
                     source="scm.observation.audit.enabled" defaultValue="false"/>
@@ -124,8 +128,12 @@
     <springProperty scope="context" name="AUDIT_ASYNC_MAX_FLUSH_TIME"
                     source="scm.observation.audit.async.max-flush-time" defaultValue="1000"/>
 
-    <property name="AUDIT_JSONL_FILE_PATTERN"
-              value="${AUDIT_FILE_DIRECTORY}/audit-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
-    <property name="AUDIT_SIMPLE_FILE_PATTERN"
-              value="${AUDIT_FILE_DIRECTORY}/audit-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
+    <property name="AUDIT_JSONL_CURRENT_FILE"
+              value="${AUDIT_FILE_DIRECTORY}/audit-${OBS_FILE_BASE_NAME}.jsonl"/>
+    <property name="AUDIT_JSONL_ROLLED_FILE_PATTERN"
+              value="${AUDIT_FILE_DIRECTORY}/archive/audit-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
+    <property name="AUDIT_SIMPLE_CURRENT_FILE"
+              value="${AUDIT_FILE_DIRECTORY}/audit-${OBS_FILE_BASE_NAME}.log"/>
+    <property name="AUDIT_SIMPLE_ROLLED_FILE_PATTERN"
+              value="${AUDIT_FILE_DIRECTORY}/archive/audit-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
 </included>
