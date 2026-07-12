@@ -120,6 +120,8 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
                 correlationId,
                 incomingTraceParent == null ? ObservationIds.traceId() : incomingTraceParent.traceId(),
                 ObservationIds.spanId(),
+                incomingTraceParent == null ? null : incomingTraceParent.parentId(),
+                incomingTraceParent == null ? null : incomingTraceParent.flags(),
                 textOrDefault(observationContext.gatewayName()),
                 channelCode,
                 "http",
@@ -146,6 +148,8 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         request.setAttribute(GatewayObservationContext.CORRELATION_ID_ATTRIBUTE, gatewayContext.correlationId());
         request.setAttribute(GatewayObservationContext.TRACE_ID_ATTRIBUTE, gatewayContext.traceId());
         request.setAttribute(GatewayObservationContext.GATEWAY_SPAN_ID_ATTRIBUTE, gatewayContext.gatewaySpanId());
+        request.setAttribute(GatewayObservationContext.REMOTE_PARENT_SPAN_ID_ATTRIBUTE, gatewayContext.remoteParentSpanId());
+        request.setAttribute(GatewayObservationContext.TRACE_FLAGS_ATTRIBUTE, gatewayContext.traceFlags());
         request.setAttribute(GatewayObservationContext.GATEWAY_NAME_ATTRIBUTE, gatewayContext.gatewayName());
         request.setAttribute(GatewayObservationContext.CHANNEL_CODE_ATTRIBUTE, gatewayContext.channelCode());
     }

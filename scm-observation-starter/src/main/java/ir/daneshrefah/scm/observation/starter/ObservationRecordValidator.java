@@ -148,6 +148,7 @@ public class ObservationRecordValidator {
             throw new IllegalStateException("Invalid TRACE span.events: an ordered collection is required");
         }
         int index = 0;
+        boolean awaitingProviderResponse = false;
         for (Object item : events) {
             if (!(item instanceof Map<?, ?> event)) {
                 throw new IllegalStateException("Invalid TRACE span.events[" + index + "]: an event object is required");
@@ -179,25 +180,71 @@ public class ObservationRecordValidator {
                                     + "].attributes.event.outcome");
                 }
             }
-            if ("provider.request".equals(name)
-                    && missing(attributes.get("event.outcome"))) {
-                throw new IllegalStateException(
-                        "Missing required TRACE observation attribute: span.events[" + index
-                                + "].attributes.event.outcome");
+            if ("provider.request".equals(name)) {
+                if (awaitingProviderResponse) {
+                    throw new IllegalStateException(
+                            "Invalid TRACE provider event ordering: provider.request at span.events[" + index
+                                    + "] appears before the previous provider.response");
+                }
+                validateProviderRequestEvent(attributes, index);
+                awaitingProviderResponse = true;
             }
             if ("provider.response".equals(name)) {
-                requireNonNegativeNumber(
-                        ObservationStream.TRACE,
-                        "span.events[" + index + "].attributes.provider.duration_ms",
-                        attributes.get("provider.duration_ms")
-                );
-                if (missing(attributes.get("event.outcome"))) {
+                if (!awaitingProviderResponse) {
                     throw new IllegalStateException(
-                            "Missing required TRACE observation attribute: span.events[" + index
-                                    + "].attributes.event.outcome");
+                            "Invalid TRACE provider event ordering: provider.response at span.events[" + index
+                                    + "] has no matching provider.request");
                 }
+                validateProviderResponseEvent(attributes, index);
+                awaitingProviderResponse = false;
             }
             index++;
+        }
+        if (awaitingProviderResponse) {
+            throw new IllegalStateException(
+                    "Invalid TRACE provider event ordering: provider.request has no matching provider.response");
+        }
+    }
+
+    private void validateProviderRequestEvent(Map<?, ?> attributes, int index) {
+        if (missing(attributes.get("event.outcome"))) {
+            throw new IllegalStateException(
+                    "Missing required TRACE observation attribute: span.events[" + index
+                            + "].attributes.event.outcome");
+        }
+        rejectPresent(attributes, "provider.duration_ms", index, "provider.request");
+        rejectPresent(attributes, "provider.response_code", index, "provider.request");
+        rejectPresent(attributes, "provider.error_code", index, "provider.request");
+    }
+
+    private void validateProviderResponseEvent(Map<?, ?> attributes, int index) {
+        requireNonNegativeNumber(
+                ObservationStream.TRACE,
+                "span.events[" + index + "].attributes.provider.duration_ms",
+                attributes.get("provider.duration_ms")
+        );
+        Object outcome = attributes.get("event.outcome");
+        if (missing(outcome)) {
+            throw new IllegalStateException(
+                    "Missing required TRACE observation attribute: span.events[" + index
+                            + "].attributes.event.outcome");
+        }
+        if ("failure".equalsIgnoreCase(String.valueOf(outcome).trim())
+                && missing(attributes.get("provider.error_code"))
+                && missing(attributes.get("error.code"))
+                && missing(attributes.get("error.type"))
+                && missing(attributes.get("provider.response_code"))) {
+            throw new IllegalStateException(
+                    "Invalid TRACE provider.response failure at span.events[" + index
+                            + "]: a safe failure indicator is required");
+        }
+    }
+
+    private void rejectPresent(Map<?, ?> attributes, String fieldName, int index, String eventName) {
+        if (!missing(attributes.get(fieldName))) {
+            throw new IllegalStateException(
+                    "Invalid TRACE " + eventName + " event at span.events[" + index
+                            + "]: " + fieldName + " is response-only");
         }
     }
 

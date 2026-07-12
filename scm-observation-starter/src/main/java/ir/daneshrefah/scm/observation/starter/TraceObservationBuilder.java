@@ -11,6 +11,7 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
     private String spanId;
     private String parentSpanId;
     private boolean parentSpanIdProvided;
+    private String traceFlags;
     private String correlationType;
 
     TraceObservationBuilder(ScmObservation observation) {
@@ -42,6 +43,11 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
     public TraceObservationBuilder parentSpanId(String parentSpanId) {
         this.parentSpanId = parentSpanId;
         this.parentSpanIdProvided = true;
+        return this;
+    }
+
+    public TraceObservationBuilder traceFlags(String traceFlags) {
+        this.traceFlags = traceFlags;
         return this;
     }
 
@@ -102,6 +108,7 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
                 context.traceId(),
                 context.spanId(),
                 resolvedParentSpanId,
+                traceFlags,
                 attributes
         );
     }

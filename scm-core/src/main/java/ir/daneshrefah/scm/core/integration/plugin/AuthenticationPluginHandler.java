@@ -173,10 +173,7 @@ public class AuthenticationPluginHandler implements PluginHandler {
     }
 
     private Object safeLoginData(UserAuthentication.AuthenticationDetail details) {
-        if (details == null || details.getLoginData() instanceof Jwt) {
-            return null;
-        }
-        return details.getLoginData();
+        return null;
     }
 
     private void copyProfile(UserProfile source, UserProfile target) {

@@ -38,7 +38,7 @@ scm.observation.scope.operation
 
 `AuthenticationPluginHandler` شیء کامل Spring `Jwt` را در Camel header قرار نمی‌دهد. پس از enrichment مجاز
 `gateway.receive`، فقط roleهای claim `aut` را در `ValidatedJwtBusinessContext` immutable نگه می‌دارد و
-`loginData` حاوی `Jwt` را از authentication محلی Exchange حذف می‌کند. سایر fieldهای غیر-JWT authentication
+`loginData` را همیشه از authentication محلی Exchange حذف می‌کند. سایر fieldهای غیر-JWT authentication
 برای سازگاری business حفظ می‌شوند. `jwt.aut` تنها کلید template سازگار است؛ دسترسی arbitrary به `jwt.*` و
 claim map کامل پشتیبانی نمی‌شود.
 

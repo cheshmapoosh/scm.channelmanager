@@ -98,7 +98,8 @@ public class CoreObservationTraceSupport {
                 .action("gateway.receive")
                 .traceId(requestedContext.traceId())
                 .spanId(requestedContext.spanId())
-                .parentSpanId(null)
+                .parentSpanId(preparedContext == null ? null : preparedContext.remoteParentSpanId())
+                .traceFlags(preparedContext == null ? null : preparedContext.traceFlags())
                 .correlationId(requestedContext.correlationId())
                 .correlationType(requestedContext.correlationType())
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, firstText(
@@ -438,6 +439,8 @@ public class CoreObservationTraceSupport {
                 stringAttribute(request, GatewayObservationContext.CORRELATION_ID_ATTRIBUTE),
                 stringAttribute(request, GatewayObservationContext.TRACE_ID_ATTRIBUTE),
                 stringAttribute(request, GatewayObservationContext.GATEWAY_SPAN_ID_ATTRIBUTE),
+                stringAttribute(request, GatewayObservationContext.REMOTE_PARENT_SPAN_ID_ATTRIBUTE),
+                stringAttribute(request, GatewayObservationContext.TRACE_FLAGS_ATTRIBUTE),
                 stringAttribute(request, GatewayObservationContext.GATEWAY_NAME_ATTRIBUTE),
                 stringAttribute(request, GatewayObservationContext.CHANNEL_CODE_ATTRIBUTE),
                 RouteLogSupport.protocol(exchange),

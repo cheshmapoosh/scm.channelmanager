@@ -168,7 +168,7 @@ The raw JWT value, HTTP authentication header value, credentials, and claims out
 
 The authentication plugin also does not place the Spring `Jwt` in a Camel message header. After allowlisted gateway
 enrichment and extraction of the role list required by existing SCM authorization, it clears `loginData` from the
-Exchange-owned `UserAuthentication` details while retaining the non-JWT authentication fields. Authorization uses
+Exchange-owned `UserAuthentication` details instead of preserving arbitrary login objects. Authorization uses
 the private Exchange authentication plus an immutable `ValidatedJwtBusinessContext`; the only retained JWT-derived
 business value is the normalized `aut` role list. The legacy template key `jwt.aut` resolves that typed list.
 Arbitrary `jwt.*` template access is intentionally unsupported, so the compact token and unrestricted claim map are

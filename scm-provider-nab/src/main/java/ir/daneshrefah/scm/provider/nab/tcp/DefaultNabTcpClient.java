@@ -13,7 +13,7 @@ import java.nio.charset.Charset;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class NabPooledTcpClient implements NabTcpClient {
+public class DefaultNabTcpClient implements NabTcpClient {
     private final NabTextNormalizer textNormalizer;
     private final NabProviderMetrics metrics;
 
@@ -28,7 +28,7 @@ public class NabPooledTcpClient implements NabTcpClient {
         NabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
         NabEndpointAddress endpoint = NabEndpointAddress.parse(config.endpoint());
         providerMetrics.connectionOpened();
-        try (NabPooledConnection connection = NabPooledConnection.open(
+        try (NabTcpSession connection = NabTcpSession.connect(
                 endpoint,
                 config,
                 Charset.forName(config.charset())
