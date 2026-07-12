@@ -1,17 +1,10 @@
-scm:
-  metadata:
-    namespace: ${SCM_METADATA_NAMESPACE:local}
-    instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-cache}
-  observation:
-    log:
-      console:
-        enabled: true
-    trace:
-      console:
-        enabled: true
-    audit:
-      console:
-        enabled: true
+SCM_METADATA_NAMESPACE: local
+SCM_METADATA_INSTANCE_ID: local-scm-cache
+
+SCM_OBS_LOG_CONSOLE_ENABLED: true
+SCM_OBS_TRACE_CONSOLE_ENABLED: true
+SCM_OBS_AUDIT_CONSOLE_ENABLED: true
+SCM_OBS_METRIC_ENABLED: true
 
 SCM_SERVER_PORT: ${SERVER_PORT:8080}
 
