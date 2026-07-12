@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.provider.nab.observation.attributes;
+package ir.daneshrefah.scm.provider.shetab.trace;
 
 import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
 import ir.daneshrefah.scm.observation.starter.ObservationAttributePresence;
@@ -6,7 +6,7 @@ import ir.daneshrefah.scm.observation.starter.attributes.trace.TraceAttribute;
 
 import java.util.List;
 
-public final class NabTraceAttributes {
+public final class ShetabTraceAttributes {
     private static final String OWNER = "scm-provider";
 
     public static final ObservationAttributeKey<String> PROVIDER_CODE = keyword("provider.code", "Provider code.");
@@ -17,21 +17,25 @@ public final class NabTraceAttributes {
             "provider.operation", "Provider operation.");
     public static final ObservationAttributeKey<String> PROVIDER_ENDPOINT = keyword(
             "provider.endpoint", "Safe provider endpoint.");
-    public static final ObservationAttributeKey<String> PROVIDER_RESPONSE_CODE = keyword("provider.response_code", "Provider response code.");
+    public static final ObservationAttributeKey<Integer> PROVIDER_ATTEMPT = TraceAttribute.integerNumber(
+            "provider.attempt", OWNER, ObservationAttributePresence.EVENT_OPTIONAL,
+            "One-based provider transport attempt number.");
     public static final ObservationAttributeKey<Long> PROVIDER_DURATION_MS = TraceAttribute.longNumber(
             "provider.duration_ms", OWNER, ObservationAttributePresence.EVENT_OPTIONAL,
-            "Provider execution duration in milliseconds.");
-    public static final ObservationAttributeKey<String> PROVIDER_ERROR_CODE = TraceAttribute.keyword(
-            "provider.error_code", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Provider error code.");
+            "Provider attempt duration in milliseconds.");
+    public static final ObservationAttributeKey<String> PROVIDER_RESPONSE_CODE = keyword(
+            "provider.response_code", "Provider response code.");
+    public static final ObservationAttributeKey<String> PROVIDER_ERROR_CODE = keyword(
+            "provider.error_code", "Provider error code.");
 
-    private NabTraceAttributes() {
+    private ShetabTraceAttributes() {
     }
 
     public static List<ObservationAttributeKey<?>> attributes() {
         return List.of(
                 PROVIDER_CODE, PROVIDER_NAME, PROVIDER_TYPE, PROVIDER_SCHEME,
-                PROVIDER_OPERATION, PROVIDER_ENDPOINT, PROVIDER_RESPONSE_CODE,
-                PROVIDER_DURATION_MS, PROVIDER_ERROR_CODE
+                PROVIDER_OPERATION, PROVIDER_ENDPOINT, PROVIDER_ATTEMPT,
+                PROVIDER_DURATION_MS, PROVIDER_RESPONSE_CODE, PROVIDER_ERROR_CODE
         );
     }
 

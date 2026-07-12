@@ -139,6 +139,10 @@ The NAB resolver builds the provider instance pipeline once. No customizer is en
 
 Observation is produced through `scm-observation-starter`. `scm-provider-nab` does not use `scm-logging-client`.
 
-Metrics follow the Micrometer / Actuator / Prometheus path and do not produce JSONL. Provider observation includes provider request counters, duration metrics, and safe trace attributes for provider code, provider type, operation code, status, duration, and safe response/error codes.
+Metrics follow the Micrometer / Actuator / Prometheus path and do not produce JSONL. A real NAB invocation adds exactly two ordered events to the explicit `scm.observation.scope.operation` scope: `provider.request` immediately before `NabProviderService.execute`, then `provider.response` after transport and response decoding. Provider activity never creates a child span. A rate-limit rejection occurs before the provider attempt and therefore creates neither event.
 
-Raw NAB request/response messages, passwords, account numbers, PAN, token, PIN, CVV2, Authorization headers, and other sensitive values must not be logged, traced, audited, or tagged.
+Once `provider.request` is recorded, `provider.response` is emitted exactly once from `finally`, including transport, timeout, connection, decoding, and provider-specific failures. Parsed NAB responses whose existing `status.success` flag is false produce a failure response event without changing the returned business result. `provider.duration_ms` exists only on `provider.response`; it is measured with `System.nanoTime()` and clamped nonnegative.
+
+The safe event schema uses `provider.name`, `provider.code`, `provider.type`, `provider.scheme`, `provider.operation`, `provider.endpoint`, `provider.duration_ms`, `provider.response_code`, `provider.error_code`, `event.outcome`, `error.type`, and `error.code`. `NabProviderTraceAttributeContributor` is the extension point for future request/response event attributes. Implementations must explicitly register every added field through its inherited `ObservationAttributeContributor` contract; unregistered fields remain rejected by observation sanitization.
+
+Raw NAB request/response messages and field values, passwords, account numbers, PAN, tokens, PIN, CVV2, Authorization headers, unrestricted exception messages, and other sensitive values must not be logged, traced, audited, or tagged.

@@ -7,8 +7,8 @@ import ir.daneshrefah.scm.core.authority.decision.chains.DefaultAuthorizationMan
 import ir.daneshrefah.scm.core.authority.decision.configuration.model.AuthoritiesSecurityContext;
 import ir.daneshrefah.scm.core.authority.decision.configuration.model.AuthorizationManagerChainDefinition;
 import ir.daneshrefah.scm.core.authority.decision.configuration.model.SecurityContext;
+import ir.daneshrefah.scm.core.integration.security.ExchangeAuthenticationContext;
 import ir.daneshrefah.scm.plugin.api.authority.exception.AuthorityBaseException;
-import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,14 +16,14 @@ import org.apache.camel.Exchange;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
 import java.beans.Introspector;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.springframework.security.config.Elements.JWT;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -37,7 +37,7 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
 
     @Override
     public void decide(Exchange exchange) throws AuthorityBaseException {
-        Authentication authentication = AuthenticationUtils.getAuthentication();
+        Authentication authentication = ExchangeAuthenticationContext.authentication(exchange);
         if (Objects.isNull(authentication)) {
             throw new AuthenticationRequiredException();
         }
@@ -76,20 +76,7 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
     }
 
     private List<String> getAllUserRoles(Exchange exchange) {
-        Jwt jwt = (Jwt) exchange.getIn().getHeader(JWT);
-        List<String> roles = Collections.emptyList();
-        if (Objects.nonNull(jwt)) {
-            String aut = String.valueOf(jwt.getClaims().get("aut"));
-            if (StringUtils.isNotBlank(aut)) {
-                roles = Arrays.stream(
-                                aut.substring(1, aut.length() - 1)
-                                        .split(","))
-                        .map(String::trim)
-                        .filter(StringUtils::isNotBlank)
-                        .collect(Collectors.toList());
-            }
-        }
-        return roles;
+        return ExchangeAuthenticationContext.jwtBusinessContext(exchange).roles();
     }
 
     private List<String> getAllServiceAcceptableRoles(Exchange exchange) {

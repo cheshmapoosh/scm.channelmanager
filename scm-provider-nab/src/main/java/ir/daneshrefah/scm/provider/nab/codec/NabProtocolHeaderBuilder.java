@@ -26,10 +26,8 @@ public class NabProtocolHeaderBuilder {
         }
         String fullMessage = header + requestBody;
         if (log.isTraceEnabled()) {
-            log.trace("NAB header built protocol={} command={} service={} rqUid={} headerLength={} bodyLength={}",
-                    headerValues.protocol(), headerValues.command(),
-                    headerValues.data().path("serviceCode").asText(),
-                    headerValues.rqUid(), header.length(), requestBody.length());
+            log.trace("NAB header built protocol={} headerLength={} bodyLength={}",
+                    headerValues.protocol(), header.length(), requestBody.length());
         }
         return new NabWireRequest(headerValues.protocol(), fullMessage);
     }

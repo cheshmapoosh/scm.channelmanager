@@ -4,13 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.provider.nab.domain.NabFieldSpec;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class FixedLengthDecoder {
@@ -24,10 +22,6 @@ public class FixedLengthDecoder {
             String rawValue = slice(fragment, offset, field);
             Object value = converterRegistry.decode(rawValue, field);
             put(result, field.name(), value);
-            if (log.isTraceEnabled()) {
-                log.trace("NAB decode field name={} offset={} length={} rawValue={} value={}",
-                        field.name(), offset, field.length(), rawValue, value);
-            }
             offset += field.length();
         }
         return result;

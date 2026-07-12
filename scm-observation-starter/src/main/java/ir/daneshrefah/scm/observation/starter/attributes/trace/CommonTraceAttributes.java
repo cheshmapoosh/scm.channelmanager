@@ -51,6 +51,10 @@ public final class CommonTraceAttributes {
     public static final ObservationAttributeKey<String> SCM_REQUEST_NAME = keyword("scm.request.name", ObservationAttributePresence.EVENT_OPTIONAL, "Low-cardinality gateway request name.");
     public static final ObservationAttributeKey<String> SCM_MESSAGE_ID = keyword("scm.message.id", ObservationAttributePresence.EVENT_OPTIONAL, "Protocol message identifier.");
     public static final ObservationAttributeKey<String> SCM_ROUTE_ID = keyword("scm.route.id", ObservationAttributePresence.EVENT_OPTIONAL, "Gateway route identifier.");
+    public static final ObservationAttributeKey<String> SCM_SCHEDULE_JOB_NAME = keyword(
+            "scm.schedule.job_name", ObservationAttributePresence.EVENT_OPTIONAL, "Low-cardinality scheduled job name.");
+    public static final ObservationAttributeKey<String> SCM_SCHEDULE_TRIGGER_TYPE = keyword(
+            "scm.schedule.trigger_type", ObservationAttributePresence.EVENT_OPTIONAL, "Low-cardinality scheduled trigger type.");
     public static final ObservationAttributeKey<String> EVENT_ACTION = keyword("event.action", ObservationAttributePresence.EVENT_REQUIRED, "Event action.");
     public static final ObservationAttributeKey<String> EVENT_OUTCOME = keyword("event.outcome", ObservationAttributePresence.EVENT_REQUIRED, "Event outcome.");
     public static final ObservationAttributeKey<String> ERROR_TYPE = keyword("error.type", ObservationAttributePresence.ERROR_REQUIRED, "Error type.");
@@ -73,6 +77,7 @@ public final class CommonTraceAttributes {
                 SPAN_NAME, SPAN_KIND, SPAN_START_TIME, SPAN_END_TIME, SPAN_DURATION_MS, SPAN_EVENTS,
                 HTTP_METHOD, HTTP_ROUTE, URL_PATH, HTTP_STATUS_CODE, HTTP_QUERY_PRESENT, CLIENT_IP, CLIENT_ADDRESS,
                 SCM_GATEWAY_NAME, SCM_PROTOCOL, SCM_REQUEST_NAME, SCM_MESSAGE_ID, SCM_ROUTE_ID,
+                SCM_SCHEDULE_JOB_NAME, SCM_SCHEDULE_TRIGGER_TYPE,
                 EVENT_ACTION, EVENT_OUTCOME,
                 ERROR_TYPE, ERROR_MESSAGE, ERROR_STACK_TRACE, ERROR_CODE, ERROR_CATEGORY
         );

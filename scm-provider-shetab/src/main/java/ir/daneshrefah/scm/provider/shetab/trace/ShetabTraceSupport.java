@@ -1,130 +1,124 @@
 package ir.daneshrefah.scm.provider.shetab.trace;
 
-import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.jpos.iso.ISOMsg;
-import org.slf4j.MDC;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 @Component
+@Slf4j
 public class ShetabTraceSupport {
     private static final String OPERATION_SCOPE_PROPERTY = "scm.observation.scope.operation";
+    private static final String PROVIDER_NAME = "SHETAB";
+    private static final String PROVIDER_TYPE = "tcp";
 
-    public <T> T clientSpan(Exchange exchange, ShetabResolvedConfig config, ISOMsg request, Supplier<T> action) {
-        String primaryEndpoint = primaryEndpoint(config);
-        EndpointParts endpointParts = primaryEndpoint == null ? null : parseEndpoint(primaryEndpoint);
-        Map<String, Object> attributes = new java.util.LinkedHashMap<>();
-        put(attributes, "scm.provider.name", config == null ? null : config.provider());
-        put(attributes, "scm.provider.scheme", config == null ? null : config.scheme());
-        put(attributes, "scm.provider.uri", providerUri(config));
-        put(attributes, "shetab.endpoint.primary", primaryEndpoint);
-        put(attributes, "net.peer.name", endpointParts == null ? null : endpointParts.host());
-        put(attributes, "net.peer.port", endpointParts == null ? null : endpointParts.port());
-        put(attributes, "shetab.iso.mti", safeMti(request));
-        put(attributes, "shetab.iso.stan", safeField(request, 11));
-        put(attributes, "shetab.iso.rrn", safeField(request, 37));
+    private final List<ShetabProviderTraceAttributeContributor> contributors;
 
-        try {
-            T result = action.get();
-            put(attributes, "event.outcome", "success");
-            addOperationEvent(exchange, "provider.shetab.call", attributes);
-            return result;
-        } catch (RuntimeException e) {
-            put(attributes, "event.outcome", "failure");
-            put(attributes, "error.type", e.getClass().getName());
-            put(attributes, "error.code", e.getClass().getSimpleName());
-            addOperationEvent(exchange, "provider.shetab.call", attributes);
-            throw e;
-        }
+    public ShetabTraceSupport(ObjectProvider<ShetabProviderTraceAttributeContributor> contributors) {
+        this.contributors = contributors.orderedStream().toList();
     }
 
-    public void customizerSpan(
+    public ShetabProviderTraceLifecycle lifecycle(
             Exchange exchange,
-            ProviderMessageCustomizerContext context,
-            String customizerType,
-            String phase,
-            Runnable action
+            ShetabResolvedConfig config,
+            ISOMsg request,
+            String operation
     ) {
-        Map<String, Object> attributes = new java.util.LinkedHashMap<>();
-        put(attributes, "scm.provider.name", context == null ? null : context.providerCode());
-        put(attributes, "scm.provider.scheme", context == null ? null : context.scheme());
-        put(attributes, "scm.provider.uri", context == null ? null : context.providerUri());
-        put(attributes, "scm.provider.service_code", context == null ? null : context.serviceCode());
-        put(attributes, "scm.provider.operation_code", context == null ? null : context.operationCode());
-        put(attributes, "scm.provider.channel_code", context == null ? null : context.channelCode());
-        put(attributes, "scm.provider.customizer.type", customizerType);
-        put(attributes, "scm.provider.customizer.phase", phase);
-
-        try {
-            action.run();
-            put(attributes, "event.outcome", "success");
-            addOperationEvent(exchange, "provider.customizer.execute", attributes);
-        } catch (RuntimeException e) {
-            put(attributes, "event.outcome", "failure");
-            put(attributes, "error.type", e.getClass().getName());
-            put(attributes, "error.code", e.getClass().getSimpleName());
-            addOperationEvent(exchange, "provider.customizer.execute", attributes);
-            throw e;
-        }
+        Map<String, Object> baseAttributes = baseAttributes(config, operation);
+        Map<String, Object> requestAttributes = new LinkedHashMap<>();
+        contributeRequestAttributes(exchange, config, request, requestAttributes);
+        return new ShetabProviderTraceLifecycle(
+                this, activeOperationScope(exchange), baseAttributes, requestAttributes);
     }
 
-    private void addOperationEvent(Exchange exchange, String name, Map<String, Object> attributes) {
-        if (exchange == null) {
+    public void finishAttempt(
+            ShetabProviderTraceLifecycle.Attempt attempt,
+            Exchange exchange,
+            ShetabResolvedConfig config,
+            ISOMsg response,
+            Throwable failure
+    ) {
+        if (attempt == null) {
             return;
         }
-        ObservationScope scope = exchange.getProperty(OPERATION_SCOPE_PROPERTY, ObservationScope.class);
-        if (scope != null) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        contributeResponseAttributes(exchange, config, response, failure, attributes);
+        String responseCode = safeField(response, 39);
+        attempt.finish(responseCode, response != null, failure, attributes);
+    }
+
+    void addOperationEvent(ObservationScope scope, String name, Map<String, Object> attributes) {
+        if (scope == null) {
+            return;
+        }
+        try {
             scope.event(name, attributes);
+        } catch (RuntimeException exception) {
+            log.warn("Ignoring Shetab provider trace event failure eventName={} failureType={}",
+                    name, exception.getClass().getSimpleName());
         }
     }
 
-    private void put(Map<String, Object> attributes, String name, Object value) {
-        if (attributes != null && name != null && !name.isBlank() && value != null) {
-            attributes.put(name, value);
+    private Map<String, Object> baseAttributes(ShetabResolvedConfig config, String operation) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        put(attributes, ShetabTraceAttributes.PROVIDER_CODE.name(), config == null ? null : config.provider());
+        put(attributes, ShetabTraceAttributes.PROVIDER_NAME.name(), PROVIDER_NAME);
+        put(attributes, ShetabTraceAttributes.PROVIDER_TYPE.name(), PROVIDER_TYPE);
+        put(attributes, ShetabTraceAttributes.PROVIDER_SCHEME.name(), config == null ? null : config.scheme());
+        put(attributes, ShetabTraceAttributes.PROVIDER_OPERATION.name(), operation);
+        put(attributes, ShetabTraceAttributes.PROVIDER_ENDPOINT.name(), safeEndpoint(primaryEndpoint(config)));
+        return attributes;
+    }
+
+    private void contributeRequestAttributes(
+            Exchange exchange,
+            ShetabResolvedConfig config,
+            ISOMsg request,
+            Map<String, Object> attributes
+    ) {
+        for (ShetabProviderTraceAttributeContributor contributor : contributors) {
+            try {
+                contributor.contributeRequestAttributes(exchange, config, request, attributes);
+            } catch (RuntimeException exception) {
+                log.warn("Ignoring Shetab request trace attribute contributor failure contributor={} failureType={}",
+                        contributor.getClass().getName(), exception.getClass().getSimpleName());
+            }
         }
     }
 
-    public void enrichLogMdc(Exchange exchange) {
-        // Trace context is managed by scm-observation-starter/Micrometer.
-        // Keep this method as a compatibility hook for existing producer code.
-    }
-
-    public Map<String, String> currentTraceIds() {
-        return Map.of(
-                "traceId", value(MDC.get("traceId")),
-                "spanId", value(MDC.get("spanId"))
-        );
-    }
-
-    private String providerUri(ShetabResolvedConfig config) {
-        if (config == null) {
-            return "";
+    private void contributeResponseAttributes(
+            Exchange exchange,
+            ShetabResolvedConfig config,
+            ISOMsg response,
+            Throwable failure,
+            Map<String, Object> attributes
+    ) {
+        for (ShetabProviderTraceAttributeContributor contributor : contributors) {
+            try {
+                contributor.contributeResponseAttributes(exchange, config, response, failure, attributes);
+            } catch (RuntimeException exception) {
+                log.warn("Ignoring Shetab response trace attribute contributor failure contributor={} failureType={}",
+                        contributor.getClass().getName(), exception.getClass().getSimpleName());
+            }
         }
-        return value(config.scheme()) + ":" + value(config.provider());
     }
 
-    private String value(String value) {
-        return value == null ? "" : value;
+    private ObservationScope activeOperationScope(Exchange exchange) {
+        return exchange == null ? null : exchange.getProperty(OPERATION_SCOPE_PROPERTY, ObservationScope.class);
     }
 
-    private String safeMti(ISOMsg msg) {
+    private String safeField(ISOMsg message, int field) {
         try {
-            return msg != null && msg.hasMTI() ? msg.getMTI() : "";
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
-    private String safeField(ISOMsg msg, int field) {
-        try {
-            return msg != null ? msg.getString(field) : "";
-        } catch (Exception e) {
-            return "";
+            return message == null ? null : clean(message.getString(field));
+        } catch (RuntimeException exception) {
+            return null;
         }
     }
 
@@ -132,30 +126,34 @@ public class ShetabTraceSupport {
         if (config == null || config.endpoints() == null || config.endpoints().isEmpty()) {
             return null;
         }
-        String endpoint = config.endpoints().get(0);
-        if (endpoint == null || endpoint.isBlank()) {
-            return null;
-        }
-        return endpoint.trim();
+        return clean(config.endpoints().get(0));
     }
 
-    private EndpointParts parseEndpoint(String endpoint) {
+    private String clean(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String safeEndpoint(String value) {
+        String endpoint = clean(value);
+        if (endpoint == null || endpoint.indexOf('@') >= 0 || endpoint.indexOf('/') >= 0
+                || endpoint.indexOf('?') >= 0 || endpoint.indexOf('#') >= 0) {
+            return null;
+        }
         int separator = endpoint.lastIndexOf(':');
         if (separator <= 0 || separator == endpoint.length() - 1) {
             return null;
         }
         try {
-            String host = endpoint.substring(0, separator).trim();
-            int port = Integer.parseInt(endpoint.substring(separator + 1).trim());
-            if (host.isBlank() || port < 1) {
-                return null;
-            }
-            return new EndpointParts(host, port);
-        } catch (Exception ignored) {
+            int port = Integer.parseInt(endpoint.substring(separator + 1));
+            return port > 0 && port <= 65_535 ? endpoint : null;
+        } catch (NumberFormatException exception) {
             return null;
         }
     }
 
-    private record EndpointParts(String host, int port) {
+    private void put(Map<String, Object> attributes, String name, Object value) {
+        if (name != null && !name.isBlank() && value != null) {
+            attributes.put(name, value);
+        }
     }
 }

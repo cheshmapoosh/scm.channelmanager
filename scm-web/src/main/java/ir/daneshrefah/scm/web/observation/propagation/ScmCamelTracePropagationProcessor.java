@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.web.observation.propagation;
 
-import ir.daneshrefah.scm.observation.starter.TraceContextHolder;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
+import ir.daneshrefah.scm.observation.starter.TraceContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
@@ -37,7 +38,28 @@ public class ScmCamelTracePropagationProcessor implements Processor {
             return;
         }
         REMOVED_PROPAGATION_HEADERS.forEach(message::removeHeader);
-        traceParentWriter.format(TraceContextHolder.current())
+        traceParentWriter.format(activeContext(exchange))
                 .ifPresent(value -> message.setHeader(ScmTraceParentWriter.TRACEPARENT, value));
+    }
+
+    private TraceContext activeContext(Exchange exchange) {
+        TraceContext operation = exchange.getProperty(
+                CoreObservationTraceSupport.OPERATION_CONTEXT_PROPERTY,
+                TraceContext.class
+        );
+        if (operation != null) {
+            return operation;
+        }
+        TraceContext service = exchange.getProperty(
+                CoreObservationTraceSupport.SERVICE_CONTEXT_PROPERTY,
+                TraceContext.class
+        );
+        if (service != null) {
+            return service;
+        }
+        return exchange.getProperty(
+                CoreObservationTraceSupport.GATEWAY_CONTEXT_PROPERTY,
+                TraceContext.class
+        );
     }
 }

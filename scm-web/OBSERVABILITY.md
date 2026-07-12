@@ -71,6 +71,26 @@ scm.observation.scope.operation
 
 This preserves layer ownership across Camel thread changes. Scope objects are not serialized into outbound messages.
 
+All three Camel lifecycle spans are started in detached mode. A detached start does not install a long-lived
+`ObservationScope.current()`, `TraceContextHolder` binding, or Micrometer `SpanInScope`; the scope handle and the
+sink's actual immutable `TraceContext` are stored on the Exchange. This permits a span to start on one Camel worker,
+receive attributes/events from another worker, and close exactly once on a third worker without attempting to clear
+another thread's state.
+
+SCM authentication and trace context needed by synchronous business code are rebound only for the duration of one
+Camel processor invocation and restored in `finally`. No binding crosses an asynchronous processor boundary or is
+left on a pooled thread. Outbound Camel trace propagation resolves operation, then service, then gateway context
+directly from the Exchange.
+
+## Security events
+
+Spring security observation listeners remain structured-LOG consumers. They do not look up
+`ObservationScope.current()` and do not attach TRACE events, because a Spring event does not carry a mutable Camel
+Exchange. Authentication and access-denied call sites that have the current Exchange map safe event data and invoke
+the trace adapter explicitly with the target layer (normally `gateway`). The adapter resolves only the corresponding
+Exchange-held scope, so a security event cannot attach to a stale request and cannot be emitted twice. Security
+activity without an explicit Camel Exchange remains LOG-only.
+
 ## Plugin events
 
 Plugins do not open `plugin.execute` spans. The core plugin invocation wrapper measures the actual invocation and records exactly one completion event named `plugin.execute` in the active Exchange-held scope for the executing layer.
@@ -110,7 +130,7 @@ Collected events are emitted in insertion order under `span.events` in the singl
 
 JWT enrichment applies only to the open `gateway.receive` scope. `service.execute`, `operation.call`, plugin events, LOG, and AUDIT do not receive the claim set.
 
-The resolver reads only an authenticated Spring Security result. It supports the standard `JwtAuthenticationToken`, the active SCM resource-server converter's authenticated `UsernamePasswordAuthenticationToken` carrying the already validated Spring `Jwt`, and the SCM `UserAuthentication` compatibility path whose authentication-manager result retains the validated `Jwt` in authentication details. It never reads an HTTP authentication header, splits or decodes a compact token, validates a token, or copies the full claim map.
+The resolver reads only an authenticated Spring Security result. It supports the standard `JwtAuthenticationToken`, the active SCM resource-server converter's authenticated `UsernamePasswordAuthenticationToken` carrying the already validated Spring `Jwt`, and the SCM `UserAuthentication` compatibility path while the authentication manager's validated result is still local to the authentication call. It never reads an HTTP authentication header, splits or decodes a compact token, validates a token, or copies the full claim map.
 
 After successful authentication, `ScmWebGatewayAuthenticationTraceEnricher` creates an immutable allowlisted `GatewayJwtTraceContext`. A non-empty context is stored locally on the Camel Exchange as:
 
@@ -120,7 +140,7 @@ scm.observation.context.gateway.jwt
 
 It then enriches the still-open Exchange-held gateway scope. Anonymous, absent, unauthenticated, or non-JWT authentication produces no JWT attributes and leaves no empty JWT context property.
 
-The complete claim allowlist is:
+The complete, unchanged claim allowlist is:
 
 | JWT claim | `gateway.receive` attribute | Type |
 | --- | --- | --- |
@@ -146,7 +166,17 @@ Normalization rules:
 
 The raw JWT value, HTTP authentication header value, credentials, and claims outside this table are forbidden observation data. They are never stored in the immutable trace context or written to TRACE, LOG, or AUDIT.
 
-Scheduled background work does not receive invented JWT or user attributes.
+The authentication plugin also does not place the Spring `Jwt` in a Camel message header. After allowlisted gateway
+enrichment and extraction of the role list required by existing SCM authorization, it clears `loginData` from the
+Exchange-owned `UserAuthentication` details while retaining the non-JWT authentication fields. Authorization uses
+the private Exchange authentication plus an immutable `ValidatedJwtBusinessContext`; the only retained JWT-derived
+business value is the normalized `aut` role list. The legacy template key `jwt.aut` resolves that typed list.
+Arbitrary `jwt.*` template access is intentionally unsupported, so the compact token and unrestricted claim map are
+not exposed through message templating.
+
+Scheduled background work does not receive invented JWT or user attributes. No real scheduled business entry point
+exists in `scm-core` or `scm-web` at this revision, so no production caller starts `scheduled.execute`; the reusable
+lifecycle is reserved for a future job's actual execution method, never scheduler registration or startup.
 
 ## Trace files
 

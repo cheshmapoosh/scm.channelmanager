@@ -621,6 +621,26 @@ rate-limit:
 
 ## ۱۷. Observability و Logging
 
+هر تلاش واقعی transport برای request دقیقاً دو event مرتب در scope صریح
+`scm.observation.scope.operation` ایجاد می‌کند: `provider.request` هنگام شروع تلاش و
+`provider.response` دقیقاً یک‌بار هنگام پایان آن. فعالیت provider و customizer child span
+ایجاد نمی‌کند و ردشدن rate limit پیش از شروع transport هیچ‌یک از این دو event را نمی‌سازد.
+
+مطابق قرارداد no-resend، هر request حداکثر یک تلاش transport دارد و مقدار
+`provider.attempt` برای آن `1` است. reconnectهای قبل از ورود به `ISOChannel.send()` بخشی از
+همان تلاش هستند؛ پس از شروع send، failure تلاش را می‌بندد و request هرگز دوباره enqueue یا
+ارسال نمی‌شود. تلاش موفق تا دریافت response، اجرای customizerهای after-receive و تبدیل ISO
+باز می‌ماند تا timeout، connection، validation و customizer failure همگی یک
+`provider.response` ناموفق تولید کنند. `provider.duration_ms` فقط روی `provider.response`
+ثبت می‌شود و با `System.nanoTime()` و مقدار nonnegative محاسبه می‌شود.
+
+schema امن event شامل `provider.name`، `provider.code`، `provider.type`،
+`provider.scheme`، `provider.operation`، `provider.endpoint`، `provider.attempt`،
+`provider.duration_ms`، `provider.response_code`، `provider.error_code`، `event.outcome`،
+`error.type` و `error.code` است. `ShetabProviderTraceAttributeContributor` extension point
+افزودن attributeهای request/response است و هر field جدید باید صریحاً در قرارداد
+`ObservationAttributeContributor` ثبت شود.
+
 Trace و eventهای provider باید فقط metadata کنترل‌شده مانند موارد زیر را حمل کنند:
 
 ```text

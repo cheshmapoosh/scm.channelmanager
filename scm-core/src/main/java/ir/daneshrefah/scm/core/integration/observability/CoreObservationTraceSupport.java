@@ -8,6 +8,7 @@ import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreTraceAttributes;
+import ir.daneshrefah.scm.core.integration.security.ExchangeAuthenticationContext;
 import ir.daneshrefah.scm.observation.starter.CorrelationType;
 import ir.daneshrefah.scm.observation.starter.ObservationIds;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
@@ -82,13 +83,12 @@ public class CoreObservationTraceSupport {
                 currentContext == null ? null : currentContext.correlationId(),
                 ObservationIds.correlationId()
         );
-        TraceContext gatewayContext = new TraceContext(
+        TraceContext requestedContext = new TraceContext(
                 traceId,
                 spanId,
                 correlationId,
                 CorrelationType.REQUEST.value()
         );
-        putContext(exchange, GATEWAY_CONTEXT_PROPERTY, gatewayContext);
 
         Map<String, String> fields = exchangeMdc.fields(exchange);
         HttpServletRequest servletRequest = servletRequest(exchange);
@@ -96,11 +96,11 @@ public class CoreObservationTraceSupport {
                 .span("gateway.receive")
                 .spanKind("server")
                 .action("gateway.receive")
-                .traceId(gatewayContext.traceId())
-                .spanId(gatewayContext.spanId())
+                .traceId(requestedContext.traceId())
+                .spanId(requestedContext.spanId())
                 .parentSpanId(null)
-                .correlationId(gatewayContext.correlationId())
-                .correlationType(gatewayContext.correlationType())
+                .correlationId(requestedContext.correlationId())
+                .correlationType(requestedContext.correlationType())
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, firstText(
                         preparedContext == null ? null : preparedContext.gatewayName(),
                         fields.get("gatewayName")))
@@ -130,7 +130,9 @@ public class CoreObservationTraceSupport {
                         servletRequest, "scm.observation.legacy.service.code"))
                 .attribute("scm.observation.legacy.operation.code", requestAttribute(
                         servletRequest, "scm.observation.legacy.operation.code"))
-                .start();
+                .startDetached();
+        TraceContext gatewayContext = startedContext(scope, requestedContext);
+        putContext(exchange, GATEWAY_CONTEXT_PROPERTY, gatewayContext);
         exchange.setProperty(GATEWAY_SCOPE_PROPERTY, scope);
         enrichGatewayAuthentication(exchange, SecurityContextHolder.getContext().getAuthentication());
     }
@@ -170,16 +172,16 @@ public class CoreObservationTraceSupport {
         exchange.removeProperty(GATEWAY_RESPONSE_EVENT_PROPERTY);
 
         ObservationScope scope = removeScope(exchange, GATEWAY_SCOPE_PROPERTY, GATEWAY_CONTEXT_PROPERTY);
-        if (scope == null) {
-            return;
-        }
         try {
-            if (statusCode != null) {
-                scope.attribute(CommonTraceAttributes.HTTP_STATUS_CODE, statusCode);
+            if (scope != null) {
+                if (statusCode != null) {
+                    scope.attribute(CommonTraceAttributes.HTTP_STATUS_CODE, statusCode);
+                }
+                finishScope(scope, failed ? failureOrSynthetic(failure) : null, 0L, null);
             }
-            finishScope(scope, failed ? failureOrSynthetic(failure) : null, 0L, null);
         } finally {
             clearTraceMessageProperties(exchange);
+            ExchangeAuthenticationContext.clear(exchange);
         }
     }
 
@@ -189,18 +191,18 @@ public class CoreObservationTraceSupport {
             return;
         }
         TraceContext parent = exchange.getProperty(GATEWAY_CONTEXT_PROPERTY, TraceContext.class);
-        TraceContext context = childContext(parent, exchange);
+        TraceContext requestedContext = childContext(parent, exchange);
         Service service = servicePlan != null ? servicePlan.service() : exchange.getProperty(Message.SERVICE, Service.class);
         Map<String, String> fields = exchangeMdc.fields(exchange);
         ObservationScope scope = observation.trace()
                 .span("service.execute")
                 .spanKind("internal")
                 .action("service.execute")
-                .traceId(context.traceId())
-                .spanId(context.spanId())
+                .traceId(requestedContext.traceId())
+                .spanId(requestedContext.spanId())
                 .parentSpanId(parent == null ? null : parent.spanId())
-                .correlationId(context.correlationId())
-                .correlationType(context.correlationType())
+                .correlationId(requestedContext.correlationId())
+                .correlationType(requestedContext.correlationType())
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
                 .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, fields.get("channelCode"))
                 .attribute(CoreTraceAttributes.SERVICE_CODE, service != null ? service.getCode() : fields.get("serviceCode"))
@@ -210,7 +212,8 @@ public class CoreObservationTraceSupport {
                 .attribute(CoreTraceAttributes.OPERATION_NAME, fields.get("operationName"))
                 .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))
                 .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
-                .start();
+                .startDetached();
+        TraceContext context = startedContext(scope, requestedContext);
         exchange.setProperty(SERVICE_SCOPE_PROPERTY, scope);
         putContext(exchange, SERVICE_CONTEXT_PROPERTY, context);
     }
@@ -250,17 +253,17 @@ public class CoreObservationTraceSupport {
             return;
         }
         TraceContext parent = exchange.getProperty(SERVICE_CONTEXT_PROPERTY, TraceContext.class);
-        TraceContext context = childContext(parent, exchange);
+        TraceContext requestedContext = childContext(parent, exchange);
         Map<String, String> fields = exchangeMdc.fields(exchange);
         ObservationScope scope = observation.trace()
                 .span("operation.call")
                 .spanKind(operationSpanKind(operation))
                 .action("operation.call")
-                .traceId(context.traceId())
-                .spanId(context.spanId())
+                .traceId(requestedContext.traceId())
+                .spanId(requestedContext.spanId())
                 .parentSpanId(parent == null ? null : parent.spanId())
-                .correlationId(context.correlationId())
-                .correlationType(context.correlationType())
+                .correlationId(requestedContext.correlationId())
+                .correlationType(requestedContext.correlationType())
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
                 .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, fields.get("channelCode"))
                 .attribute(CoreTraceAttributes.SERVICE_CODE, fields.get("serviceCode"))
@@ -269,7 +272,8 @@ public class CoreObservationTraceSupport {
                 .attribute(CoreTraceAttributes.OPERATION_TYPE, operationType(operation))
                 .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))
                 .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
-                .start();
+                .startDetached();
+        TraceContext context = startedContext(scope, requestedContext);
         exchange.setProperty(OPERATION_SCOPE_PROPERTY, scope);
         putContext(exchange, OPERATION_CONTEXT_PROPERTY, context);
     }
@@ -385,6 +389,16 @@ public class CoreObservationTraceSupport {
         String correlationId = firstText(parent == null ? null : parent.correlationId(), correlationId(exchange), ObservationIds.correlationId());
         String correlationType = firstText(parent == null ? null : parent.correlationType(), CorrelationType.OPERATION.value());
         return new TraceContext(traceId, ObservationIds.spanId(), correlationId, correlationType);
+    }
+
+    private TraceContext startedContext(ObservationScope scope, TraceContext requested) {
+        TraceContext actual = scope == null ? null : scope.traceContext();
+        return new TraceContext(
+                firstText(actual == null ? null : actual.traceId(), requested == null ? null : requested.traceId()),
+                firstText(actual == null ? null : actual.spanId(), requested == null ? null : requested.spanId()),
+                firstText(actual == null ? null : actual.correlationId(), requested == null ? null : requested.correlationId()),
+                firstText(actual == null ? null : actual.correlationType(), requested == null ? null : requested.correlationType())
+        );
     }
 
     private void putContext(Exchange exchange, String propertyName, TraceContext context) {

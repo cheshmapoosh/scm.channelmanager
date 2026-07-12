@@ -18,18 +18,17 @@ import ir.daneshrefah.scm.provider.shetab.iso.ShetabIsoMapConverter;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
 import ir.daneshrefah.scm.provider.shetab.ratelimit.ShetabRateLimiter;
 import ir.daneshrefah.scm.provider.shetab.tcp.ShetabClientRegistry;
+import ir.daneshrefah.scm.provider.shetab.tcp.ShetabTransportResponse;
+import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
 import ir.daneshrefah.scm.provider.shetab.trace.ShetabTraceSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
 import org.apache.commons.lang3.StringUtils;
-import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -66,20 +65,18 @@ public class ShetabProducer extends DefaultProducer {
 
     @Override
     public void process(Exchange exchange) {
-        traceSupport.enrichLogMdc(exchange);
         String provider = resolveProvider(exchange);
         String operationName = resolveOperationName(exchange);
         ShetabResolvedConfig config;
         try {
             config = configResolver.resolve(provider, overrides(exchange));
         } catch (RuntimeException e) {
-            logProviderResolutionFailed(exchange, provider, operationName, e);
+            logProviderResolutionFailed(exchange, operationName, e);
             throw e;
         }
         ShetabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
 
         Map<String, Object> requestMap = bodyAsMap(exchange.getMessage().getBody());
-
         ISOMsg request = isoMapConverter.toIsoMsg(requestMap);
 
         ProviderRequest providerRequest = new ProviderRequest("ISO8583", null, Map.of(), requestMap);
@@ -88,40 +85,42 @@ public class ShetabProducer extends DefaultProducer {
         ProviderExchange providerExchange = new ProviderExchange(providerRequest, customizerContext);
         ProviderMessageCustomizerPipeline customizerPipeline = config.messageCustomizerPipeline();
         logConfiguredCustomizers(customizerContext, customizerPipeline);
-        executeCustomizers(exchange, providerExchange, customizerPipeline, true);
+        executeCustomizers(providerExchange, customizerPipeline, true);
 
-        log.info("Shetab provider start provider={} operation={} mti={}", config.provider(), operationName, requestMap.get("mti"));
-        if (log.isDebugEnabled()) {
-            log.debug("Shetab provider request provider={} operation={} body={}",
-                    config.provider(), operationName, maskSensitive(requestMap));
-        }
+        log.info("Shetab provider start provider={} operation={}", config.provider(), operationName);
         long startedAt = System.nanoTime();
         try {
-            ISOMsg response = traceSupport.clientSpan(exchange, config, request, () -> {
-                rateLimiter.acquire(config, operationName);
-                return clientRegistry.request(config, request);
-            });
-            ProviderResponse providerResponse = new ProviderResponse();
-            providerResponse.nativeResponse(response);
-            providerExchange.response(providerResponse);
-            executeCustomizers(exchange, providerExchange, customizerPipeline, false);
-            Map<String, Object> responseMap = isoMapConverter.toMap(response);
-            providerResponse.body(responseMap);
+            rateLimiter.acquire(config, operationName);
+            ShetabProviderTraceLifecycle traceLifecycle = traceSupport.lifecycle(
+                    exchange, config, request, operationName);
+            ShetabTransportResponse transportResponse = clientRegistry.request(config, request, traceLifecycle);
+            ISOMsg response = transportResponse.response();
+            RuntimeException responseFailure = null;
+            try {
+                ProviderResponse providerResponse = new ProviderResponse();
+                providerResponse.nativeResponse(response);
+                providerExchange.response(providerResponse);
+                executeCustomizers(providerExchange, customizerPipeline, false);
+                Map<String, Object> responseMap = isoMapConverter.toMap(response);
+                providerResponse.body(responseMap);
+                exchange.getMessage().setBody(responseMap);
+            } catch (RuntimeException exception) {
+                responseFailure = exception;
+                throw exception;
+            } finally {
+                traceSupport.finishAttempt(
+                        transportResponse.traceAttempt(), exchange, config, response, responseFailure);
+            }
             providerMetrics.succeeded();
-            Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);
+            Duration elapsed = Duration.ofNanos(Math.max(0L, System.nanoTime() - startedAt));
             providerMetrics.addLatency(elapsed.toMillis());
             providerMetrics.recordProviderRequestDuration(config, customizerContext, elapsed, "success");
-            if (log.isDebugEnabled()) {
-                log.debug("Shetab provider response provider={} operation={} body={}",
-                        config.provider(), operationName, maskSensitive(responseMap));
-            }
-            exchange.getMessage().setBody(responseMap);
             log.info("Shetab provider done provider={} operation={} elapsedMs={}",
-                    config.provider(), operationName, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt));
+                    config.provider(), operationName, elapsedMillis(startedAt));
         } catch (RuntimeException e) {
             providerMetrics.recordProviderRequestError(config, customizerContext);
-            log.error("Shetab provider error provider={} operation={} elapsedMs={} message={}",
-                    config.provider(), operationName, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt), e.getMessage(), e);
+            log.error("Shetab provider error provider={} operation={} elapsedMs={} failureType={}",
+                    config.provider(), operationName, elapsedMillis(startedAt), e.getClass().getSimpleName());
             throw e;
         }
     }
@@ -155,7 +154,6 @@ public class ShetabProducer extends DefaultProducer {
     }
 
     private void executeCustomizers(
-            Exchange camelExchange,
             ProviderExchange providerExchange,
             ProviderMessageCustomizerPipeline pipeline,
             boolean beforeSend
@@ -165,26 +163,22 @@ public class ShetabProducer extends DefaultProducer {
         }
         for (ProviderMessageCustomizerPipeline.Entry entry : pipeline.entries()) {
             try {
-                traceSupport.customizerSpan(camelExchange, providerExchange.context(), entry.type(),
-                        beforeSend ? "beforeSend" : "afterReceive",
-                        () -> {
-                            if (beforeSend) {
-                                entry.customizer().beforeSend(providerExchange);
-                            } else {
-                                entry.customizer().afterReceive(providerExchange);
-                            }
-                        });
+                if (beforeSend) {
+                    entry.customizer().beforeSend(providerExchange);
+                } else {
+                    entry.customizer().afterReceive(providerExchange);
+                }
                 metrics.provider(providerExchange.context().providerCode()).customizerExecution(
                         providerExchange.context(), entry.type(), beforeSend ? "beforeSend" : "afterReceive");
             } catch (RuntimeException e) {
                 metrics.provider(providerExchange.context().providerCode()).customizerError(
                         providerExchange.context(), entry.type(), beforeSend ? "beforeSend" : "afterReceive");
-                log.error("Shetab provider customizer error provider={} scheme={} providerUri={} service={} operation={} channel={} customizer={} phase={} message={}",
+                log.error("Shetab provider customizer error provider={} scheme={} providerUri={} service={} operation={} channel={} customizer={} phase={} failureType={}",
                         providerExchange.context().providerCode(), providerExchange.context().scheme(),
                         providerExchange.context().providerUri(),
                         providerExchange.context().serviceCode(), providerExchange.context().operationCode(),
                         providerExchange.context().channelCode(), entry.type(), beforeSend ? "beforeSend" : "afterReceive",
-                        e.getMessage(), e);
+                        e.getClass().getSimpleName());
                 throw e;
             }
         }
@@ -214,55 +208,14 @@ public class ShetabProducer extends DefaultProducer {
     }
 
     private void logProviderResolutionFailed(Exchange exchange,
-                                             String provider,
                                              String operationName,
                                              RuntimeException exception) {
-        log.warn("event=PROVIDER_RESOLUTION_FAILED providerUri={} scheme={} providerCode={} availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={} failureMessage={}",
-                providerUri(exchange, provider),
-                scheme(provider),
-                providerCode(provider),
+        log.warn("event=PROVIDER_RESOLUTION_FAILED providerType=SHETAB availableProviderCodes={} operationName={} serviceCode={} gatewayName={} outcome=failed failureType={}",
                 configResolver.availableProviderCodes(),
                 operationName,
                 serviceCode(exchange),
                 gatewayName(exchange),
-                exception.getClass().getSimpleName(),
-                safeMessage(exception),
-                exception);
-    }
-
-    private String providerCode(String provider) {
-        try {
-            return configResolver.providerName(provider);
-        } catch (RuntimeException ignored) {
-            String cleaned = StringUtils.trimToNull(provider);
-            int separator = cleaned != null ? cleaned.indexOf(':') : -1;
-            return separator >= 0 ? StringUtils.trimToEmpty(cleaned.substring(separator + 1)) : cleaned;
-        }
-    }
-
-    private String scheme(String provider) {
-        String cleaned = StringUtils.trimToNull(provider);
-        int separator = cleaned != null ? cleaned.indexOf(':') : -1;
-        return separator >= 0 ? StringUtils.trimToEmpty(cleaned.substring(0, separator)) : ShetabConfigResolver.COMPONENT_SCHEME;
-    }
-
-    private String providerUri(Exchange exchange, String provider) {
-        String operationProviderUri = exchange.getMessage().getHeader("scmOperationProviderUri", String.class);
-        if (StringUtils.isNotBlank(operationProviderUri)) {
-            return operationProviderUri;
-        }
-        String endpointUri = StringUtils.trimToNull(endpoint.getEndpointUri());
-        return endpointUri != null ? endpointUri : provider;
-    }
-
-    private String safeMessage(Throwable exception) {
-        if (exception == null || exception.getMessage() == null) {
-            return null;
-        }
-        return exception.getMessage()
-                .replace('\r', ' ')
-                .replace('\n', ' ')
-                .trim();
+                exception.getClass().getSimpleName());
     }
 
     private ShetabEndpointOverrides overrides(Exchange exchange) {
@@ -292,43 +245,6 @@ public class ShetabProducer extends DefaultProducer {
             }
         }
         return objectMapper.convertValue(body, MAP_TYPE);
-    }
-
-    private Object maskSensitive(Object value) {
-        return maskSensitive(null, value);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Object maskSensitive(String key, Object value) {
-        if (isSensitiveKey(key)) {
-            return "***";
-        }
-        if (value instanceof Map<?, ?> map) {
-            Map<String, Object> masked = new LinkedHashMap<>();
-            map.forEach((entryKey, entryValue) ->
-                    masked.put(String.valueOf(entryKey), maskSensitive(String.valueOf(entryKey), entryValue)));
-            return masked;
-        }
-        if (value instanceof Collection<?> collection) {
-            return collection.stream().map(item -> maskSensitive(null, item)).toList();
-        }
-        return value;
-    }
-
-    private boolean isSensitiveKey(String key) {
-        if (key == null) {
-            return false;
-        }
-        String normalized = key.replace("-", "").replace("_", "").toLowerCase();
-        return "52".equals(key)
-                || "14".equals(key)
-                || "48".equals(key)
-                || "128".equals(key)
-                || normalized.contains("pin")
-                || normalized.contains("mac")
-                || normalized.contains("cvv")
-                || normalized.contains("expiry")
-                || normalized.contains("expire");
     }
 
     private String resolveOperationName(Exchange exchange) {
@@ -381,7 +297,7 @@ public class ShetabProducer extends DefaultProducer {
         if (StringUtils.isNotBlank(traceId)) {
             return traceId;
         }
-        return traceSupport.currentTraceIds().getOrDefault("traceId", "");
+        return "";
     }
 
     private <T> T first(T value, T fallback) {
@@ -396,19 +312,7 @@ public class ShetabProducer extends DefaultProducer {
         return bean;
     }
 
-    private String safeField(ISOMsg msg, int field) {
-        try {
-            return msg != null ? msg.getString(field) : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String safeMti(ISOMsg msg) {
-        try {
-            return msg != null && msg.hasMTI() ? msg.getMTI() : null;
-        } catch (Exception e) {
-            return null;
-        }
+    private long elapsedMillis(long startedAtNanos) {
+        return TimeUnit.NANOSECONDS.toMillis(Math.max(0L, System.nanoTime() - startedAtNanos));
     }
 }

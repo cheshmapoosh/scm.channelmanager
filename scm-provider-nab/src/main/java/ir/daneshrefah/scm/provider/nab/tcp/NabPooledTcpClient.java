@@ -45,8 +45,8 @@ public class NabPooledTcpClient implements NabTcpClient {
             if (containsIgnoreCase(e.getMessage(), "acknowledge")) {
                 providerMetrics.ackFailed();
             }
-            log.error("NAB request failed provider={} endpoint={} protocol={}",
-                    config.provider(), endpoint.value(), protocol, e);
+            log.error("NAB request failed provider={} endpoint={} protocol={} failureType={}",
+                    config.provider(), endpoint.value(), protocol, e.getClass().getSimpleName());
             throw e;
         } finally {
             providerMetrics.connectionClosed();

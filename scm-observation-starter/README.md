@@ -173,7 +173,8 @@ Span event یک رخداد نقطه‌ای داخل span جاری است و span
 
 ```text
 plugin.execute
-provider.response.received
+provider.request
+provider.response
 ```
 
 ساختار پایدار span event در trace:
@@ -325,6 +326,23 @@ gateway.receive
 هر سه span مقدار غیرمنفی `span.duration_ms` دارند که از elapsed time یکنواخت محاسبه می‌شود؛ `span.start_time` و `span.end_time` همچنان UTC هستند.
 هر trace document فقط از `event.stream=trace` برای هویت stream استفاده می‌کند و `event.category=trace` را تکرار نمی‌کند؛ `event.action` و `event.outcome` همچنان الزامی هستند.
 
+Camel business spans are detached and owned by the local `Exchange`. Route code starts them with
+`TraceObservationBuilder.startDetached()`, stores the returned `ObservationScope` and its immutable
+`traceContext()` in Exchange properties, writes attributes/events directly to that scope, and closes it
+exactly once from whichever thread completes the route. Detached start does not install
+`ObservationScope.current()`, a `TraceContextHolder` binding, or a Micrometer `SpanInScope`; retaining any
+of those thread-bound scopes across asynchronous Camel processors is forbidden. The existing `start()`
+API remains thread-bound for callers whose complete lifecycle is synchronous on one thread.
+
+Security trace events for Camel work must receive an explicit Exchange and select the gateway, service,
+or operation scope property. They must not fall back to `ObservationScope.current()`. Security events with
+no Exchange scope remain structured LOG only.
+
+The structured sink and the Micrometer/OpenTelemetry mapper use the same application-wide
+`ObservationAttributeRegistry`, sanitizer, gateway-only JWT filter, ordered span-event representation, and
+record validator. A deployment selects one effective TRACE output path; enabling OpenTelemetry must not
+also activate an independent structured exporter.
+
 ### `gateway.receive`
 
 - root span مربوط به business request در `scm-web` است.
@@ -454,32 +472,51 @@ The core starter defines no HTTP server properties, defaults, request filter, or
 
 Business TRACE should be created only for real end-user channel calls or an actual scheduled business execution, not application startup, infrastructure initialization, actuator, internal, admin/config, static, documentation, or background-job registration endpoints.
 
+`ScheduledObservationLifecycle.start(...)` is the reusable scheduled-business entry API. It creates one
+detached root span only when the job body actually begins:
+
+```text
+span.name       = scheduled.execute
+event.action    = scheduled.execute
+span.kind       = internal
+parent.span.id  = absent
+```
+
+The optional safe metadata is limited to `scm.schedule.job_name`, `scm.schedule.trigger_type`, and
+`scm.route.id`. Callers mark the returned scope successful or failed and close it around the real job body;
+monotonic duration is supplied by the trace sink. Scheduler/trigger registration and application startup
+must never invoke this lifecycle. The starter exposes the API but contains no scheduled business entry
+point itself; production job modules must invoke it at their actual execution method. Scheduled spans do
+not receive invented JWT or user attributes.
+
 Distributed trace propagation uses the standard W3C `traceparent` header as the source of truth. Custom headers such as `X-SCM-Trace-ID`, `X-SCM-Span-ID`, and `X-SCM-Parent-Span-ID` are not distributed trace propagation sources.
 
 ## ۱۰. قواعد Provider
 
-Providerها می‌توانند برای log عملیاتی معمولی از `@Slf4j` استفاده کنند. برای observation رسمی باید eventهای زیر را از طریق `ScmEventPublisher` منتشر کنند:
+Providerها می‌توانند برای log عملیاتی معمولی از `@Slf4j` استفاده کنند. هر تلاش واقعی provider باید دقیقاً دو event در scope صریح `operation.call` همان Exchange ثبت کند:
 
 ```text
-PROVIDER_REQUEST_SENT
-PROVIDER_RESPONSE_RECEIVED
-PROVIDER_CALL_FAILED
-PROVIDER_TIMEOUT
+provider.request
+provider.response
 ```
 
-Trace مربوط به provider فقط metadata، زمان‌بندی و نتیجه را نگه می‌دارد:
+`provider.request` بلافاصله پیش از invocation ثبت می‌شود. `provider.response` دقیقاً یک بار پس از پایان invocation ثبت می‌شود و مسیر failure نیز باید آن را در `finally` یا lifecycle معادل، پیش از ادامهٔ exception، نگه دارد. مدت monotonic فقط با `provider.duration_ms` روی event پاسخ ثبت می‌شود. Provider هیچ child span و هیچ event سومی برای request/response/customizer ایجاد نمی‌کند.
+
+Trace مربوط به provider فقط metadata امن و ثبت‌شده را در attributes همین دو event نگه می‌دارد؛ attributeهای provider مستقیماً روی `operation.call` قرار نمی‌گیرند. نمونهٔ فیلدهای مجاز پس از ثبت توسط `ObservationAttributeContributor`:
 
 ```text
-scm.provider.code
-scm.provider.type
-scm.provider.address
-scm.provider.endpoint
-scm.provider.request_time
-scm.provider.response_time
-scm.provider.duration_ms
-scm.provider.result
-scm.provider.response_code
-http.status_code
+provider.name
+provider.code
+provider.type
+provider.scheme
+provider.operation
+provider.endpoint
+provider.duration_ms
+provider.response_code
+provider.error_code
+event.outcome
+error.type
+error.code
 ```
 
 موارد زیر نباید در provider trace قرار گیرند:
@@ -494,6 +531,8 @@ http.status_code
 - CVV2
 - MAC key
 - full PAN/card number
+
+افزودن attribute اختصاصی provider در آینده به extension point ماژول provider و ثبت صریح همان field در registry نیاز دارد؛ sanitizer یا allowlist عمومی نباید برای field دلخواه تضعیف شود. Full `Jwt`، raw token، مقدار `Authorization` و unrestricted claims نیز هرگز نباید در header پیام Camel یا attributes provider قرار گیرند.
 
 Provider log می‌تواند جزئیات امن و موردنیاز عملیات را پس از masking و sanitization ثبت کند. تنظیمات `sensitive-headers`، `sensitive-body-keys` و `max-body-log-length` باید رعایت شوند و نباید تضعیف شوند.
 
@@ -601,22 +640,27 @@ scmEventPublisher.publish(
 );
 ```
 
-### انتشار provider event
+### ثبت provider event
 
-Body درخواست و پاسخ در event قرار نمی‌گیرد:
+Body درخواست و پاسخ در event قرار نمی‌گیرد. هر دو event مستقیماً روی operation scope همان Exchange نوشته می‌شوند:
 
 ```java
-scmEventPublisher.publish(
-        ScmProviderEvent.of(
-                ScmProviderEventType.PROVIDER_RESPONSE_RECEIVED,
-                Map.of(
-                        "scm.provider.code", providerCode,
-                        "scm.provider.endpoint", endpoint,
-                        "scm.provider.duration_ms", durationMs,
-                        "scm.provider.response_code", responseCode
-                )
-        )
-);
+ObservationScope operationScope = exchange.getProperty(
+        "scm.observation.scope.operation", ObservationScope.class);
+operationScope.event("provider.request", Map.of(
+        "provider.name", providerName,
+        "provider.operation", operationName,
+        "event.outcome", "success"
+));
+
+// In a finally-style completion path, including failures:
+operationScope.event("provider.response", Map.of(
+        "provider.name", providerName,
+        "provider.operation", operationName,
+        "provider.duration_ms", durationMs,
+        "provider.response_code", responseCode,
+        "event.outcome", "success"
+));
 ```
 
 ### انتشار plugin event
@@ -658,7 +702,7 @@ public class ScmWebSecurityObservationListener
 }
 ```
 
-در پیاده‌سازی واقعی، outcome بر اساس event type تعیین می‌شود و listener می‌تواند trace event یا metric متناظر را نیز ثبت کند.
+در پیاده‌سازی واقعی، outcome بر اساس event type تعیین می‌شود. این Spring listener فقط structured LOG را ثبت می‌کند؛ TRACE security event فقط در call site دارای Exchange و با scope صریح لایه ثبت می‌شود تا event تکراری و fallback مبتنی بر ThreadLocal ایجاد نشود.
 
 ### ساخت `traceparent`
 
@@ -670,28 +714,38 @@ String traceparent = "00-" + traceId + "-" + currentSpanId + "-01";
 
 ### ساخت spanهای اصلی
 
-Scopeها به‌ترتیب بسته می‌شوند تا رابطهٔ والد/فرزند حفظ شود:
+Camel scopeها detached هستند، context واقعی sink را در Exchange نگه می‌دارند و به‌ترتیب معکوس بسته می‌شوند:
 
 ```java
-try (ObservationScope gateway = observation.trace()
+ObservationScope gateway = observation.trace()
         .span("gateway.receive")
         .spanKind("server")
-        .start()) {
+        .parentSpanId(null)
+        .startDetached();
+exchange.setProperty("scm.observation.scope.gateway", gateway);
+TraceContext gatewayContext = gateway.traceContext();
 
-    try (ObservationScope service = observation.trace()
-            .span("service.execute")
-            .spanKind("internal")
-            .start()) {
+ObservationScope service = observation.trace()
+        .span("service.execute")
+        .spanKind("internal")
+        .traceId(gatewayContext.traceId())
+        .parentSpanId(gatewayContext.spanId())
+        .startDetached();
+exchange.setProperty("scm.observation.scope.service", service);
+TraceContext serviceContext = service.traceContext();
 
-        try (ObservationScope operation = observation.trace()
-                .span("operation.call")
-                .spanKind("client")
-                .start()) {
+ObservationScope operation = observation.trace()
+        .span("operation.call")
+        .spanKind("client")
+        .traceId(serviceContext.traceId())
+        .parentSpanId(serviceContext.spanId())
+        .startDetached();
+exchange.setProperty("scm.observation.scope.operation", operation);
 
-            // provider/downstream call
-        }
-    }
-}
+// Route processors and provider events use the explicit Exchange scopes.
+operation.success().close();
+service.success().close();
+gateway.success().close();
 ```
 
 در مسیر واقعی باید قبل از `close()`، outcome موفق یا failure و attributeهای نتیجه روی scope ثبت شوند.

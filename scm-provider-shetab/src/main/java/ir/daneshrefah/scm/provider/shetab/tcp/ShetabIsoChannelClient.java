@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.provider.shetab.iso.ShetabPackagerFactory;
 import ir.daneshrefah.scm.provider.shetab.iso.log.SafeIsoLogFormatter;
 import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
+import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
 import lombok.extern.slf4j.Slf4j;
 import org.jpos.iso.ISOMsg;
 
@@ -94,6 +95,14 @@ public class ShetabIsoChannelClient {
     }
 
     public ISOMsg request(ISOMsg msg, int timeoutMs) {
+        return request(msg, timeoutMs, null).response();
+    }
+
+    public ShetabTransportResponse request(
+            ISOMsg msg,
+            int timeoutMs,
+            ShetabProviderTraceLifecycle traceLifecycle
+    ) {
         metrics.submitted();
 
         if (!running.get()) {
@@ -106,7 +115,7 @@ public class ShetabIsoChannelClient {
         boolean queued = false;
 
         try {
-            tracker = responseRegistry.register(correlationKey, deadline);
+            tracker = responseRegistry.register(correlationKey, deadline, traceLifecycle);
             PendingRequest pendingRequest = new PendingRequest(tracker, msg);
 
             long queueWaitMs = Math.min(
@@ -149,6 +158,7 @@ public class ShetabIsoChannelClient {
             );
 
             if (tracker != null) {
+                tracker.failActiveAttempt(error);
                 responseRegistry.failIfActive(tracker, error);
             }
 
@@ -164,6 +174,7 @@ public class ShetabIsoChannelClient {
 
         } catch (RuntimeException e) {
             if (tracker != null) {
+                tracker.failActiveAttempt(e);
                 responseRegistry.remove(tracker);
             }
 
@@ -329,6 +340,9 @@ public class ShetabIsoChannelClient {
     private void sendPending(PendingRequest pending) throws Exception {
         ResponseTracker tracker = pending.tracker();
 
+        verifyPending(tracker, "before transport attempt");
+        tracker.startAttempt();
+
         while (running.get()) {
             verifyPending(tracker, "before connection");
 
@@ -443,7 +457,7 @@ public class ShetabIsoChannelClient {
         return true;
     }
 
-    private ISOMsg awaitResponse(ISOMsg msg, ResponseTracker tracker)
+    private ShetabTransportResponse awaitResponse(ISOMsg msg, ResponseTracker tracker)
             throws InterruptedException, ExecutionException, TimeoutException {
         long waitMs = tracker.deadline().remainingMillisCeiling();
 
@@ -457,15 +471,23 @@ public class ShetabIsoChannelClient {
             throw deadlineExceeded(tracker, msg, null);
         }
 
-        return response;
+        return new ShetabTransportResponse(response, tracker.releaseActiveAttempt());
     }
 
-    private ISOMsg handleRequestExecutionFailure(ResponseTracker tracker, ISOMsg msg, ExecutionException e) {
+    private ShetabTransportResponse handleRequestExecutionFailure(
+            ResponseTracker tracker,
+            ISOMsg msg,
+            ExecutionException e
+    ) {
         if (tracker != null) {
             responseRegistry.remove(tracker);
         }
 
         Throwable cause = e.getCause() != null ? e.getCause() : e;
+
+        if (tracker != null) {
+            tracker.failActiveAttempt(cause);
+        }
 
         if (cause instanceof ShetabRequestDeadlineExceededException deadlineError) {
             recordResponseTimeoutIfCurrent(tracker, deadlineError);
@@ -495,6 +517,7 @@ public class ShetabIsoChannelClient {
         if (tracker != null) {
             responseRegistry.remove(tracker);
             boolean completedByDeadline = tracker.future().completeExceptionally(error);
+            tracker.failActiveAttempt(error);
 
             if (completedByDeadline || tracker.future().isCompletedExceptionally()) {
                 recordResponseTimeoutIfCurrent(tracker, error);
@@ -610,6 +633,7 @@ public class ShetabIsoChannelClient {
         List<ResponseTracker> trackers = responseRegistry.removeDeliveredByGeneration(generation);
 
         for (ResponseTracker tracker : trackers) {
+            tracker.failActiveAttempt(error);
             tracker.future().completeExceptionally(error);
         }
     }
@@ -618,7 +642,9 @@ public class ShetabIsoChannelClient {
         List<ResponseTracker> expiredTrackers = responseRegistry.removeExpired();
 
         for (ResponseTracker tracker : expiredTrackers) {
-            tracker.future().completeExceptionally(deadlineExceeded(tracker, null, null));
+            ShetabRequestDeadlineExceededException error = deadlineExceeded(tracker, null, null);
+            tracker.failActiveAttempt(error);
+            tracker.future().completeExceptionally(error);
         }
     }
 
@@ -665,6 +691,7 @@ public class ShetabIsoChannelClient {
         List<ResponseTracker> trackers = responseRegistry.removeAll();
 
         for (ResponseTracker tracker : trackers) {
+            tracker.failActiveAttempt(error);
             tracker.future().completeExceptionally(error);
         }
     }
@@ -673,6 +700,7 @@ public class ShetabIsoChannelClient {
         PendingRequest pending;
 
         while ((pending = sendQueue.poll()) != null) {
+            pending.tracker().failActiveAttempt(error);
             responseRegistry.failIfActive(pending.tracker(), error);
         }
     }
