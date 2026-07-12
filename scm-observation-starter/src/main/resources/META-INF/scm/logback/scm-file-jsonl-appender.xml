@@ -7,6 +7,7 @@
             <appender name="SCM_FILE_JSONL"
                       class="ch.qos.logback.core.rolling.RollingFileAppender">
                 <append>true</append>
+                <file>${LOG_JSONL_CURRENT_FILE}</file>
                 <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                     <marker>SCM_OBSERVATION_TRACE</marker>
                     <inverse>true</inverse>
@@ -16,7 +17,7 @@
                     <inverse>true</inverse>
                 </filter>
                 <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                    <fileNamePattern>${LOG_JSONL_FILE_PATTERN}</fileNamePattern>
+                    <fileNamePattern>${LOG_JSONL_ROLLED_FILE_PATTERN}</fileNamePattern>
                     <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
                     <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
                     <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>

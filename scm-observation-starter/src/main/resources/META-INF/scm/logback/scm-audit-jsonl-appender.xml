@@ -9,11 +9,12 @@
                     <appender name="SCM_AUDIT_JSONL_FILE"
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
                         <append>true</append>
+                        <file>${AUDIT_JSONL_CURRENT_FILE}</file>
                         <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                             <marker>SCM_OBSERVATION_AUDIT</marker>
                         </filter>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                            <fileNamePattern>${AUDIT_JSONL_FILE_PATTERN}</fileNamePattern>
+                            <fileNamePattern>${AUDIT_JSONL_ROLLED_FILE_PATTERN}</fileNamePattern>
                             <maxFileSize>${AUDIT_MAX_FILE_SIZE}</maxFileSize>
                             <maxHistory>${AUDIT_MAX_HISTORY}</maxHistory>
                             <totalSizeCap>${AUDIT_TOTAL_SIZE_CAP}</totalSizeCap>
@@ -38,11 +39,12 @@
                     <appender name="SCM_AUDIT_JSONL"
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
                         <append>true</append>
+                        <file>${AUDIT_JSONL_CURRENT_FILE}</file>
                         <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                             <marker>SCM_OBSERVATION_AUDIT</marker>
                         </filter>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                            <fileNamePattern>${AUDIT_JSONL_FILE_PATTERN}</fileNamePattern>
+                            <fileNamePattern>${AUDIT_JSONL_ROLLED_FILE_PATTERN}</fileNamePattern>
                             <maxFileSize>${AUDIT_MAX_FILE_SIZE}</maxFileSize>
                             <maxHistory>${AUDIT_MAX_HISTORY}</maxHistory>
                             <totalSizeCap>${AUDIT_TOTAL_SIZE_CAP}</totalSizeCap>
