@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.uaa.starter.provider.token;
 
 import ir.daneshrefah.scm.utils.string.HashUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.util.Assert;
 
 import java.util.Collections;
@@ -16,6 +17,7 @@ import java.util.Collections;
 public class BearerAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     private final String token;
+    private transient Jwt validatedJwt;
 
     public BearerAuthenticationToken(String username, String terminalCode, String clientId, String accessParameter, String token) {
         super(username, terminalCode, clientId, accessParameter, Collections.emptyList());
@@ -25,6 +27,14 @@ public class BearerAuthenticationToken extends BaseTerminalAuthenticationToken {
 
     public String getToken() {
         return token;
+    }
+
+    public Jwt getValidatedJwt() {
+        return validatedJwt;
+    }
+
+    public void validatedJwt(Jwt validatedJwt) {
+        this.validatedJwt = validatedJwt;
     }
 
     @Override
