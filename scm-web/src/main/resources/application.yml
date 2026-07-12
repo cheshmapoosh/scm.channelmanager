@@ -259,7 +259,7 @@ scm:
             verify-response: ${SCM_HPS_SHETAB7_MAC_VERIFY_RESPONSE:false}
 
     api-repo:
-      schema: ${SCM_API_REPO_SCHEMA:nab-api-repo}
+      scheme: ${SCM_API_REPO_SCHEME:${SCM_API_REPO_SCHEMA:scm-rest}}
       enabled: ${SCM_API_REPO_ENABLED:true}
       base-url: ${SCM_API_REPO_BASE_URL:${SCM_HPS_BASE_URL}}
       connect-timeout-ms: ${SCM_API_REPO_CONNECT_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS:3000}}
