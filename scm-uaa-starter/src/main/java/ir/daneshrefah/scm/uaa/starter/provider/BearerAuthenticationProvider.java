@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -47,7 +48,7 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
     @Override
     protected UserAuthentication retrieveUser(String username, BaseAuthenticationToken authentication) throws AuthenticationException {
         BearerAuthenticationToken bearer = (BearerAuthenticationToken) authentication;
-        Jwt jwt = decodeBearerToken(bearer);
+        Jwt jwt = validatedJwt(bearer);
         UserAuthentication userAuthentication = jwtTokenConverter.convert(jwt, username);
         validateUserAuthentication(authentication, userAuthentication);
         if (StringUtils.isNotEmpty(userAuthentication.getDetails().getSessionId())) {
@@ -59,13 +60,19 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
             }
         }
 
-        return userAuthentication;
+        return detachedAuthentication(userAuthentication, null);
     }
 
 
-    private Jwt decodeBearerToken(BearerAuthenticationToken bearer) {
+    private Jwt validatedJwt(BearerAuthenticationToken bearer) {
+        Jwt validatedJwt = bearer.getValidatedJwt();
+        if (validatedJwt != null) {
+            return validatedJwt;
+        }
         try {
-            return jwtDecoder.decode(bearer.getToken());
+            validatedJwt = jwtDecoder.decode(bearer.getToken());
+            bearer.validatedJwt(validatedJwt);
+            return validatedJwt;
         } catch (JwtException ex) {
             throw new InvalidBearerTokenException("Bearer token is invalid or expired", ex);
         }
@@ -85,7 +92,7 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
             return;
         }
         if (authentication instanceof BearerAuthenticationToken bearerAuthenticationToken) {
-            Jwt jwt = decodeBearerToken(bearerAuthenticationToken);
+            Jwt jwt = validatedJwt(bearerAuthenticationToken);
             validateJwtId(jwt, username, authenticationTerminalCode, bearerAuthenticationToken);
         }
     }
@@ -109,6 +116,59 @@ public class BearerAuthenticationProvider extends AbstractClientAuthenticationPr
         }
         Cache.ValueWrapper valueWrapper = cache.get(cacheKey);
         return valueWrapper == null ? null : (String) valueWrapper.get();
+    }
+
+    @Override
+    protected UserAuthentication createSuccessAuthentication(UserAuthentication user, Authentication authentication) {
+        if (!(authentication instanceof BearerAuthenticationToken bearer) || bearer.getValidatedJwt() == null) {
+            return user;
+        }
+        return detachedAuthentication(user, bearer.getValidatedJwt());
+    }
+
+    private UserAuthentication detachedAuthentication(UserAuthentication user, Jwt loginData) {
+        UserAuthentication.AuthenticationDetail details = user == null ? null : user.getDetails();
+        UserAuthentication.AuthenticationDetail safeDetails = UserAuthentication.AuthenticationDetail.builder()
+                .issuer(details == null ? null : details.getIssuer())
+                .issuedAt(details == null ? null : details.getIssuedAt())
+                .expiresAt(details == null ? null : details.getExpiresAt())
+                .maxIdle(details == null ? null : details.getMaxIdle())
+                .loginData(loginData)
+                .loginAccessParameter(details == null ? null : details.getLoginAccessParameter())
+                .sessionId(details == null ? null : details.getSessionId())
+                .clientId(details == null ? null : details.getClientId())
+                .build();
+        String delegatedUsername = user != null && user.isDelegated()
+                ? user.getProfile().getNickname()
+                : null;
+        UserAuthentication copy = new UserAuthentication(
+                safeDetails,
+                user == null ? null : user.getPrincipal(),
+                delegatedUsername,
+                user == null ? null : user.getAuthorities()
+        );
+        if (user != null) {
+            copy.setAuthenticated(user.isAuthenticated());
+            copy.setError(user.getError());
+            if (user.getIsTransactionAuthenticated() != null) {
+                copy.authenticateTransaction(user.getIsTransactionAuthenticated());
+            }
+            copyProfile(user, copy);
+        }
+        return copy;
+    }
+
+    private void copyProfile(UserAuthentication source, UserAuthentication target) {
+        if (source == null || target == null || source.getProfile() == null || target.getProfile() == null) {
+            return;
+        }
+        if (source.getProfile().getPersonUsername() != null && source.getProfile().getPersonId() != null) {
+            target.getProfile().loadPersonInfo(source.getProfile().getPersonUsername(), source.getProfile().getPersonId());
+        }
+        if (source.getProfile().getMemberships() != null) {
+            target.getProfile().loadMembership(source.getProfile().getMemberships());
+        }
+        target.getProfile().setServiceAccesses(source.getProfile().getServiceAccesses());
     }
 
     @Override
