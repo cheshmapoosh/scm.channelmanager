@@ -77,6 +77,16 @@ public class StructuredTraceObservationSink implements TraceObservationSink {
         }
 
         @Override
+        public TraceContext traceContext() {
+            return new TraceContext(
+                    spec.traceId(),
+                    spec.spanId(),
+                    spec.correlationId(),
+                    spec.correlationType()
+            );
+        }
+
+        @Override
         public void event(String name, Map<String, ?> attributes) {
             synchronized (this) {
                 String safeName = safeEventName(name);

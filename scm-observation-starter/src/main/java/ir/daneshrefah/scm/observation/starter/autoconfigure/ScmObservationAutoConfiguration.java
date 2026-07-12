@@ -29,7 +29,9 @@ import ir.daneshrefah.scm.observation.starter.metrics.MetricObservationSink;
 import ir.daneshrefah.scm.observation.starter.metrics.MicrometerMetricObservationSink;
 import ir.daneshrefah.scm.observation.starter.policy.ObservationSignalPolicy;
 import ir.daneshrefah.scm.observation.starter.policy.ResolvedObservationSignalPolicy;
+import ir.daneshrefah.scm.observation.starter.scheduled.ScheduledObservationLifecycle;
 import ir.daneshrefah.scm.observation.starter.trace.NoopTraceObservationSink;
+import ir.daneshrefah.scm.observation.starter.trace.ScmSpanDataMapper;
 import ir.daneshrefah.scm.observation.starter.trace.StructuredTraceObservationSink;
 import ir.daneshrefah.scm.observation.starter.trace.TraceObservationSink;
 import org.springframework.beans.factory.ObjectProvider;
@@ -186,6 +188,12 @@ public class ScmObservationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public ScheduledObservationLifecycle scheduledObservationLifecycle(ScmObservation observation) {
+        return new ScheduledObservationLifecycle(observation);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public ObservationConfigurationValidator observationConfigurationValidator(
             ObservationProperties properties,
             ObservationSignalPolicy signalPolicy,
@@ -242,6 +250,23 @@ public class ScmObservationAutoConfiguration {
                     documentFactory,
                     recordValidator,
                     observationClock
+            );
+        }
+
+        @Bean
+        @ConditionalOnTraceEnabled
+        @ConditionalOnMissingBean
+        public ScmSpanDataMapper scmSpanDataMapper(
+                ObservationContext context,
+                ObsTargetIndexResolver targetIndexResolver,
+                ObservationSanitizer sanitizer,
+                ObservationAttributeRegistry attributeRegistry
+        ) {
+            return new ScmSpanDataMapper(
+                    context,
+                    targetIndexResolver,
+                    sanitizer,
+                    attributeRegistry
             );
         }
     }

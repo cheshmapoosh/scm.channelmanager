@@ -4,6 +4,7 @@ import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.iso.ShetabPackagerFactory;
 import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
+import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import org.jpos.iso.ISOMsg;
@@ -26,6 +27,15 @@ public class ShetabTcpClientRegistry implements ShetabClientRegistry {
 
     @Override
     public ISOMsg request(ShetabResolvedConfig config, ISOMsg request) {
+        return request(config, request, null).response();
+    }
+
+    @Override
+    public ShetabTransportResponse request(
+            ShetabResolvedConfig config,
+            ISOMsg request,
+            ShetabProviderTraceLifecycle traceLifecycle
+    ) {
         String providerKey = normalizeProviderKey(config.provider());
         RuntimeConfigSignature requestedSignature = RuntimeConfigSignature.from(providerKey, config);
         RegisteredClient registeredClient = clients.computeIfAbsent(
@@ -35,7 +45,11 @@ public class ShetabTcpClientRegistry implements ShetabClientRegistry {
 
         registeredClient.verifyCompatible(requestedSignature, config.provider());
 
-        return registeredClient.client().request(request, config.responseTimeoutMs());
+        return registeredClient.client().request(
+                request,
+                config.responseTimeoutMs(),
+                traceLifecycle
+        );
     }
 
     private RegisteredClient createClient(ShetabResolvedConfig config, RuntimeConfigSignature signature) {

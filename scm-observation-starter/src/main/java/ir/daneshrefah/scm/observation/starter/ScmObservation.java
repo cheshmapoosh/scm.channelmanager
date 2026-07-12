@@ -89,6 +89,13 @@ public class ScmObservation {
         return new ObservationScope(traceSink.start(spec), contextScope);
     }
 
+    ObservationScope startDetachedTrace(TraceObservationSpec spec) {
+        if (!isEnabled(ObservationSignal.TRACE) || traceSink == null) {
+            return ObservationScope.detached(TraceObservationHandle.NOOP);
+        }
+        return ObservationScope.detached(traceSink.start(spec));
+    }
+
     boolean isEnabled(ObservationSignal signal) {
         return signalPolicy != null && signalPolicy.isEnabled(signal);
     }

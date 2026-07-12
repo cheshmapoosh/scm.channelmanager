@@ -4,7 +4,6 @@ import ir.daneshrefah.scm.common.event.ScmSafeEventAttributes;
 import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.uaa.starter.security.event.ScmSecurityEvent;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationEvent;
-import ir.daneshrefah.scm.web.observation.ScmWebObservationTraceEventAdapter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.event.EventListener;
@@ -16,16 +15,13 @@ import org.springframework.stereotype.Component;
 public class ScmWebSecurityObservationListener {
     private final ScmObservation observation;
     private final ScmWebSecurityObservationMapper mapper;
-    private final ScmWebObservationTraceEventAdapter traceEventAdapter;
 
     public ScmWebSecurityObservationListener(
             ScmObservation observation,
-            ScmWebSecurityObservationMapper mapper,
-            ScmWebObservationTraceEventAdapter traceEventAdapter
+            ScmWebSecurityObservationMapper mapper
     ) {
         this.observation = observation;
         this.mapper = mapper;
-        this.traceEventAdapter = traceEventAdapter;
     }
 
     @EventListener
@@ -42,7 +38,6 @@ public class ScmWebSecurityObservationListener {
                     .outcome(mapped.outcome())
                     .attributes(mapped.logAttributes())
                     .write();
-            traceEventAdapter.addSpanEventIfCurrent(ScmWebSecurityObservationListener.class, mapped);
         } catch (RuntimeException exception) {
             log.warn("event=SCM_WEB_SECURITY_OBSERVATION_FAILED outcome=ignored scmEventType={} failureType={} failureMessage={}",
                     event == null ? null : event.eventType(),

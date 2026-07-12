@@ -179,6 +179,24 @@ public class ObservationRecordValidator {
                                     + "].attributes.event.outcome");
                 }
             }
+            if ("provider.request".equals(name)
+                    && missing(attributes.get("event.outcome"))) {
+                throw new IllegalStateException(
+                        "Missing required TRACE observation attribute: span.events[" + index
+                                + "].attributes.event.outcome");
+            }
+            if ("provider.response".equals(name)) {
+                requireNonNegativeNumber(
+                        ObservationStream.TRACE,
+                        "span.events[" + index + "].attributes.provider.duration_ms",
+                        attributes.get("provider.duration_ms")
+                );
+                if (missing(attributes.get("event.outcome"))) {
+                    throw new IllegalStateException(
+                            "Missing required TRACE observation attribute: span.events[" + index
+                                    + "].attributes.event.outcome");
+                }
+            }
             index++;
         }
     }

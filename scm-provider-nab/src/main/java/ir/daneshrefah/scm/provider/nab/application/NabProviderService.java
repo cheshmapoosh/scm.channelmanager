@@ -49,8 +49,8 @@ public class NabProviderService {
 
         String requestBody = encoder.encode(data, requestFields);
         NabWireRequest wireRequest = headerBuilder.build(headerValues, commandSpec.protocol(), config, requestBody);
-        log.info("Sending NAB request provider={} protocol={} command={} rqUid={} requestFields={} responseFields={}",
-                config.provider(), commandSpec.protocol(), commandSpec.code(), headerValues.rqUid(),
+        log.info("Sending NAB request provider={} protocol={} command={} requestFields={} responseFields={}",
+                config.provider(), commandSpec.protocol(), commandSpec.code(),
                 requestFields.size(), responseSpec.fields().size());
 
         String wireResponse = tcpClient.request(config, wireRequest);

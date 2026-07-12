@@ -60,7 +60,7 @@ final class NabPooledConnection implements AutoCloseable {
             String ack = readAck(config);
             logWire(config, "received-ack", ack);
             if (!ack.endsWith(NAB_SUCCESS_CODE)) {
-                throw new IllegalStateException("NAB dispatcher acknowledge is not successful: " + ack);
+                throw new IllegalStateException("NAB dispatcher acknowledge is not successful");
             }
             write(body);
             String response = readResponse(config);
@@ -113,7 +113,7 @@ final class NabPooledConnection implements AutoCloseable {
             }
             if (!isListFrame(nextFramePayload)) {
                 throw new IllegalStateException("NAB list response expected actionCode " + NAB_SUCCESS_LIST_CODE
-                        + " or terminator " + NAB_SUCCESS_CODE + " but got frame: " + nextFramePayload);
+                        + " or terminator " + NAB_SUCCESS_CODE);
             }
             listPayload.append('\n').append(nextFramePayload);
         }
@@ -189,7 +189,8 @@ final class NabPooledConnection implements AutoCloseable {
         try {
             socket.close();
         } catch (Exception e) {
-            log.debug("Could not close NAB pooled connection endpoint={}", endpoint.value(), e);
+            log.debug("Could not close NAB pooled connection endpoint={} failureType={}",
+                    endpoint.value(), e.getClass().getSimpleName());
         }
     }
 }

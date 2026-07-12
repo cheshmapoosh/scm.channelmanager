@@ -1,42 +1,42 @@
 # Observability - scm-provider-shetab
 
-## هدف
+## TRACE lifecycle
 
-Provider Shetab باید callهای TCP/ISO را trace و metric کند بدون اینکه اطلاعات حساس کارت یا پیام خام ثبت شود.
-
-## Trace
-
-Span پیشنهادی:
+Shetab provider activity does not create a span. Each actual transport attempt adds exactly two ordered events to the explicit `scm.observation.scope.operation` scope owned by `operation.call`:
 
 ```text
-scm.provider.call
+provider.request
+provider.response
 ```
 
-## Metric
+`provider.request` is recorded after rate limiting, when the transport attempt begins. A failed send records its failure `provider.response` before a retry is queued; the retry receives its own pair and reliable `provider.attempt` number. The final successful send is completed only after response receipt, after-receive customizers, and ISO conversion. A `finally` path therefore retains one failure response event for timeouts, connection failures, decoding/validation failures, and customizer failures without swallowing the original exception.
+
+`provider.duration_ms` is present only on `provider.response`. It uses monotonic `System.nanoTime()` elapsed time and is clamped nonnegative.
+
+Safe registered event attributes are:
 
 ```text
-scm_provider_calls_total
-scm_provider_call_duration_seconds
-scm_provider_timeouts_total
+provider.name
+provider.code
+provider.type
+provider.scheme
+provider.operation
+provider.endpoint
+provider.attempt
+provider.duration_ms
+provider.response_code
+provider.error_code
+event.outcome
+error.type
+error.code
 ```
 
-Tagهای مجاز:
+Future provider-specific request or response attributes use `ShetabProviderTraceAttributeContributor`. Every added field must be explicitly registered through its inherited `ObservationAttributeContributor` contract; the sanitizer continues to reject arbitrary fields.
 
-```text
-provider
-operation
-result
-error_code
-mti
-```
+## Metrics
 
-## ممنوع
+Metrics remain on the Actuator/Micrometer/Prometheus path. They are not written to TRACE files.
 
-```text
-PAN کامل
-CVV2
-PIN
-Track data
-ISO message خام
-metric file writing
-```
+## Forbidden data
+
+Never log, trace, audit, or tag raw/map/packed ISO request or response payloads, PAN, account data, CVV2, PIN or PIN blocks, MAC values, track data, credentials, tokens, Authorization headers, or unrestricted exception messages.

@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.provider.shetab.tcp;
 
+import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
 import org.jpos.iso.ISOMsg;
 
 import java.util.ArrayList;
@@ -25,7 +26,11 @@ final class ShetabResponseRegistry {
         this.provider = Objects.requireNonNull(provider, "provider");
     }
 
-    ResponseTracker register(ShetabCorrelationKey correlationKey, Deadline deadline) {
+    ResponseTracker register(
+            ShetabCorrelationKey correlationKey,
+            Deadline deadline,
+            ShetabProviderTraceLifecycle traceLifecycle
+    ) {
         Objects.requireNonNull(correlationKey, "correlationKey");
         Objects.requireNonNull(deadline, "deadline");
 
@@ -35,7 +40,12 @@ final class ShetabResponseRegistry {
             );
         }
 
-        ResponseTracker tracker = new ResponseTracker(correlationKey, deadline, System.nanoTime());
+        ResponseTracker tracker = new ResponseTracker(
+                correlationKey,
+                deadline,
+                System.nanoTime(),
+                traceLifecycle
+        );
 
         synchronized (lock) {
             String exactKey = correlationKey.exactKey();
@@ -317,13 +327,21 @@ final class ResponseTracker {
     private final Deadline deadline;
     private final long startedNanos;
     private final CompletableFuture<ISOMsg> future = new CompletableFuture<>();
+    private final ShetabProviderTraceLifecycle traceLifecycle;
+    private ShetabProviderTraceLifecycle.Attempt activeAttempt;
     private volatile DeliveryPhase deliveryPhase = DeliveryPhase.QUEUED;
     private volatile long connectionGeneration = -1L;
 
-    ResponseTracker(ShetabCorrelationKey correlationKey, Deadline deadline, long startedNanos) {
+    ResponseTracker(
+            ShetabCorrelationKey correlationKey,
+            Deadline deadline,
+            long startedNanos,
+            ShetabProviderTraceLifecycle traceLifecycle
+    ) {
         this.correlationKey = Objects.requireNonNull(correlationKey, "correlationKey");
         this.deadline = Objects.requireNonNull(deadline, "deadline");
         this.startedNanos = startedNanos;
+        this.traceLifecycle = traceLifecycle;
     }
 
     ShetabCorrelationKey correlationKey() {
@@ -357,6 +375,27 @@ final class ResponseTracker {
 
     void markSent() {
         deliveryPhase = DeliveryPhase.SENT;
+    }
+
+    synchronized void startAttempt() {
+        if (traceLifecycle != null && activeAttempt == null && !future.isDone()) {
+            activeAttempt = traceLifecycle.startAttempt(1);
+        }
+    }
+
+    synchronized void failActiveAttempt(Throwable failure) {
+        ShetabProviderTraceLifecycle.Attempt attempt = activeAttempt;
+        activeAttempt = null;
+
+        if (attempt != null) {
+            attempt.transportFailure(failure);
+        }
+    }
+
+    synchronized ShetabProviderTraceLifecycle.Attempt releaseActiveAttempt() {
+        ShetabProviderTraceLifecycle.Attempt attempt = activeAttempt;
+        activeAttempt = null;
+        return attempt;
     }
 
     boolean wasDeliveredOn(long generation) {

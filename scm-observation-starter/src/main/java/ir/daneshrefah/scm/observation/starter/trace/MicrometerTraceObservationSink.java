@@ -6,13 +6,17 @@ import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistry;
 import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistryHolder;
 import ir.daneshrefah.scm.observation.starter.ObservationSanitizer;
 import ir.daneshrefah.scm.observation.starter.ObservationStream;
+import ir.daneshrefah.scm.observation.starter.TraceContext;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class MicrometerTraceObservationSink implements TraceObservationSink {
     private static final String DEFAULT_SPAN_NAME = "trace.span";
@@ -20,9 +24,14 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
     private final Tracer tracer;
     private final ObservationSanitizer sanitizer;
     private final ObservationAttributeRegistry attributeRegistry;
+    private final Clock clock;
 
+    /**
+     * @deprecated Prefer explicit injection of the application-wide registry.
+     */
+    @Deprecated(forRemoval = false)
     public MicrometerTraceObservationSink(Tracer tracer, ObservationSanitizer sanitizer) {
-        this(tracer, sanitizer, ObservationAttributeRegistryHolder.getOrCommonOnly());
+        this(tracer, sanitizer, requiredApplicationRegistry());
     }
 
     public MicrometerTraceObservationSink(
@@ -30,11 +39,25 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
             ObservationSanitizer sanitizer,
             ObservationAttributeRegistry attributeRegistry
     ) {
+        this(tracer, sanitizer, attributeRegistry, Clock.systemUTC());
+    }
+
+    public MicrometerTraceObservationSink(
+            Tracer tracer,
+            ObservationSanitizer sanitizer,
+            ObservationAttributeRegistry attributeRegistry,
+            Clock clock
+    ) {
         this.tracer = tracer;
         this.sanitizer = sanitizer;
-        this.attributeRegistry = attributeRegistry == null
-                ? ObservationAttributeRegistry.commonOnly()
-                : attributeRegistry;
+        this.attributeRegistry = Objects.requireNonNull(
+                attributeRegistry, "The application-wide observation attribute registry is required");
+        this.clock = clock == null ? Clock.systemUTC() : clock;
+    }
+
+    private static ObservationAttributeRegistry requiredApplicationRegistry() {
+        return ObservationAttributeRegistryHolder.get().orElseThrow(() -> new IllegalStateException(
+                "The application-wide observation attribute registry must be initialized before the Micrometer trace sink"));
     }
 
     @Override
@@ -44,6 +67,7 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
         }
         try {
             Span.Builder spanBuilder = tracer.spanBuilder().name(textOrDefault(spec.spanName(), DEFAULT_SPAN_NAME));
+            configureParent(spanBuilder, spec);
             Span.Kind spanKind = spanKind(spec.spanKind());
             if (spanKind != null) {
                 spanBuilder.kind(spanKind);
@@ -53,13 +77,28 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
                 tag(spanBuilder, "event.outcome", spec.outcome());
             }
             tag(spanBuilder, "correlation.id", spec.correlationId());
-            tagAll(spanBuilder, spec.attributes());
+            tag(spanBuilder, "correlation.type", spec.correlationType());
+            tagAll(spanBuilder, spec.spanName(), spec.attributes());
             Span span = spanBuilder.start();
-            Tracer.SpanInScope spanInScope = tracer.withSpan(span);
-            return new MicrometerTraceObservationHandle(span, spanInScope);
+            return new MicrometerTraceObservationHandle(span, spec, System.nanoTime());
         } catch (RuntimeException ex) {
             return TraceObservationHandle.NOOP;
         }
+    }
+
+    private void configureParent(Span.Builder spanBuilder, TraceObservationSpec spec) {
+        String traceId = textOrNull(spec.traceId());
+        String parentSpanId = textOrNull(spec.parentSpanId());
+        if (traceId == null || parentSpanId == null) {
+            spanBuilder.setNoParent();
+            return;
+        }
+        io.micrometer.tracing.TraceContext parent = tracer.traceContextBuilder()
+                .traceId(traceId)
+                .spanId(parentSpanId)
+                .sampled(Boolean.TRUE)
+                .build();
+        spanBuilder.setParent(parent);
     }
 
     private Map<String, Object> eventAttributes(Map<String, ?> attributes) {
@@ -83,34 +122,54 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
         return safeAttributes;
     }
 
-    private void tagAll(Span.Builder spanBuilder, Map<String, Object> attributes) {
+    private void tagAll(Span.Builder spanBuilder, String spanName, Map<String, Object> attributes) {
         if (attributes == null) {
             return;
         }
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-            tag(spanBuilder, entry.getKey(), entry.getValue());
+            if (isSpanAttributeAllowed(spanName, entry.getKey())) {
+                tag(spanBuilder, entry.getKey(), entry.getValue());
+            }
         }
+    }
+
+    private void tagAll(Span span, String spanName, Map<String, Object> attributes) {
+        if (attributes == null) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            if (isSpanAttributeAllowed(spanName, entry.getKey())) {
+                tag(span, entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private boolean isSpanAttributeAllowed(String spanName, String fieldName) {
+        return fieldName != null
+                && !TraceAttributeSecurity.isReservedTraceField(fieldName)
+                && ("gateway.receive".equals(textOrNull(spanName))
+                || !TraceAttributeSecurity.isGatewayOnlyJwtContextField(fieldName));
     }
 
     private void tag(Span.Builder spanBuilder, String name, Object value) {
         if (spanBuilder == null || name == null || name.isBlank() || value == null || !TraceAttributeSecurity.isAllowed(name)) {
             return;
         }
-        Object sanitized = sanitizer == null ? value : sanitizer.sanitize(name.trim(), value);
-        if (sanitized == null) {
+        Object prepared = preparedValue(name, value);
+        if (prepared == null) {
             return;
         }
         String key = name.trim();
-        if (sanitized instanceof Boolean booleanValue) {
+        if (prepared instanceof Boolean booleanValue) {
             spanBuilder.tag(key, booleanValue);
-        } else if (sanitized instanceof Byte || sanitized instanceof Short || sanitized instanceof Integer || sanitized instanceof Long) {
-            spanBuilder.tag(key, ((Number) sanitized).longValue());
-        } else if (sanitized instanceof Float || sanitized instanceof Double) {
-            spanBuilder.tag(key, ((Number) sanitized).doubleValue());
-        } else if (sanitized instanceof Iterable<?> iterable) {
+        } else if (prepared instanceof Byte || prepared instanceof Short || prepared instanceof Integer || prepared instanceof Long) {
+            spanBuilder.tag(key, ((Number) prepared).longValue());
+        } else if (prepared instanceof Float || prepared instanceof Double) {
+            spanBuilder.tag(key, ((Number) prepared).doubleValue());
+        } else if (prepared instanceof Iterable<?> iterable) {
             tagIterable(spanBuilder, key, iterable);
         } else {
-            spanBuilder.tag(key, String.valueOf(sanitized));
+            spanBuilder.tag(key, String.valueOf(prepared));
         }
     }
 
@@ -118,22 +177,31 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
         if (span == null || name == null || name.isBlank() || value == null || !TraceAttributeSecurity.isAllowed(name)) {
             return;
         }
-        Object sanitized = sanitizer == null ? value : sanitizer.sanitize(name.trim(), value);
-        if (sanitized == null) {
+        Object prepared = preparedValue(name, value);
+        if (prepared == null) {
             return;
         }
         String key = name.trim();
-        if (sanitized instanceof Boolean booleanValue) {
+        if (prepared instanceof Boolean booleanValue) {
             span.tag(key, booleanValue);
-        } else if (sanitized instanceof Byte || sanitized instanceof Short || sanitized instanceof Integer || sanitized instanceof Long) {
-            span.tag(key, ((Number) sanitized).longValue());
-        } else if (sanitized instanceof Float || sanitized instanceof Double) {
-            span.tag(key, ((Number) sanitized).doubleValue());
-        } else if (sanitized instanceof Iterable<?> iterable) {
+        } else if (prepared instanceof Byte || prepared instanceof Short || prepared instanceof Integer || prepared instanceof Long) {
+            span.tag(key, ((Number) prepared).longValue());
+        } else if (prepared instanceof Float || prepared instanceof Double) {
+            span.tag(key, ((Number) prepared).doubleValue());
+        } else if (prepared instanceof Iterable<?> iterable) {
             tagIterable(span, key, iterable);
         } else {
-            span.tag(key, String.valueOf(sanitized));
+            span.tag(key, String.valueOf(prepared));
         }
+    }
+
+    private Object preparedValue(String name, Object value) {
+        if (name == null || name.isBlank() || value == null || !TraceAttributeSecurity.isAllowed(name)) {
+            return null;
+        }
+        String fieldName = name.trim();
+        Object sanitized = sanitizer == null ? value : sanitizer.sanitize(fieldName, value);
+        return attributeRegistry.prepareValue(ObservationStream.TRACE, fieldName, sanitized);
     }
 
     private void tagIterable(Span.Builder spanBuilder, String key, Iterable<?> iterable) {
@@ -197,15 +265,34 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
         return value == null || value.isBlank() ? defaultValue : value.trim();
     }
 
+    private String textOrNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
     private final class MicrometerTraceObservationHandle implements TraceObservationHandle {
         private final Span span;
-        private final Tracer.SpanInScope spanInScope;
+        private final TraceObservationSpec spec;
+        private final String spanName;
+        private final long startedAtNanos;
         private final Object lifecycleMonitor = new Object();
         private boolean finished;
 
-        private MicrometerTraceObservationHandle(Span span, Tracer.SpanInScope spanInScope) {
+        private MicrometerTraceObservationHandle(Span span, TraceObservationSpec spec, long startedAtNanos) {
             this.span = span;
-            this.spanInScope = spanInScope;
+            this.spec = spec;
+            this.spanName = spec.spanName();
+            this.startedAtNanos = startedAtNanos;
+        }
+
+        @Override
+        public TraceContext traceContext() {
+            io.micrometer.tracing.TraceContext actual = span == null ? null : span.context();
+            return new TraceContext(
+                    firstText(actual == null ? null : actual.traceId(), spec.traceId()),
+                    firstText(actual == null ? null : actual.spanId(), spec.spanId()),
+                    spec.correlationId(),
+                    spec.correlationType()
+            );
         }
 
         @Override
@@ -217,21 +304,19 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
                 finished = true;
             }
             try {
-                if (outcome != null && !outcome.isBlank()) {
-                    tag(span, "event.outcome", outcome);
-                }
-                if (attributes != null) {
-                    for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-                        tag(span, entry.getKey(), entry.getValue());
-                    }
-                }
+                tag(span, "span.duration_ms", elapsedMillis(startedAtNanos, System.nanoTime()));
+                tag(span, "event.outcome", textOrDefault(
+                        outcome,
+                        textOrDefault(spec.outcome(), throwable == null ? "success" : "failure")
+                ));
+                tagAll(span, spanName, attributes);
                 if (throwable != null) {
-                    span.error(throwable);
+                    tag(span, "error.type", throwable.getClass().getName());
+                    tag(span, "error.message", safeMessage(throwable));
                 }
             } catch (RuntimeException ignored) {
                 // Trace failures must not affect business flow.
             } finally {
-                closeScope();
                 endSpan();
             }
         }
@@ -258,22 +343,12 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
                         TraceObservationSpanEventRegistry.add(
                                 span.context().traceId(),
                                 span.context().spanId(),
-                                new TraceObservationSpanEvent(safeName, Instant.now(), eventAttributes(attributes))
+                                new TraceObservationSpanEvent(safeName, Instant.now(clock), eventAttributes(attributes))
                         );
                     }
                 } catch (RuntimeException ignored) {
                     // Trace event failures must not affect business flow.
                 }
-            }
-        }
-
-        private void closeScope() {
-            try {
-                if (spanInScope != null) {
-                    spanInScope.close();
-                }
-            } catch (RuntimeException ignored) {
-                // Trace failures must not affect business flow.
             }
         }
 
@@ -285,6 +360,23 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
             } catch (RuntimeException ignored) {
                 // Trace failures must not affect business flow.
             }
+        }
+
+        private long elapsedMillis(long startNanos, long endNanos) {
+            return TimeUnit.NANOSECONDS.toMillis(Math.max(0L, endNanos - startNanos));
+        }
+
+        private String firstText(String first, String fallback) {
+            String value = textOrNull(first);
+            return value == null ? fallback : value;
+        }
+
+        private String safeMessage(Throwable throwable) {
+            if (throwable == null || throwable.getMessage() == null) {
+                return null;
+            }
+            String message = throwable.getMessage().replace('\r', ' ').replace('\n', ' ').trim();
+            return message.length() > 300 ? message.substring(0, 300) : message;
         }
     }
 }

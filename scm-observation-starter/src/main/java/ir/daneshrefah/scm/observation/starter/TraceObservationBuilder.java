@@ -51,6 +51,30 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
     }
 
     public ObservationScope start() {
+        return startThreadBound();
+    }
+
+    /**
+     * Starts a span whose lifecycle is owned explicitly by its caller rather than by the current thread.
+     * Detached spans are suitable for asynchronous processing frameworks such as Camel: this method does
+     * not install {@link ObservationScope#current()} state or a {@link TraceContextHolder} binding.
+     */
+    public ObservationScope startDetached() {
+        TraceContext context = new TraceContext(
+                firstText(traceId, ObservationIds.traceId()),
+                firstText(spanId, ObservationIds.spanId()),
+                firstText(correlationId, ObservationIds.correlationId()),
+                firstText(correlationType, CorrelationType.OPERATION.value())
+        );
+        String resolvedParentSpanId = parentSpanIdProvided ? textOrNull(parentSpanId) : null;
+        TraceObservationSpec spec = spec(context, resolvedParentSpanId);
+        if (!observation.isEnabled(ObservationSignal.TRACE)) {
+            return ObservationScope.detached(TraceObservationHandle.NOOP);
+        }
+        return observation.startDetachedTrace(spec);
+    }
+
+    private ObservationScope startThreadBound() {
         if (!observation.isEnabled(ObservationSignal.TRACE)) {
             return new ObservationScope(TraceObservationHandle.NOOP);
         }
@@ -59,7 +83,15 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
         String resolvedParentSpanId = parentSpanIdProvided ? textOrNull(parentSpanId) : currentSpanId(current);
         TraceContextHolder.Scope contextScope = TraceContextHolder.open(context);
         try {
-            return observation.startTrace(new TraceObservationSpec(
+            return observation.startTrace(spec(context, resolvedParentSpanId), contextScope);
+        } catch (RuntimeException | Error ex) {
+            contextScope.close();
+            throw ex;
+        }
+    }
+
+    private TraceObservationSpec spec(TraceContext context, String resolvedParentSpanId) {
+        return new TraceObservationSpec(
                 sourceClass,
                 spanName,
                 spanKind,
@@ -71,11 +103,7 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
                 context.spanId(),
                 resolvedParentSpanId,
                 attributes
-            ), contextScope);
-        } catch (RuntimeException | Error ex) {
-            contextScope.close();
-            throw ex;
-        }
+        );
     }
 
     @Override
@@ -89,5 +117,10 @@ public class TraceObservationBuilder extends AbstractObservationBuilder<TraceObs
 
     private String textOrNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String firstText(String first, String fallback) {
+        String value = textOrNull(first);
+        return value == null ? fallback : value;
     }
 }

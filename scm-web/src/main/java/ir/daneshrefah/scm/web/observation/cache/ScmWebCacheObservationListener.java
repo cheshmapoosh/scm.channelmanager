@@ -3,7 +3,6 @@ package ir.daneshrefah.scm.web.observation.cache;
 import ir.daneshrefah.scm.common.event.cache.ScmCacheEvent;
 import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationEvent;
-import ir.daneshrefah.scm.web.observation.ScmWebObservationTraceEventAdapter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.event.EventListener;
@@ -15,16 +14,13 @@ import org.springframework.stereotype.Component;
 public class ScmWebCacheObservationListener {
     private final ScmObservation observation;
     private final ScmWebCacheObservationMapper mapper;
-    private final ScmWebObservationTraceEventAdapter traceEventAdapter;
 
     public ScmWebCacheObservationListener(
             ScmObservation observation,
-            ScmWebCacheObservationMapper mapper,
-            ScmWebObservationTraceEventAdapter traceEventAdapter
+            ScmWebCacheObservationMapper mapper
     ) {
         this.observation = observation;
         this.mapper = mapper;
-        this.traceEventAdapter = traceEventAdapter;
     }
 
     @EventListener
@@ -41,7 +37,6 @@ public class ScmWebCacheObservationListener {
                     .outcome(mapped.outcome())
                     .attributes(mapped.logAttributes())
                     .write();
-            traceEventAdapter.addSpanEventIfCurrent(ScmWebCacheObservationListener.class, mapped);
         } catch (RuntimeException exception) {
             log.warn("event=SCM_WEB_CACHE_OBSERVATION_FAILED outcome=ignored scmEventType={} failureType={} failureMessage={}",
                     event == null ? null : event.eventType(),
