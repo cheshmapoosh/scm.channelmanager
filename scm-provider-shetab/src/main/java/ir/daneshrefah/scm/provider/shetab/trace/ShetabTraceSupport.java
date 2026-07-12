@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.provider.shetab.trace;
 
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
+import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import ir.daneshrefah.scm.provider.shetab.iso.util.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
@@ -59,8 +60,9 @@ public class ShetabTraceSupport {
         String responseCode = safeField(response, 39);
         finishAttempt(attempt, exchange, config, new ShetabProviderAttemptResult(
                 response,
-                responseCode,
-                isSuccessfulResponse(config, responseCode),
+                failure == null
+                        ? providerOutcome(config, responseCode)
+                        : ProviderBusinessOutcome.technicalFailure(responseCode, failure),
                 failure
         ));
     }
@@ -75,7 +77,7 @@ public class ShetabTraceSupport {
             return;
         }
         ShetabProviderAttemptResult safeResult = result == null
-                ? new ShetabProviderAttemptResult(null, null, false, null)
+                ? new ShetabProviderAttemptResult(null, ProviderBusinessOutcome.businessFailure(null, null), null)
                 : result;
         Map<String, Object> attributes = new LinkedHashMap<>();
         contributeResponseAttributes(exchange, config, safeResult.response(), safeResult.failure(), attributes);
@@ -86,6 +88,12 @@ public class ShetabTraceSupport {
         String configuredSuccessCode = configuredSuccessCode(config);
         String normalizedCode = clean(responseCode);
         return normalizedCode != null && normalizedCode.equals(configuredSuccessCode);
+    }
+
+    public ProviderBusinessOutcome providerOutcome(ShetabResolvedConfig config, String responseCode) {
+        return isSuccessfulResponse(config, responseCode)
+                ? ProviderBusinessOutcome.success(responseCode)
+                : ProviderBusinessOutcome.businessFailure(responseCode, responseCode);
     }
 
     void addOperationEvent(ObservationScope scope, String name, Map<String, Object> attributes) {

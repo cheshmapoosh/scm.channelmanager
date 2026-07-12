@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.provider.shetab.trace;
 
+import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import org.apache.camel.Exchange;
@@ -73,19 +74,15 @@ public final class ShetabProviderTraceLifecycle {
         put(attributes, ShetabTraceAttributes.PROVIDER_DURATION_MS.name(), elapsedMillis(attempt.startedAtNanos()));
         put(attributes, ShetabTraceAttributes.PROVIDER_RESPONSE_CODE.name(), clean(result.responseCode()));
 
+        ProviderBusinessOutcome outcome = result.outcome();
         Throwable failure = result.failure();
-        boolean success = failure == null && result.successfulResponse();
-        put(attributes, "event.outcome", success ? "success" : "failure");
-        if (!success && failure == null) {
-            String errorCode = clean(result.responseCode());
+        boolean success = outcome != null && outcome.success();
+        put(attributes, "event.outcome", outcome == null ? "failure" : outcome.eventOutcome());
+        if (!success) {
+            String errorCode = outcome == null ? errorCode(failure) : outcome.safeErrorCode();
             put(attributes, ShetabTraceAttributes.PROVIDER_ERROR_CODE.name(), errorCode);
             put(attributes, "error.code", errorCode);
-        }
-        if (failure != null) {
-            String errorCode = errorCode(failure);
-            put(attributes, ShetabTraceAttributes.PROVIDER_ERROR_CODE.name(), errorCode);
-            put(attributes, "error.type", failure.getClass().getSimpleName());
-            put(attributes, "error.code", errorCode);
+            put(attributes, "error.type", outcome == null ? errorType(failure) : outcome.errorType());
         }
         traceSupport.addOperationEvent(operationScope, "provider.response", attributes);
     }
@@ -103,6 +100,10 @@ public final class ShetabProviderTraceLifecycle {
             current = current.getCause();
         }
         return failure == null ? null : failure.getClass().getSimpleName();
+    }
+
+    private static String errorType(Throwable failure) {
+        return failure == null ? ProviderBusinessOutcome.TECHNICAL_ERROR_TYPE : failure.getClass().getSimpleName();
     }
 
     private static String clean(String value) {

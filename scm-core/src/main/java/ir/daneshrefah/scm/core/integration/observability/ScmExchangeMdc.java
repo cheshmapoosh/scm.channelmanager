@@ -7,6 +7,9 @@ import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.observation.starter.CorrelationType;
+import ir.daneshrefah.scm.observation.starter.TraceContext;
+import ir.daneshrefah.scm.observation.starter.logging.ScmMdcKeys;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import org.apache.camel.Exchange;
 import org.slf4j.MDC;
@@ -21,16 +24,17 @@ public class ScmExchangeMdc {
     private static final String X_CORRELATION_ID = "X-Correlation-Id";
 
     private static final List<String> MDC_KEYS = List.of(
-            "traceId",
-            "spanId",
-            "correlationId",
-            "gatewayName",
-            "channelCode",
-            "serviceCode",
-            "serviceVersion",
-            "operationName",
-            "routeId",
-            "exchangeId");
+            ScmMdcKeys.TRACE_ID,
+            ScmMdcKeys.SPAN_ID,
+            ScmMdcKeys.CORRELATION_ID,
+            ScmMdcKeys.CORRELATION_TYPE,
+            ScmMdcKeys.GATEWAY_NAME,
+            ScmMdcKeys.CHANNEL_CODE,
+            ScmMdcKeys.SERVICE_CODE,
+            ScmMdcKeys.SERVICE_VERSION,
+            ScmMdcKeys.OPERATION_NAME,
+            ScmMdcKeys.ROUTE_ID,
+            ScmMdcKeys.EXCHANGE_ID);
 
     public Map<String, String> put(Exchange exchange) {
         Map<String, String> fields = fields(exchange);
@@ -45,24 +49,56 @@ public class ScmExchangeMdc {
         return fields;
     }
 
+    public Binding bind(Exchange exchange) {
+        Binding binding = Binding.capture(MDC_KEYS);
+        put(exchange);
+        return binding;
+    }
+
     public void clear() {
         MDC_KEYS.forEach(MDC::remove);
     }
 
     public Map<String, String> fields(Exchange exchange) {
         Map<String, String> fields = new LinkedHashMap<>();
-        SpanContext spanContext = spanContext(exchange);
-        fields.put("traceId", spanContext != null ? spanContext.getTraceId() : property(exchange, Message.TRACE_ID));
-        fields.put("spanId", spanContext != null ? spanContext.getSpanId() : property(exchange, Message.SPAN_ID));
-        fields.put("correlationId", correlationId(exchange));
-        fields.put("gatewayName", gatewayName(exchange));
-        fields.put("channelCode", channelCode(exchange));
-        fields.put("serviceCode", serviceCode(exchange));
-        fields.put("serviceVersion", property(exchange, Message.SERVICE_VERSION));
-        fields.put("operationName", operationName(exchange));
-        fields.put("routeId", exchange.getFromRouteId());
-        fields.put("exchangeId", exchange.getExchangeId());
+        TraceContext scmContext = activeTraceContext(exchange);
+        SpanContext spanContext = scmContext == null ? spanContext(exchange) : null;
+        fields.put(ScmMdcKeys.TRACE_ID, scmContext != null ? scmContext.traceId() : spanContext != null ? spanContext.getTraceId() : property(exchange, Message.TRACE_ID));
+        fields.put(ScmMdcKeys.SPAN_ID, scmContext != null ? scmContext.spanId() : spanContext != null ? spanContext.getSpanId() : property(exchange, Message.SPAN_ID));
+        fields.put(ScmMdcKeys.CORRELATION_ID, scmContext != null && scmContext.correlationId() != null ? scmContext.correlationId() : correlationId(exchange));
+        fields.put(ScmMdcKeys.CORRELATION_TYPE, scmContext != null && scmContext.correlationType() != null ? scmContext.correlationType() : CorrelationType.OPERATION.value());
+        fields.put(ScmMdcKeys.GATEWAY_NAME, gatewayName(exchange));
+        fields.put(ScmMdcKeys.CHANNEL_CODE, channelCode(exchange));
+        fields.put(ScmMdcKeys.SERVICE_CODE, serviceCode(exchange));
+        fields.put(ScmMdcKeys.SERVICE_VERSION, property(exchange, Message.SERVICE_VERSION));
+        fields.put(ScmMdcKeys.OPERATION_NAME, operationName(exchange));
+        fields.put(ScmMdcKeys.ROUTE_ID, exchange.getFromRouteId());
+        fields.put(ScmMdcKeys.EXCHANGE_ID, exchange.getExchangeId());
         return fields;
+    }
+
+    private TraceContext activeTraceContext(Exchange exchange) {
+        if (exchange == null) {
+            return null;
+        }
+        TraceContext operation = exchange.getProperty(
+                CoreObservationTraceSupport.OPERATION_CONTEXT_PROPERTY,
+                TraceContext.class
+        );
+        if (operation != null) {
+            return operation;
+        }
+        TraceContext service = exchange.getProperty(
+                CoreObservationTraceSupport.SERVICE_CONTEXT_PROPERTY,
+                TraceContext.class
+        );
+        if (service != null) {
+            return service;
+        }
+        return exchange.getProperty(
+                CoreObservationTraceSupport.GATEWAY_CONTEXT_PROPERTY,
+                TraceContext.class
+        );
     }
 
     private SpanContext spanContext(Exchange exchange) {
@@ -119,5 +155,26 @@ public class ScmExchangeMdc {
     private String property(Exchange exchange, String key) {
         Object value = exchange.getProperty(key);
         return value != null ? String.valueOf(value) : null;
+    }
+
+    public record Binding(Map<String, String> previousValues) implements AutoCloseable {
+        private static Binding capture(List<String> keys) {
+            Map<String, String> values = new LinkedHashMap<>();
+            for (String key : keys) {
+                values.put(key, MDC.get(key));
+            }
+            return new Binding(values);
+        }
+
+        @Override
+        public void close() {
+            previousValues.forEach((key, previousValue) -> {
+                if (previousValue == null) {
+                    MDC.remove(key);
+                } else {
+                    MDC.put(key, previousValue);
+                }
+            });
+        }
     }
 }

@@ -31,7 +31,7 @@ public class ScmServletObservationAutoConfiguration {
     )
     static class LogMdcConfiguration {
         @Bean
-        @ConditionalOnMissingBean(name = "observationMdcFilterRegistration")
+        @ConditionalOnMissingBean(name = {"observationMdcFilterRegistration", "httpGatewayObservationFilter"})
         public FilterRegistrationBean<ObservationMdcFilter> observationMdcFilterRegistration(
                 ObservationSignalPolicy signalPolicy,
                 ObservationContext context
@@ -52,7 +52,7 @@ public class ScmServletObservationAutoConfiguration {
     )
     static class HttpServerTraceConfiguration {
         @Bean
-        @ConditionalOnMissingBean(name = "httpServerObservationFilterRegistration")
+        @ConditionalOnMissingBean(name = {"httpServerObservationFilterRegistration", "httpGatewayObservationFilter"})
         public FilterRegistrationBean<HttpServerObservationFilter> httpServerObservationFilterRegistration(
                 ScmObservation observation,
                 ObservationSignalPolicy signalPolicy,

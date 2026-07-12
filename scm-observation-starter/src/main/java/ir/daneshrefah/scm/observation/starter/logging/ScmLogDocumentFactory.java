@@ -145,6 +145,13 @@ public final class ScmLogDocumentFactory {
                 firstPresent(mdc, "correlationId", "correlation_id", "correlation.id"));
         putIfAbsent(attributes, ScmLogFields.CORRELATION_TYPE,
                 firstPresent(mdc, "correlationType", "correlation_type", "correlation.type"));
+        putIfAbsent(attributes, "scm.gateway.name", firstPresent(mdc, "gatewayName", "scm.gateway.name"));
+        putIfAbsent(attributes, ScmLogFields.SCM_CHANNEL_CODE, firstPresent(mdc, "channelCode", "scm.channel.code"));
+        putIfAbsent(attributes, "scm.service.code", firstPresent(mdc, "serviceCode", "scm.service.code"));
+        putIfAbsent(attributes, "scm.service.version", firstPresent(mdc, "serviceVersion", "scm.service.version"));
+        putIfAbsent(attributes, "scm.operation.name", firstPresent(mdc, "operationName", "scm.operation.name"));
+        putIfAbsent(attributes, "scm.route.id", firstPresent(mdc, "routeId", "scm.route.id"));
+        putIfAbsent(attributes, "scm.exchange.id", firstPresent(mdc, "exchangeId", "scm.exchange.id"));
     }
 
     private void putThrowableFields(Map<String, Object> attributes, IThrowableProxy throwableProxy) {

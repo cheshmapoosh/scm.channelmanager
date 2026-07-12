@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.provider.nab.observation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
+import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
 import ir.daneshrefah.scm.provider.nab.config.NabConfigResolver;
 import ir.daneshrefah.scm.provider.nab.config.NabResolvedConfig;
 import ir.daneshrefah.scm.provider.nab.observation.attributes.NabTraceAttributes;
@@ -57,6 +58,7 @@ public class NabProviderTraceSupport {
             Exchange exchange,
             NabResolvedConfig config,
             JsonNode response,
+            ProviderBusinessOutcome outcome,
             Throwable failure
     ) {
         if (attempt == null || !attempt.markFinished()) {
@@ -67,23 +69,29 @@ public class NabProviderTraceSupport {
         contributeResponseAttributes(exchange, config, response, failure, contributedAttributes);
         mergeContributed(attributes, contributedAttributes);
         put(attributes, NabTraceAttributes.PROVIDER_DURATION_MS.name(), elapsedMillis(attempt.startedAtNanos()));
-        String responseCode = responseCode(response);
+        String responseCode = outcome == null ? responseCode(response) : outcome.responseCode();
         put(attributes, NabTraceAttributes.PROVIDER_RESPONSE_CODE.name(), responseCode);
 
-        boolean successfulResponse = response != null && response.path("status").path("success").asBoolean(false);
-        boolean success = failure == null && successfulResponse;
-        put(attributes, "event.outcome", success ? "success" : "failure");
-        if (!success && failure == null) {
-            put(attributes, NabTraceAttributes.PROVIDER_ERROR_CODE.name(), responseCode);
-            put(attributes, "error.code", responseCode);
-        }
-        if (failure != null) {
-            String errorCode = errorCode(failure);
+        boolean success = outcome != null && outcome.success();
+        put(attributes, "event.outcome", outcome == null ? "failure" : outcome.eventOutcome());
+        if (!success) {
+            String errorCode = outcome == null ? errorCode(failure) : outcome.safeErrorCode();
             put(attributes, NabTraceAttributes.PROVIDER_ERROR_CODE.name(), errorCode);
-            put(attributes, "error.type", failure.getClass().getSimpleName());
             put(attributes, "error.code", errorCode);
+            put(attributes, "error.type", outcome == null ? errorType(failure) : outcome.errorType());
         }
         addEvent(attempt.scope(), "provider.response", attributes);
+    }
+
+    public ProviderBusinessOutcome providerOutcome(JsonNode response, Throwable failure) {
+        String responseCode = responseCode(response);
+        if (failure != null) {
+            return ProviderBusinessOutcome.technicalFailure(responseCode, failure);
+        }
+        boolean successfulResponse = response != null && response.path("status").path("success").asBoolean(false);
+        return successfulResponse
+                ? ProviderBusinessOutcome.success(responseCode)
+                : ProviderBusinessOutcome.businessFailure(responseCode, responseCode);
     }
 
     private Map<String, Object> baseAttributes(NabResolvedConfig config, String operation) {
@@ -166,6 +174,10 @@ public class NabProviderTraceSupport {
             current = current.getCause();
         }
         return failure == null ? null : failure.getClass().getSimpleName();
+    }
+
+    private String errorType(Throwable failure) {
+        return failure == null ? ProviderBusinessOutcome.TECHNICAL_ERROR_TYPE : failure.getClass().getSimpleName();
     }
 
     private long elapsedMillis(long startedAtNanos) {

@@ -1,9 +1,12 @@
 package ir.daneshrefah.scm.web.observation.gateway.http;
 
+import ir.daneshrefah.scm.observation.starter.CorrelationType;
 import ir.daneshrefah.scm.observation.starter.ObservationContext;
 import ir.daneshrefah.scm.observation.starter.ObservationIds;
+import ir.daneshrefah.scm.observation.starter.TraceFlags;
 import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationContext;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
+import ir.daneshrefah.scm.observation.starter.logging.ScmMdcKeys;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParent;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParentParser;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParentWriter;
@@ -21,8 +24,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -30,6 +35,16 @@ import java.util.Set;
 public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     private static final String DEFAULT_VALUE = "default";
     private static final String CORRELATION_HEADER = "X-Correlation-Id";
+    private static final String LEGACY_CORRELATION_HEADER = "X-SCM-Correlation-ID";
+    private static final List<String> OWNED_MDC_KEYS = List.of(
+            ScmMdcKeys.CORRELATION_ID,
+            ScmMdcKeys.CORRELATION_TYPE,
+            ScmMdcKeys.TRACE_ID,
+            ScmMdcKeys.SPAN_ID,
+            ScmMdcKeys.GATEWAY_NAME,
+            ScmMdcKeys.CHANNEL_CODE,
+            ScmMdcKeys.PROTOCOL
+    );
     private static final Set<String> MISSING_CHANNEL_CODES = Set.of(
             "null",
             "blank",
@@ -114,14 +129,14 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         ScmTraceParent incomingTraceParent = traceParentParser.parse(request.getHeader(ScmTraceParentWriter.TRACEPARENT))
                 .orElse(null);
-        String correlationId = ObservationIds.correlationId();
+        String correlationId = effectiveCorrelationId(request);
         String channelCode = resolveChannelCode(request);
         GatewayObservationContext gatewayContext = new GatewayObservationContext(
                 correlationId,
                 incomingTraceParent == null ? ObservationIds.traceId() : incomingTraceParent.traceId(),
                 ObservationIds.spanId(),
                 incomingTraceParent == null ? null : incomingTraceParent.parentId(),
-                incomingTraceParent == null ? null : incomingTraceParent.flags(),
+                incomingTraceParent == null ? TraceFlags.DEFAULT : incomingTraceParent.flags(),
                 textOrDefault(observationContext.gatewayName()),
                 channelCode,
                 "http",
@@ -134,13 +149,25 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
             setRequestAttributes(request, gatewayContext);
             putSafeTransportAttributes(request);
             putLegacyProjectionAttributes(request);
+            MdcSnapshot mdcSnapshot = MdcSnapshot.capture(OWNED_MDC_KEYS);
             putMdc(gatewayContext);
             response.setHeader(CORRELATION_HEADER, correlationId);
-            filterChain.doFilter(request, response);
+            try {
+                filterChain.doFilter(request, response);
+            } finally {
+                mdcSnapshot.restore();
+            }
         } finally {
             response.setHeader(CORRELATION_HEADER, correlationId);
-            clearMdc();
         }
+    }
+
+    private String effectiveCorrelationId(HttpServletRequest request) {
+        String inbound = firstText(
+                request == null ? null : request.getHeader(CORRELATION_HEADER),
+                request == null ? null : request.getHeader(LEGACY_CORRELATION_HEADER)
+        );
+        return inbound == null ? ObservationIds.correlationId() : inbound;
     }
 
     private void setRequestAttributes(HttpServletRequest request, GatewayObservationContext gatewayContext) {
@@ -345,21 +372,46 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     }
 
     private void putMdc(GatewayObservationContext gatewayContext) {
-        MDC.put("correlationId", gatewayContext.correlationId());
-        MDC.put("traceId", gatewayContext.traceId());
-        MDC.put("spanId", gatewayContext.gatewaySpanId());
-        MDC.put("gatewayName", gatewayContext.gatewayName());
-        MDC.put("channelCode", gatewayContext.channelCode());
-        MDC.put("protocol", gatewayContext.protocol());
+        MDC.put(ScmMdcKeys.CORRELATION_ID, gatewayContext.correlationId());
+        MDC.put(ScmMdcKeys.CORRELATION_TYPE, CorrelationType.REQUEST.value());
+        MDC.put(ScmMdcKeys.TRACE_ID, gatewayContext.traceId());
+        MDC.put(ScmMdcKeys.SPAN_ID, gatewayContext.gatewaySpanId());
+        MDC.put(ScmMdcKeys.GATEWAY_NAME, gatewayContext.gatewayName());
+        MDC.put(ScmMdcKeys.CHANNEL_CODE, gatewayContext.channelCode());
+        MDC.put(ScmMdcKeys.PROTOCOL, gatewayContext.protocol());
     }
 
-    private void clearMdc() {
-        MDC.remove("correlationId");
-        MDC.remove("traceId");
-        MDC.remove("spanId");
-        MDC.remove("gatewayName");
-        MDC.remove("channelCode");
-        MDC.remove("protocol");
+    private String firstText(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            String text = textOrNull(value);
+            if (text != null) {
+                return text;
+            }
+        }
+        return null;
+    }
+
+    private record MdcSnapshot(Map<String, String> values) {
+        private static MdcSnapshot capture(List<String> keys) {
+            Map<String, String> values = new LinkedHashMap<>();
+            for (String key : keys) {
+                values.put(key, MDC.get(key));
+            }
+            return new MdcSnapshot(values);
+        }
+
+        private void restore() {
+            values.forEach((key, previousValue) -> {
+                if (previousValue == null) {
+                    MDC.remove(key);
+                } else {
+                    MDC.put(key, previousValue);
+                }
+            });
+        }
     }
 
     private record ChannelPathMapping(String pathPrefix, String channelCode) {

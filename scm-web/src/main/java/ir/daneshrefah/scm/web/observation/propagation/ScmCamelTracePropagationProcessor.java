@@ -11,6 +11,7 @@ import java.util.List;
 
 @Component
 public class ScmCamelTracePropagationProcessor implements Processor {
+    private static final String CORRELATION_HEADER = "X-Correlation-Id";
     private static final List<String> REMOVED_PROPAGATION_HEADERS = List.of(
             ScmTraceParentWriter.TRACEPARENT,
             "tracestate",
@@ -38,8 +39,12 @@ public class ScmCamelTracePropagationProcessor implements Processor {
             return;
         }
         REMOVED_PROPAGATION_HEADERS.forEach(message::removeHeader);
-        traceParentWriter.format(activeContext(exchange))
+        TraceContext context = activeContext(exchange);
+        traceParentWriter.format(context)
                 .ifPresent(value -> message.setHeader(ScmTraceParentWriter.TRACEPARENT, value));
+        if (context != null && context.correlationId() != null) {
+            message.setHeader(CORRELATION_HEADER, context.correlationId());
+        }
     }
 
     private TraceContext activeContext(Exchange exchange) {
