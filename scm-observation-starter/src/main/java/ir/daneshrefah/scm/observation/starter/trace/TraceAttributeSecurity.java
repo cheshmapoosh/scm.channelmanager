@@ -5,18 +5,25 @@ import java.util.Set;
 
 final class TraceAttributeSecurity {
     private static final Set<String> SAFE_JWT_FIELDS = Set.of(
-            "scm.auth.jwt.present",
-            "scm.auth.jwt.issuer",
-            "scm.auth.jwt.subject",
-            "scm.auth.jwt.username",
-            "scm.auth.jwt.exp",
-            "scm.auth.jwt.hash",
-            "uaa.jwt.present",
-            "uaa.jwt.issuer",
-            "uaa.jwt.subject",
-            "uaa.jwt.username",
-            "uaa.jwt.masked",
-            "uaa.jwt.expiration"
+            "scm.jwt.scope",
+            "scm.jwt.issuer",
+            "scm.jwt.issue_at",
+            "scm.jwt.expire_at",
+            "scm.jwt.audience",
+            "scm.jwt.generator"
+    );
+    private static final Set<String> GATEWAY_JWT_CONTEXT_FIELDS = Set.of(
+            "scm.user.nickname",
+            "scm.jwt.scope",
+            "scm.jwt.issuer",
+            "scm.client.address",
+            "scm.jwt.issue_at",
+            "scm.jwt.expire_at",
+            "scm.channel.code",
+            "scm.jwt.audience",
+            "scm.jwt.generator",
+            "scm.auth.txn_method",
+            "scm.auth.login_method"
     );
 
     private TraceAttributeSecurity() {
@@ -27,10 +34,15 @@ final class TraceAttributeSecurity {
             return false;
         }
         String normalized = fieldName.trim().toLowerCase(Locale.ROOT);
+        if ("event.category".equals(normalized)) {
+            return false;
+        }
         if (SAFE_JWT_FIELDS.contains(normalized)) {
             return true;
         }
-        if (normalized.startsWith("scm.auth.jwt.") || normalized.startsWith("uaa.jwt.")) {
+        if (normalized.startsWith("scm.jwt.")
+                || normalized.startsWith("scm.auth.jwt.")
+                || normalized.startsWith("uaa.jwt.")) {
             return false;
         }
         String compact = normalized
@@ -60,6 +72,7 @@ final class TraceAttributeSecurity {
         }
         return switch (fieldName.trim().toLowerCase(Locale.ROOT)) {
             case "@timestamp",
+                    "event.stream",
                     "event.category",
                     "event.action",
                     "event.outcome",
@@ -77,6 +90,44 @@ final class TraceAttributeSecurity {
                     "span.events" -> true;
             default -> false;
         };
+    }
+
+    static boolean isAllowedSpanEventAttribute(String fieldName) {
+        if (!isAllowed(fieldName)) {
+            return false;
+        }
+        String normalized = fieldName.trim().toLowerCase(Locale.ROOT);
+        if (GATEWAY_JWT_CONTEXT_FIELDS.contains(normalized)) {
+            return false;
+        }
+        return switch (normalized) {
+            case "@timestamp",
+                    "event.stream",
+                    "event.category",
+                    "event.action",
+                    "message",
+                    "correlation.id",
+                    "correlation.type",
+                    "trace.id",
+                    "span.id",
+                    "parent.span.id",
+                    "span.name",
+                    "span.kind",
+                    "span.start_time",
+                    "span.end_time",
+                    "span.duration_ms",
+                    "span.events" -> false;
+            default -> true;
+        };
+    }
+
+    static boolean isGatewayOnlyJwtContextField(String fieldName) {
+        if (fieldName == null || fieldName.isBlank()) {
+            return false;
+        }
+        String normalized = fieldName.trim().toLowerCase(Locale.ROOT);
+        return GATEWAY_JWT_CONTEXT_FIELDS.contains(normalized)
+                && !"scm.channel.code".equals(normalized);
     }
 
     private static boolean containsUnsafeToken(String normalized, String compact) {

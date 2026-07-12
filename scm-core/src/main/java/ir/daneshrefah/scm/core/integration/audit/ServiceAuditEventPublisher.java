@@ -27,8 +27,7 @@ public class ServiceAuditEventPublisher {
     public void recordFailure(Exchange exchange, Exception exception) {
         Error error = firstFaultError(exchange);
         String errorCode = error != null ? error.getErrorCode() : exception != null ? exception.getClass().getSimpleName() : null;
-        String errorMessage = error != null ? error.getMessage() : exception != null ? exception.getMessage() : null;
-        write(exchange, "FAILED", errorCode, errorMessage);
+        write(exchange, "FAILED", errorCode, null);
     }
 
     private void write(Exchange exchange, String status, String errorCode, String errorMessage) {

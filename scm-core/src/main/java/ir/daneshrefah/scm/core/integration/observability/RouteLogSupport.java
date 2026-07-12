@@ -46,7 +46,13 @@ public final class RouteLogSupport {
         String message = exception.getMessage()
                 .replace('\r', ' ')
                 .replace('\n', ' ')
-                .replaceAll("(?i)(password|token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*\\S+", "$1=***")
+                .replaceAll(
+                        "(?i)(password|credential|token|access[_-]?token|refresh[_-]?token|authorization|client_secret|authorization_code|pin|otp|session[_-]?id|card[_-]?number)\\s*[:=]\\s*(?:Bearer\\s+)?[^\\s,;]+",
+                        "$1=***")
+                .replaceAll("(?i)\\bBearer\\s+[^\\s,;]+", "Bearer ***")
+                .replaceAll(
+                        "(?<![A-Za-z0-9_-])[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,}(?![A-Za-z0-9_-])",
+                        "***")
                 .trim();
         if (message.length() > MAX_FAILURE_MESSAGE_LENGTH) {
             return message.substring(0, MAX_FAILURE_MESSAGE_LENGTH);

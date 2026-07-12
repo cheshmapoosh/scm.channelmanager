@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginType;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.template.context.HeaderContextResolver;
 import ir.daneshrefah.scm.uaa.starter.core.AuthenticationClientTemplate;
 import ir.daneshrefah.scm.uaa.starter.core.ClientAuthenticationRequest;
@@ -15,8 +16,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -28,10 +28,11 @@ import static ir.daneshrefah.scm.utils.constant.Constants.*;
 public class AuthenticationPluginHandler implements PluginHandler {
 
     private final ObjectProvider<AuthenticationClientTemplate> authenticationClientTemplateProvider;
+    private final CoreObservationTraceSupport observationTraceSupport;
     private final HeaderContextResolver headerContextResolver;
     private final PersonProfileLoader profileLoader;
-    private final JwtDecoder jwtDecoder;
     private static final String AUTH_HEADER = "Authorization";
+    private static final String JWT_HEADER = "jwt";
 
     @Override
     public PluginType getType() {
@@ -48,20 +49,30 @@ public class AuthenticationPluginHandler implements PluginHandler {
         if (authValue == null || !authValue.startsWith("Bearer ")) {
             throw new AuthenticationRequiredException();
         }
-        String token = authValue.substring("Bearer ".length());
-        try {
-            AuthenticationClientTemplate authenticationClientTemplate = authenticationClientTemplateProvider.getIfAvailable();
-            if (authenticationClientTemplate == null) {
-                throw new AuthenticationRequiredException();
-            }
-            ClientAuthenticationRequest authenticationRequest = convertToClientAuthenticationRequest(exchange);
-            UserAuthentication authentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            profileLoader.preparePersonProfile(authentication);
-            exchange.getIn().setHeader("jwt", jwtDecoder.decode(token));
-        } catch (JwtException e) {
+        AuthenticationClientTemplate authenticationClientTemplate = authenticationClientTemplateProvider.getIfAvailable();
+        if (authenticationClientTemplate == null) {
             throw new AuthenticationRequiredException();
         }
+        ClientAuthenticationRequest authenticationRequest = convertToClientAuthenticationRequest(exchange);
+        UserAuthentication authentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        profileLoader.preparePersonProfile(authentication);
+        preserveValidatedJwt(exchange, authentication);
+        enrichGatewayTrace(exchange);
+    }
+
+    private void preserveValidatedJwt(Exchange exchange, UserAuthentication authentication) {
+        exchange.getIn().removeHeader(JWT_HEADER);
+        UserAuthentication.AuthenticationDetail details = authentication == null ? null : authentication.getDetails();
+        Object loginData = details == null ? null : details.getLoginData();
+        if (loginData instanceof Jwt jwt) {
+            exchange.getIn().setHeader(JWT_HEADER, jwt);
+        }
+    }
+
+    private void enrichGatewayTrace(Exchange exchange) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        observationTraceSupport.enrichGatewayAuthentication(exchange, authentication);
     }
 
 

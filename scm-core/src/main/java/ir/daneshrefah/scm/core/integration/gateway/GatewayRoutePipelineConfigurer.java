@@ -8,7 +8,6 @@ import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContract;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractResolver;
 import ir.daneshrefah.scm.core.integration.gateway.contract.RequestContractDecoder;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
-import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
@@ -24,6 +23,7 @@ import org.apache.camel.model.RouteDefinition;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
@@ -37,10 +37,11 @@ public class GatewayRoutePipelineConfigurer {
     private final ServiceRouteUriResolver serviceRouteUriResolver;
     private final ScmExchangeMdc scmExchangeMdc;
     private final IncomingChannelCodeResolver incomingChannelCodeResolver;
-    private final CoreObservationTraceSupport observationTraceSupport;
 
     public void configureGatewayRoute(ChannelRouteBuildContext context,
-                                      InboundRouteDefinition inboundRoute) {
+                                      InboundRouteDefinition inboundRoute,
+                                      Consumer<Exchange> startGatewaySpan,
+                                      Consumer<Exchange> finishGatewaySpan) {
         RuntimeRoutePlan routePlan = context.routePlan();
         RuntimeServicePlan servicePlan = context.servicePlan();
         RouteDefinition route = inboundRoute.route();
@@ -68,13 +69,14 @@ public class GatewayRoutePipelineConfigurer {
 
         defineExceptionHandler(route);
         route.onCompletion()
+                .process(exchange -> finishGatewaySpan.accept(exchange))
                 .process(exchange -> scmExchangeMdc.clear())
                 .end();
         pipeline.process(exchange -> {
             exchange.setProperty(RouteLogSupport.GATEWAY_START_NANOS, System.nanoTime());
             applyIncomingChannel(exchange, routePlan, servicePlan, inboundRoute);
+            startGatewaySpan.accept(exchange);
             Map<String, String> fields = scmExchangeMdc.put(exchange);
-            observationTraceSupport.traceGatewayRequest(exchange, service);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.GATEWAY_REQUEST_RECEIVED,
                     servicePlan.gatewayChannel().getName(),
@@ -242,7 +244,6 @@ public class GatewayRoutePipelineConfigurer {
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     scmExchangeMdc.put(exchange);
-                    observationTraceSupport.traceException(exchange, exception);
                     Map<String, String> fields = scmExchangeMdc.fields(exchange);
                     log.warn("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
                             RouteLogEvents.GATEWAY_REQUEST_FAILED,

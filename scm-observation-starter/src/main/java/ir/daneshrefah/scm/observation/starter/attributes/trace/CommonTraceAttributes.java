@@ -36,6 +36,8 @@ public final class CommonTraceAttributes {
     public static final ObservationAttributeKey<String> SPAN_START_TIME = date("span.start_time", ObservationAttributePresence.ALWAYS_REQUIRED, "Span start time.");
     public static final ObservationAttributeKey<String> SPAN_END_TIME = date("span.end_time", ObservationAttributePresence.ALWAYS_REQUIRED, "Span end time.");
     public static final ObservationAttributeKey<Long> SPAN_DURATION_MS = TraceAttribute.longNumber("span.duration_ms", ObservationAttributePresence.ALWAYS_REQUIRED, "Span duration in milliseconds.");
+    public static final ObservationAttributeKey<List<?>> SPAN_EVENTS = TraceAttribute.object(
+            "span.events", listType(), ObservationAttributePresence.EVENT_OPTIONAL, "Ordered structured span events.");
     public static final ObservationAttributeKey<String> HTTP_METHOD = keyword("http.method", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP method.");
     public static final ObservationAttributeKey<String> HTTP_ROUTE = keyword("http.route", ObservationAttributePresence.EVENT_OPTIONAL, "Low-cardinality HTTP route template.");
     public static final ObservationAttributeKey<String> URL_PATH = keyword("url.path", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request path without query string.");
@@ -49,7 +51,6 @@ public final class CommonTraceAttributes {
     public static final ObservationAttributeKey<String> SCM_REQUEST_NAME = keyword("scm.request.name", ObservationAttributePresence.EVENT_OPTIONAL, "Low-cardinality gateway request name.");
     public static final ObservationAttributeKey<String> SCM_MESSAGE_ID = keyword("scm.message.id", ObservationAttributePresence.EVENT_OPTIONAL, "Protocol message identifier.");
     public static final ObservationAttributeKey<String> SCM_ROUTE_ID = keyword("scm.route.id", ObservationAttributePresence.EVENT_OPTIONAL, "Gateway route identifier.");
-    public static final ObservationAttributeKey<String> EVENT_CATEGORY = keyword("event.category", ObservationAttributePresence.EVENT_REQUIRED, "Event category.");
     public static final ObservationAttributeKey<String> EVENT_ACTION = keyword("event.action", ObservationAttributePresence.EVENT_REQUIRED, "Event action.");
     public static final ObservationAttributeKey<String> EVENT_OUTCOME = keyword("event.outcome", ObservationAttributePresence.EVENT_REQUIRED, "Event outcome.");
     public static final ObservationAttributeKey<String> ERROR_TYPE = keyword("error.type", ObservationAttributePresence.ERROR_REQUIRED, "Error type.");
@@ -69,10 +70,10 @@ public final class CommonTraceAttributes {
                 DEPLOYMENT_SERVICE_NAME, DEPLOYMENT_SERVICE_VERSION, DEPLOYMENT_ENVIRONMENT, SCM_RUNTIME,
                 SCM_CHANNEL_CODE, SCM_OBS_LEGACY_ENABLED, SCM_OBS_LEGACY_SERVICE_CODE, SCM_OBS_LEGACY_OPERATION_CODE,
                 CORRELATION_ID, CORRELATION_TYPE, TRACE_ID, SPAN_ID, PARENT_SPAN_ID,
-                SPAN_NAME, SPAN_KIND, SPAN_START_TIME, SPAN_END_TIME, SPAN_DURATION_MS,
+                SPAN_NAME, SPAN_KIND, SPAN_START_TIME, SPAN_END_TIME, SPAN_DURATION_MS, SPAN_EVENTS,
                 HTTP_METHOD, HTTP_ROUTE, URL_PATH, HTTP_STATUS_CODE, HTTP_QUERY_PRESENT, CLIENT_IP, CLIENT_ADDRESS,
                 SCM_GATEWAY_NAME, SCM_PROTOCOL, SCM_REQUEST_NAME, SCM_MESSAGE_ID, SCM_ROUTE_ID,
-                EVENT_CATEGORY, EVENT_ACTION, EVENT_OUTCOME,
+                EVENT_ACTION, EVENT_OUTCOME,
                 ERROR_TYPE, ERROR_MESSAGE, ERROR_STACK_TRACE, ERROR_CODE, ERROR_CATEGORY
         );
     }
@@ -90,5 +91,10 @@ public final class CommonTraceAttributes {
     private static ObservationAttributeKey<String> date(
             String name, ObservationAttributePresence presence, String description) {
         return TraceAttribute.date(name, presence, description);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<List<?>> listType() {
+        return (Class<List<?>>) (Class<?>) List.class;
     }
 }

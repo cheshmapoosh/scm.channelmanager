@@ -8,7 +8,6 @@ import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
 import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.observation.starter.attributes.metric.CommonMetricTags;
-import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.provider.nab.observation.attributes.NabMetricTags;
 import ir.daneshrefah.scm.provider.nab.observation.attributes.NabTraceAttributes;
 import ir.daneshrefah.scm.provider.nab.observation.NabMetricNames;
@@ -24,6 +23,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultProducer;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -32,6 +33,7 @@ public class NabProducer extends DefaultProducer {
     private static final String PROVIDER_NAME = "NAB";
     private static final String OUTCOME_SUCCESS = "success";
     private static final String OUTCOME_FAILURE = "failure";
+    private static final String OPERATION_SCOPE_PROPERTY = "scm.observation.scope.operation";
 
     private final NabEndpoint endpoint;
     private NabConfigResolver configResolver;
@@ -71,7 +73,7 @@ public class NabProducer extends DefaultProducer {
         String operation = operationName(input);
         NabProviderMetrics.CounterSet providerMetrics = metrics.provider(config.provider());
         long startedAt = System.nanoTime();
-        ObservationScope observationScope = startObservation(exchange, config, input, operation);
+        ObservationScope observationScope = activeOperationScope(exchange);
 
         log.info("NAB provider call started provider={}", config.provider());
         providerMetrics.submitted();
@@ -97,47 +99,48 @@ public class NabProducer extends DefaultProducer {
             throw e;
         } finally {
             providerMetrics.addLatency(elapsedMillis(startedAt));
-            observationScope.close();
         }
     }
 
-    private ObservationScope startObservation(Exchange exchange, NabResolvedConfig config, JsonNode input, String operation) {
-        var traceBuilder = observation.trace()
-                .span("operation.call")
-                .spanKind("client")
-                .action("operation.call")
-                .attribute(NabTraceAttributes.PROVIDER_CODE, config.provider())
-                .attribute(NabTraceAttributes.PROVIDER_NAME, PROVIDER_NAME)
-                .attribute(NabTraceAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
-                .attribute(NabTraceAttributes.OPERATION_CODE, operationCode(input))
-                .attribute(NabTraceAttributes.OPERATION_NAME, operation);
-        String correlationId = correlationId(exchange);
-        if (StringUtils.isNotBlank(correlationId)) {
-            traceBuilder.correlationId(correlationId);
-        }
-        return traceBuilder.start();
+    private ObservationScope activeOperationScope(Exchange exchange) {
+        return exchange == null ? null : exchange.getProperty(OPERATION_SCOPE_PROPERTY, ObservationScope.class);
     }
 
     private void markObservationSuccess(ObservationScope scope, NabResolvedConfig config, JsonNode output, long durationMs) {
-        scope.attribute(NabTraceAttributes.PROVIDER_CODE, config.provider())
-                .attribute(NabTraceAttributes.PROVIDER_NAME, PROVIDER_NAME)
-                .attribute(NabTraceAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
-                .attribute(NabTraceAttributes.PROVIDER_STATUS, OUTCOME_SUCCESS)
-                .attribute(NabTraceAttributes.PROVIDER_DURATION_MS, durationMs)
-                .attribute(NabTraceAttributes.PROVIDER_RESPONSE_CODE, responseCode(output))
-                .success();
+        if (scope == null) {
+            return;
+        }
+        Map<String, Object> attributes = providerEventAttributes(config, durationMs, OUTCOME_SUCCESS);
+        put(attributes, NabTraceAttributes.PROVIDER_RESPONSE_CODE.name(), responseCode(output));
+        scope.event("provider.nab.call", attributes);
     }
 
     private void markObservationFailure(ObservationScope scope, NabResolvedConfig config, RuntimeException exception, long durationMs) {
-        scope.attribute(NabTraceAttributes.PROVIDER_CODE, config.provider())
-                .attribute(NabTraceAttributes.PROVIDER_NAME, PROVIDER_NAME)
-                .attribute(NabTraceAttributes.PROVIDER_TYPE, PROVIDER_TYPE)
-                .attribute(NabTraceAttributes.PROVIDER_STATUS, OUTCOME_FAILURE)
-                .attribute(NabTraceAttributes.PROVIDER_DURATION_MS, durationMs)
-                .attribute(NabTraceAttributes.PROVIDER_ERROR_CODE, errorCode(exception))
-                .attribute(NabTraceAttributes.PROVIDER_ERROR_MESSAGE, safeMessage(exception))
-                .failure(exception)
-                .attribute(CommonTraceAttributes.ERROR_MESSAGE, safeMessage(exception));
+        if (scope == null) {
+            return;
+        }
+        Map<String, Object> attributes = providerEventAttributes(config, durationMs, OUTCOME_FAILURE);
+        put(attributes, NabTraceAttributes.PROVIDER_ERROR_CODE.name(), errorCode(exception));
+        put(attributes, "error.type", exception == null ? null : exception.getClass().getName());
+        put(attributes, "error.code", errorCode(exception));
+        scope.event("provider.nab.call", attributes);
+    }
+
+    private Map<String, Object> providerEventAttributes(NabResolvedConfig config, long durationMs, String outcome) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        put(attributes, NabTraceAttributes.PROVIDER_CODE.name(), config == null ? null : config.provider());
+        put(attributes, NabTraceAttributes.PROVIDER_NAME.name(), PROVIDER_NAME);
+        put(attributes, NabTraceAttributes.PROVIDER_TYPE.name(), PROVIDER_TYPE);
+        put(attributes, NabTraceAttributes.PROVIDER_STATUS.name(), outcome);
+        put(attributes, NabTraceAttributes.PROVIDER_DURATION_MS.name(), Math.max(0L, durationMs));
+        put(attributes, "event.outcome", outcome);
+        return attributes;
+    }
+
+    private void put(Map<String, Object> attributes, String name, Object value) {
+        if (attributes != null && name != null && !name.isBlank() && value != null) {
+            attributes.put(name, value);
+        }
     }
 
     private void recordObservationMetrics(
@@ -339,30 +342,6 @@ public class NabProducer extends DefaultProducer {
             return gatewayName;
         }
         return StringUtils.defaultString(exchange.getMessage().getHeader("gatewayName", String.class));
-    }
-
-    private String correlationId(Exchange exchange) {
-        String value = exchange.getProperty(Message.CORRELATION_ID, String.class);
-        if (StringUtils.isNotBlank(value)) {
-            return value;
-        }
-        value = exchange.getMessage().getHeader(Message.CORRELATION_ID, String.class);
-        if (StringUtils.isNotBlank(value)) {
-            return value;
-        }
-        value = exchange.getMessage().getHeader("X-Correlation-Id", String.class);
-        if (StringUtils.isNotBlank(value)) {
-            return value;
-        }
-        value = exchange.getMessage().getHeader("X-SCM-Correlation-ID", String.class);
-        if (StringUtils.isNotBlank(value)) {
-            return value;
-        }
-        value = exchange.getMessage().getHeader("X-SCM-Client-Correlation-ID", String.class);
-        if (StringUtils.isNotBlank(value)) {
-            return value;
-        }
-        return exchange.getMessage().getHeader("correlationId", String.class);
     }
 
     private long elapsedMillis(long startedAt) {

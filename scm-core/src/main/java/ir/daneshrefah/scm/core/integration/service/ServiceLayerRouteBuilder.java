@@ -216,6 +216,7 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
 
         defineExceptionHandler(route, servicePlan);
         route.onCompletion()
+                .process(observationTraceSupport::finishServiceExecutionOnCompletion)
                 .process(exchange -> scmExchangeMdc.clear())
                 .end();
         applyServiceStart(route, servicePlan);
@@ -537,7 +538,6 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
         Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
         scmExchangeMdc.put(exchange);
         observationTraceSupport.finishServiceExecutionFailure(exchange, exception);
-        observationTraceSupport.traceException(exchange, exception);
         globalErrorHandler.handle(exchange);
         servicePluginMetrics.recordServiceExecution(
                 servicePlan.gatewayChannel().getName(),

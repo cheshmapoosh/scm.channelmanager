@@ -51,8 +51,8 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                     scmExchangeMdc.put(exchange);
                     ClientContract contract = resolveContract(exchange);
                     Object body = exchange.getMessage().getBody();
+                    boolean scmFault = body instanceof ScmFault;
                     Object encodedBody;
-                    traceResponse(exchange);
                     if (body instanceof ScmFault fault) {
                         encodedBody = encodeFault(exchange, fault, contract);
                     } else {
@@ -62,6 +62,7 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                                 contract.name(), serviceVersion(exchange), exchange.getFromRouteId(), exchange.getExchangeId());
                     }
                     exchange.getMessage().setBody(encodedBody);
+                    observationTraceSupport.gatewayResponseCompleted(exchange, scmFault);
                 })
                 .marshal()
                 .json(JsonLibrary.Jackson);
@@ -158,8 +159,4 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
         return service != null ? service.getCode() : null;
     }
 
-    private void traceResponse(Exchange exchange) {
-        Service service = exchange.getProperty(Message.SERVICE, Service.class);
-        observationTraceSupport.traceGatewayResponse(exchange, service);
-    }
 }

@@ -169,11 +169,10 @@ operation.call
 
 ### ۳.۵. Span event
 
-Span event یک رخداد نقطه‌ای داخل span جاری است و span مستقل جدید ایجاد نمی‌کند. برای رویدادهایی مانند اجرای plugin یا دریافت پاسخ provider مناسب است:
+Span event یک رخداد نقطه‌ای داخل span جاری است و span مستقل جدید ایجاد نمی‌کند. هر invocation از plugin دقیقاً یک completion event داخل span همان لایه ثبت می‌کند:
 
 ```text
-plugin.before.started
-plugin.before.completed
+plugin.execute
 provider.response.received
 ```
 
@@ -183,11 +182,13 @@ provider.response.received
 {
   "span.events": [
     {
-      "name": "plugin.before.completed",
+      "name": "plugin.execute",
       "timestamp": "2026-07-05T10:15:30Z",
       "attributes": {
         "plugin.name": "requestTransformer",
-        "plugin.outcome": "success"
+        "plugin.layer": "service",
+        "plugin.duration_ms": 12,
+        "event.outcome": "success"
       }
     }
   ]
@@ -321,6 +322,8 @@ gateway.receive
 ```
 
 `trace.id` در هر سه span ثابت است. هر span یک `span.id` مستقل دارد و `parent.span.id` ارتباط آن‌ها را مشخص می‌کند. `correlation.id` نیز در محدودهٔ پردازش محلی `scm-web` ثابت می‌ماند.
+هر سه span مقدار غیرمنفی `span.duration_ms` دارند که از elapsed time یکنواخت محاسبه می‌شود؛ `span.start_time` و `span.end_time` همچنان UTC هستند.
+هر trace document فقط از `event.stream=trace` برای هویت stream استفاده می‌کند و `event.category=trace` را تکرار نمی‌کند؛ `event.action` و `event.outcome` همچنان الزامی هستند.
 
 ### `gateway.receive`
 
@@ -421,14 +424,16 @@ base-name pattern: scm-${spring.application.name}-${spring.profiles.active}-${sc
 stream-specific directory override -> scm.observation.file.root-directory -> ${user.home}/scm/obs
 ```
 
-`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The starter appends stream, hour, roll index, and a format-specific extension:
+`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The active TRACE filename is stable; only rolled TRACE files append the hour and roll index:
 
 ```text
-simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
-jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+active simple: trace-scm-{appName}-{env}-{namespace}-{instanceId}.log
+rolled simple: trace-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
+active jsonl:  trace-scm-{appName}-{env}-{namespace}-{instanceId}.jsonl
+rolled jsonl:  trace-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
-Files are under `{root}/{appName}/{env}/{namespace}/{stream}/`. The root directory is part of the physical path, not the filename. File names never include `scm.channel.code` or the Config label. Both patterns retain the hour token and roll index. Observation files are not gzipped and do not use a separate archive directory.
+Files are under `{root}/{appName}/{env}/{namespace}/{stream}/`. The root directory is part of the physical path, not the filename. File names never include `scm.channel.code` or the Config label. The active TRACE name contains no date, hour, or roll index; its rollover pattern retains both `%d` and `%i`. Observation files are not gzipped and do not use a separate archive directory.
 
 Every simple line is UTF-8, single-line `key=value` output and contains exactly one canonical stream identity: `stream=log`, `stream=trace`, or `stream=audit`. Text values are safely quoted and escaped; null values are omitted. Simple TRACE and AUDIT output is not JSON with a stream prefix.
 
@@ -443,11 +448,11 @@ Host modules apply legacy projection at their business entry points only:
 - `scm-cache`: default behavior is `scm.observation.legacy.enabled=false`.
 - `scm-cm-connector`: provider/technical spans are not legacy by default; a root span can be legacy only when CM connector is the direct business entry point and configured service/operation codes are supplied.
 
-Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Enabling the AUDIT console does not change the default `audit.enabled=false` policy. Starter defaults keep consoles disabled and files enabled in other profiles. `clean-history-on-start=false` remains the default; current and rolled JSONL files keep final names while Filebeat reads them. Optional simple `.log` files are for human use and are not part of that ingestion contract.
+Console output for LOG, TRACE, and AUDIT is enabled only in the `dev` profile. Enabling the AUDIT console does not change the default `audit.enabled=false` policy. Starter defaults keep consoles disabled and files enabled in other profiles. `clean-history-on-start=false` remains the default; the active TRACE JSONL file has a stable final name and rolled files have distinct final names while Filebeat reads them. Optional simple `.log` files are for human use and are not part of that ingestion contract.
 
 The core starter defines no HTTP server properties, defaults, request filter, or Servlet auto-configuration. `scm-observation-servlet-starter` owns generic Servlet request MDC and HTTP server tracing. Other transports can add separate adapters without changing this core.
 
-Business TRACE should be created only for real end-user channel calls, not actuator, internal, admin/config, static, documentation, or background job endpoints.
+Business TRACE should be created only for real end-user channel calls or an actual scheduled business execution, not application startup, infrastructure initialization, actuator, internal, admin/config, static, documentation, or background-job registration endpoints.
 
 Distributed trace propagation uses the standard W3C `traceparent` header as the source of truth. Custom headers such as `X-SCM-Trace-ID`, `X-SCM-Span-ID`, and `X-SCM-Parent-Span-ID` are not distributed trace propagation sources.
 
@@ -494,29 +499,30 @@ Provider log می‌تواند جزئیات امن و موردنیاز عملی�
 
 ## ۱۱. قواعد Plugin
 
-Wrapper اجرای plugin باید eventهای زیر را منتشر کند:
+Wrapper میزبان مدت اجرای واقعی هر invocation را با elapsed time یکنواخت اندازه می‌گیرد و پس از پایان همان invocation دقیقاً یک span event ثبت می‌کند:
 
 ```text
-PLUGIN_BEFORE_STARTED
-PLUGIN_BEFORE_COMPLETED
-PLUGIN_AFTER_STARTED
-PLUGIN_AFTER_COMPLETED
-PLUGIN_FAILED
+plugin.execute
 ```
 
-Listener میزبان در `scm-web` آن‌ها را به span eventهای زیر تبدیل می‌کند:
+این event مستقیماً به scope بازِ لایه‌ای متصل می‌شود که plugin در آن اجرا شده است. Wrapper لایه را مشخص می‌کند و scope مربوط به `gateway`، `service` یا `operation` را از property محلی همان Camel `Exchange` می‌خواند؛ بنابراین اتصال event به span جاری فقط به `ThreadLocal` وابسته نیست و span مستقلی برای plugin ساخته نمی‌شود.
+
+Attributeهای completion event به metadata امن و ثبت‌شده محدود هستند:
 
 ```text
-plugin.before.started
-plugin.before.completed
-plugin.after.started
-plugin.after.completed
-plugin.failed
+plugin.name
+plugin.type
+plugin.phase
+plugin.layer
+plugin.duration_ms
+event.outcome
+error.type (failure only)
+error.code (failure only)
 ```
 
-Plugin می‌تواند برای log معمولی از `@Slf4j` استفاده کند. اتصال رسمی به observation، تولید structured observation log، افزودن span event و metric در ماژول میزبان انجام می‌شود.
+`plugin.duration_ms` از فاصلهٔ monotonic پیرامون invocation واقعی محاسبه می‌شود و منفی نیست. event شکست پیش از بسته‌شدن scope والد ذخیره می‌شود تا سند نهایی span آن را حتی در outcome شکست نیز نگه دارد.
 
-Attributeهای plugin باید به metadata امن مانند نام، type، class، phase، order، outcome و duration محدود باشند. ورودی یا خروجی کامل provider نباید به span event افزوده شود.
+Plugin می‌تواند برای log معمولی از `@Slf4j` استفاده کند. اتصال رسمی به observation، تولید structured observation log، افزودن span event و metric در wrapper میزبان انجام می‌شود. ورودی و خروجی plugin، payload، token، header، credential و exception message نامحدود نباید به span event افزوده شوند.
 
 ## ۱۲. قانون Groovy plugin
 
@@ -615,19 +621,16 @@ scmEventPublisher.publish(
 
 ### انتشار plugin event
 
-Wrapper مدت اجرا و outcome را منتشر می‌کند:
+Wrapper پس از invocation، scope همان لایه را از `Exchange` می‌گیرد و یک completion event ثبت می‌کند:
 
 ```java
-scmEventPublisher.publish(
-        ScmPluginEvent.of(
-                ScmPluginEventType.PLUGIN_BEFORE_COMPLETED,
-                Map.of(
-                        "plugin.name", pluginName,
-                        "plugin.outcome", "success",
-                        "plugin.duration_ms", durationMs
-                )
-        )
-);
+ObservationScope layerScope = activeLayerScope(exchange, layer);
+layerScope.event("plugin.execute", Map.of(
+        "plugin.name", pluginName,
+        "plugin.layer", layer,
+        "plugin.duration_ms", durationMs,
+        "event.outcome", "success"
+));
 ```
 
 ### مدیریت event در `scm-web`

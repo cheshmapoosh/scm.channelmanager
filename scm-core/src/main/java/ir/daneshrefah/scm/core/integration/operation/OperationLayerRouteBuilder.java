@@ -171,6 +171,9 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 .setProperty(Message.OPERATION, constant(operation));
 
         defineExceptionHandler(route, operation);
+        route.onCompletion()
+                .process(exchange -> observationTraceSupport.finishOperationCallOnCompletion(exchange, operation))
+                .end();
         applyMetrics(route, operation);
 
         List<PluginDetail> orderedBeforePluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.BEFORE);
@@ -178,6 +181,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         buildTarget(route, operation);
         List<PluginDetail> orderedAfterPluginDetails = pluginResolverService.resolveOrderedPluginDetails(operation, PluginPhase.AFTER);
         applyAfterPlugins(route, orderedAfterPluginDetails, Map.of(Message.OPERATION, operation));
+        route.process(exchange -> observationTraceSupport.finishOperationCallSuccess(exchange, operation));
         applyMetricsSuccess(route, operation);
 
         log.info("event={} layer=operation operationName={} operationType={} routeId={} fromUri={} outcome=success",
@@ -230,10 +234,11 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 .process(exchange -> {
                     Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
                     String routeId = exchange.getFromRouteId();
-                    observationTraceSupport.finishOperationCallFailure(exchange, operation, exception);
                     recordOperationMetrics(exchange, operation, exception);
-                    observationTraceSupport.traceException(exchange, exception);
-                    log.error("[Error Handler] Route {} threw: {}", routeId, exception.getMessage(), exception);
+                    log.error("[Error Handler] Route {} failed failureType={} failureMessage={}",
+                            routeId,
+                            RouteLogSupport.failureType(exception),
+                            RouteLogSupport.failureMessage(exception));
                     if (Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class))) {
                         // CMNEW-119: service-layer direct calls must receive SCMFault, not protocol-specific gateway output.
                         globalErrorHandler.handle(exchange);
@@ -243,11 +248,18 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 })
 //                .filter(exchange -> !Boolean.TRUE.equals(exchange.getProperty(Message.SERVICE_LAYER_INVOCATION, Boolean.class)))
                 .to(Routes.GLOBAL_ERROR_HANDLER)
+                .process(exchange -> observationTraceSupport.finishOperationCallFailure(
+                        exchange,
+                        operation,
+                        exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class)))
                 .end();
     }
 
     private void applyMetrics(RouteDefinition route, Operation operation) {
-        route.process(exchange -> exchange.setProperty(RouteLogSupport.OPERATION_START_NANOS, System.nanoTime()));
+        route.process(exchange -> {
+            exchange.setProperty(RouteLogSupport.OPERATION_START_NANOS, System.nanoTime());
+            observationTraceSupport.startOperationCall(exchange, operation);
+        });
     }
 
     private void applyMetricsSuccess(RouteDefinition route, Operation operation) {
@@ -270,7 +282,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         OperationTypeHandler handler = operationTypeHandlers.stream()
                 .filter(h -> Objects.equals(operation.getType(), h.getOperationType()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Operation type handler not found for operation " + operation.getName()));
-        handler.internalConfig(route, operation, observationTraceSupport);
+        handler.config(route, operation);
     }
 
     private void applyAfterPlugins(RouteDefinition route, List<PluginDetail> orderedAfterPluginDetails, Map<String, ?> properties) {

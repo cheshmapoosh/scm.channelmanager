@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.gateway;
 
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.service.GatewayService;
+import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
@@ -12,6 +13,7 @@ import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
@@ -30,6 +32,7 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
     private final List<GatewayInboundRouteFactory> inboundRouteFactories;
     private final GatewayRoutePipelineConfigurer gatewayRoutePipelineConfigurer;
     private final RuntimeRouteActivation runtimeRouteActivation;
+    private final CoreObservationTraceSupport observationTraceSupport;
 
     @Override
     public void configure() {
@@ -179,7 +182,11 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
                     inboundRoute,
                     gatewayRouteIds
             );
-            gatewayRoutePipelineConfigurer.configureGatewayRoute(new ChannelRouteBuildContext(routePlan, servicePlan), inboundRoute);
+            gatewayRoutePipelineConfigurer.configureGatewayRoute(
+                    new ChannelRouteBuildContext(routePlan, servicePlan),
+                    inboundRoute,
+                    exchange -> startGatewayReceive(exchange, servicePlan),
+                    this::finishGatewayReceive);
         } catch (RuntimeException exception) {
             log.error("event={} layer=gateway routeId={} gatewayName={} targetKind={} serviceCode={} serviceVersion={} outcome=failed failureType={} failureMessage={}",
                     RouteLogEvents.GATEWAY_ROUTE_CONSTRUCTION_FAILED,
@@ -193,6 +200,14 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
                     exception);
             throw exception;
         }
+    }
+
+    private void startGatewayReceive(Exchange exchange, RuntimeServicePlan servicePlan) {
+        observationTraceSupport.startGatewayReceive(exchange, servicePlan.service());
+    }
+
+    private void finishGatewayReceive(Exchange exchange) {
+        observationTraceSupport.finishGatewayReceive(exchange);
     }
 
     private void validateUniqueGatewayRouteId(
