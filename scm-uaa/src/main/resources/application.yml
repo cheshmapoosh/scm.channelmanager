@@ -208,12 +208,31 @@ scm:
 
   cache:
     client:
-      distributed: ${SCM_CACHE_DISTRIBUTED:false}
-      config:
-        cluster-name: ${SCM_CACHE_CLUSTER_NAME:scm}
-        network-config:
-          addresses:
-            - ${SCM_CACHE_ADDRESS:127.0.0.1:5701}
+      distributed: ${SCM_CACHE_CLIENT_DISTRIBUTED:${SCM_CACHE_DISTRIBUTED:false}}
+      default-type: ${SCM_CACHE_CLIENT_DEFAULT_TYPE:remote}
+      remote:
+        cluster-name: ${SCM_CACHE_REMOTE_CLUSTER_NAME:${SCM_CACHE_CLUSTER_NAME:scm-cache}}
+        addresses: ${SCM_CACHE_REMOTE_ADDRESSES:${SCM_CACHE_ADDRESS:127.0.0.1:5701}}
+      local:
+        ttl: ${SCM_CACHE_LOCAL_TTL:0s}
+        maximum-size: ${SCM_CACHE_LOCAL_MAXIMUM_SIZE:10000}
+      near:
+        enabled: ${SCM_CACHE_NEAR_ENABLED:true}
+        maximum-size: ${SCM_CACHE_NEAR_MAXIMUM_SIZE:10000}
+        invalidate-on-change: ${SCM_CACHE_NEAR_INVALIDATE_ON_CHANGE:true}
+        in-memory-format: ${SCM_CACHE_NEAR_IN_MEMORY_FORMAT:OBJECT}
+      caches:
+        session_cache:
+          type: ${SCM_CACHE_SESSION_TYPE:near}
+          remote-name: ${SCM_CACHE_SESSION_REMOTE_NAME:session_cache}
+          maximum-size: ${SCM_CACHE_SESSION_MAXIMUM_SIZE:10000}
+        user_cache:
+          type: ${SCM_CACHE_USER_TYPE:near}
+          remote-name: ${SCM_CACHE_USER_REMOTE_NAME:user_cache}
+          maximum-size: ${SCM_CACHE_USER_MAXIMUM_SIZE:10000}
+        jwt:jti:
+          type: ${SCM_CACHE_JWT_JTI_TYPE:remote}
+          remote-name: ${SCM_CACHE_JWT_JTI_REMOTE_NAME:jwt:jti}
 
   otp:
     ttl: ${SCM_OTP_TTL:${SCM_OTP_TTL_MINUTES:1}}
