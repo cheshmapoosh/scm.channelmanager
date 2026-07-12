@@ -1,12 +1,13 @@
 # scm-cm-connector
 
-`scm-cm-connector` connects the legacy CM system to SCM-zone services.
+`scm-cm-connector` remains the HTTP bridge between the legacy CM system and SCM-zone services.
 
 It uses:
 
 - `scm-uaa-starter` for OAuth2 Resource Server security,
 - `scm-cache-starter` for Hazelcast-backed cache infrastructure,
-- `scm-observation-starter` for logs, traces, and metrics.
+- `scm-observation-starter` for the transport-neutral observation API,
+- `scm-observation-servlet-starter` for Servlet request correlation and HTTP server observation.
 
 ## Endpoints
 
@@ -45,6 +46,16 @@ Ownership must be established before session data is returned.
 ## Observation
 
 The connector records low-cardinality logs, traces, and metrics for session reads, cache access, ownership checks, OTP delegation, and error paths.
+
+The Servlet adapter owns the compatible HTTP server property namespace. CM Connector retains its service-specific request span policy:
+
+```yaml
+scm:
+  observation:
+    http:
+      server:
+        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:cm-connector.http.request}
+```
 
 Never log or tag tokens, subjects, nicknames, terminal codes, session ids, JWT ids, raw cache keys, OTPs, passwords, or full cache values.
 

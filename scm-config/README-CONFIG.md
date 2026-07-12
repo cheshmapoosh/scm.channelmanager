@@ -25,7 +25,7 @@
 | `src/main/resources/application-test.yml` | تنظیمات test | مقدارهای test خود Config Server را local و variable-based نگه میدارد. |
 | `src/main/resources/application-pilot.yml` | تنظیمات pilot | مقدارهای pilot را local نگه میدارد و secretها باید از محیط امن بیایند. |
 | `src/main/resources/application-prod.yml` | تنظیمات prod | مقدارهای prod را local نگه میدارد و passwordها و encryption key نباید hardcode شوند. |
-| `config-repo/<service>/application-*.yml` | seed فایلهای Config Repo | نمونه فایلهای متغیر برای سرویسها هستند و فقط keyهای flat مثل `SCM_DB_URL` دارند. |
+| مخزن خارجی Spring Cloud Config | تنظیمات سرویس‌ها | خارج از این source tree مدیریت می‌شود و propertyهای هر محیط را از repository و runtime امن در اختیار Config Server می‌گذارد. |
 
 ## 4. متغیرهای عمومی
 

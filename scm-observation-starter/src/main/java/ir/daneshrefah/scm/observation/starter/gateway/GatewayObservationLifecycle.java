@@ -48,13 +48,13 @@ public class GatewayObservationLifecycle {
             traceScope = observation.trace()
                     .source(GatewayObservationLifecycle.class)
                     .span(GATEWAY_RECEIVE)
-                    .spanKind(spanKind(context.protocol()))
+                    .spanKind(context.spanKind())
                     .correlationId(context.correlationId())
                     .traceId(context.traceId())
                     .spanId(context.gatewaySpanId())
                     .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, context.gatewayName())
                     .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, businessChannelCode(context.channelCode()))
-                    .attribute(CommonTraceAttributes.SCM_PROTOCOL, context.protocol().value())
+                    .attribute(CommonTraceAttributes.SCM_PROTOCOL, context.protocol())
                     .attribute(CommonTraceAttributes.SCM_REQUEST_NAME, context.requestName())
                     .attribute(CommonTraceAttributes.SCM_MESSAGE_ID, context.messageId())
                     .attribute(CommonTraceAttributes.SCM_ROUTE_ID, safeRequest.routeId())
@@ -89,7 +89,7 @@ public class GatewayObservationLifecycle {
     }
 
     private GatewayObservationContext context(GatewayObservationRequest request) {
-        GatewayProtocol protocol = request.protocol() == null ? GatewayProtocol.UNKNOWN : request.protocol();
+        String protocol = textOrDefault(request.protocol(), "unknown");
         return new GatewayObservationContext(
                 textOrGenerate(request.correlationId(), ObservationIds.correlationId()),
                 textOrGenerate(request.traceId(), ObservationIds.traceId()),
@@ -97,7 +97,8 @@ public class GatewayObservationLifecycle {
                 textOrDefault(request.gatewayName(), observationContext.gatewayName()),
                 textOrDefault(request.channelCode(), observationContext.channelCode()),
                 protocol,
-                textOrDefault(request.requestName(), protocol.value()),
+                textOrDefault(request.spanKind(), "server"),
+                textOrDefault(request.requestName(), protocol),
                 textOrNull(request.messageId())
         );
     }
@@ -123,7 +124,7 @@ public class GatewayObservationLifecycle {
                 .tag("app_profile", observationContext.appProfile())
                 .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
                 .tag("gateway_name", context.gatewayName())
-                .tag(CommonMetricTags.PROTOCOL, context.protocol().value())
+                .tag(CommonMetricTags.PROTOCOL, context.protocol())
                 .tag(CommonMetricTags.REQUEST_NAME, context.requestName())
                 .tag(CommonMetricTags.OUTCOME, outcome)
                 .increment();
@@ -134,7 +135,7 @@ public class GatewayObservationLifecycle {
                 .tag("app_profile", observationContext.appProfile())
                 .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
                 .tag("gateway_name", context.gatewayName())
-                .tag(CommonMetricTags.PROTOCOL, context.protocol().value())
+                .tag(CommonMetricTags.PROTOCOL, context.protocol())
                 .tag(CommonMetricTags.REQUEST_NAME, context.requestName())
                 .tag(CommonMetricTags.OUTCOME, outcome)
                 .record(durationMs, TimeUnit.MILLISECONDS);
@@ -146,7 +147,7 @@ public class GatewayObservationLifecycle {
                     .tag("app_profile", observationContext.appProfile())
                     .tag(CommonMetricTags.CHANNEL_CODE, context.channelCode())
                     .tag("gateway_name", context.gatewayName())
-                    .tag(CommonMetricTags.PROTOCOL, context.protocol().value())
+                    .tag(CommonMetricTags.PROTOCOL, context.protocol())
                     .tag(CommonMetricTags.REQUEST_NAME, context.requestName())
                     .tag(CommonMetricTags.OUTCOME, outcome)
                     .tag(CommonMetricTags.ERROR_CODE, result.errorCode())
@@ -159,10 +160,6 @@ public class GatewayObservationLifecycle {
         traceScope.attribute(CommonTraceAttributes.ERROR_CODE, result.errorCode());
         traceScope.attribute(CommonTraceAttributes.ERROR_TYPE, result.errorType());
         traceScope.attribute(CommonTraceAttributes.ERROR_MESSAGE, result.errorMessage());
-    }
-
-    private String spanKind(GatewayProtocol protocol) {
-        return protocol == GatewayProtocol.MQ || protocol == GatewayProtocol.JMS ? "consumer" : "server";
     }
 
     private String outcome(GatewayObservationResult result) {

@@ -26,7 +26,7 @@
 | `src/main/resources/application-test.yml` | تنظیمات test | فقط Config Server را bootstrap میکند و مقدارهای UAA باید از Config Server بیایند. |
 | `src/main/resources/application-pilot.yml` | تنظیمات pilot | فقط Config Server را bootstrap میکند و نبود Config Server باید startup را شکست دهد. |
 | `src/main/resources/application-prod.yml` | تنظیمات prod | فقط Config Server را bootstrap میکند و مقدارهای حساس باید از Secret Management بیایند. |
-| `scm-config/config-repo/scm-uaa/application-*.yml` | فایلهای متغیر Config Server | متغیرهای محیطی UAA مثل `SCM_UAA_BASE_URL` و cache client را به صورت flat نگه میدارند. |
+| مخزن خارجی Spring Cloud Config | تنظیمات runtime غیر-dev | خارج از این source tree مدیریت می‌شود و مقدارهای UAA مانند base URL و cache client را از Config Server یا environment امن تأمین می‌کند. |
 
 ## 4. متغیرهای عمومی
 

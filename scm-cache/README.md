@@ -1,6 +1,6 @@
 # scm-cache
 
-`scm-cache` is the SCM Hazelcast server/member process. It owns the embedded Hazelcast member bootstrap, server-side health checks, readiness/liveness probes, and Prometheus export.
+`scm-cache` is the SCM Hazelcast server/member process. It owns the embedded Hazelcast member bootstrap, persistence/bootstrap configuration, server-side health checks, readiness/liveness probes, and Prometheus export. It has no business or direct cache-management REST API.
 
 `scm-cache-starter` remains the client-side cache integration module. Client cache metrics and auto-instrumentation are intentionally deferred to a later cycle.
 
@@ -9,9 +9,9 @@
 The service uses exactly two conceptual ports:
 
 - `5701` named `hazelcast` for Hazelcast cluster/member communication.
-- `8080` named `management` for the main Spring Boot web server and Actuator endpoints.
+- `8080` named `management` for the main Spring Boot web server and Actuator endpoints only.
 
-Actuator runs on the main web server port. Do not configure `management.server.port`, and do not add a separate actuator port.
+Actuator runs on the main web server port. Port `8080` is management-only; it does not expose business or direct cache-management controllers. Do not configure `management.server.port`, and do not add a separate actuator port.
 
 ## Actuator Endpoints
 
@@ -109,6 +109,8 @@ The health reason `capacity_ratio_unavailable` means the element is materialized
 
 `ScmCacheInitLogging` is startup-log-only. It creates the initial lifecycle correlation id and minimal structured arguments before the normal Spring observation API is fully available. It must not contain business logic, transaction logic, repository access, health logic, or Hazelcast bootstrap logic.
 
+When `scm.observation.enabled=false` or `scm.observation.log.enabled=false`, the shared `SCM_FALLBACK_CONSOLE` appender preserves ordinary diagnostic console logs. It excludes SCM TRACE and AUDIT marker events and never writes observation files. When structured LOG observation is enabled, the fallback remains inactive to avoid duplicate output.
+
 Startup/context/init logs use explicit `correlation.type=lifecycle`; they must not fall back to `unknown`.
 
 Event categories:
@@ -120,6 +122,8 @@ scm.cache.health
 ```
 
 ## Observation Routing
+
+`scm-cache` uses the transport-neutral `scm-observation-starter` only. It does not depend on `scm-observation-servlet-starter`, so Actuator, `/livez`, and `/readyz` requests do not create SCM HTTP request TRACE records and do not receive SCM request-correlation MDC behavior.
 
 Every LOG, TRACE, and AUDIT record includes:
 
@@ -197,7 +201,7 @@ AUDIT  = disabled
 METRIC = enabled
 ```
 
-Metrics follow the standard Actuator and Micrometer flow:
+`scm-cache` explicitly sets `scm.observation.metric.enabled=true` as service policy. Metrics follow the standard Actuator and Micrometer flow:
 
 ```text
 Metric -> Actuator -> Micrometer -> Prometheus -> Grafana

@@ -7,7 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class GatewayObservationRequest {
-    private final GatewayProtocol protocol;
+    private final String protocol;
+    private final String spanKind;
     private final String gatewayName;
     private final String channelCode;
     private final String correlationId;
@@ -21,6 +22,7 @@ public final class GatewayObservationRequest {
 
     private GatewayObservationRequest(Builder builder) {
         this.protocol = builder.protocol;
+        this.spanKind = builder.spanKind;
         this.gatewayName = builder.gatewayName;
         this.channelCode = builder.channelCode;
         this.correlationId = builder.correlationId;
@@ -37,8 +39,12 @@ public final class GatewayObservationRequest {
         return new Builder();
     }
 
-    public GatewayProtocol protocol() {
+    public String protocol() {
         return protocol;
+    }
+
+    public String spanKind() {
+        return spanKind;
     }
 
     public String gatewayName() {
@@ -82,7 +88,8 @@ public final class GatewayObservationRequest {
     }
 
     public static final class Builder {
-        private GatewayProtocol protocol = GatewayProtocol.UNKNOWN;
+        private String protocol = "unknown";
+        private String spanKind = "server";
         private String gatewayName;
         private String channelCode;
         private String correlationId;
@@ -97,8 +104,13 @@ public final class GatewayObservationRequest {
         private Builder() {
         }
 
-        public Builder protocol(GatewayProtocol protocol) {
-            this.protocol = protocol == null ? GatewayProtocol.UNKNOWN : protocol;
+        public Builder protocol(String protocol) {
+            this.protocol = protocol;
+            return this;
+        }
+
+        public Builder spanKind(String spanKind) {
+            this.spanKind = spanKind;
             return this;
         }
 

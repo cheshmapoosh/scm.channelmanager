@@ -25,7 +25,6 @@
 | `src/main/resources/application-test.yml` | تنظیمات test | فقط Config Server را bootstrap میکند و retry بیشتری دارد. |
 | `src/main/resources/application-pilot.yml` | تنظیمات pilot | فقط Config Server را bootstrap میکند و نبود Config Server باید startup را شکست دهد. |
 | `src/main/resources/application-prod.yml` | تنظیمات prod | فقط Config Server را bootstrap میکند و مقدارهای حساس باید از Secret یا محیط امن بیایند. |
-| `scm-config/config-repo/scm-cache/application-*.yml` | فایلهای متغیر Config Server | متغیرهای محیطی cache مانند DB و نام کلاستر را به صورت flat نگه میدارند. |
 
 ## 4. متغیرهای عمومی
 
@@ -36,7 +35,7 @@
 | `SCM_METADATA_NAMESPACE` | namespace اجرا | در Kubernetes از metadata.namespace میآید و در dev مقدار local دارد. |
 | `SCM_METADATA_INSTANCE_ID` | شناسه نمونه | شناسه node یا pod است. اگر تکراری باشد تشخیص عضو مشکل دار سخت میشود. |
 | `SCM_METADATA_TIME_ZONE` | timezone فایل | اگر خالی باشد timezone سیستم JVM استفاده میشود و فقط برای نام فایلهای observation است. |
-| `SCM_SERVER_PORT` | پورت سرویس | پورت HTTP سرویس است. مقدار اشتباه باعث شکست health check یا route میشود. |
+| `SCM_SERVER_PORT` | پورت مدیریت | پورت HTTP مربوط به Actuator، health و probeها است. مقدار اشتباه باعث شکست health check و probeها میشود. |
 | `SCM_DB_URL` | آدرس دیتابیس | آدرس JDBC دیتابیس مورد نیاز cache است. اگر اشتباه باشد سرویس بالا نمیآید. |
 | `SCM_DB_USERNAME` | کاربر دیتابیس | نام کاربری دیتابیس است و مقدار حساس محسوب میشود. نباید در ticket، screenshot یا chat ارسال شود. |
 | `SCM_DB_PASSWORD` | رمز دیتابیس | رمز دیتابیس است و کاملاً حساس است. در pilot/prod باید از Secret Management بیاید. |
@@ -55,7 +54,6 @@
 | `SCM_CACHE_KUBERNETES_ENABLED` | کشف Kubernetes | در محیطهای cluster معمولاً باید فعال باشد تا اعضا از service پیدا شوند. |
 | `SCM_CACHE_KUBERNETES_NAMESPACE` | namespace کش | namespace Kubernetes برای discovery است. مقدار اشتباه باعث پیدا نشدن podها میشود. |
 | `SCM_CACHE_KUBERNETES_SERVICE_NAME` | service کش | نام Kubernetes service مربوط به cache است. مقدار اشتباه باعث join نشدن cluster میشود. |
-| `SCM_CACHE_MANAGEMENT_ENABLED` | مدیریت Hazelcast | دسترسیهای مدیریتی را کنترل میکند. در prod باید طبق سیاست عملیاتی تنظیم شود. |
 
 ## 6. متغیرهای Observation
 
@@ -64,7 +62,7 @@
 | `SCM_OBS_ROOT_DIR` | مسیر اصلی observation | مسیر پایه log، trace و audit است. مقدار اشتباه باعث نوشته نشدن فایلها در مسیر مورد انتظار میشود. |
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | لاگ کنسول | فقط در profile `dev` باید روشن باشد. در test، pilot و prod خاموش است. |
 | `SCM_OBS_LOG_FILE_ENABLED` | لاگ فایل | فایل log را روشن یا خاموش میکند. خاموش بودن اشتباه باعث از دست رفتن لاگ عملیاتی میشود. |
-| `SCM_OBS_TRACE_FILE_ENABLED` | فایل trace | فایل trace را کنترل میکند. مقدار اشتباه عیب یابی درخواستها را سخت میکند. |
+| `SCM_OBS_TRACE_FILE_ENABLED` | فایل trace | مقصد فایل TRACEهای داخلی cache را کنترل میکند و HTTP مدیریت را trace نمیکند. |
 | `SCM_OBS_AUDIT_ENABLED` | audit | audit را کنترل میکند و باید جدا از application log باقی بماند. |
 
 ## 7. متغیرهای اتصال به Config Server

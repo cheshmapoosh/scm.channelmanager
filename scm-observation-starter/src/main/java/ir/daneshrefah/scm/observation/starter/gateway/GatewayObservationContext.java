@@ -6,7 +6,8 @@ public record GatewayObservationContext(
         String gatewaySpanId,
         String gatewayName,
         String channelCode,
-        GatewayProtocol protocol,
+        String protocol,
+        String spanKind,
         String requestName,
         String messageId
 ) {

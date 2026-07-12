@@ -9,7 +9,6 @@ import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationLifecycl
 import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationRequest;
 import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationResult;
 import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationScope;
-import ir.daneshrefah.scm.observation.starter.gateway.GatewayProtocol;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParent;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParentParser;
@@ -126,7 +125,8 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         String correlationId = ObservationIds.correlationId();
         String channelCode = resolveChannelCode(request);
         GatewayObservationRequest.Builder requestBuilder = GatewayObservationRequest.builder()
-                .protocol(GatewayProtocol.HTTP)
+                .protocol("http")
+                .spanKind("server")
                 .gatewayName(textOrDefault(observationContext.gatewayName()))
                 .channelCode(channelCode)
                 .correlationId(correlationId)
@@ -387,7 +387,7 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         MDC.put("spanId", gatewayContext.gatewaySpanId());
         MDC.put("gatewayName", gatewayContext.gatewayName());
         MDC.put("channelCode", gatewayContext.channelCode());
-        MDC.put("protocol", gatewayContext.protocol().value());
+        MDC.put("protocol", gatewayContext.protocol());
     }
 
     private void clearMdc() {

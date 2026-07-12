@@ -12,12 +12,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
     implementation 'io.opentelemetry:opentelemetry-sdk'
     compileOnly 'ch.qos.logback:logback-classic'
-    compileOnly 'jakarta.servlet:jakarta.servlet-api'
-    compileOnly 'org.springframework:spring-web'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'org.springframework:spring-test'
-    testImplementation 'org.springframework:spring-web'
-    testImplementation 'jakarta.servlet:jakarta.servlet-api'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

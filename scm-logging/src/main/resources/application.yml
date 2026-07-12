@@ -72,9 +72,6 @@ scm:
   runtime: ${SCM_RUNTIME:standalone}
 
   observation:
-    http:
-      server:
-        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:logging.http.request}
     log:
       level:
         root: ${SCM_LOG_LEVEL_ROOT:INFO}

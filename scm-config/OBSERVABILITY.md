@@ -4,6 +4,8 @@
 
 `scm-config` باید تغییرات config را audit کند.
 
+هستهٔ `scm-observation-starter` transport-neutral است. `scm-config` برای correlation مربوط به Servlet request و HTTP server observation به‌صورت صریح از `scm-observation-servlet-starter` استفاده می‌کند؛ attributeهای HTTP در adapter ساخته می‌شوند.
+
 ## Audit Events
 
 ```text

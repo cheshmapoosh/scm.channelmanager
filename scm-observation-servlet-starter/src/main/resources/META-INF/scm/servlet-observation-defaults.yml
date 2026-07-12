@@ -1,0 +1,7 @@
+scm:
+  observation:
+    http:
+      server:
+        enabled: ${SCM_OBS_HTTP_SERVER_ENABLED:false}
+        mode: ${SCM_OBS_HTTP_SERVER_MODE:channel-only}
+        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:http.server.request}

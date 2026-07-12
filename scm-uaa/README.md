@@ -51,7 +51,7 @@ sequenceDiagram
 
 TRACE/LOG مهم:
 
-- root HTTP span توسط filter در `scm-observation-starter` ساخته می‌شود.
+- در صورت فعال‌بودن HTTP server observation، root HTTP span توسط filter در `scm-observation-servlet-starter` ساخته می‌شود.
 - spanهای داخلی می‌توانند نام‌هایی مثل `uaa.legacy.nib.login` و `uaa.token.issue` داشته باشند.
 - JSONL نباید شامل password، JWT خام، Authorization header، mobile خام، national code خام، OTP یا cookie value باشد.
 
@@ -280,7 +280,7 @@ sequenceDiagram
 
 ## LOG و TRACE چگونه JSONL می‌شوند؟
 
-`scm-uaa` از `scm-observation-starter` استفاده می‌کند. هر inbound HTTP request یک root trace span دارد. کلاس‌های authentication و security برای operationهای داخلی child/application span یا structured event تولید می‌کنند.
+`scm-uaa` برای هستهٔ observation از `scm-observation-starter` و برای integration مربوط به Servlet از `scm-observation-servlet-starter` استفاده می‌کند. وقتی global observation، سیگنال TRACE و HTTP server observation همگی فعال باشند و mode اجازهٔ generic tracing بدهد، adapter برای inbound HTTP request یک root trace span می‌سازد. کلاس‌های authentication و security برای operationهای داخلی child/application span یا structured event تولید می‌کنند.
 
 خروجی فایل LOG و TRACE به صورت پیش‌فرض JSONL است: هر خط دقیقا یک JSON object فشرده است. pretty print، JSON array و multiline stack trace در فایل‌ها مجاز نیست. Filebeat، Kafka یا Logstash می‌توانند این فایل‌های JSONL را line by line مصرف کنند. قالب اختیاری `simple` خروجی تک‌خطی `key=value` با یک `stream=` صریح تولید می‌کند و بخشی از pipeline فعلی JSONL نیست.
 

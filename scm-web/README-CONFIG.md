@@ -25,7 +25,7 @@
 | `src/main/resources/application-test.yml` | تنظیمات test | فقط اتصال به Config Server را bootstrap میکند و مقدارهای سرویس باید از Config Server بیایند. |
 | `src/main/resources/application-pilot.yml` | تنظیمات pilot | فقط اتصال اجباری به Config Server را bootstrap میکند. اگر Config Server در دسترس نباشد سرویس نباید با config ناقص بالا بیاید. |
 | `src/main/resources/application-prod.yml` | تنظیمات prod | فقط اتصال اجباری به Config Server را bootstrap میکند و مقدارهای حساس باید از Secret یا محیط امن تأمین شوند. |
-| `scm-config/config-repo/scm-web/application-*.yml` | فایلهای متغیر Config Server | مقدارهای profileهای test، pilot و prod را به صورت متغیرهای flat نگه میدارند. |
+| مخزن خارجی Spring Cloud Config | تنظیمات runtime غیر-dev | خارج از این source tree مدیریت می‌شود و مقدارهای profileهای test، pilot و prod را از Config Server یا environment امن تأمین می‌کند. |
 
 ## 4. متغیرهای عمومی
 
