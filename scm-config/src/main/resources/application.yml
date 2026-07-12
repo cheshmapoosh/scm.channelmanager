@@ -9,9 +9,9 @@ spring:
       password: ${SCM_CONFIG_ADMIN_PASSWORD:${SCM_CONFIG_PASSWORD}}
   cloud:
     config:
-      enabled: false
+      enabled: ${SCM_CONFIG_ENABLED:false}
       import-check:
-        enabled: false
+        enabled: ${SCM_CONFIG_IMPORT_CHECK_ENABLED:false}
       server:
         git:
           uri: ${SCM_CONFIG_REPO_URI:/mnt/config-repo-server}

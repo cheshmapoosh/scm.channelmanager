@@ -76,7 +76,7 @@ scm:
 
   observation:
     metric:
-      enabled: true
+      enabled: ${SCM_OBS_METRIC_ENABLED:true}
     log:
       level:
         root: ${SCM_LOG_LEVEL_ROOT:INFO}

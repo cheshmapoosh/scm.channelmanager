@@ -327,7 +327,7 @@ scm:
         in-memory-format: ${SCM_CACHE_NEAR_IN_MEMORY_FORMAT:OBJECT}
       caches:
         ebServiceByCode:
-          type: local
+          type: ${SCM_CACHE_EB_SERVICE_BY_CODE_TYPE:local}
         session_cache:
           type: ${SCM_CACHE_SESSION_TYPE:near}
           remote-name: ${SCM_CACHE_SESSION_REMOTE_NAME:session_cache}

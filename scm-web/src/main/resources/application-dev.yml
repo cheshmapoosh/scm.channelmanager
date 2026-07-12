@@ -1,17 +1,9 @@
-scm:
-  metadata:
-    namespace: ${SCM_METADATA_NAMESPACE:local}
-    instance-id: ${SCM_METADATA_INSTANCE_ID:local-scm-web}
-  observation:
-    log:
-      console:
-        enabled: true
-    trace:
-      console:
-        enabled: true
-    audit:
-      console:
-        enabled: true
+SCM_METADATA_NAMESPACE: local
+SCM_METADATA_INSTANCE_ID: local-scm-web
+
+SCM_OBS_LOG_CONSOLE_ENABLED: true
+SCM_OBS_TRACE_CONSOLE_ENABLED: true
+SCM_OBS_AUDIT_CONSOLE_ENABLED: true
 
 SCM_CHANNEL_CODE: IB
 SCM_GATEWAY_NAME: channel.nib
