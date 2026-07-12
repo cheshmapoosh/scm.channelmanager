@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.web.observation.security;
 
+import ir.daneshrefah.scm.common.event.ScmSafeEventAttributes;
 import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.uaa.starter.security.event.ScmSecurityEvent;
 import ir.daneshrefah.scm.web.observation.ScmWebObservationEvent;
@@ -51,6 +52,6 @@ public class ScmWebSecurityObservationListener {
     }
 
     private String safeMessage(RuntimeException exception) {
-        return exception.getMessage() == null ? null : exception.getMessage().replace('\r', ' ').replace('\n', ' ').trim();
+        return ScmSafeEventAttributes.sanitizeMessage(exception.getMessage());
     }
 }

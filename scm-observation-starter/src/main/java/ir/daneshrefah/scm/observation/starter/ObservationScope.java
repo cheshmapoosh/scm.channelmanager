@@ -15,7 +15,7 @@ public class ObservationScope implements AutoCloseable {
     private final ObservationScope previousScope;
     private String outcome;
     private Throwable throwable;
-    private boolean closed;
+    private volatile boolean closed;
 
     ObservationScope(TraceObservationHandle traceHandle) {
         this(traceHandle, null);
@@ -24,42 +24,60 @@ public class ObservationScope implements AutoCloseable {
     ObservationScope(TraceObservationHandle traceHandle, AutoCloseable contextScope) {
         this.traceHandle = traceHandle == null ? TraceObservationHandle.NOOP : traceHandle;
         this.contextScope = contextScope;
-        this.previousScope = CURRENT.get();
+        this.previousScope = current();
         CURRENT.set(this);
     }
 
     public static ObservationScope current() {
         ObservationScope scope = CURRENT.get();
-        return scope == null || scope.closed ? null : scope;
+        ObservationScope active = active(scope);
+        if (active != scope) {
+            if (active == null) {
+                CURRENT.remove();
+            } else {
+                CURRENT.set(active);
+            }
+        }
+        return active;
     }
 
-    public ObservationScope success() {
-        this.outcome = "success";
-        return this;
-    }
-
-    public ObservationScope failure() {
-        this.outcome = "failure";
-        return this;
-    }
-
-    public ObservationScope failure(Throwable throwable) {
-        this.outcome = "failure";
-        this.throwable = throwable;
-        if (throwable != null) {
-            attribute(CommonTraceAttributes.ERROR_TYPE, throwable.getClass().getName());
-            attribute(CommonTraceAttributes.ERROR_MESSAGE, throwable.getMessage());
+    public synchronized ObservationScope success() {
+        if (!closed) {
+            this.outcome = "success";
         }
         return this;
     }
 
-    public ObservationScope outcome(String outcome) {
-        this.outcome = outcome;
+    public synchronized ObservationScope failure() {
+        if (!closed) {
+            this.outcome = "failure";
+        }
         return this;
     }
 
-    public ObservationScope attribute(String name, Object value) {
-        if (name != null && !name.isBlank() && value != null) {
+    public synchronized ObservationScope failure(Throwable throwable) {
+        if (!closed) {
+            this.outcome = "failure";
+            this.throwable = throwable;
+            if (throwable != null) {
+                attributes.put(CommonTraceAttributes.ERROR_TYPE.name(), throwable.getClass().getName());
+                if (throwable.getMessage() != null) {
+                    attributes.put(CommonTraceAttributes.ERROR_MESSAGE.name(), throwable.getMessage());
+                }
+            }
+        }
+        return this;
+    }
+
+    public synchronized ObservationScope outcome(String outcome) {
+        if (!closed) {
+            this.outcome = outcome;
+        }
+        return this;
+    }
+
+    public synchronized ObservationScope attribute(String name, Object value) {
+        if (!closed && name != null && !name.isBlank() && value != null) {
             attributes.put(name, value);
         }
         return this;
@@ -72,8 +90,8 @@ public class ObservationScope implements AutoCloseable {
         return this;
     }
 
-    public ObservationScope attributes(Map<String, ?> values) {
-        if (values != null) {
+    public synchronized ObservationScope attributes(Map<String, ?> values) {
+        if (!closed && values != null) {
             for (Map.Entry<String, ?> entry : values.entrySet()) {
                 attribute(entry.getKey(), entry.getValue());
             }
@@ -81,7 +99,7 @@ public class ObservationScope implements AutoCloseable {
         return this;
     }
 
-    public ObservationScope event(String name, Map<String, ?> attributes) {
+    public synchronized ObservationScope event(String name, Map<String, ?> attributes) {
         if (!closed && name != null && !name.isBlank()) {
             traceHandle.event(name.trim(), attributes);
         }
@@ -90,23 +108,44 @@ public class ObservationScope implements AutoCloseable {
 
     @Override
     public void close() {
-        if (!closed) {
-            closed = true;
-            try {
-                traceHandle.finish(outcome, attributes, throwable);
-            } finally {
-                restorePreviousScope();
-                closeContextScope();
+        Map<String, Object> finalAttributes;
+        String finalOutcome;
+        Throwable finalThrowable;
+        synchronized (this) {
+            if (closed) {
+                return;
             }
+            closed = true;
+            finalAttributes = new LinkedHashMap<>(attributes);
+            finalOutcome = outcome;
+            finalThrowable = throwable;
+        }
+        try {
+            traceHandle.finish(finalOutcome, finalAttributes, finalThrowable);
+        } finally {
+            restorePreviousScope();
+            closeContextScope();
         }
     }
 
     private void restorePreviousScope() {
-        if (previousScope == null) {
+        if (CURRENT.get() != this) {
+            return;
+        }
+        ObservationScope previous = active(previousScope);
+        if (previous == null) {
             CURRENT.remove();
         } else {
-            CURRENT.set(previousScope);
+            CURRENT.set(previous);
         }
+    }
+
+    private static ObservationScope active(ObservationScope scope) {
+        ObservationScope active = scope;
+        while (active != null && active.closed) {
+            active = active.previousScope;
+        }
+        return active;
     }
 
     private void closeContextScope() {

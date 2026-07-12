@@ -84,6 +84,10 @@ scm:
       allowed-channel-codes: ${SCM_RUNTIME_ALLOWED_CHANNEL_CODES:*}
 
   observation:
+    http:
+      server:
+        enabled: false
+        mode: channel-only
     log:
       level:
         root: ${SCM_LOG_LEVEL_ROOT:INFO}

@@ -12,11 +12,14 @@ SCM observation files use this directory layout:
 {root}/{appName}/{env}/{namespace}/{stream}/
 ```
 
-Final JSONL file names use this shape:
+The active TRACE JSONL file has a stable name, and rolled TRACE files add the hour and roll index:
 
 ```text
-{stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+active: trace-scm-{appName}-{env}-{namespace}-{instanceId}.jsonl
+rolled: trace-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
+
+The `trace-scm-*.jsonl` input glob below intentionally matches both forms.
 
 Example Filebeat inputs:
 

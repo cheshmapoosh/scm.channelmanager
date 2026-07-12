@@ -2,7 +2,10 @@ package ir.daneshrefah.scm.observation.starter.trace;
 
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistry;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistryHolder;
 import ir.daneshrefah.scm.observation.starter.ObservationSanitizer;
+import ir.daneshrefah.scm.observation.starter.ObservationStream;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,10 +19,22 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
 
     private final Tracer tracer;
     private final ObservationSanitizer sanitizer;
+    private final ObservationAttributeRegistry attributeRegistry;
 
     public MicrometerTraceObservationSink(Tracer tracer, ObservationSanitizer sanitizer) {
+        this(tracer, sanitizer, ObservationAttributeRegistryHolder.getOrCommonOnly());
+    }
+
+    public MicrometerTraceObservationSink(
+            Tracer tracer,
+            ObservationSanitizer sanitizer,
+            ObservationAttributeRegistry attributeRegistry
+    ) {
         this.tracer = tracer;
         this.sanitizer = sanitizer;
+        this.attributeRegistry = attributeRegistry == null
+                ? ObservationAttributeRegistry.commonOnly()
+                : attributeRegistry;
     }
 
     @Override
@@ -53,12 +68,16 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
             return safeAttributes;
         }
         attributes.forEach((key, value) -> {
-            if (key == null || key.isBlank() || value == null || !TraceAttributeSecurity.isAllowed(key)) {
+            if (key == null
+                    || key.isBlank()
+                    || value == null
+                    || !TraceAttributeSecurity.isAllowedSpanEventAttribute(key)) {
                 return;
             }
             Object sanitized = sanitizer == null ? value : sanitizer.sanitize(key.trim(), value);
-            if (sanitized != null) {
-                safeAttributes.put(key.trim(), sanitized);
+            Object prepared = attributeRegistry.prepareValue(ObservationStream.TRACE, key.trim(), sanitized);
+            if (prepared != null) {
+                safeAttributes.put(key.trim(), prepared);
             }
         });
         return safeAttributes;
@@ -181,6 +200,7 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
     private final class MicrometerTraceObservationHandle implements TraceObservationHandle {
         private final Span span;
         private final Tracer.SpanInScope spanInScope;
+        private final Object lifecycleMonitor = new Object();
         private boolean finished;
 
         private MicrometerTraceObservationHandle(Span span, Tracer.SpanInScope spanInScope) {
@@ -190,10 +210,12 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
 
         @Override
         public void finish(String outcome, Map<String, Object> attributes, Throwable throwable) {
-            if (finished) {
-                return;
+            synchronized (lifecycleMonitor) {
+                if (finished) {
+                    return;
+                }
+                finished = true;
             }
-            finished = true;
             try {
                 if (outcome != null && !outcome.isBlank()) {
                     tag(span, "event.outcome", outcome);
@@ -216,21 +238,32 @@ public class MicrometerTraceObservationSink implements TraceObservationSink {
 
         @Override
         public void event(String name, Map<String, ?> attributes) {
-            if (finished || span == null || name == null || name.isBlank()) {
+            if (span == null || name == null || name.isBlank()) {
                 return;
             }
-            try {
-                String safeName = name.replace('\r', ' ').replace('\n', ' ').trim();
-                span.event(safeName);
-                if (span.context() != null) {
-                    TraceObservationSpanEventRegistry.add(
-                            span.context().traceId(),
-                            span.context().spanId(),
-                            new TraceObservationSpanEvent(safeName, Instant.now(), eventAttributes(attributes))
-                    );
+            synchronized (lifecycleMonitor) {
+                if (finished) {
+                    return;
                 }
-            } catch (RuntimeException ignored) {
-                // Trace event failures must not affect business flow.
+                try {
+                    String safeName = name.replace('\r', ' ').replace('\n', ' ').trim();
+                    if (safeName.isEmpty()) {
+                        return;
+                    }
+                    if (safeName.length() > 128) {
+                        safeName = safeName.substring(0, 128);
+                    }
+                    span.event(safeName);
+                    if (span.context() != null) {
+                        TraceObservationSpanEventRegistry.add(
+                                span.context().traceId(),
+                                span.context().spanId(),
+                                new TraceObservationSpanEvent(safeName, Instant.now(), eventAttributes(attributes))
+                        );
+                    }
+                } catch (RuntimeException ignored) {
+                    // Trace event failures must not affect business flow.
+                }
             }
         }
 

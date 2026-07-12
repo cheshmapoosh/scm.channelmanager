@@ -3,7 +3,10 @@ package ir.daneshrefah.scm.observation.starter;
 import ir.daneshrefah.scm.observation.starter.attributes.audit.ChangeEntityAuditAttributes;
 import ir.daneshrefah.scm.observation.starter.attributes.audit.ServiceExecuteAuditAttributes;
 
+import java.time.DateTimeException;
+import java.time.Instant;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,6 +49,7 @@ public class ObservationRecordValidator {
         validateLegacyProjection(stream, document);
         validateAuditType(stream, document);
         validateTraceParent(stream, document);
+        validateTraceFields(stream, document);
     }
 
     private EnumSet<ObservationAttributePresence> requiredPresence(ObservationRecordKind kind, boolean errorContext) {
@@ -121,6 +125,79 @@ public class ObservationRecordValidator {
         Object spanId = document.get("span.id");
         if (String.valueOf(parentSpanId).equals(String.valueOf(spanId))) {
             throw new IllegalStateException("Invalid TRACE parent.span.id: a span cannot be its own parent");
+        }
+    }
+
+    private void validateTraceFields(ObservationStream stream, Map<String, Object> document) {
+        if (stream != ObservationStream.TRACE) {
+            return;
+        }
+        if (document.containsKey("event.category")) {
+            throw new IllegalStateException(
+                    "Invalid TRACE observation attribute event.category: event.stream is the only trace stream identifier");
+        }
+        requireNonNegativeNumber(stream, "span.duration_ms", document.get("span.duration_ms"));
+        validateSpanEvents(document.get("span.events"));
+    }
+
+    private void validateSpanEvents(Object value) {
+        if (value == null) {
+            return;
+        }
+        if (!(value instanceof List<?> events)) {
+            throw new IllegalStateException("Invalid TRACE span.events: an ordered collection is required");
+        }
+        int index = 0;
+        for (Object item : events) {
+            if (!(item instanceof Map<?, ?> event)) {
+                throw new IllegalStateException("Invalid TRACE span.events[" + index + "]: an event object is required");
+            }
+            String name = requiredEventText(event, "name", index);
+            String timestamp = requiredEventText(event, "timestamp", index);
+            try {
+                Instant.parse(timestamp);
+            } catch (DateTimeException exception) {
+                throw new IllegalStateException(
+                        "Invalid TRACE span.events[" + index + "].timestamp: an ISO-8601 UTC instant is required",
+                        exception
+                );
+            }
+            Object attributesValue = event.get("attributes");
+            if (!(attributesValue instanceof Map<?, ?> attributes)) {
+                throw new IllegalStateException(
+                        "Invalid TRACE span.events[" + index + "].attributes: an attribute object is required");
+            }
+            if ("plugin.execute".equals(name)) {
+                requireNonNegativeNumber(
+                        ObservationStream.TRACE,
+                        "span.events[" + index + "].attributes.plugin.duration_ms",
+                        attributes.get("plugin.duration_ms")
+                );
+                if (missing(attributes.get("event.outcome"))) {
+                    throw new IllegalStateException(
+                            "Missing required TRACE observation attribute: span.events[" + index
+                                    + "].attributes.event.outcome");
+                }
+            }
+            index++;
+        }
+    }
+
+    private String requiredEventText(Map<?, ?> event, String fieldName, int index) {
+        Object value = event.get(fieldName);
+        if (missing(value)) {
+            throw new IllegalStateException(
+                    "Missing required TRACE observation attribute: span.events[" + index + "]." + fieldName);
+        }
+        return String.valueOf(value).trim();
+    }
+
+    private void requireNonNegativeNumber(ObservationStream stream, String fieldName, Object value) {
+        if (!(value instanceof Number number)
+                || !Double.isFinite(number.doubleValue())
+                || number.doubleValue() < 0D) {
+            throw new IllegalStateException(
+                    "Invalid " + stream + " observation attribute " + fieldName + ": a non-negative number is required");
         }
     }
 

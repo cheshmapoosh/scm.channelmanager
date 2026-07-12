@@ -40,11 +40,12 @@
                     <appender name="SCM_TRACE_SIMPLE_FILE"
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
                         <append>true</append>
+                        <file>${TRACE_SIMPLE_CURRENT_FILE}</file>
                         <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                             <marker>SCM_OBSERVATION_TRACE</marker>
                         </filter>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                            <fileNamePattern>${TRACE_SIMPLE_FILE_PATTERN}</fileNamePattern>
+                            <fileNamePattern>${TRACE_SIMPLE_ROLLED_FILE_PATTERN}</fileNamePattern>
                             <maxFileSize>${TRACE_MAX_FILE_SIZE}</maxFileSize>
                             <maxHistory>${TRACE_MAX_HISTORY}</maxHistory>
                             <totalSizeCap>${TRACE_TOTAL_SIZE_CAP}</totalSizeCap>
@@ -65,11 +66,12 @@
                     <appender name="SCM_TRACE_SIMPLE"
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
                         <append>true</append>
+                        <file>${TRACE_SIMPLE_CURRENT_FILE}</file>
                         <filter class="ir.daneshrefah.scm.observation.starter.logback.ObservationMarkerFilter">
                             <marker>SCM_OBSERVATION_TRACE</marker>
                         </filter>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                            <fileNamePattern>${TRACE_SIMPLE_FILE_PATTERN}</fileNamePattern>
+                            <fileNamePattern>${TRACE_SIMPLE_ROLLED_FILE_PATTERN}</fileNamePattern>
                             <maxFileSize>${TRACE_MAX_FILE_SIZE}</maxFileSize>
                             <maxHistory>${TRACE_MAX_HISTORY}</maxHistory>
                             <totalSizeCap>${TRACE_TOTAL_SIZE_CAP}</totalSizeCap>

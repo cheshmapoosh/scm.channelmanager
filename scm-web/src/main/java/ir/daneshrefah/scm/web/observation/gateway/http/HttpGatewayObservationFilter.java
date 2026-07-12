@@ -2,13 +2,7 @@ package ir.daneshrefah.scm.web.observation.gateway.http;
 
 import ir.daneshrefah.scm.observation.starter.ObservationContext;
 import ir.daneshrefah.scm.observation.starter.ObservationIds;
-import ir.daneshrefah.scm.observation.starter.TraceContext;
-import ir.daneshrefah.scm.observation.starter.TraceContextHolder;
 import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationContext;
-import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationLifecycle;
-import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationRequest;
-import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationResult;
-import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationScope;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParent;
 import ir.daneshrefah.scm.web.observation.propagation.ScmTraceParentParser;
@@ -35,6 +29,7 @@ import java.util.Set;
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
 public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     private static final String DEFAULT_VALUE = "default";
+    private static final String CORRELATION_HEADER = "X-Correlation-Id";
     private static final Set<String> MISSING_CHANNEL_CODES = Set.of(
             "null",
             "blank",
@@ -45,7 +40,6 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
             "n-a"
     );
 
-    private final GatewayObservationLifecycle gatewayObservationLifecycle;
     private final ObservationContext observationContext;
     private final ScmTraceParentParser traceParentParser;
     private final boolean legacyGatewayEnabled;
@@ -56,7 +50,6 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     private final List<LegacyPathMapping> legacyPathMappings;
 
     public HttpGatewayObservationFilter(
-            GatewayObservationLifecycle gatewayObservationLifecycle,
             ObservationContext observationContext,
             ScmTraceParentParser traceParentParser,
             @Value("${scm.web.observation.gateway.legacy.enabled:${SCM_WEB_OBS_LEGACY_GATEWAY_ENABLED:false}}") boolean legacyGatewayEnabled,
@@ -66,7 +59,6 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
             @Value("${scm.runtime.channel-affinity.allowed-channel-codes:${SCM_CHANNEL_CODE:}}") String allowedChannelCodes,
             @Value("${scm.web.observation.gateway.legacy.route-mappings:${SCM_WEB_OBS_LEGACY_GATEWAY_ROUTE_MAPPINGS:}}") String legacyRouteMappings
     ) {
-        this.gatewayObservationLifecycle = gatewayObservationLifecycle;
         this.observationContext = observationContext;
         this.traceParentParser = traceParentParser;
         this.legacyGatewayEnabled = legacyGatewayEnabled;
@@ -124,54 +116,28 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
                 .orElse(null);
         String correlationId = ObservationIds.correlationId();
         String channelCode = resolveChannelCode(request);
-        GatewayObservationRequest.Builder requestBuilder = GatewayObservationRequest.builder()
-                .protocol("http")
-                .spanKind("server")
-                .gatewayName(textOrDefault(observationContext.gatewayName()))
-                .channelCode(channelCode)
-                .correlationId(correlationId)
-                .traceId(incomingTraceParent == null ? ObservationIds.traceId() : incomingTraceParent.traceId())
-                .spanId(ObservationIds.spanId())
-                .requestName(requestName(request))
-                .clientAddress(clientIp(request))
-                .attribute(CommonTraceAttributes.HTTP_METHOD, textOrDefault(request.getMethod()))
-                .attribute(CommonTraceAttributes.URL_PATH, safePath(request))
-                .attribute(CommonTraceAttributes.HTTP_QUERY_PRESENT, hasQuery(request))
-                .attribute(CommonTraceAttributes.CLIENT_IP, clientIp(request));
-        putLegacyProjectionAttributes(requestBuilder, request);
-        GatewayObservationRequest observationRequest = requestBuilder.build();
-
-        TraceContextHolder.Scope incomingParentScope = openIncomingParentScope(incomingTraceParent);
-        GatewayObservationScope observationScope = null;
+        GatewayObservationContext gatewayContext = new GatewayObservationContext(
+                correlationId,
+                incomingTraceParent == null ? ObservationIds.traceId() : incomingTraceParent.traceId(),
+                ObservationIds.spanId(),
+                textOrDefault(observationContext.gatewayName()),
+                channelCode,
+                "http",
+                "server",
+                requestName(request),
+                null
+        );
 
         try {
-            observationScope = gatewayObservationLifecycle.start(observationRequest);
-            GatewayObservationContext gatewayContext = observationScope.context();
             setRequestAttributes(request, gatewayContext);
+            putSafeTransportAttributes(request);
+            putLegacyProjectionAttributes(request);
             putMdc(gatewayContext);
-
+            response.setHeader(CORRELATION_HEADER, correlationId);
             filterChain.doFilter(request, response);
-            observationScope.success(GatewayObservationResult.builder()
-                    .outcome("success")
-                    .statusCode(response.getStatus())
-                    .attribute(CommonTraceAttributes.HTTP_STATUS_CODE, response.getStatus())
-                    .build());
-        } catch (Throwable ex) {
-            int statusCode = statusCode(response, ex);
-            observationScope.failure(GatewayObservationResult.builder()
-                    .outcome("failure")
-                    .statusCode(statusCode)
-                    .errorCode(errorCode(statusCode, ex))
-                    .error(ex)
-                    .attribute(CommonTraceAttributes.HTTP_STATUS_CODE, statusCode)
-                    .build());
-            rethrow(ex);
         } finally {
-            if (observationScope != null) {
-                observationScope.close();
-            }
+            response.setHeader(CORRELATION_HEADER, correlationId);
             clearMdc();
-            closeIncomingParentScope(incomingParentScope);
         }
     }
 
@@ -182,6 +148,14 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         request.setAttribute(GatewayObservationContext.GATEWAY_SPAN_ID_ATTRIBUTE, gatewayContext.gatewaySpanId());
         request.setAttribute(GatewayObservationContext.GATEWAY_NAME_ATTRIBUTE, gatewayContext.gatewayName());
         request.setAttribute(GatewayObservationContext.CHANNEL_CODE_ATTRIBUTE, gatewayContext.channelCode());
+    }
+
+    private void putSafeTransportAttributes(HttpServletRequest request) {
+        String clientIp = clientIp(request);
+        request.setAttribute(CommonTraceAttributes.HTTP_METHOD.name(), textOrDefault(request.getMethod()));
+        request.setAttribute(CommonTraceAttributes.URL_PATH.name(), safePath(request));
+        request.setAttribute(CommonTraceAttributes.HTTP_QUERY_PRESENT.name(), hasQuery(request));
+        request.setAttribute(CommonTraceAttributes.CLIENT_IP.name(), clientIp);
     }
 
     private String requestName(HttpServletRequest request) {
@@ -207,21 +181,6 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
     private boolean hasQuery(HttpServletRequest request) {
         String query = request.getQueryString();
         return query != null && !query.isBlank();
-    }
-
-    private int statusCode(HttpServletResponse response, Throwable failure) {
-        int statusCode = response.getStatus();
-        if (failure != null && statusCode < 400) {
-            return 500;
-        }
-        return statusCode;
-    }
-
-    private String errorCode(int statusCode, Throwable failure) {
-        if (statusCode >= 400) {
-            return "http.status." + statusCode;
-        }
-        return failure == null ? null : failure.getClass().getSimpleName();
     }
 
     private String textOrDefault(String value) {
@@ -257,19 +216,19 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private void putLegacyProjectionAttributes(GatewayObservationRequest.Builder builder, HttpServletRequest request) {
+    private void putLegacyProjectionAttributes(HttpServletRequest request) {
         if (!legacyGatewayEnabled || request == null) {
-            builder.attribute("scm.observation.legacy.enabled", false);
+            request.setAttribute("scm.observation.legacy.enabled", false);
             return;
         }
         LegacyPathMapping mapping = resolveLegacyMapping(safePath(request));
         if (mapping == null) {
-            builder.attribute("scm.observation.legacy.enabled", false);
+            request.setAttribute("scm.observation.legacy.enabled", false);
             return;
         }
-        builder.attribute("scm.observation.legacy.enabled", true)
-                .attribute("scm.observation.legacy.service.code", mapping.serviceCode())
-                .attribute("scm.observation.legacy.operation.code", mapping.operationCode());
+        request.setAttribute("scm.observation.legacy.enabled", true);
+        request.setAttribute("scm.observation.legacy.service.code", mapping.serviceCode());
+        request.setAttribute("scm.observation.legacy.operation.code", mapping.operationCode());
     }
 
     private String textOrNull(String value) {
@@ -397,36 +356,6 @@ public class HttpGatewayObservationFilter extends OncePerRequestFilter {
         MDC.remove("gatewayName");
         MDC.remove("channelCode");
         MDC.remove("protocol");
-    }
-
-    private TraceContextHolder.Scope openIncomingParentScope(ScmTraceParent traceParent) {
-        if (traceParent == null) {
-            return null;
-        }
-        return TraceContextHolder.open(new TraceContext(traceParent.traceId(), traceParent.parentId(), null, null));
-    }
-
-    private void closeIncomingParentScope(TraceContextHolder.Scope scope) {
-        if (scope == null) {
-            return;
-        }
-        scope.close();
-    }
-
-    private void rethrow(Throwable throwable) throws ServletException, IOException {
-        if (throwable instanceof ServletException servletException) {
-            throw servletException;
-        }
-        if (throwable instanceof IOException ioException) {
-            throw ioException;
-        }
-        if (throwable instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-        if (throwable instanceof Error error) {
-            throw error;
-        }
-        throw new ServletException(throwable);
     }
 
     private record ChannelPathMapping(String pathPrefix, String channelCode) {

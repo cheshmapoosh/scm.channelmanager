@@ -10,7 +10,7 @@ import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
-import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
+import ir.daneshrefah.scm.core.integration.observability.PluginObservationSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -18,6 +18,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +31,7 @@ public class GlobalErrorHandlerRouteBuilder extends RouteBuilder {
     private final PluginResolverService pluginResolverService;
     private final GlobalErrorHandler globalErrorHandler;
     private final Map<String, PluginHandler> pluginHandlers;
-    private final CoreObservationTraceSupport observationTraceSupport;
+    private final PluginObservationSupport pluginObservationSupport;
 
     @Override
     public void configure() throws Exception {
@@ -51,29 +52,42 @@ public class GlobalErrorHandlerRouteBuilder extends RouteBuilder {
                 List<PluginDetail> gatewayAfterThrowingPluginDetails = pluginResolverService.resolveOrderedPluginDetails(channelPluginDetails, channelServiceAccess.getService(), PluginPhase.AFTER_THROWING);
                 boolean hasAnyCustomErrorHandlerPlugin = checkCustomErrorHandlerPlugin(operationAfterThrowingPluginDetails, gatewayAfterThrowingPluginDetails);
                 if (hasAnyCustomErrorHandlerPlugin) {
-                    Map<String, Object> properties = exchange.getIn().getHeaders();
+                    Map<String, Object> properties = new LinkedHashMap<>(exchange.getIn().getHeaders());
                     properties.put(Message.OPERATION, operation);
                     properties.put(Message.SERVICE, service);
                     properties.put(Message.GATEWAY_CHANNEL, gatewayChannel);
-                    invokeCustomErrorHandlerPlugin(route, operationAfterThrowingPluginDetails, properties);
-                    invokeCustomErrorHandlerPlugin(route, gatewayAfterThrowingPluginDetails, properties);
+                    invokeCustomErrorHandlerPlugin(exchange, route, operationAfterThrowingPluginDetails, properties, "operation");
+                    invokeCustomErrorHandlerPlugin(exchange, route, gatewayAfterThrowingPluginDetails, properties, "gateway");
                 } else {
                     globalErrorHandler.handle(exchange);
                 }
             }
-            Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
-            observationTraceSupport.traceException(exchange, exception);
         }).to(Routes.GLOBAL_RESPONSE_HANDLER);
     }
 
-    private void invokeCustomErrorHandlerPlugin(RouteDefinition route, List<PluginDetail> pluginDetails, Map<String, ?> properties) {
+    private void invokeCustomErrorHandlerPlugin(
+            Exchange exchange,
+            RouteDefinition route,
+            List<PluginDetail> pluginDetails,
+            Map<String, ?> properties,
+            String layer
+    ) throws Exception {
+        if (pluginDetails == null || pluginDetails.isEmpty()) {
+            return;
+        }
         pluginDetails.forEach(detail -> {
             PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
             handler.init(route, detail, properties);
-            route.process(exchange -> {
-                handler.handle(exchange, detail);
-            });
         });
+        for (PluginDetail detail : pluginDetails) {
+            PluginHandler handler = Objects.requireNonNull(pluginHandlers.get(detail.getName()));
+            pluginObservationSupport.execute(
+                    exchange,
+                    detail,
+                    handler,
+                    layer,
+                    () -> handler.handle(exchange, detail));
+        }
     }
 
     private boolean checkCustomErrorHandlerPlugin(List<PluginDetail> operationAfterThrowingPluginDetails, List<PluginDetail> gatewayAfterThrowingPluginDetails) {

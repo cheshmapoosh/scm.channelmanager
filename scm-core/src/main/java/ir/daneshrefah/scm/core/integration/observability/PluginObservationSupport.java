@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.observability;
 
 import ir.daneshrefah.scm.common.handler.PluginHandler;
+import ir.daneshrefah.scm.common.exception.ErrorCodeAwareException;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreLogAttributes;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreMetricTags;
@@ -11,7 +12,6 @@ import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.observation.starter.LogObservationBuilder;
 import ir.daneshrefah.scm.observation.starter.attributes.log.CommonLogAttributes;
 import ir.daneshrefah.scm.observation.starter.attributes.metric.CommonMetricTags;
-import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.observation.starter.metrics.MetricCounterBuilder;
 import ir.daneshrefah.scm.observation.starter.metrics.MetricTimerBuilder;
 import ir.daneshrefah.scm.observation.starter.metrics.CommonMetricNames;
@@ -19,6 +19,7 @@ import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -27,15 +28,18 @@ public class PluginObservationSupport {
     private final ObjectProvider<ScmObservation> observationProvider;
     private final ObjectProvider<ObservationContext> contextProvider;
     private final ScmExchangeMdc exchangeMdc;
+    private final CoreObservationTraceSupport observationTraceSupport;
 
     public PluginObservationSupport(
             ObjectProvider<ScmObservation> observationProvider,
             ObjectProvider<ObservationContext> contextProvider,
-            ScmExchangeMdc exchangeMdc
+            ScmExchangeMdc exchangeMdc,
+            CoreObservationTraceSupport observationTraceSupport
     ) {
         this.observationProvider = observationProvider;
         this.contextProvider = contextProvider;
         this.exchangeMdc = exchangeMdc;
+        this.observationTraceSupport = observationTraceSupport;
     }
 
     public void execute(
@@ -51,55 +55,77 @@ public class PluginObservationSupport {
             return;
         }
 
-        long startNanos = System.nanoTime();
         Map<String, String> fields = exchangeMdc.fields(exchange);
-        ObservationScope scope = startScope(observation, exchange, detail, handler, layer, fields);
         logStarted(observation, exchange, detail, handler, layer, fields);
+
+        Exception invocationFailure = null;
+        long startNanos = System.nanoTime();
         try {
             invocation.run();
-            long durationNanos = System.nanoTime() - startNanos;
-            scope.attribute(CoreTraceAttributes.PLUGIN_DURATION_MS, durationNanos / 1_000_000L).success();
+        } catch (Exception exception) {
+            invocationFailure = exception;
+        }
+        long durationNanos = elapsedNanos(startNanos);
+        recordPluginEvent(exchange, detail, handler, layer, durationNanos, invocationFailure);
+
+        if (invocationFailure == null) {
             recordMetrics(observation, fields, detail, handler, layer, durationNanos, "success", null);
             logSuccess(observation, exchange, detail, handler, layer, fields, durationNanos);
-        } catch (Exception exception) {
-            long durationNanos = System.nanoTime() - startNanos;
-            scope.failure(exception)
-                    .attribute(CoreTraceAttributes.PLUGIN_DURATION_MS, durationNanos / 1_000_000L)
-                    .attribute(CommonTraceAttributes.ERROR_MESSAGE, RouteLogSupport.failureMessage(exception));
-            recordMetrics(observation, fields, detail, handler, layer, durationNanos, "failure", exception);
-            logFailure(observation, exchange, detail, handler, layer, fields, durationNanos, exception);
-            throw exception;
-        } finally {
-            scope.close();
+            return;
         }
+
+        recordMetrics(observation, fields, detail, handler, layer, durationNanos, "failure", invocationFailure);
+        logFailure(observation, exchange, detail, handler, layer, fields, durationNanos, invocationFailure);
+        throw invocationFailure;
     }
 
-    private ObservationScope startScope(
-            ScmObservation observation,
+    private void recordPluginEvent(
             Exchange exchange,
             PluginDetail detail,
             PluginHandler handler,
             String layer,
-            Map<String, String> fields
+            long durationNanos,
+            Exception exception
     ) {
-        return observation.trace()
-                .span("plugin.execute")
-                .spanKind("internal")
-                .action("plugin.execute")
-                .correlationId(fields.get("correlationId"))
-                .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
-                .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, fields.get("channelCode"))
-                .attribute(CoreTraceAttributes.SERVICE_CODE, fields.get("serviceCode"))
-                .attribute(CoreTraceAttributes.OPERATION_CODE, fields.get("operationName"))
-                .attribute(CoreTraceAttributes.OPERATION_NAME, fields.get("operationName"))
-                .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))
-                .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
-                .attribute(CoreTraceAttributes.PLUGIN_NAME, detail != null ? detail.getName() : null)
-                .attribute(CoreTraceAttributes.PLUGIN_TYPE, handler != null && handler.getType() != null ? handler.getType().name() : null)
-                .attribute(CoreTraceAttributes.PLUGIN_PHASE, detail != null && detail.getPhase() != null ? detail.getPhase().name() : null)
-                .attribute(CoreTraceAttributes.PLUGIN_LAYER, layer)
-                .attribute(CommonTraceAttributes.SCM_PROTOCOL, RouteLogSupport.protocol(exchange))
-                .start();
+        ObservationScope scope = observationTraceSupport.activeScope(exchange, layer);
+        if (scope == null) {
+            return;
+        }
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        put(attributes, CoreTraceAttributes.PLUGIN_NAME.name(), detail == null ? null : detail.getName());
+        put(attributes, CoreTraceAttributes.PLUGIN_TYPE.name(),
+                handler == null || handler.getType() == null ? null : handler.getType().name());
+        put(attributes, CoreTraceAttributes.PLUGIN_PHASE.name(),
+                detail == null || detail.getPhase() == null ? null : detail.getPhase().name());
+        put(attributes, CoreTraceAttributes.PLUGIN_LAYER.name(), layer);
+        put(attributes, CoreTraceAttributes.PLUGIN_DURATION_MS.name(), durationNanos / 1_000_000L);
+        put(attributes, "event.outcome", exception == null ? "success" : "failure");
+        if (exception != null) {
+            put(attributes, "error.type", exception.getClass().getSimpleName());
+            put(attributes, "error.code", safeErrorCode(exception));
+        }
+        try {
+            scope.event("plugin.execute", attributes);
+        } catch (RuntimeException ignored) {
+            // A trace event must never change plugin execution behavior.
+        }
+    }
+
+    private void put(Map<String, Object> attributes, String name, Object value) {
+        if (name != null && value != null) {
+            attributes.put(name, value);
+        }
+    }
+
+    private String safeErrorCode(Exception exception) {
+        if (exception instanceof ErrorCodeAwareException aware) {
+            return String.valueOf(aware.getErrorCode());
+        }
+        return exception == null ? null : exception.getClass().getSimpleName();
+    }
+
+    private long elapsedNanos(long startNanos) {
+        return Math.max(0L, System.nanoTime() - startNanos);
     }
 
     private void logStarted(ScmObservation observation, Exchange exchange, PluginDetail detail, PluginHandler handler, String layer, Map<String, String> fields) {
@@ -123,7 +149,7 @@ public class PluginObservationSupport {
                 .outcome("failure")
                 .attribute(CoreLogAttributes.PLUGIN_DURATION_MS, durationNanos / 1_000_000L)
                 .attribute(CommonLogAttributes.ERROR_TYPE, exception.getClass().getName())
-                .attribute(CommonLogAttributes.ERROR_MESSAGE, RouteLogSupport.failureMessage(exception))
+                .attribute(CommonLogAttributes.ERROR_CODE, safeErrorCode(exception))
                 .write();
     }
 

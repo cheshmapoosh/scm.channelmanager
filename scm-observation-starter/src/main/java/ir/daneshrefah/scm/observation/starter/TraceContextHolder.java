@@ -1,13 +1,16 @@
 package ir.daneshrefah.scm.observation.starter;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public final class TraceContextHolder {
-    private static final ThreadLocal<TraceContext> CURRENT = new ThreadLocal<>();
+    private static final ThreadLocal<Binding> CURRENT = new ThreadLocal<>();
 
     private TraceContextHolder() {
     }
 
     public static TraceContext current() {
-        return CURRENT.get();
+        Binding binding = activeBinding();
+        return binding == null ? null : binding.context;
     }
 
     public static void set(TraceContext context) {
@@ -15,7 +18,7 @@ public final class TraceContextHolder {
             clear();
             return;
         }
-        CURRENT.set(context);
+        CURRENT.set(new Binding(context, null));
     }
 
     public static void clear() {
@@ -23,9 +26,9 @@ public final class TraceContextHolder {
     }
 
     public static Scope open(TraceContext context) {
-        TraceContext previous = current();
-        set(context);
-        return new Scope(previous);
+        Binding binding = new Binding(context, activeBinding());
+        CURRENT.set(binding);
+        return new Scope(binding);
     }
 
     public static TraceContext childContext() {
@@ -58,21 +61,58 @@ public final class TraceContextHolder {
         return null;
     }
 
-    public static final class Scope implements AutoCloseable {
-        private final TraceContext previous;
-        private boolean closed;
+    private static Binding activeBinding() {
+        Binding current = CURRENT.get();
+        Binding active = active(current);
+        if (active != current) {
+            restore(active);
+        }
+        return active;
+    }
 
-        private Scope(TraceContext previous) {
+    private static Binding active(Binding binding) {
+        Binding active = binding;
+        while (active != null && active.closed.get()) {
+            active = active.previous;
+        }
+        return active;
+    }
+
+    private static void restore(Binding binding) {
+        Binding active = active(binding);
+        if (active == null) {
+            CURRENT.remove();
+        } else {
+            CURRENT.set(active);
+        }
+    }
+
+    private static final class Binding {
+        private final TraceContext context;
+        private final Binding previous;
+        private final AtomicBoolean closed = new AtomicBoolean();
+
+        private Binding(TraceContext context, Binding previous) {
+            this.context = context;
             this.previous = previous;
+        }
+    }
+
+    public static final class Scope implements AutoCloseable {
+        private final Binding binding;
+
+        private Scope(Binding binding) {
+            this.binding = binding;
         }
 
         @Override
         public void close() {
-            if (closed) {
+            if (binding == null || !binding.closed.compareAndSet(false, true)) {
                 return;
             }
-            closed = true;
-            set(previous);
+            if (CURRENT.get() == binding) {
+                restore(binding.previous);
+            }
         }
     }
 }

@@ -7,6 +7,8 @@ import ir.daneshrefah.scm.observation.starter.ObservationAttributeType;
 import ir.daneshrefah.scm.observation.starter.ObservationAttributeTypes;
 import ir.daneshrefah.scm.observation.starter.ObservationStream;
 
+import java.util.List;
+
 public final class TraceAttribute {
     private TraceAttribute() {
     }
@@ -20,6 +22,17 @@ public final class TraceAttribute {
     public static ObservationAttributeKey<String> keyword(
             String name, ObservationAttributePresence presence, String description) {
         return keyword(name, "common", presence, description);
+    }
+
+    public static ObservationAttributeKey<List<String>> keywordCollection(
+            String name, String owner, ObservationAttributePresence presence, String description) {
+        return attribute(name, ObservationAttributeTypes.KEYWORD_COLLECTION, owner, presence,
+                ObservationAttributeSensitivity.RAW, 0, 0, description);
+    }
+
+    public static ObservationAttributeKey<List<String>> keywordCollection(
+            String name, ObservationAttributePresence presence, String description) {
+        return keywordCollection(name, "common", presence, description);
     }
 
     public static ObservationAttributeKey<String> text(
@@ -86,6 +99,22 @@ public final class TraceAttribute {
     public static ObservationAttributeKey<Boolean> booleanValue(
             String name, ObservationAttributePresence presence, String description) {
         return booleanValue(name, "common", presence, description);
+    }
+
+    public static <T> ObservationAttributeKey<T> object(
+            String name,
+            Class<T> javaType,
+            String owner,
+            ObservationAttributePresence presence,
+            String description
+    ) {
+        return attribute(name, ObservationAttributeTypes.object(javaType), owner, presence,
+                ObservationAttributeSensitivity.RAW, 0, 0, description);
+    }
+
+    public static <T> ObservationAttributeKey<T> object(
+            String name, Class<T> javaType, ObservationAttributePresence presence, String description) {
+        return object(name, javaType, "common", presence, description);
     }
 
     public static ObservationAttributeKey<String> maskedKeyword(

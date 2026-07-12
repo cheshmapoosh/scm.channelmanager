@@ -18,13 +18,15 @@ import ir.daneshrefah.scm.observation.starter.ObservationSanitizer;
 import ir.daneshrefah.scm.observation.starter.ObservationStream;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class ScmSpanDataMapper {
     private static final String EVENT_ACTION = "event.action";
@@ -57,7 +59,6 @@ public class ScmSpanDataMapper {
                 stringAttribute(spanData, CORRELATION_ID, ObservationIds.correlationId()),
                 CorrelationType.OPERATION.value()
         );
-        builder.put(CommonTraceAttributes.EVENT_CATEGORY, "trace");
         builder.put(CommonTraceAttributes.EVENT_ACTION, textOrDefault(eventAction, textOrDefault(spanData.getName(), "trace.span")));
         builder.put(CommonTraceAttributes.EVENT_OUTCOME, textOrDefault(eventOutcome, statusOutcome(spanData)));
         builder.put(CommonTraceAttributes.TRACE_ID, spanData.getTraceId());
@@ -67,7 +68,8 @@ public class ScmSpanDataMapper {
         builder.put(CommonTraceAttributes.SPAN_KIND, spanData.getKind().name().toLowerCase(Locale.ROOT));
         builder.put(CommonTraceAttributes.SPAN_START_TIME, startTime.toString());
         builder.put(CommonTraceAttributes.SPAN_END_TIME, endTime.toString());
-        builder.put(CommonTraceAttributes.SPAN_DURATION_MS, Math.max(0L, Duration.between(startTime, endTime).toMillis()));
+        builder.put(CommonTraceAttributes.SPAN_DURATION_MS, elapsedMillis(
+                spanData.getStartEpochNanos(), spanData.getEndEpochNanos()));
         putSpanAttributes(builder, spanData);
         putSpanEvents(builder, spanData);
         Map<String, Object> document = builder.build();
@@ -98,13 +100,22 @@ public class ScmSpanDataMapper {
 
     private void putSpanEvents(ObservationDocumentBuilder builder, SpanData spanData) {
         List<Map<String, Object>> events = new ArrayList<>();
+        List<Map<String, Object>> enrichedEvents = TraceObservationSpanEventRegistry.drain(
+                spanData.getTraceId(), spanData.getSpanId());
+        Map<String, Integer> enrichedEventCounts = eventNameCounts(enrichedEvents);
         for (EventData eventData : spanData.getEvents()) {
+            String eventName = textOrDefault(eventData.getName(), "span.event");
+            if (consumeEventName(enrichedEventCounts, eventName)) {
+                continue;
+            }
             Map<String, Object> event = new LinkedHashMap<>();
-            event.put("name", textOrDefault(eventData.getName(), "span.event"));
+            event.put("name", eventName);
             event.put("timestamp", instant(eventData.getEpochNanos()).toString());
             Map<String, Object> attributes = new LinkedHashMap<>();
             eventData.getAttributes().forEach((attributeKey, value) -> {
-                if (attributeKey != null && value != null && TraceAttributeSecurity.isAllowed(attributeKey.getKey())) {
+                if (attributeKey != null
+                        && value != null
+                        && TraceAttributeSecurity.isAllowedSpanEventAttribute(attributeKey.getKey())) {
                     Object sanitized = sanitizer == null ? value : sanitizer.sanitize(attributeKey.getKey(), value);
                     if (sanitized != null) {
                         attributes.put(attributeKey.getKey(), sanitized);
@@ -114,9 +125,42 @@ public class ScmSpanDataMapper {
             event.put("attributes", attributes);
             events.add(event);
         }
-        events.addAll(TraceObservationSpanEventRegistry.drain(spanData.getTraceId(), spanData.getSpanId()));
+        events.addAll(enrichedEvents);
+        events.sort(Comparator.comparing(this::eventTimestamp));
         if (!events.isEmpty()) {
-            builder.put("span.events", events);
+            builder.put(CommonTraceAttributes.SPAN_EVENTS, events);
+        }
+    }
+
+    private Map<String, Integer> eventNameCounts(List<Map<String, Object>> events) {
+        Map<String, Integer> counts = new HashMap<>();
+        for (Map<String, Object> event : events) {
+            Object name = event == null ? null : event.get("name");
+            if (name != null) {
+                counts.merge(String.valueOf(name), 1, Integer::sum);
+            }
+        }
+        return counts;
+    }
+
+    private boolean consumeEventName(Map<String, Integer> counts, String name) {
+        Integer count = counts.get(name);
+        if (count == null || count < 1) {
+            return false;
+        }
+        if (count == 1) {
+            counts.remove(name);
+        } else {
+            counts.put(name, count - 1);
+        }
+        return true;
+    }
+
+    private Instant eventTimestamp(Map<String, Object> event) {
+        try {
+            return Instant.parse(String.valueOf(event.get("timestamp")));
+        } catch (RuntimeException ignored) {
+            return Instant.MAX;
         }
     }
 
@@ -149,6 +193,10 @@ public class ScmSpanDataMapper {
         long seconds = Math.floorDiv(epochNanos, 1_000_000_000L);
         long nanos = Math.floorMod(epochNanos, 1_000_000_000L);
         return Instant.ofEpochSecond(seconds, nanos);
+    }
+
+    private long elapsedMillis(long startNanos, long endNanos) {
+        return TimeUnit.NANOSECONDS.toMillis(Math.max(0L, endNanos - startNanos));
     }
 
     private String textOrDefault(String value, String defaultValue) {

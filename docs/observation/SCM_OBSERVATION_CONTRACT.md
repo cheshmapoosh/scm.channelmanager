@@ -126,6 +126,8 @@ scm.observation.target.index
 
 `@timestamp` remains UTC. The metadata timezone is not used for JSON event timestamps and is not used for the Elasticsearch index hour.
 
+TRACE documents use `event.stream=trace` without a redundant `event.category=trace`. `event.action` and `event.outcome` remain required trace fields.
+
 ## Elasticsearch Indexes
 
 Index naming is starter-owned and not configurable by host applications.
@@ -171,11 +173,13 @@ Hosts override these only for an actual deployment requirement.
 stream-specific directory override -> shared observation root directory -> ${user.home}/scm/obs
 ```
 
-`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The starter owns stream prefix, hour token, roll index, and format-specific extension:
+`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The active TRACE filename is stable, while its rollover pattern owns the hour token and roll index:
 
 ```text
-simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
-jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+active simple: trace-scm-{appName}-{env}-{namespace}-{instanceId}.log
+rolled simple: trace-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
+active jsonl:  trace-scm-{appName}-{env}-{namespace}-{instanceId}.jsonl
+rolled jsonl:  trace-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
 Directory layout:
@@ -188,12 +192,13 @@ Examples:
 
 ```text
 log-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
+trace-scm-scm-web-prod-payment-scm-web-7d98c9.jsonl
 trace-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
 audit-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
 log-scm-scm-web-dev-local-local-scm-web-20260711-10-0.log
 ```
 
-File names never include channel code or Config label. Observation files are not gzipped and do not use a separate archive directory. Both formats retain `%d` and `%i` through the hour and roll-index tokens. Current and rolled JSONL files use final names while Filebeat reads them.
+File names never include channel code or Config label. Observation files are not gzipped and do not use a separate archive directory. The active TRACE filename contains neither `%d` nor `%i`; only the rolled TRACE patterns retain those tokens. Active and rolled JSONL files use final names while Filebeat reads them.
 
 ## Structured LOG Event Identity
 

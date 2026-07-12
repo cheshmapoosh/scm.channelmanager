@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class ScmWebSecurityObservationMapper {
@@ -14,6 +15,15 @@ public class ScmWebSecurityObservationMapper {
     private static final String AUTHENTICATION_FAILURE = "authentication.failure";
     private static final String ACCESS_DENIED = "access.denied";
     private static final String TOKEN_PREFIX = "token.";
+    private static final Set<String> SAFE_SECURITY_ATTRIBUTE_KEYS = Set.of(
+            "http.method",
+            "url.path",
+            "client.ip",
+            "security.failure.reason",
+            "security.event.type",
+            "error.type",
+            "error.code"
+    );
 
     public ScmWebObservationEvent map(ScmSecurityEvent event) {
         String action = event == null ? "security.event" : event.eventType();
@@ -29,9 +39,15 @@ public class ScmWebSecurityObservationMapper {
     }
 
     private Map<String, Object> attributes(ScmSecurityEvent event) {
-        Map<String, Object> attributes = event == null
-                ? new LinkedHashMap<>()
-                : new LinkedHashMap<>(ScmSafeEventAttributes.mutableCopyOf(event.attributes()));
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        if (event != null) {
+            Map<String, Object> safeEventAttributes = ScmSafeEventAttributes.mutableCopyOf(event.attributes());
+            safeEventAttributes.forEach((key, value) -> {
+                if (SAFE_SECURITY_ATTRIBUTE_KEYS.contains(key)) {
+                    attributes.put(key, value);
+                }
+            });
+        }
         if (event != null) {
             attributes.put("scm.event.type", event.eventType());
             attributes.put("scm.event.source", event.metadata().source());

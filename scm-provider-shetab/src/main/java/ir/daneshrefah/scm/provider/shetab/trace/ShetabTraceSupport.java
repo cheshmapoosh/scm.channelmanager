@@ -2,12 +2,10 @@ package ir.daneshrefah.scm.provider.shetab.trace;
 
 import ir.daneshrefah.scm.common.provider.message.ProviderMessageCustomizerContext;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
-import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.provider.shetab.config.ShetabResolvedConfig;
 import org.apache.camel.Exchange;
 import org.jpos.iso.ISOMsg;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -15,45 +13,33 @@ import java.util.function.Supplier;
 
 @Component
 public class ShetabTraceSupport {
-    private final ObjectProvider<ScmObservation> observationProvider;
-
-    public ShetabTraceSupport(ObjectProvider<ScmObservation> observationProvider) {
-        this.observationProvider = observationProvider;
-    }
+    private static final String OPERATION_SCOPE_PROPERTY = "scm.observation.scope.operation";
 
     public <T> T clientSpan(Exchange exchange, ShetabResolvedConfig config, ISOMsg request, Supplier<T> action) {
-        ScmObservation observation = observationProvider.getIfAvailable();
-        if (observation == null) {
-            return action.get();
-        }
-
         String primaryEndpoint = primaryEndpoint(config);
         EndpointParts endpointParts = primaryEndpoint == null ? null : parseEndpoint(primaryEndpoint);
-
-        ObservationScope scope = observation.trace()
-                .span("provider.shetab.call")
-                .spanKind("client")
-                .action("provider.shetab.call")
-                .attribute("scm.provider.name", value(config == null ? null : config.provider()))
-                .attribute("scm.provider.scheme", value(config == null ? null : config.scheme()))
-                .attribute("scm.provider.uri", providerUri(config))
-                .attribute("shetab.endpoint.primary", primaryEndpoint)
-                .attribute("net.peer.name", endpointParts == null ? null : endpointParts.host())
-                .attribute("net.peer.port", endpointParts == null ? null : endpointParts.port())
-                .attribute("shetab.iso.mti", safeMti(request))
-                .attribute("shetab.iso.stan", safeField(request, 11))
-                .attribute("shetab.iso.rrn", safeField(request, 37))
-                .start();
+        Map<String, Object> attributes = new java.util.LinkedHashMap<>();
+        put(attributes, "scm.provider.name", config == null ? null : config.provider());
+        put(attributes, "scm.provider.scheme", config == null ? null : config.scheme());
+        put(attributes, "scm.provider.uri", providerUri(config));
+        put(attributes, "shetab.endpoint.primary", primaryEndpoint);
+        put(attributes, "net.peer.name", endpointParts == null ? null : endpointParts.host());
+        put(attributes, "net.peer.port", endpointParts == null ? null : endpointParts.port());
+        put(attributes, "shetab.iso.mti", safeMti(request));
+        put(attributes, "shetab.iso.stan", safeField(request, 11));
+        put(attributes, "shetab.iso.rrn", safeField(request, 37));
 
         try {
             T result = action.get();
-            scope.success();
+            put(attributes, "event.outcome", "success");
+            addOperationEvent(exchange, "provider.shetab.call", attributes);
             return result;
         } catch (RuntimeException e) {
-            scope.failure(e);
+            put(attributes, "event.outcome", "failure");
+            put(attributes, "error.type", e.getClass().getName());
+            put(attributes, "error.code", e.getClass().getSimpleName());
+            addOperationEvent(exchange, "provider.shetab.call", attributes);
             throw e;
-        } finally {
-            scope.close();
         }
     }
 
@@ -64,34 +50,42 @@ public class ShetabTraceSupport {
             String phase,
             Runnable action
     ) {
-        ScmObservation observation = observationProvider.getIfAvailable();
-        if (observation == null) {
-            action.run();
-            return;
-        }
-
-        ObservationScope scope = observation.trace()
-                .span("provider.customizer.execute")
-                .spanKind("internal")
-                .action("provider.customizer.execute")
-                .attribute("scm.provider.name", value(context == null ? null : context.providerCode()))
-                .attribute("scm.provider.scheme", value(context == null ? null : context.scheme()))
-                .attribute("scm.provider.uri", value(context == null ? null : context.providerUri()))
-                .attribute("scm.provider.service_code", value(context == null ? null : context.serviceCode()))
-                .attribute("scm.provider.operation_code", value(context == null ? null : context.operationCode()))
-                .attribute("scm.provider.channel_code", value(context == null ? null : context.channelCode()))
-                .attribute("scm.provider.customizer.type", value(customizerType))
-                .attribute("scm.provider.customizer.phase", value(phase))
-                .start();
+        Map<String, Object> attributes = new java.util.LinkedHashMap<>();
+        put(attributes, "scm.provider.name", context == null ? null : context.providerCode());
+        put(attributes, "scm.provider.scheme", context == null ? null : context.scheme());
+        put(attributes, "scm.provider.uri", context == null ? null : context.providerUri());
+        put(attributes, "scm.provider.service_code", context == null ? null : context.serviceCode());
+        put(attributes, "scm.provider.operation_code", context == null ? null : context.operationCode());
+        put(attributes, "scm.provider.channel_code", context == null ? null : context.channelCode());
+        put(attributes, "scm.provider.customizer.type", customizerType);
+        put(attributes, "scm.provider.customizer.phase", phase);
 
         try {
             action.run();
-            scope.success();
+            put(attributes, "event.outcome", "success");
+            addOperationEvent(exchange, "provider.customizer.execute", attributes);
         } catch (RuntimeException e) {
-            scope.failure(e);
+            put(attributes, "event.outcome", "failure");
+            put(attributes, "error.type", e.getClass().getName());
+            put(attributes, "error.code", e.getClass().getSimpleName());
+            addOperationEvent(exchange, "provider.customizer.execute", attributes);
             throw e;
-        } finally {
-            scope.close();
+        }
+    }
+
+    private void addOperationEvent(Exchange exchange, String name, Map<String, Object> attributes) {
+        if (exchange == null) {
+            return;
+        }
+        ObservationScope scope = exchange.getProperty(OPERATION_SCOPE_PROPERTY, ObservationScope.class);
+        if (scope != null) {
+            scope.event(name, attributes);
+        }
+    }
+
+    private void put(Map<String, Object> attributes, String name, Object value) {
+        if (attributes != null && name != null && !name.isBlank() && value != null) {
+            attributes.put(name, value);
         }
     }
 

@@ -84,9 +84,13 @@
     <springProperty scope="context" name="TRACE_ASYNC_MAX_FLUSH_TIME"
                     source="scm.observation.trace.async.max-flush-time" defaultValue="1000"/>
 
-    <property name="TRACE_JSONL_FILE_PATTERN"
+    <property name="TRACE_JSONL_CURRENT_FILE"
+              value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}.jsonl"/>
+    <property name="TRACE_JSONL_ROLLED_FILE_PATTERN"
               value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
-    <property name="TRACE_SIMPLE_FILE_PATTERN"
+    <property name="TRACE_SIMPLE_CURRENT_FILE"
+              value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}.log"/>
+    <property name="TRACE_SIMPLE_ROLLED_FILE_PATTERN"
               value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
 
     <springProperty scope="context" name="AUDIT_ENABLED"
