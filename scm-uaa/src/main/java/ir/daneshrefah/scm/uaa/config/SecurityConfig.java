@@ -5,7 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 //import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
-import ir.daneshrefah.scm.cache.client.connector.CacheTemplate;
+
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.common.service.LogoutService;
