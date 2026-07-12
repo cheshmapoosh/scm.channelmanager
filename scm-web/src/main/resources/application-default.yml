@@ -137,7 +137,7 @@ scm:
             field: 128
             verify-response: false
     api-repo:
-      schema: nab-api-repo
+      scheme: nab-api-repo
       enabled: true
       base-url: http://10.15.1.61:9677
       connect-timeout-ms: 3000
