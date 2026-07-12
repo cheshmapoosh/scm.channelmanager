@@ -21,7 +21,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
@@ -71,14 +75,19 @@ public class AuthenticationPluginHandler implements PluginHandler {
             throw new AuthenticationRequiredException();
         }
         ClientAuthenticationRequest authenticationRequest = convertToClientAuthenticationRequest(exchange);
+        Authentication localJwtAuthentication = SecurityContextHolder.getContext().getAuthentication();
         try (ExchangeAuthenticationContext.Binding ignored = ExchangeAuthenticationContext.isolateCurrentThread()) {
+            Authentication traceAuthentication = null;
             try {
                 UserAuthentication authentication = authenticationClientTemplate
                         .authenticateUserByAuthenticationRequest(authenticationRequest);
                 profileLoader.preparePersonProfile(authentication);
 
                 // Resolve the trace allowlist while the validated Jwt is still available locally.
-                observationTraceSupport.enrichGatewayAuthentication(exchange, authentication);
+                traceAuthentication = traceAuthentication(authentication, localJwtAuthentication);
+                observationTraceSupport.enrichGatewayAuthentication(exchange, traceAuthentication);
+                traceAuthentication = null;
+                localJwtAuthentication = null;
 
                 ValidatedJwtBusinessContext jwtBusinessContext = validatedBusinessContext(authentication);
                 UserAuthentication exchangeAuthentication = exchangeAuthentication(authentication);
@@ -90,6 +99,9 @@ public class AuthenticationPluginHandler implements PluginHandler {
                         "error.code", exception.getClass().getSimpleName()
                 ));
                 throw exception;
+            } finally {
+                traceAuthentication = null;
+                localJwtAuthentication = null;
             }
         }
     }
@@ -100,6 +112,34 @@ public class AuthenticationPluginHandler implements PluginHandler {
         }
         exchange.getIn().removeHeader(JWT_HEADER);
         exchange.getMessage().removeHeader(JWT_HEADER);
+    }
+
+    private Authentication traceAuthentication(
+            UserAuthentication authentication,
+            Authentication localJwtAuthentication
+    ) {
+        if (containsValidatedJwt(authentication)) {
+            return authentication;
+        }
+        if (containsValidatedJwt(localJwtAuthentication)) {
+            return localJwtAuthentication;
+        }
+        return authentication;
+    }
+
+    private boolean containsValidatedJwt(Authentication authentication) {
+        if (authentication instanceof JwtAuthenticationToken) {
+            return true;
+        }
+        if (authentication instanceof UsernamePasswordAuthenticationToken token
+                && token.getCredentials() instanceof Jwt) {
+            return true;
+        }
+        if (authentication instanceof UserAuthentication userAuthentication) {
+            UserAuthentication.AuthenticationDetail details = userAuthentication.getDetails();
+            return details != null && details.getLoginData() instanceof Jwt;
+        }
+        return false;
     }
 
     private ValidatedJwtBusinessContext validatedBusinessContext(UserAuthentication authentication) {

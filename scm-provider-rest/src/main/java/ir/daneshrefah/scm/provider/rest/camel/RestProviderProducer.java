@@ -129,6 +129,7 @@ public class RestProviderProducer extends DefaultProducer {
             ResponseEntity<String> response = traceSupport.clientSpan(
                     exchange,
                     config,
+                    operationName,
                     requestSpec,
                     () -> clientRegistry.exchange(config, requestSpec)
             );

@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
 import ir.daneshrefah.scm.provider.rest.ratelimit.CacheClientRestProviderRateLimiter;
 import ir.daneshrefah.scm.provider.rest.ratelimit.NoopRestProviderRateLimiter;
 import ir.daneshrefah.scm.provider.rest.ratelimit.RestProviderRateLimiter;
+import ir.daneshrefah.scm.provider.rest.trace.RestObservationAttributeContributor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.ObjectProvider;
@@ -45,6 +46,12 @@ public class RestProviderAutoConfiguration {
     @ConditionalOnMissingBean
     public RestProviderMetrics restProviderMetrics() {
         return new RestProviderMetrics();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RestObservationAttributeContributor restObservationAttributeContributor() {
+        return new RestObservationAttributeContributor();
     }
 
     @Bean
