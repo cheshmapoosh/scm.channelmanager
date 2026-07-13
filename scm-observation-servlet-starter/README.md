@@ -1,71 +1,122 @@
-# scm-observation-servlet-starter
+# راهنمای `scm-observation-servlet-starter`
 
-`scm-observation-servlet-starter` is the opt-in Servlet transport adapter for SCM observation. It depends on the transport-neutral `scm-observation-starter` and owns:
+## هدف
 
-- Servlet request correlation MDC;
-- optional HTTP server spans;
-- HTTP header, method, path, route, status, and client-address extraction;
-- Servlet filter registration and ordering.
+این ماژول adapter اختیاری Servlet برای هستهٔ مستقل `scm-observation-starter` است و مسئول موارد زیر است:
 
-The core starter does not depend on this adapter and contains no Servlet or HTTP configuration. SOAP, Camel, TCP, MQ, WebSocket, gRPC, and other transports use separate adapters and the same core observation API.
+- ایجاد correlation محلی برای request؛
+- قرار دادن metadata request در MDC؛
+- ایجاد اختیاری HTTP server span؛
+- استخراج امن method، path، route، status و client address؛
+- ثبت filterها با order مشخص.
+
+هستهٔ Observation به این adapter وابسته نیست. ماژول‌های غیر Servlet نباید این dependency را اضافه کنند.
 
 ## Dependency
-
-Only a Servlet-facing host that needs request MDC or HTTP server observation adds:
 
 ```gradle
 implementation project(':scm-observation-servlet-starter')
 ```
 
-Adding the adapter does not enable any observation signal. Services that expose only Actuator management HTTP, including `scm-cache`, do not depend on it.
+افزودن dependency هیچ signalی را فعال نمی‌کند. فعال‌سازی همچنان تابع variableهای هسته است.
 
-Current opt-in hosts are `scm-web`, `scm-uaa`, `scm-config`, and `scm-cm-connector`. `scm-cache` and the non-HTTP `scm-logging` service do not depend on this adapter.
+## Variableهای Servlet Observation
 
-## Properties
+قرارداد بیرونی فقط از طریق environment variable است:
 
-The adapter exclusively owns this external property contract:
-
-| Spring property | Environment variable | Default |
+| Variable | Default | توضیح |
 | --- | --- | --- |
-| `scm.observation.http.server.enabled` | `SCM_OBS_HTTP_SERVER_ENABLED` | `false` |
-| `scm.observation.http.server.mode` | `SCM_OBS_HTTP_SERVER_MODE` | `channel-only` |
-| `scm.observation.http.server.span-name` | `SCM_OBS_HTTP_SERVER_SPAN_NAME` | `http.server.request` |
+| `SCM_OBS_HTTP_SERVER_ENABLED` | `false` | اجازهٔ ایجاد generic HTTP server span |
+| `SCM_OBS_HTTP_SERVER_MODE` | `channel-only` | policy ایجاد span؛ مقدار پیش‌فرض generic HTTP span را غیرفعال نگه می‌دارد |
+| `SCM_OBS_HTTP_SERVER_SPAN_NAME` | `http.server.request` | نام span در صورت فعال بودن |
 
-Defaults are stored in `META-INF/scm/servlet-observation-defaults.yml`. `ScmServletObservationDefaultsEnvironmentPostProcessor` loads them at `LOWEST_PRECEDENCE` and adds them last, so command-line arguments, system properties, environment variables, Spring Cloud Config, profiles, and host configuration retain precedence. Hosts must not add `spring.config.import` for this resource.
+نمونهٔ یک میزبان عمومی HTTP:
 
-A service-specific span name remains a host policy:
-
-```yaml
-scm:
-  observation:
-    http:
-      server:
-        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:uaa.http.request}
+```bash
+export SCM_OBS_ENABLED=true
+export SCM_OBS_TRACE_ENABLED=true
+export SCM_OBS_HTTP_SERVER_ENABLED=true
+export SCM_OBS_HTTP_SERVER_MODE=all
+export SCM_OBS_HTTP_SERVER_SPAN_NAME=admin.http.request
 ```
 
-## Signal Gating
+نمونهٔ میزبانی که business trace را در لایهٔ اختصاصی Gateway می‌سازد:
 
-`ObservationMdcFilter` is registered only when both `scm.observation.enabled=true` and `scm.observation.log.enabled=true`. The core `ObservationSignalPolicy` also gates its runtime behavior.
+```bash
+export SCM_OBS_HTTP_SERVER_ENABLED=false
+export SCM_OBS_HTTP_SERVER_MODE=channel-only
+```
 
-`HttpServerObservationFilter` is configured only when both `scm.observation.enabled=true` and `scm.observation.trace.enabled=true`. Its registration is enabled only when `scm.observation.http.server.enabled=true` and mode is not `channel-only`. The default `channel-only` mode therefore leaves generic HTTP server spans disabled.
+در حالت دوم adapter می‌تواند correlation/MDC را فراهم کند، اما generic HTTP business span ایجاد نمی‌کند.
 
-Setting `scm.observation.http.server.enabled=true`, changing its mode, or adding this dependency never enables TRACE. Global observation and the core TRACE policy remain authoritative.
+## Signal gating
 
-## Filter Behavior
+`ObservationMdcFilter` فقط زمانی فعال است که هر دو variable زیر true باشند:
 
-`ObservationMdcFilter` runs on `/*` at `Ordered.HIGHEST_PRECEDENCE + 20`.
+```text
+SCM_OBS_ENABLED=true
+SCM_OBS_LOG_ENABLED=true
+```
 
-- It reads a nonblank `X-Correlation-ID`, trims it, and otherwise generates a local correlation id.
-- It places `correlationId`, `scmAppName`, and `scmAppProfile` in MDC while the request is processed.
-- It restores prior correlation, trace, and span MDC values after the filter chain.
+`HttpServerObservationFilter` فقط زمانی span ایجاد می‌کند که همهٔ شرط‌های زیر برقرار باشند:
 
-`HttpServerObservationFilter` runs on `/*` at `Ordered.HIGHEST_PRECEDENCE + 30` when its gates allow registration.
+```text
+SCM_OBS_ENABLED=true
+SCM_OBS_TRACE_ENABLED=true
+SCM_OBS_HTTP_SERVER_ENABLED=true
+SCM_OBS_HTTP_SERVER_MODE != channel-only
+```
 
-- It creates a server-kind span with the configured span name and `correlation.type=request`.
-- Correlation resolution is `X-Correlation-ID`, then current MDC, then a generated local id.
-- It records HTTP method, request URI with servlet-path fallback, Spring's best-matching route, response status, and client IP.
-- Client IP resolution is the first `X-Forwarded-For` value, then `X-Real-IP`, then the Servlet remote address.
-- A thrown or explicitly recorded exception marks the span as failed; an HTTP status of 400 or greater also produces failure outcome.
-- Async and error dispatches are not observed again, and a request attribute prevents duplicate filter observation.
+فعال‌کردن HTTP adapter به‌تنهایی TRACE را فعال نمی‌کند.
 
-Controllers or exception handlers may call `HttpServerObservationFilter.recordException(request, throwable)` so an exception translated into an HTTP response remains attached to the server span. The adapter passes all generated observation data through the core builders, validation, sanitization, and output contract.
+## رفتار Filterها
+
+### `ObservationMdcFilter`
+
+- روی `/*` و با order برابر `Ordered.HIGHEST_PRECEDENCE + 20` اجرا می‌شود؛
+- ابتدا `X-Correlation-ID` غیرخالی را می‌خواند؛
+- در نبود آن correlation id محلی تولید می‌کند؛
+- `correlationId`, application name و profile را در MDC قرار می‌دهد؛
+- پس از پایان request مقادیر قبلی MDC را restore می‌کند.
+
+### `HttpServerObservationFilter`
+
+- با order برابر `Ordered.HIGHEST_PRECEDENCE + 30` اجرا می‌شود؛
+- server span با `correlation.type=request` می‌سازد؛
+- method، URI، best matching route، status و client IP را ثبت می‌کند؛
+- client IP را به ترتیب از اولین `X-Forwarded-For`، سپس `X-Real-IP` و سپس remote address می‌گیرد؛
+- exception یا status برابر 400 و بیشتر را failure ثبت می‌کند؛
+- async و error dispatch را دوباره observe نمی‌کند؛
+- برای جلوگیری از duplicate از request attribute داخلی استفاده می‌کند.
+
+Exception handler می‌تواند از API زیر استفاده کند تا exception ترجمه‌شده به HTTP response نیز روی span ثبت شود:
+
+```java
+HttpServerObservationFilter.recordException(request, throwable);
+```
+
+## مرز امنیتی
+
+Adapter نباید raw headerهای زیر را در Observation قرار دهد:
+
+```text
+Authorization
+Cookie
+Set-Cookie
+API key
+Token
+Password
+OTP
+```
+
+هر attribute تولیدشده از مسیر registry، validation و sanitizer هسته عبور می‌کند.
+
+## مسیر توسعه
+
+برای افزودن metadata جدید Servlet:
+
+1. semantic field را مشخص کنید؛
+2. attribute را در ماژول مالک register کنید؛
+3. extraction را در adapter با allowlist محدود اضافه کنید؛
+4. از ثبت مقدار آزاد header جلوگیری کنید؛
+5. مستند variable یا attribute جدید را به‌روزرسانی کنید.
