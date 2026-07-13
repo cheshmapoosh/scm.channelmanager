@@ -44,8 +44,8 @@ public class JwtGatewayAuthenticationTraceContributor implements GatewayAuthenti
             return Map.of();
         }
         Map<String, Object> attributes = new LinkedHashMap<>();
-        put(attributes, CoreTraceAttributes.AUTH_TYPE.name(), "bearer");
-        put(attributes, CoreTraceAttributes.AUTH_SCHEME.name(), "jwt");
+        put(attributes, CoreTraceAttributes.AUTH_TYPE.name(), "jwt");
+        put(attributes, CoreTraceAttributes.AUTH_SCHEME.name(), "bearer");
         put(attributes, CoreTraceAttributes.AUTH_SUBJECT_USERNAME.name(), stringClaim(jwt, SUBJECT));
         put(attributes, CoreTraceAttributes.AUTH_SUBJECT_ID.name(), stringClaim(jwt, SUBJECT_ID));
         put(attributes, CoreTraceAttributes.AUTH_ISSUER.name(), stringClaim(jwt, ISSUER));
@@ -117,6 +117,9 @@ public class JwtGatewayAuthenticationTraceContributor implements GatewayAuthenti
         }
         if (value instanceof URI || value instanceof URL) {
             return textOrNull(value.toString());
+        }
+        if (value instanceof Number number) {
+            return textOrNull(number.toString());
         }
         return null;
     }

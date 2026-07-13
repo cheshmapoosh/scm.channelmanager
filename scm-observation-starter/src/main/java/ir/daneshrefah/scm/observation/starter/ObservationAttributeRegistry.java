@@ -102,7 +102,7 @@ public class ObservationAttributeRegistry {
             return null;
         }
         if (key == null) {
-            return isDynamicTraceBusinessAttribute(stream, name) ? dynamicTraceValue(value) : null;
+            return null;
         }
         String text = value instanceof String ? ((String) value).trim() : null;
         if (text != null && (text.isBlank() || "-".equals(text) || "null".equalsIgnoreCase(text))) {
@@ -112,22 +112,6 @@ public class ObservationAttributeRegistry {
             return value;
         }
         return mask(String.valueOf(value), key);
-    }
-
-    private boolean isDynamicTraceBusinessAttribute(ObservationStream stream, String name) {
-        if (stream != ObservationStream.TRACE || name == null || name.isBlank()) {
-            return false;
-        }
-        String normalized = name.trim();
-        return normalized.startsWith("scm.service.") || normalized.startsWith("scm.status.");
-    }
-
-    private Object dynamicTraceValue(Object value) {
-        String text = value instanceof String ? ((String) value).trim() : null;
-        if (text != null) {
-            return text.isBlank() || "-".equals(text) || "null".equalsIgnoreCase(text) ? null : text;
-        }
-        return value;
     }
 
     private Map<String, ObservationAttributeKey<?>> attributes(ObservationStream stream) {

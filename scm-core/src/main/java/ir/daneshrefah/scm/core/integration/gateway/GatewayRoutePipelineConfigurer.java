@@ -68,8 +68,13 @@ public class GatewayRoutePipelineConfigurer {
         pipeline.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(servicePlan.gatewayChannel().getProtocolType()));
         pipeline.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(inboundRoute.channelServiceDefinition()));
         pipeline.setProperty(Message.SERVICE_VERSION, constant(inboundRoute.serviceVersion()));
+        GatewayObservationEnrichmentSupport.GatewayObservationDefinition observationDefinition =
+                gatewayObservationEnrichmentSupport.definitionFor(routePlan, servicePlan, inboundRoute);
+        if (observationDefinition.requiresBodyExtraction()) {
+            route.streamCaching();
+        }
         pipeline.setProperty(GatewayObservationEnrichmentSupport.DEFINITION_PROPERTY,
-                constant(gatewayObservationEnrichmentSupport.definitionFor(routePlan, servicePlan, inboundRoute)));
+                constant(observationDefinition));
 
         defineExceptionHandler(route);
         route.onCompletion()
