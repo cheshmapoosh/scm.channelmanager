@@ -1,92 +1,103 @@
-# scm-cm-connector
+# `scm-cm-connector`
 
-`scm-cm-connector` remains the HTTP bridge between the legacy CM system and SCM-zone services.
+`scm-cm-connector` پل HTTP بین CM قدیمی و سرویس‌های SCM است.
 
-It uses:
+وابستگی‌های اصلی:
 
-- `scm-uaa-starter` for OAuth2 Resource Server security,
-- `scm-cache-starter` for Hazelcast-backed cache infrastructure,
-- `scm-observation-starter` for the transport-neutral observation API,
-- `scm-observation-servlet-starter` for Servlet request correlation and HTTP server observation.
+```text
+scm-uaa-starter
+scm-cache-starter
+scm-observation-starter
+scm-observation-servlet-starter
+```
 
-## Endpoints
+مستند کامل Observation، variableها، lifecycle و مسیر توسعه:
+
+```text
+scm-cm-connector/OBSERVABILITY.md
+```
+
+## Endpointها
 
 ```http
 GET /internal/cm/v1/session
 POST /internal/cm/v1/otp/verify
 ```
 
-The session endpoint uses the authenticated `ScmPrincipal`. It never accepts nickname, terminal code, subject, session id, map name, cache key, or cache value from the request.
+Endpoint مربوط به session فقط از `ScmPrincipal` معتبر استفاده می‌کند. nickname، terminal code، subject، session id، map name، cache key یا cache value نباید از request به‌عنوان منبع قابل اعتماد پذیرفته شود.
 
-The OTP endpoint delegates to `OtpVerificationGateway`. The default gateway returns `501 Not Implemented`; it does not read OTP from cache and does not compare OTP locally.
+Endpoint مربوط به OTP به `OtpVerificationGateway` واگذار می‌شود. implementation پیش‌فرض `501 Not Implemented` برمی‌گرداند و OTP را از cache نمی‌خواند یا به‌صورت محلی مقایسه نمی‌کند.
 
 ## Session Cache
 
-The connector receives `SessionCache` from `scm-uaa-starter` when security cache support is explicitly enabled:
+فعال‌سازی session cache فقط از طریق variable انجام می‌شود:
 
-```yaml
-scm:
-  security:
-    cache:
-      session:
-        enabled: true
-        cache-name: session_cache
-      user:
-        enabled: false
+```bash
+export SCM_SECURITY_SESSION_CACHE_ENABLED=true
+export SCM_SECURITY_SESSION_CACHE_NAME=session_cache
+export SCM_SECURITY_USER_CACHE_ENABLED=false
 
-  cache:
-    client:
-      caches:
-        session_cache:
-          type: near
+export SCM_CACHE_DISTRIBUTED=true
+export SCM_CACHE_SESSION_TYPE=near
+export SCM_CACHE_CLUSTER_NAME=scm-cache
+export SCM_CACHE_ADDRESS=127.0.0.1:5701
 ```
 
-Ownership must be established before session data is returned.
+قبل از بازگرداندن session، ownership باید از principal معتبر اثبات شود.
+
+## Resource Server
+
+نمونهٔ variableهای اصلی:
+
+```bash
+export SCM_RESOURCE_SERVER_ENABLED=true
+export SCM_UAA_BASE_URL=http://localhost:8000
+export SCM_CM_CONNECTOR_RESOURCE_AUDIENCE=scm-cm-connector
+export SCM_RESOURCE_SERVER_METHOD_SECURITY_ENABLED=true
+```
+
+Claimهای required نیز با variableهای زیر تعیین می‌شوند:
+
+```text
+SCM_CM_CONNECTOR_REQUIRED_CLAIM_SUB
+SCM_CM_CONNECTOR_REQUIRED_CLAIM_SESSION
+SCM_CM_CONNECTOR_REQUIRED_CLAIM_NICKNAME
+SCM_CM_CONNECTOR_REQUIRED_CLAIM_TERMINAL
+```
 
 ## Observation
 
-The connector records low-cardinality logs, traces, and metrics for session reads, cache access, ownership checks, OTP delegation, and error paths.
+تنظیمات runtime Observation با environment variable انجام می‌شود، نه با property مستقیم. نمونهٔ local:
 
-The Servlet adapter owns the compatible HTTP server property namespace. CM Connector retains its service-specific request span policy:
+```bash
+export SCM_APP=scm-cm-connector
+export SCM_ENV=dev
+export SCM_METADATA_NAMESPACE=local
+export SCM_METADATA_INSTANCE_ID=local-scm-cm-connector
 
-```yaml
-scm:
-  observation:
-    http:
-      server:
-        span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:cm-connector.http.request}
+export SCM_OBS_ENABLED=true
+export SCM_OBS_LOG_ENABLED=true
+export SCM_OBS_TRACE_ENABLED=true
+export SCM_OBS_AUDIT_ENABLED=false
+
+export SCM_OBS_HTTP_SERVER_ENABLED=true
+export SCM_OBS_HTTP_SERVER_MODE=all
+export SCM_OBS_HTTP_SERVER_SPAN_NAME=cm-connector.http.request
 ```
 
-Never log or tag tokens, subjects, nicknames, terminal codes, session ids, JWT ids, raw cache keys, OTPs, passwords, or full cache values.
+جزئیات کامل در `OBSERVABILITY.md` قرار دارد.
 
-Every LOG, TRACE, and AUDIT record includes:
+## قواعد امنیتی
+
+موارد زیر نباید log، trace، audit یا metric tag شوند:
 
 ```text
-event.stream
-scm.metadata.namespace
-scm.metadata.instance_id
-scm.metadata.time_zone
-scm.config.label
-scm.observation.target.index
-service.name
-deployment.environment
+raw token
+Authorization
+session id
+raw cache key
+cache value
+OTP
+password
+credential
 ```
-
-`scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Physical files are namespace-based and do not use channel code. The starter owns technical defaults; CM Connector keeps only policy and real overrides:
-
-```text
-simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
-jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
-```
-
-JSONL is the default Filebeat ingestion contract. Simple output is optional human-readable `key=value` output, includes exactly one canonical `stream=`, and is not consumed by the current JSONL pipeline.
-
-CM connector spans are not legacy by default. If a request already started at `scm-web.gateway.receive`, connector spans should keep `scm.observation.legacy.enabled=false`. If CM connector is later configured as the direct business entry point for a legacy-reportable flow, only the root business span may set:
-
-```text
-scm.observation.legacy.enabled = true
-scm.observation.legacy.operation.code
-scm.observation.legacy.service.code
-```
-
-Console output for LOG, TRACE, and AUDIT is enabled only in `dev`; the AUDIT console does not enable the AUDIT signal. Starter defaults keep consoles disabled and files enabled in test, pilot, and prod. Distributed tracing uses W3C `traceparent`; custom `X-SCM-*` trace headers are not distributed trace sources of truth.

@@ -1,21 +1,27 @@
-# scm-cache
+# `scm-cache`
 
-`scm-cache` is the SCM Hazelcast server/member process. It owns the embedded Hazelcast member bootstrap, persistence/bootstrap configuration, server-side health checks, readiness/liveness probes, and Prometheus export. It has no business or direct cache-management REST API.
+`scm-cache` فرایند server/member مربوط به Hazelcast در SCM است و مسئول bootstrap عضو Hazelcast، persistence configuration، health، readiness/liveness و Prometheus export است.
 
-`scm-cache-starter` remains the client-side cache integration module. Client cache metrics and auto-instrumentation are intentionally deferred to a later cycle.
+`scm-cache-starter` ماژول client-side cache integration است و مسئولیت جداگانه دارد.
 
-## Ports
+مستند کامل Observation، variableها، signalها و مسیر توسعه:
 
-The service uses exactly two conceptual ports:
+```text
+scm-cache/OBSERVABILITY.md
+```
 
-- `5701` named `hazelcast` for Hazelcast cluster/member communication.
-- `8080` named `management` for the main Spring Boot web server and Actuator endpoints only.
+## Portها
 
-Actuator runs on the main web server port. Port `8080` is management-only; it does not expose business or direct cache-management controllers. Do not configure `management.server.port`, and do not add a separate actuator port.
+```text
+5701  hazelcast    ارتباط cluster/member
+8080  management   Spring Boot و Actuator
+```
 
-## Actuator Endpoints
+Port `8080` فقط برای management است و business API یا direct cache-management API ارائه نمی‌کند. Actuator روی همان port اجرا می‌شود و `management.server.port` جداگانه نباید تعریف شود.
 
-Only these Actuator endpoints are exposed:
+## Actuator
+
+Endpointهای مجاز:
 
 ```text
 /actuator/health
@@ -24,40 +30,37 @@ Only these Actuator endpoints are exposed:
 /actuator/info
 /actuator/metrics
 /actuator/prometheus
-```
-
-Probe aliases are also enabled on the same server port:
-
-```text
 /livez
 /readyz
 ```
 
-`/actuator/health/liveness` includes Spring Boot `livenessState` and `scmCacheHazelcastLiveness`. It checks that the application is alive and the embedded Hazelcast lifecycle service is running. It does not depend on the database or remote systems.
+Liveness فقط زنده‌بودن application و lifecycle عضو Hazelcast را بررسی می‌کند.
 
-`/actuator/health/readiness` includes Spring Boot `readinessState` and the stable `scmCacheHazelcast` health indicator. Readiness checks that the embedded Hazelcast instance exists, its lifecycle service is running, bootstrap completed, registered element count matches materialized element count, and cluster size is at least `scm.cache.health.hazelcast.minimum-cluster-size` with a default of `1`.
-
-The Hazelcast readiness details include:
+Readiness موارد زیر را بررسی می‌کند:
 
 ```text
-cluster.size
-bootstrap.started
-bootstrap.completed
-registered.count
-materialized.count
-lastFailure.type
-lastFailure.message
+Hazelcast instance موجود باشد
+lifecycle service در حال اجرا باشد
+bootstrap کامل شده باشد
+registered count با materialized count سازگار باشد
+cluster size از حداقل پیکربندی کمتر نباشد
+```
+
+حداقل cluster size با variable زیر تنظیم می‌شود:
+
+```bash
+export SCM_CACHE_HEALTH_MIN_CLUSTER_SIZE=1
 ```
 
 ## Prometheus Metrics
 
-Prometheus is available at:
+Metricها از این مسیر صادر می‌شوند:
 
 ```text
 /actuator/prometheus
 ```
 
-`scm-cache` registers low-cardinality gauges only:
+Metricهای اصلی:
 
 ```text
 scm.cache.hazelcast.cluster.size
@@ -73,15 +76,7 @@ scm.element.materialized
 scm.element.capacity.ratio
 ```
 
-Allowed Hazelcast lifecycle tags are:
-
-```text
-service=scm-cache
-component=hazelcast
-element_type=<HazelcastElementType>
-```
-
-Allowed generic element metric tags are:
+Tagهای مجاز low-cardinality هستند:
 
 ```text
 service=scm-cache
@@ -90,121 +85,90 @@ element_type=<HazelcastElementType>
 element_name=<finite configured element name>
 ```
 
-Element names are allowed as metric tags only for finite configured Hazelcast elements. Never use request, user, account, token, correlation, or other dynamic values as element tags.
+request، user، account، token، correlation id و مقادیر آزاد نباید metric tag شوند.
 
-Hazelcast element metrics use a scheduled snapshot refresh instead of scrape-time Hazelcast sampling. The refresh reads samples once, evaluates health/risk once, registers meters for newly discovered configured elements, and Prometheus gauge functions only read the latest snapshot.
+## Risk Policy
 
-Element risk is calculated inside the application before metrics are exported. Grafana and Prometheus must alert on the final values, not recalculate thresholds:
+Variableهای اصلی:
+
+```bash
+export SCM_CACHE_ELEMENT_WARNING_RATIO=0.80
+export SCM_CACHE_ELEMENT_CRITICAL_RATIO=0.90
+export SCM_CACHE_USER_WARNING_RATIO=0.80
+export SCM_CACHE_USER_CRITICAL_RATIO=0.90
+```
+
+معنای metricها:
 
 ```text
-scm.element.risk: 0=normal, 1=warning, 2=critical
+scm.element.risk:   0=normal, 1=warning, 2=critical
 scm.element.health: 1=healthy, 0=unhealthy
 ```
 
-`warningRatio` and `criticalRatio` are capacity ratios between `0` and `1`. `scm-observation-starter` owns `ScmElementRiskProperties`, `ScmElementRiskEngine`, and `ScmElementHealthEngine`; `scm-cache` binds them with `scm.cache.health.hazelcast.element-risk` and provides Hazelcast samples. The default policy and every per-element override are validated fail-fast at startup. Grafana should alert on `scm.element.risk == 1`, `scm.element.risk == 2`, and `scm.element.health == 0`.
+محاسبهٔ risk و health داخل application انجام می‌شود. Dashboard نباید thresholdها را دوباره محاسبه کند.
 
-The health reason `capacity_ratio_unavailable` means the element is materialized and healthy, but the adapter could not calculate a capacity ratio for that element. Readiness must not fail only because this reason is present, and `scm.element.capacity.ratio` may be `NaN`.
+## Hazelcast Runtime Variables
 
-## Structured Logs
+نمونهٔ local:
 
-`ScmCacheInitLogging` is startup-log-only. It creates the initial lifecycle correlation id and minimal structured arguments before the normal Spring observation API is fully available. It must not contain business logic, transaction logic, repository access, health logic, or Hazelcast bootstrap logic.
-
-When `scm.observation.enabled=false` or `scm.observation.log.enabled=false`, the shared `SCM_FALLBACK_CONSOLE` appender preserves ordinary diagnostic console logs. It excludes SCM TRACE and AUDIT marker events and never writes observation files. When structured LOG observation is enabled, the fallback remains inactive to avoid duplicate output.
-
-Startup/context/init logs use explicit `correlation.type=lifecycle`; they must not fall back to `unknown`.
-
-Event categories:
-
-```text
-scm.cache.context
-scm.cache.init
-scm.cache.health
+```bash
+export SCM_CACHE_CLUSTER_NAME=scm-cache-dev
+export SCM_CACHE_MEMBER_NAME=scm-cache-dev-local
+export SCM_CACHE_NETWORK_PORT=5701
+export SCM_CACHE_NETWORK_PORT_AUTO_INCREMENT=true
+export SCM_CACHE_NETWORK_PORT_COUNT=100
+export SCM_CACHE_TCP_IP_ENABLED=false
+export SCM_CACHE_KUBERNETES_ENABLED=false
 ```
 
-## Observation Routing
+نمونهٔ Kubernetes:
 
-`scm-cache` uses the transport-neutral `scm-observation-starter` only. It does not depend on `scm-observation-servlet-starter`, so Actuator, `/livez`, and `/readyz` requests do not create SCM HTTP request TRACE records and do not receive SCM request-correlation MDC behavior.
-
-Every LOG, TRACE, and AUDIT record includes:
-
-```text
-event.stream
-scm.metadata.namespace
-scm.metadata.instance_id
-scm.metadata.time_zone
-scm.config.label
-scm.observation.target.index
-service.name
-deployment.environment
+```bash
+export SCM_CACHE_KUBERNETES_ENABLED=true
+export SCM_CACHE_KUBERNETES_NAMESPACE=scm-platform
+export SCM_CACHE_KUBERNETES_SERVICE_NAME=scm-cache
 ```
 
-`scm.observation.target.index` is resolved dynamically from stream, namespace, environment, timestamp, and a real business `scm.channel.code` when present. Cache records normally do not represent a legacy business entry point, so `scm.observation.legacy.enabled` defaults to `false`.
+## Observation
 
-Files are namespace-based and do not use channel code. The starter owns technical defaults; Cache keeps only service policy and real overrides:
+`scm-cache` فقط از هستهٔ transport-neutral استفاده می‌کند و Servlet adapter ندارد. endpointهای Actuator business trace ایجاد نمی‌کنند.
 
-```text
-simple: {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
-jsonl:  {stream}-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
+نمونهٔ variableهای Observation:
+
+```bash
+export SCM_APP=scm-cache
+export SCM_ENV=prod
+export SCM_METADATA_NAMESPACE=scm-platform
+export SCM_METADATA_INSTANCE_ID=scm-cache-0
+
+export SCM_OBS_ENABLED=true
+export SCM_OBS_LOG_ENABLED=true
+export SCM_OBS_TRACE_ENABLED=true
+export SCM_OBS_AUDIT_ENABLED=false
+export SCM_OBS_METRIC_ENABLED=true
+
+export SCM_OBS_LOG_FILE_ENABLED=true
+export SCM_OBS_TRACE_FILE_ENABLED=true
+export SCM_OBS_LOG_FILE_FORMAT=jsonl
+export SCM_OBS_TRACE_FILE_FORMAT=jsonl
 ```
 
-JSONL is the default Filebeat ingestion contract. Simple output is optional human-readable `key=value` output, always includes exactly one `stream=` identity, and is not consumed by the current JSONL pipeline.
+برای جزئیات lifecycle، eventها، attributeها و مسیر توسعه به `OBSERVABILITY.md` مراجعه شود.
 
-In Kubernetes, `SCM_METADATA_NAMESPACE` comes from `metadata.namespace` and `SCM_METADATA_INSTANCE_ID` comes from `metadata.name` through the Downward API.
+## مرز امنیتی
 
-Console output for LOG, TRACE, and AUDIT is enabled only in `dev`. Enabling the AUDIT console does not enable the default-disabled AUDIT signal. Starter defaults keep consoles disabled and files enabled in test, pilot, and prod.
-
-Distributed tracing uses W3C `traceparent`; custom `X-SCM-*` trace headers are not distributed trace sources of truth.
-
-Stable event actions:
+موارد زیر نباید در output ثبت شوند:
 
 ```text
-runtime.context.created
-scm.cache.init.started
-hazelcast.bootstrap.started
-hazelcast.bootstrap.config.loaded
-hazelcast.bootstrap.config.registered
-hazelcast.bootstrap.member.started
-hazelcast.bootstrap.objects.materialized
-hazelcast.bootstrap.completed
-hazelcast.bootstrap.failed
-hazelcast.element.registered
-hazelcast.element.materialized
-hazelcast.health.changed
+cache key
+cache value
+request body
+token
+OTP
+password
+kubeconfig
+full network configuration
+sensitive command-line argument
 ```
 
-Hazelcast bootstrap logs include loaded definition count, registered element count and summary by type, one registered event per element, materialized element count and summary by type, one materialized event per element, member address, and cluster size. Materialization failures include the Hazelcast element type/name when available and are rethrown after a single bootstrap failure log. Do not log cache keys, cache values, request bodies, tokens, OTPs, passwords, kubeconfig, full network configuration, or sensitive command-line arguments.
-
-Registered and materialized Hazelcast element logs include `cache.hazelcast.element.type`, `cache.hazelcast.element.name`, and one LOG-only text field named `cache.hazelcast.element.config`. The config text uses deterministic key order, excludes nulls, and includes only selected safe values such as `ttlSeconds`, `maxIdleSeconds`, backup counts, `statisticsEnabled`, `evictionSize`, and `evictionMaxSizePolicy`. Nested JSON config logging is intentionally not used, and full Hazelcast config objects are never logged. `scm-cache` log attributes are registered through `ScmCacheObservationAttributeContributor`.
-
-Failure message formatting uses the injected `ObservationSanitizer` through `SafeFailureMessageFormatter`; it removes CR/LF, trims, sanitizes, and truncates stored failure messages instead of manually constructing a sanitizer.
-
-`HazelcastElementRegistry` only orchestrates registration and returns the initialization plan. `HazelcastElementDefinitionFactory` builds element definitions and deterministic config text, while `HazelcastElementMaterializer` materializes distributed objects and adds type/name context to materialization failures.
-
-## Configuration Source
-
-Local development uses module-local Spring configuration under:
-
-```text
-scm-cache/src/main/resources/
-```
-
-Non-development environments must use Spring Cloud Config through `scm-config`. Do not add a centralized root `docs/` folder for module-specific observability details.
-
-## Enabled Signals
-
-SCM Cache uses:
-
-```text
-LOG    = enabled
-TRACE  = enabled
-AUDIT  = disabled
-METRIC = enabled
-```
-
-`scm-cache` explicitly sets `scm.observation.metric.enabled=true` as service policy. Metrics follow the standard Actuator and Micrometer flow:
-
-```text
-Metric -> Actuator -> Micrometer -> Prometheus -> Grafana
-```
-
-Do not write metrics to files.
+Config element فقط به‌صورت خلاصهٔ deterministic و allowlisted ثبت می‌شود.
