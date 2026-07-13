@@ -47,6 +47,24 @@ public final class CoreTraceAttributes {
     public static final ObservationAttributeKey<String> SERVICE_CODE = keyword("scm.service.code", "Service code.");
     public static final ObservationAttributeKey<String> SERVICE_NAME = keyword("scm.service.name", "Service name.");
     public static final ObservationAttributeKey<String> SERVICE_VERSION = keyword("scm.service.version", "Service version.");
+    public static final ObservationAttributeKey<Long> SERVICE_AMOUNT = TraceAttribute.longNumber(
+            "scm.service.amount", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Business transaction amount.");
+    public static final ObservationAttributeKey<String> SERVICE_CURRENCY = keyword(
+            "scm.service.currency", "Business transaction currency.");
+    public static final ObservationAttributeKey<String> SERVICE_SOURCE_CARD = keyword(
+            "scm.service.source.card", "Business source card number.");
+    public static final ObservationAttributeKey<String> SERVICE_SOURCE_ACCOUNT = keyword(
+            "scm.service.source.account", "Business source account number.");
+    public static final ObservationAttributeKey<String> SERVICE_DESTINATION_CARD = keyword(
+            "scm.service.destination.card", "Business destination card number.");
+    public static final ObservationAttributeKey<String> SERVICE_DESTINATION_ACCOUNT = keyword(
+            "scm.service.destination.account", "Business destination account number.");
+    public static final ObservationAttributeKey<String> SERVICE_DOCUMENT_NUMBER = keyword(
+            "scm.service.document.number", "Business document number.");
+    public static final ObservationAttributeKey<String> SERVICE_REFERENCE_NUMBER = keyword(
+            "scm.service.reference.number", "Business reference number.");
+    public static final ObservationAttributeKey<String> SERVICE_TRANSACTION_TYPE = keyword(
+            "scm.service.transaction.type", "Business transaction type.");
     public static final ObservationAttributeKey<String> STATUS_CODE = keyword("scm.status.code", "Business status code.");
     public static final ObservationAttributeKey<String> STATUS_OUTCOME = keyword(
             "scm.status.outcome", "Business status outcome.");
@@ -82,6 +100,10 @@ public final class CoreTraceAttributes {
                 AUTH_SUBJECT_ID, AUTH_SUBJECT_USERNAME, AUTH_ISSUER, AUTH_AUDIENCE, AUTH_SCOPES,
                 AUTH_LOGIN_METHOD, AUTH_TRANSACTION_METHOD,
                 SERVICE_CODE, SERVICE_NAME, SERVICE_VERSION,
+                SERVICE_AMOUNT, SERVICE_CURRENCY,
+                SERVICE_SOURCE_CARD, SERVICE_SOURCE_ACCOUNT,
+                SERVICE_DESTINATION_CARD, SERVICE_DESTINATION_ACCOUNT,
+                SERVICE_DOCUMENT_NUMBER, SERVICE_REFERENCE_NUMBER, SERVICE_TRANSACTION_TYPE,
                 STATUS_CODE, STATUS_OUTCOME, STATUS_MESSAGE, STATUS_DESCRIPTION,
                 OPERATION_CODE, OPERATION_NAME, OPERATION_TYPE, OPERATION_DURATION_MS, SERVICE_DURATION_MS,
                 EXCHANGE_ID, TARGET_KIND,

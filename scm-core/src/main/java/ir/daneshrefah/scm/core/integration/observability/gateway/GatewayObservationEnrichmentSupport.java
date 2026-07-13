@@ -14,7 +14,11 @@ import ir.daneshrefah.scm.core.integration.gateway.InboundRouteDefinition;
 import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
+import ir.daneshrefah.scm.observation.starter.ElasticFieldType;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
+import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistry;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
+import ir.daneshrefah.scm.observation.starter.ObservationStream;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +44,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @Component
 @RequiredArgsConstructor
@@ -50,19 +52,22 @@ public class GatewayObservationEnrichmentSupport {
     public static final String DEFINITION_PROPERTY = "scm.observation.gateway.definition";
     public static final String ATTRIBUTES_PROPERTY = "scm.observation.gateway.attributes";
 
+    private static final int SUPPORTED_VERSION = 1;
     private static final String REQUEST_SNAPSHOT_PROPERTY = "scm.observation.gateway.request.snapshot";
     private static final String RESPONSE_SNAPSHOT_PROPERTY = "scm.observation.gateway.response.snapshot";
-    private static final Set<String> RESERVED_DYNAMIC_ATTRIBUTES = Set.of(
+    private static final Set<String> RESERVED_OBSERVATION_ATTRIBUTES = Set.of(
             "trace.id",
             "correlation.id",
             "service.name",
             "span.start_time",
             "span.end_time",
             "span.duration_ms",
+            "span.events",
             "scm.service.code",
             "scm.service.name",
             "scm.service.version",
-            "scm.service.duration_ms"
+            "scm.service.duration_ms",
+            "scm.status.duration_ms"
     );
     private static final Map<String, String> REQUEST_HEADER_EVENT_ATTRIBUTES = Map.ofEntries(
             Map.entry("user-agent", CommonTraceAttributes.HTTP_REQUEST_HEADER_USER_AGENT.name()),
@@ -76,16 +81,23 @@ public class GatewayObservationEnrichmentSupport {
     );
 
     private final ObjectMapper objectMapper;
-    private final ConcurrentMap<ObservationDefinitionCacheKey, GatewayObservationDefinition> definitions =
-            new ConcurrentHashMap<>();
+    private final ObservationAttributeRegistry attributeRegistry;
 
     public GatewayObservationDefinition definitionFor(
             RuntimeRoutePlan routePlan,
             RuntimeServicePlan servicePlan,
             InboundRouteDefinition inboundRoute
     ) {
-        ObservationDefinitionCacheKey key = cacheKey(routePlan, servicePlan, inboundRoute);
-        return definitions.computeIfAbsent(key, ignored -> compile(findObservationDefinition(servicePlan)));
+        DefinitionRegistrationContext context = registrationContext(routePlan, servicePlan, inboundRoute, null);
+        List<ChannelServiceDefinition> definitions = observationDefinitions(servicePlan);
+        if (definitions.isEmpty()) {
+            return GatewayObservationDefinition.empty();
+        }
+        if (definitions.size() > 1) {
+            invalid(context.withDefinition(duplicateDefinitionIds(definitions)), "duplicateDefinitions");
+        }
+        ChannelServiceDefinition definition = definitions.getFirst();
+        return compile(definition, context.withDefinition(definition.getId()));
     }
 
     public void captureRequest(Exchange exchange) {
@@ -93,16 +105,17 @@ public class GatewayObservationEnrichmentSupport {
             return;
         }
         try {
-            Object body = safeBodyCopy(exchange.getMessage().getBody());
+            Object body = immutableBodyCopy(exchange.getMessage().getBody());
+            String rawQuery = rawQuery(exchange);
             GatewayRequestSnapshot snapshot = new GatewayRequestSnapshot(
                     body,
                     bodySize(body),
                     safeHeaders(exchange.getMessage().getHeaders()),
-                    queryParameters(rawQuery(exchange)),
+                    queryParameters(rawQuery),
                     pathParameters(exchange),
                     httpMethod(exchange),
                     requestPath(exchange),
-                    rawQuery(exchange)
+                    sanitizeQuery(rawQuery)
             );
             exchange.setProperty(REQUEST_SNAPSHOT_PROPERTY, snapshot);
             exchange.setProperty(ATTRIBUTES_PROPERTY, new LinkedHashMap<String, Object>());
@@ -144,7 +157,7 @@ public class GatewayObservationEnrichmentSupport {
             return;
         }
         try {
-            Object body = safeBodyCopy(exchange.getMessage().getBody());
+            Object body = immutableBodyCopy(exchange.getMessage().getBody());
             GatewayResponseSnapshot snapshot = new GatewayResponseSnapshot(
                     body,
                     bodySize(body),
@@ -183,99 +196,159 @@ public class GatewayObservationEnrichmentSupport {
         }
     }
 
-    private ObservationDefinitionCacheKey cacheKey(
-            RuntimeRoutePlan routePlan,
-            RuntimeServicePlan servicePlan,
-            InboundRouteDefinition inboundRoute
-    ) {
-        GatewayChannel gateway = servicePlan == null ? null : servicePlan.gatewayChannel();
-        Service service = servicePlan == null ? null : servicePlan.service();
-        return new ObservationDefinitionCacheKey(
-                text(gateway == null ? null : gateway.getName()),
-                gatewayChannelCode(gateway),
-                text(service == null ? null : service.getCode()),
-                text(inboundRoute == null ? null : inboundRoute.serviceVersion()),
-                gateway == null || gateway.getProtocolType() == null ? null : gateway.getProtocolType().name(),
-                ChannelServiceDefinitionType.OBSERVATION.name()
-        );
-    }
-
-    private String gatewayChannelCode(GatewayChannel gateway) {
-        if (gateway == null || gateway.getChannel() == null) {
-            return null;
-        }
-        return text(gateway.getChannel().getCode());
-    }
-
-    private ChannelServiceDefinition findObservationDefinition(RuntimeServicePlan servicePlan) {
+    private List<ChannelServiceDefinition> observationDefinitions(RuntimeServicePlan servicePlan) {
         if (servicePlan == null || servicePlan.routeDefinitions() == null) {
-            return null;
+            return List.of();
         }
-        List<ChannelServiceDefinition> candidates = servicePlan.routeDefinitions()
+        return servicePlan.routeDefinitions()
                 .stream()
                 .filter(definition -> definition != null
                         && definition.getType() == ChannelServiceDefinitionType.OBSERVATION)
                 .toList();
-        if (candidates.size() > 1) {
-            log.warn("Multiple OBSERVATION definitions found phase={} definitionCount={} failureType={}",
-                    "definition.select", candidates.size(), "duplicateDefinition");
-        }
-        return candidates.isEmpty() ? null : candidates.getFirst();
     }
 
-    private GatewayObservationDefinition compile(ChannelServiceDefinition channelServiceDefinition) {
+    private GatewayObservationDefinition compile(
+            ChannelServiceDefinition channelServiceDefinition,
+            DefinitionRegistrationContext context
+    ) {
         Definition definition = channelServiceDefinition == null ? null : channelServiceDefinition.getDefinition();
         String payload = definition == null ? null : definition.getDetails();
         if (payload == null || payload.isBlank()) {
+            invalid(context, "missingPayload");
+        }
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(payload);
+        } catch (Exception exception) {
+            invalid(context, "invalidJson");
             return GatewayObservationDefinition.empty();
         }
-        try {
-            JsonNode root = objectMapper.readTree(payload);
-            int version = root.path("version").asInt(1);
-            JsonNode trace = root.path("trace");
-            if (!trace.isArray()) {
-                return new GatewayObservationDefinition(version, List.of());
-            }
-            List<GatewayObservationRule> rules = new ArrayList<>();
-            for (JsonNode item : trace) {
-                GatewayObservationRule rule = compileRule(item, channelServiceDefinition.getId());
-                if (rule != null) {
-                    rules.add(rule);
-                }
-            }
-            return new GatewayObservationDefinition(version, List.copyOf(rules));
-        } catch (RuntimeException | java.io.IOException exception) {
-            log.warn("TRACE enrichment failed spanName={} phase={} failureType={}",
-                    "gateway.receive", "definition.compile", exception.getClass().getSimpleName());
-            return GatewayObservationDefinition.empty();
+        if (root == null || !root.isObject()) {
+            invalid(context, "definitionNotObject");
+        }
+        JsonNode versionNode = root.get("version");
+        if (versionNode == null || !versionNode.isInt()) {
+            invalid(context, "missingOrInvalidVersion");
+        }
+        int version = versionNode.asInt();
+        if (version != SUPPORTED_VERSION) {
+            invalid(context, "unsupportedVersion");
+        }
+        JsonNode trace = root.get("trace");
+        if (trace == null || !trace.isArray()) {
+            invalid(context, "traceNotArray");
+        }
+        List<GatewayObservationRule> rules = new ArrayList<>();
+        Set<String> seenAttributes = new java.util.LinkedHashSet<>();
+        int index = 0;
+        for (JsonNode item : trace) {
+            GatewayObservationRule rule = compileRule(item, context.withRuleIndex(index), seenAttributes);
+            rules.add(rule);
+            index++;
+        }
+        return new GatewayObservationDefinition(version, List.copyOf(rules));
+    }
+
+    private GatewayObservationRule compileRule(
+            JsonNode item,
+            DefinitionRegistrationContext context,
+            Set<String> seenAttributes
+    ) {
+        if (item == null || !item.isObject()) {
+            invalid(context, "invalidRuleStructure");
+        }
+        String attribute = stringField(item, "attribute", context, "missingAttribute");
+        DefinitionRegistrationContext attributeContext = context.withAttribute(attribute);
+        ObservationAttributeKey<?> attributeKey = attributeRegistry.findByName(ObservationStream.TRACE, attribute)
+                .orElseThrow(() -> invalid(attributeContext, "unregisteredAttribute"));
+        validateObservationAttribute(attributeKey, attributeContext);
+
+        String from = stringField(item, "from", attributeContext, "missingFrom");
+        DefinitionRegistrationContext sourceContext = attributeContext.withFrom(from);
+        ObservationSource source = ObservationSource.from(from);
+        if (source == null) {
+            invalid(sourceContext, "unsupportedFrom");
+        }
+
+        boolean required = booleanField(item, "required", sourceContext, false);
+        boolean overwrite = booleanField(item, "overwrite", sourceContext, false);
+        String path = optionalStringField(item, "path", sourceContext, null);
+        JsonNode valueNode = item.get("value");
+        DefinitionRegistrationContext ruleContext = sourceContext.withPath(path);
+        if (source.requiresPath() && path == null) {
+            invalid(ruleContext, "missingPath");
+        }
+        if (source == ObservationSource.CONSTANT && missingNode(valueNode)) {
+            invalid(ruleContext, "missingValue");
+        }
+        String assertedType = optionalStringField(item, "type", ruleContext, null);
+        if (assertedType != null) {
+            validateTypeAssertion(assertedType, attributeKey, ruleContext);
+        }
+        Object constantValue = source == ObservationSource.CONSTANT
+                ? convertRegisteredValue(nodeValue(valueNode), attributeKey, ruleContext, "constantTypeMismatch")
+                : null;
+        Object defaultValue = missingNode(item.get("default"))
+                ? null
+                : convertRegisteredValue(nodeValue(item.get("default")), attributeKey, ruleContext, "defaultTypeMismatch");
+        if (seenAttributes.contains(attribute) && !overwrite) {
+            invalid(ruleContext, "duplicateAttribute");
+        }
+        seenAttributes.add(attribute);
+        return new GatewayObservationRule(
+                attribute,
+                attributeKey,
+                source,
+                path,
+                assertedType,
+                required,
+                defaultValue,
+                overwrite,
+                constantValue
+        );
+    }
+
+    private void validateObservationAttribute(
+            ObservationAttributeKey<?> attributeKey,
+            DefinitionRegistrationContext context
+    ) {
+        String attribute = attributeKey.name();
+        String normalized = attribute.toLowerCase(Locale.ROOT);
+        if (RESERVED_OBSERVATION_ATTRIBUTES.contains(normalized)
+                || !(normalized.startsWith("scm.service.") || normalized.startsWith("scm.status."))) {
+            invalid(context, "reservedOrUnsupportedAttribute");
+        }
+        if (attributeKey.type().elasticType() == ElasticFieldType.OBJECT
+                || List.class.isAssignableFrom(attributeKey.type().javaType())) {
+            invalid(context, "nonScalarRegisteredAttribute");
+        }
+        String compact = compact(normalized);
+        if (compact.contains("token")
+                || compact.contains("authorization")
+                || compact.contains("password")
+                || compact.contains("secret")
+                || compact.contains("apikey")
+                || compact.contains("cookie")
+                || compact.contains("credential")
+                || hasSegment(normalized, "otp")
+                || hasSegment(normalized, "pin")
+                || hasSegment(normalized, "cvv")) {
+            invalid(context, "unsafeAttribute");
         }
     }
 
-    private GatewayObservationRule compileRule(JsonNode item, String definitionId) {
-        if (item == null || !item.isObject()) {
-            warnRuleSkipped(definitionId, "rule.compile", "invalidRule");
-            return null;
+    private void validateTypeAssertion(
+            String assertedType,
+            ObservationAttributeKey<?> attributeKey,
+            DefinitionRegistrationContext context
+    ) {
+        RuleType ruleType = RuleType.from(assertedType);
+        if (ruleType == null) {
+            invalid(context, "unsupportedType");
         }
-        String attribute = textValue(item.get("attribute"));
-        if (!isAllowedDynamicAttribute(attribute)) {
-            warnRuleSkipped(definitionId, "rule.attribute", "disallowedAttribute");
-            return null;
+        if (!ruleType.compatibleWith(attributeKey.type().elasticType())) {
+            invalid(context, "typeIncompatibleWithRegisteredAttribute");
         }
-        ObservationSource source = ObservationSource.from(textValue(item.get("from")));
-        if (source == null) {
-            warnRuleSkipped(definitionId, "rule.source", "unsupportedSource");
-            return null;
-        }
-        return new GatewayObservationRule(
-                attribute,
-                source,
-                textValue(item.get("path")),
-                item.get("value"),
-                textValue(item.get("type")),
-                item.path("required").asBoolean(false),
-                item.get("default"),
-                item.path("overwrite").asBoolean(false)
-        );
     }
 
     private void executeTraceRules(Exchange exchange, GatewayResponseSnapshot responseSnapshot) {
@@ -292,20 +365,22 @@ public class GatewayObservationEnrichmentSupport {
             try {
                 Object value = extractValue(exchange, requestSnapshot, responseSnapshot, rule);
                 if (value == null) {
-                    if (rule.defaultValue() != null && !rule.defaultValue().isMissingNode() && !rule.defaultValue().isNull()) {
-                        value = nodeValue(rule.defaultValue());
-                    } else if (rule.required()) {
+                    value = rule.defaultValue();
+                }
+                if (value == null) {
+                    if (rule.required()) {
                         warnRuleFailed(rule, "rule.required", "missingValue");
                     }
+                    continue;
                 }
-                value = convertValue(value, rule.type());
-                if (value == null) {
+                Object converted = convertRegisteredValue(value, rule.attributeKey(), null, "runtimeTypeMismatch");
+                if (converted == null) {
                     continue;
                 }
                 if (attributes.containsKey(rule.attribute()) && !rule.overwrite()) {
                     continue;
                 }
-                attributes.put(rule.attribute(), value);
+                attributes.put(rule.attribute(), converted);
             } catch (RuntimeException exception) {
                 warnRuleFailed(rule, "rule.extract", exception.getClass().getSimpleName());
             }
@@ -326,7 +401,7 @@ public class GatewayObservationEnrichmentSupport {
             case RESPONSE_BODY -> jsonPointerValue(responseSnapshot == null ? null : responseSnapshot.body(), rule.path());
             case RESPONSE_HEADER -> responseSnapshot == null ? null : responseSnapshot.header(ruleKey(rule.path()));
             case EXCHANGE_PROPERTY -> exchange.getProperty(propertyKey(rule.path()));
-            case CONSTANT -> nodeValue(rule.value());
+            case CONSTANT -> rule.constantValue();
         };
     }
 
@@ -338,38 +413,6 @@ public class GatewayObservationEnrichmentSupport {
             exchange.setProperty(ATTRIBUTES_PROPERTY, attributes);
         }
         return attributes;
-    }
-
-    private boolean isAllowedDynamicAttribute(String attribute) {
-        if (attribute == null || attribute.isBlank()) {
-            return false;
-        }
-        String normalized = attribute.trim().toLowerCase(Locale.ROOT);
-        if (RESERVED_DYNAMIC_ATTRIBUTES.contains(normalized)) {
-            return false;
-        }
-        if (!(normalized.startsWith("scm.service.") || normalized.startsWith("scm.status."))) {
-            return false;
-        }
-        String compact = normalized.replace(".", "").replace("_", "").replace("-", "");
-        return !compact.contains("token")
-                && !compact.contains("authorization")
-                && !compact.contains("password")
-                && !compact.contains("secret")
-                && !compact.contains("apikey")
-                && !hasSegment(normalized, "otp")
-                && !hasSegment(normalized, "pin")
-                && !hasSegment(normalized, "cvv");
-    }
-
-    private boolean hasSegment(String normalized, String segment) {
-        String[] parts = normalized.split("[._\\-\\s/]+");
-        for (String part : parts) {
-            if (segment.equals(part)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Object jsonPointerValue(Object body, String pointer) {
@@ -413,7 +456,7 @@ public class GatewayObservationEnrichmentSupport {
             return null;
         }
         if (node.isTextual()) {
-            return text(node.asText());
+            return textOrNull(node.asText());
         }
         if (node.isIntegralNumber()) {
             return node.longValue();
@@ -430,26 +473,59 @@ public class GatewayObservationEnrichmentSupport {
         return objectMapper.convertValue(node, Object.class);
     }
 
-    private Object convertValue(Object value, String type) {
-        if (value == null || type == null || type.isBlank()) {
-            return value;
+    private Object convertRegisteredValue(
+            Object value,
+            ObservationAttributeKey<?> attributeKey,
+            DefinitionRegistrationContext context,
+            String failureReason
+    ) {
+        if (value == null) {
+            return null;
         }
-        String normalizedType = type.trim().toLowerCase(Locale.ROOT);
-        return switch (normalizedType) {
-            case "string", "text", "keyword" -> text(String.valueOf(value));
-            case "long" -> longValue(value);
-            case "int", "integer" -> integerValue(value);
-            case "double", "decimal", "number" -> doubleValue(value);
-            case "boolean", "bool" -> booleanValue(value);
-            default -> value;
-        };
+        Object normalized = value instanceof JsonNode jsonNode ? nodeValue(jsonNode) : value;
+        if (isObjectOrArray(normalized)) {
+            if (context != null) {
+                invalid(context, "nonScalarValue");
+            }
+            throw new IllegalArgumentException("Non-scalar value for " + attributeKey.name());
+        }
+        try {
+            return switch (attributeKey.type().elasticType()) {
+                case KEYWORD, TEXT, DATE -> stringValue(normalized);
+                case LONG -> longValue(normalized);
+                case INTEGER -> integerValue(normalized);
+                case DOUBLE -> doubleValue(normalized);
+                case BOOLEAN -> booleanValue(normalized);
+                case OBJECT -> {
+                    if (context != null) {
+                        invalid(context, "objectAttributeNotSupported");
+                    }
+                    throw new IllegalArgumentException("Object attribute is not supported");
+                }
+            };
+        } catch (RuntimeException exception) {
+            if (context != null) {
+                invalid(context, failureReason);
+            }
+            throw exception;
+        }
+    }
+
+    private boolean isObjectOrArray(Object value) {
+        return value instanceof Map<?, ?>
+                || value instanceof Collection<?>
+                || value != null && value.getClass().isArray();
+    }
+
+    private String stringValue(Object value) {
+        return textOrNull(String.valueOf(value));
     }
 
     private Long longValue(Object value) {
         if (value instanceof Number number) {
             return number.longValue();
         }
-        String text = text(String.valueOf(value));
+        String text = textOrNull(String.valueOf(value));
         return text == null ? null : Long.valueOf(text);
     }
 
@@ -457,7 +533,7 @@ public class GatewayObservationEnrichmentSupport {
         if (value instanceof Number number) {
             return number.intValue();
         }
-        String text = text(String.valueOf(value));
+        String text = textOrNull(String.valueOf(value));
         return text == null ? null : Integer.valueOf(text);
     }
 
@@ -465,7 +541,7 @@ public class GatewayObservationEnrichmentSupport {
         if (value instanceof Number number) {
             return number.doubleValue();
         }
-        String text = text(String.valueOf(value));
+        String text = textOrNull(String.valueOf(value));
         return text == null ? null : Double.valueOf(text);
     }
 
@@ -473,21 +549,21 @@ public class GatewayObservationEnrichmentSupport {
         if (value instanceof Boolean bool) {
             return bool;
         }
-        String text = text(String.valueOf(value));
+        String text = textOrNull(String.valueOf(value));
         return text == null ? null : Boolean.valueOf(text);
     }
 
-    private Object safeBodyCopy(Object body) {
+    private Object immutableBodyCopy(Object body) {
         if (body == null
                 || body instanceof String
                 || body instanceof Number
                 || body instanceof Boolean
                 || body instanceof BigDecimal
-                || body instanceof TemporalAccessor
-                || body instanceof JsonNode
-                || body instanceof Map<?, ?>
-                || body instanceof Collection<?>) {
+                || body instanceof TemporalAccessor) {
             return body;
+        }
+        if (body instanceof JsonNode jsonNode) {
+            return jsonNode.deepCopy();
         }
         if (body instanceof byte[] bytes) {
             return bytes.clone();
@@ -513,15 +589,10 @@ public class GatewayObservationEnrichmentSupport {
         if (body instanceof InputStream || body instanceof Reader) {
             return null;
         }
-        if (body.getClass().isArray()) {
-            int length = Array.getLength(body);
-            List<Object> values = new ArrayList<>(length);
-            for (int index = 0; index < length; index++) {
-                values.add(Array.get(body, index));
-            }
-            return List.copyOf(values);
+        if (body instanceof Map<?, ?> || body instanceof Collection<?> || body.getClass().isArray()) {
+            return objectMapper.valueToTree(body);
         }
-        return body;
+        return objectMapper.valueToTree(body);
     }
 
     private long bodySize(Object body) {
@@ -570,16 +641,16 @@ public class GatewayObservationEnrichmentSupport {
         }
         if (value instanceof Collection<?> collection) {
             List<String> values = collection.stream()
-                    .map(item -> text(item == null ? null : String.valueOf(item)))
+                    .map(item -> textOrNull(item == null ? null : String.valueOf(item)))
                     .filter(item -> item != null)
                     .toList();
             return values.isEmpty() ? null : values;
         }
-        return text(String.valueOf(value));
+        return textOrNull(String.valueOf(value));
     }
 
     private boolean isSafeHeaderName(String normalized) {
-        String compact = normalized.replace("-", "").replace("_", "");
+        String compact = compact(normalized);
         return !compact.contains("authorization")
                 && !compact.contains("cookie")
                 && !compact.contains("password")
@@ -601,43 +672,77 @@ public class GatewayObservationEnrichmentSupport {
             return Map.of();
         }
         Map<String, Object> values = new LinkedHashMap<>();
-        for (String pair : rawQuery.split("&")) {
+        for (String pair : rawQuery.split("&", -1)) {
             if (pair.isBlank()) {
                 continue;
             }
             int separator = pair.indexOf('=');
-            String name = normalizeMapKey(decode(separator >= 0 ? pair.substring(0, separator) : pair));
-            String value = decode(separator >= 0 ? pair.substring(separator + 1) : "");
+            String name = normalizeMapKey(decodeQueryComponent(separator >= 0 ? pair.substring(0, separator) : pair));
+            String value = separator >= 0 ? decodeQueryComponent(pair.substring(separator + 1)) : "";
             if (name == null) {
                 continue;
             }
             Object existing = values.get(name);
             if (existing instanceof List<?> list) {
                 List<Object> appended = new ArrayList<>(list);
-                appended.add(value);
+                appended.add(value == null ? "" : value);
                 values.put(name, List.copyOf(appended));
             } else if (existing != null) {
-                values.put(name, List.of(existing, value));
+                values.put(name, List.of(existing, value == null ? "" : value));
             } else {
-                values.put(name, value);
+                values.put(name, value == null ? "" : value);
             }
         }
         return Map.copyOf(values);
     }
 
-    private String decode(String value) {
-        String text = text(value);
-        if (text == null) {
+    private String sanitizeQuery(String rawQuery) {
+        if (rawQuery == null || rawQuery.isBlank()) {
+            return null;
+        }
+        List<String> pairs = new ArrayList<>();
+        for (String pair : rawQuery.split("&", -1)) {
+            if (pair.isBlank()) {
+                continue;
+            }
+            int separator = pair.indexOf('=');
+            String rawName = separator >= 0 ? pair.substring(0, separator) : pair;
+            String decodedName = decodeQueryComponent(rawName);
+            if (isSensitiveParameterName(decodedName)) {
+                pairs.add(rawName + "=[REDACTED]");
+            } else {
+                pairs.add(pair);
+            }
+        }
+        return pairs.isEmpty() ? null : String.join("&", pairs);
+    }
+
+    private boolean isSensitiveParameterName(String name) {
+        String normalized = name == null ? "" : name.trim().toLowerCase(Locale.ROOT);
+        String compact = compact(normalized);
+        return compact.contains("token")
+                || compact.contains("authorization")
+                || compact.contains("password")
+                || compact.contains("secret")
+                || compact.contains("apikey")
+                || compact.contains("otp")
+                || compact.contains("cookie")
+                || compact.contains("credential")
+                || hasSegment(normalized, "pin")
+                || hasSegment(normalized, "cvv");
+    }
+
+    private String decodeQueryComponent(String value) {
+        if (value == null) {
             return null;
         }
         try {
-            return URLDecoder.decode(text, StandardCharsets.UTF_8);
+            return URLDecoder.decode(value, StandardCharsets.UTF_8);
         } catch (RuntimeException ignored) {
-            return text;
+            return value;
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> pathParameters(Exchange exchange) {
         Object value = exchange.getProperty(Message.INBOUND_PATH_VARIABLES);
         if (!(value instanceof Map<?, ?> map) || map.isEmpty()) {
@@ -701,8 +806,47 @@ public class GatewayObservationEnrichmentSupport {
         );
     }
 
+    private String stringField(JsonNode item, String fieldName, DefinitionRegistrationContext context, String reason) {
+        String value = optionalStringField(item, fieldName, context, reason);
+        if (value == null) {
+            invalid(context, reason);
+        }
+        return value;
+    }
+
+    private String optionalStringField(JsonNode item, String fieldName, DefinitionRegistrationContext context, String reason) {
+        JsonNode node = item.get(fieldName);
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (!node.isTextual()) {
+            invalid(context, reason);
+        }
+        return textOrNull(node.asText());
+    }
+
+    private boolean booleanField(
+            JsonNode item,
+            String fieldName,
+            DefinitionRegistrationContext context,
+            boolean defaultValue
+    ) {
+        JsonNode node = item.get(fieldName);
+        if (node == null || node.isNull()) {
+            return defaultValue;
+        }
+        if (!node.isBoolean()) {
+            invalid(context, "invalid" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1));
+        }
+        return node.asBoolean(defaultValue);
+    }
+
+    private boolean missingNode(JsonNode node) {
+        return node == null || node.isMissingNode() || node.isNull();
+    }
+
     private String ruleKey(String path) {
-        String value = text(path);
+        String value = textOrNull(path);
         if (value == null) {
             return null;
         }
@@ -713,7 +857,7 @@ public class GatewayObservationEnrichmentSupport {
     }
 
     private String propertyKey(String path) {
-        String value = text(path);
+        String value = textOrNull(path);
         if (value == null) {
             return null;
         }
@@ -724,18 +868,11 @@ public class GatewayObservationEnrichmentSupport {
     }
 
     private String normalizeMapKey(String value) {
-        String text = text(value);
+        String text = textOrNull(value);
         return text == null ? null : text.toLowerCase(Locale.ROOT);
     }
 
-    private String textValue(JsonNode node) {
-        if (node == null || node.isNull() || !node.isValueNode()) {
-            return null;
-        }
-        return text(node.asText());
-    }
-
-    private String text(String value) {
+    private String textOrNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
@@ -744,7 +881,7 @@ public class GatewayObservationEnrichmentSupport {
             return null;
         }
         for (String value : values) {
-            String text = text(value);
+            String text = textOrNull(value);
             if (text != null) {
                 return text;
             }
@@ -758,9 +895,95 @@ public class GatewayObservationEnrichmentSupport {
         }
     }
 
-    private void warnRuleSkipped(String definitionId, String phase, String failureType) {
-        log.warn("TRACE enrichment rule skipped spanName={} phase={} definitionId={} failureType={}",
-                "gateway.receive", phase, definitionId, failureType);
+    private boolean hasSegment(String normalized, String segment) {
+        String[] parts = normalized.split("[._\\-\\s/]+");
+        for (String part : parts) {
+            if (segment.equals(part)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String compact(String value) {
+        return value == null
+                ? ""
+                : value.replace(".", "")
+                .replace("_", "")
+                .replace("-", "")
+                .replace(" ", "")
+                .toLowerCase(Locale.ROOT);
+    }
+
+    private String duplicateDefinitionIds(List<ChannelServiceDefinition> definitions) {
+        return definitions.stream()
+                .map(ChannelServiceDefinition::getId)
+                .map(value -> value == null ? "<null>" : value)
+                .toList()
+                .toString();
+    }
+
+    private DefinitionRegistrationContext registrationContext(
+            RuntimeRoutePlan routePlan,
+            RuntimeServicePlan servicePlan,
+            InboundRouteDefinition inboundRoute,
+            String definitionId
+    ) {
+        GatewayChannel gateway = servicePlan == null ? null : servicePlan.gatewayChannel();
+        Service service = servicePlan == null ? null : servicePlan.service();
+        return new DefinitionRegistrationContext(
+                inboundRoute == null || inboundRoute.route() == null ? null : inboundRoute.route().getRouteId(),
+                gateway == null ? null : gateway.getName(),
+                gatewayChannelCode(gateway, servicePlan),
+                service == null ? null : service.getCode(),
+                inboundRoute == null ? null : inboundRoute.serviceVersion(),
+                gateway == null || gateway.getProtocolType() == null ? null : gateway.getProtocolType().name(),
+                definitionId,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private String gatewayChannelCode(GatewayChannel gateway, RuntimeServicePlan servicePlan) {
+        if (gateway != null && gateway.getChannel() != null && gateway.getChannel().getCode() != null) {
+            return gateway.getChannel().getCode();
+        }
+        if (servicePlan != null
+                && servicePlan.channelServiceAccess() != null
+                && servicePlan.channelServiceAccess().getChannel() != null) {
+            return servicePlan.channelServiceAccess().getChannel().getCode();
+        }
+        return null;
+    }
+
+    private IllegalStateException invalid(DefinitionRegistrationContext context, String reason) {
+        log.error("event=gateway.observation.definition.invalid routeId={} gatewayName={} channelCode={} serviceCode={} serviceVersion={} protocol={} definitionId={} ruleIndex={} attribute={} from={} path={} reason={}",
+                context.routeId(),
+                context.gatewayName(),
+                context.channelCode(),
+                context.serviceCode(),
+                context.serviceVersion(),
+                context.protocol(),
+                context.definitionId(),
+                context.ruleIndex(),
+                context.attribute(),
+                context.from(),
+                context.path(),
+                reason);
+        throw new IllegalStateException("Invalid gateway OBSERVATION definition: reason=" + reason
+                + ", routeId=" + context.routeId()
+                + ", gatewayName=" + context.gatewayName()
+                + ", channelCode=" + context.channelCode()
+                + ", serviceCode=" + context.serviceCode()
+                + ", serviceVersion=" + context.serviceVersion()
+                + ", protocol=" + context.protocol()
+                + ", definitionId=" + context.definitionId()
+                + ", ruleIndex=" + context.ruleIndex()
+                + ", attribute=" + context.attribute()
+                + ", from=" + context.from()
+                + ", path=" + context.path());
     }
 
     private void warnRuleFailed(GatewayObservationRule rule, String phase, String failureType) {
@@ -769,7 +992,7 @@ public class GatewayObservationEnrichmentSupport {
     }
 
     public record GatewayObservationDefinition(int version, List<GatewayObservationRule> trace) {
-        private static final GatewayObservationDefinition EMPTY = new GatewayObservationDefinition(1, List.of());
+        private static final GatewayObservationDefinition EMPTY = new GatewayObservationDefinition(SUPPORTED_VERSION, List.of());
 
         public GatewayObservationDefinition {
             trace = trace == null || trace.isEmpty() ? List.of() : List.copyOf(trace);
@@ -778,17 +1001,22 @@ public class GatewayObservationEnrichmentSupport {
         static GatewayObservationDefinition empty() {
             return EMPTY;
         }
+
+        public boolean requiresBodyExtraction() {
+            return trace.stream().anyMatch(rule -> rule.source().isBody());
+        }
     }
 
     public record GatewayObservationRule(
             String attribute,
+            ObservationAttributeKey<?> attributeKey,
             ObservationSource source,
             String path,
-            JsonNode value,
-            String type,
+            String assertedType,
             boolean required,
-            JsonNode defaultValue,
-            boolean overwrite
+            Object defaultValue,
+            boolean overwrite,
+            Object constantValue
     ) {
     }
 
@@ -827,24 +1055,78 @@ public class GatewayObservationEnrichmentSupport {
         }
     }
 
+    private record DefinitionRegistrationContext(
+            String routeId,
+            String gatewayName,
+            String channelCode,
+            String serviceCode,
+            String serviceVersion,
+            String protocol,
+            String definitionId,
+            Integer ruleIndex,
+            String attribute,
+            String from,
+            String path
+    ) {
+        DefinitionRegistrationContext withDefinition(String definitionId) {
+            return new DefinitionRegistrationContext(
+                    routeId, gatewayName, channelCode, serviceCode, serviceVersion, protocol,
+                    definitionId, ruleIndex, attribute, from, path);
+        }
+
+        DefinitionRegistrationContext withRuleIndex(int ruleIndex) {
+            return new DefinitionRegistrationContext(
+                    routeId, gatewayName, channelCode, serviceCode, serviceVersion, protocol,
+                    definitionId, ruleIndex, attribute, from, path);
+        }
+
+        DefinitionRegistrationContext withAttribute(String attribute) {
+            return new DefinitionRegistrationContext(
+                    routeId, gatewayName, channelCode, serviceCode, serviceVersion, protocol,
+                    definitionId, ruleIndex, attribute, from, path);
+        }
+
+        DefinitionRegistrationContext withFrom(String from) {
+            return new DefinitionRegistrationContext(
+                    routeId, gatewayName, channelCode, serviceCode, serviceVersion, protocol,
+                    definitionId, ruleIndex, attribute, from, path);
+        }
+
+        DefinitionRegistrationContext withPath(String path) {
+            return new DefinitionRegistrationContext(
+                    routeId, gatewayName, channelCode, serviceCode, serviceVersion, protocol,
+                    definitionId, ruleIndex, attribute, from, path);
+        }
+    }
+
     public enum ObservationSource {
-        REQUEST_BODY("request.body"),
-        REQUEST_HEADER("request.header"),
-        REQUEST_QUERY("request.query"),
-        REQUEST_PATH("request.path"),
-        RESPONSE_BODY("response.body"),
-        RESPONSE_HEADER("response.header"),
-        EXCHANGE_PROPERTY("exchange.property"),
-        CONSTANT("constant");
+        REQUEST_BODY("request.body", true),
+        REQUEST_HEADER("request.header", false),
+        REQUEST_QUERY("request.query", false),
+        REQUEST_PATH("request.path", false),
+        RESPONSE_BODY("response.body", true),
+        RESPONSE_HEADER("response.header", false),
+        EXCHANGE_PROPERTY("exchange.property", false),
+        CONSTANT("constant", false);
 
         private final String externalName;
+        private final boolean body;
 
-        ObservationSource(String externalName) {
+        ObservationSource(String externalName, boolean body) {
             this.externalName = externalName;
+            this.body = body;
         }
 
         String externalName() {
             return externalName;
+        }
+
+        boolean isBody() {
+            return body;
+        }
+
+        boolean requiresPath() {
+            return this != CONSTANT;
         }
 
         static ObservationSource from(String value) {
@@ -861,13 +1143,37 @@ public class GatewayObservationEnrichmentSupport {
         }
     }
 
-    private record ObservationDefinitionCacheKey(
-            String gatewayName,
-            String gatewayChannelCode,
-            String serviceCode,
-            String serviceVersion,
-            String protocol,
-            String type
-    ) {
+    private enum RuleType {
+        STRING,
+        LONG,
+        INTEGER,
+        DOUBLE,
+        BOOLEAN;
+
+        static RuleType from(String value) {
+            if (value == null || value.isBlank()) {
+                return null;
+            }
+            return switch (value.trim().toLowerCase(Locale.ROOT)) {
+                case "string", "text", "keyword", "date" -> STRING;
+                case "long" -> LONG;
+                case "int", "integer" -> INTEGER;
+                case "double", "decimal", "number" -> DOUBLE;
+                case "boolean", "bool" -> BOOLEAN;
+                default -> null;
+            };
+        }
+
+        boolean compatibleWith(ElasticFieldType elasticFieldType) {
+            return switch (this) {
+                case STRING -> elasticFieldType == ElasticFieldType.KEYWORD
+                        || elasticFieldType == ElasticFieldType.TEXT
+                        || elasticFieldType == ElasticFieldType.DATE;
+                case LONG -> elasticFieldType == ElasticFieldType.LONG;
+                case INTEGER -> elasticFieldType == ElasticFieldType.INTEGER;
+                case DOUBLE -> elasticFieldType == ElasticFieldType.DOUBLE;
+                case BOOLEAN -> elasticFieldType == ElasticFieldType.BOOLEAN;
+            };
+        }
     }
 }
