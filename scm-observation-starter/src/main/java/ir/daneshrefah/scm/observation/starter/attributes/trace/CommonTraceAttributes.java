@@ -41,7 +41,31 @@ public final class CommonTraceAttributes {
     public static final ObservationAttributeKey<String> HTTP_METHOD = keyword("http.method", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP method.");
     public static final ObservationAttributeKey<String> HTTP_ROUTE = keyword("http.route", ObservationAttributePresence.EVENT_OPTIONAL, "Low-cardinality HTTP route template.");
     public static final ObservationAttributeKey<String> URL_PATH = keyword("url.path", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request path without query string.");
+    public static final ObservationAttributeKey<String> URL_QUERY = keyword("url.query", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request query string.");
+    public static final ObservationAttributeKey<Long> HTTP_REQUEST_BODY_SIZE = TraceAttribute.longNumber(
+            "http.request.body.size", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request body size in bytes.");
     public static final ObservationAttributeKey<Integer> HTTP_STATUS_CODE = TraceAttribute.integerNumber("http.status_code", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP response status code.");
+    public static final ObservationAttributeKey<Long> HTTP_RESPONSE_BODY_SIZE = TraceAttribute.longNumber(
+            "http.response.body.size", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP response body size in bytes.");
+    public static final ObservationAttributeKey<String> HTTP_RESPONSE_HEADER_CONTENT_TYPE = keyword(
+            "http.response.header.content_type", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP response Content-Type header.");
+    public static final ObservationAttributeKey<String> HTTP_REQUEST_HEADER_USER_AGENT = keyword(
+            "http.request.header.user_agent", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request User-Agent header.");
+    public static final ObservationAttributeKey<String> HTTP_REQUEST_HEADER_ACCEPT = keyword(
+            "http.request.header.accept", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request Accept header.");
+    public static final ObservationAttributeKey<String> HTTP_REQUEST_HEADER_ACCEPT_LANGUAGE = keyword(
+            "http.request.header.accept_language", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request Accept-Language header.");
+    public static final ObservationAttributeKey<String> HTTP_REQUEST_HEADER_ORIGIN = keyword(
+            "http.request.header.origin", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request Origin header.");
+    public static final ObservationAttributeKey<String> HTTP_REQUEST_HEADER_REFERER = keyword(
+            "http.request.header.referer", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request Referer header.");
+    public static final ObservationAttributeKey<String> HTTP_REQUEST_HEADER_CONTENT_TYPE = keyword(
+            "http.request.header.content_type", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request Content-Type header.");
+    public static final ObservationAttributeKey<String> HTTP_REQUEST_HEADER_CONTENT_LENGTH = keyword(
+            "http.request.header.content_length", ObservationAttributePresence.EVENT_OPTIONAL, "HTTP request Content-Length header.");
+    public static final ObservationAttributeKey<String> HTTP_REQUEST_HEADER_CLIENT_CORRELATION_ID = keyword(
+            "http.request.header.x_scm_client_correlation_id", ObservationAttributePresence.EVENT_OPTIONAL,
+            "HTTP request X-SCM-Client-Correlation-ID header.");
     public static final ObservationAttributeKey<Boolean> HTTP_QUERY_PRESENT = TraceAttribute.booleanValue(
             "http.query.present", ObservationAttributePresence.EVENT_OPTIONAL, "Whether an HTTP query string was present.");
     public static final ObservationAttributeKey<String> CLIENT_IP = keyword("client.ip", ObservationAttributePresence.EVENT_OPTIONAL, "Client IP address.");
@@ -75,7 +99,12 @@ public final class CommonTraceAttributes {
                 SCM_CHANNEL_CODE, SCM_OBS_LEGACY_ENABLED, SCM_OBS_LEGACY_SERVICE_CODE, SCM_OBS_LEGACY_OPERATION_CODE,
                 CORRELATION_ID, CORRELATION_TYPE, TRACE_ID, SPAN_ID, PARENT_SPAN_ID,
                 SPAN_NAME, SPAN_KIND, SPAN_START_TIME, SPAN_END_TIME, SPAN_DURATION_MS, SPAN_EVENTS,
-                HTTP_METHOD, HTTP_ROUTE, URL_PATH, HTTP_STATUS_CODE, HTTP_QUERY_PRESENT, CLIENT_IP, CLIENT_ADDRESS,
+                HTTP_METHOD, HTTP_ROUTE, URL_PATH, URL_QUERY, HTTP_REQUEST_BODY_SIZE,
+                HTTP_STATUS_CODE, HTTP_RESPONSE_BODY_SIZE, HTTP_RESPONSE_HEADER_CONTENT_TYPE,
+                HTTP_REQUEST_HEADER_USER_AGENT, HTTP_REQUEST_HEADER_ACCEPT, HTTP_REQUEST_HEADER_ACCEPT_LANGUAGE,
+                HTTP_REQUEST_HEADER_ORIGIN, HTTP_REQUEST_HEADER_REFERER, HTTP_REQUEST_HEADER_CONTENT_TYPE,
+                HTTP_REQUEST_HEADER_CONTENT_LENGTH, HTTP_REQUEST_HEADER_CLIENT_CORRELATION_ID,
+                HTTP_QUERY_PRESENT, CLIENT_IP, CLIENT_ADDRESS,
                 SCM_GATEWAY_NAME, SCM_PROTOCOL, SCM_REQUEST_NAME, SCM_MESSAGE_ID, SCM_ROUTE_ID,
                 SCM_SCHEDULE_JOB_NAME, SCM_SCHEDULE_TRIGGER_TYPE,
                 EVENT_ACTION, EVENT_OUTCOME,

@@ -25,6 +25,26 @@ final class TraceAttributeSecurity {
             "scm.auth.txn_method",
             "scm.auth.login_method"
     );
+    private static final Set<String> GATEWAY_AUTH_CONTEXT_FIELDS = Set.of(
+            "scm.client.id",
+            "scm.client.type",
+            "scm.client.channel.code",
+            "scm.client.channel.validated",
+            "scm.client.username",
+            "scm.client.address",
+            "scm.client.correlation.id",
+            "scm.auth.type",
+            "scm.auth.scheme",
+            "scm.auth.client.id",
+            "scm.auth.client.accept_address",
+            "scm.auth.subject.id",
+            "scm.auth.subject.username",
+            "scm.auth.issuer",
+            "scm.auth.audience",
+            "scm.auth.scopes",
+            "scm.auth.login_method",
+            "scm.auth.transaction_method"
+    );
 
     private TraceAttributeSecurity() {
     }
@@ -97,7 +117,8 @@ final class TraceAttributeSecurity {
             return false;
         }
         String normalized = fieldName.trim().toLowerCase(Locale.ROOT);
-        if (GATEWAY_JWT_CONTEXT_FIELDS.contains(normalized)) {
+        if (GATEWAY_JWT_CONTEXT_FIELDS.contains(normalized)
+                || GATEWAY_AUTH_CONTEXT_FIELDS.contains(normalized)) {
             return false;
         }
         return switch (normalized) {
@@ -126,7 +147,8 @@ final class TraceAttributeSecurity {
             return false;
         }
         String normalized = fieldName.trim().toLowerCase(Locale.ROOT);
-        return GATEWAY_JWT_CONTEXT_FIELDS.contains(normalized)
+        return (GATEWAY_JWT_CONTEXT_FIELDS.contains(normalized)
+                || GATEWAY_AUTH_CONTEXT_FIELDS.contains(normalized))
                 && !"scm.channel.code".equals(normalized);
     }
 

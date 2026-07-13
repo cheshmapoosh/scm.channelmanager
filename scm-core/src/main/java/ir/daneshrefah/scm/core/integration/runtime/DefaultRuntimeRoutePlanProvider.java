@@ -88,7 +88,7 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                             gatewayChannel,
                             access,
                             access.getService(),
-                            inboundDefinitions(definitions));
+                            runtimeRouteDefinitions(definitions));
                 })
                 .toList();
     }
@@ -141,6 +141,15 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                         LinkedHashMap::new,
                         Collectors.toList()));
 
+        Map<String, List<ChannelServiceDefinition>> observationDefinitionsByService = definitions.stream()
+                .filter(this::isObservationDefinition)
+                .filter(definition -> definition.getChannelServiceAccess() != null)
+                .filter(definition -> definition.getChannelServiceAccess().getId() != null)
+                .collect(Collectors.groupingBy(
+                        definition -> serviceKey(definition.getChannelServiceAccess()),
+                        LinkedHashMap::new,
+                        Collectors.toList()));
+
         return membershipsByService.entrySet()
                 .stream()
                 .map(entry -> {
@@ -169,6 +178,8 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                             .getOrDefault(entry.getKey(), List.of());
                     List<ChannelServiceDefinition> apiDocDefinitions = apiDocDefinitionsByService
                             .getOrDefault(entry.getKey(), List.of());
+                    List<ChannelServiceDefinition> observationDefinitions = observationDefinitionsByService
+                            .getOrDefault(entry.getKey(), List.of());
                     if (CollectionUtils.isEmpty(inboundDefinitions)) {
                         log.warn("Service-domain membership skipped gatewayName={} serviceKey={} {} reason=missing-inbound-definition",
                                 gatewayChannel.getName(),
@@ -181,20 +192,22 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                             RuntimeTargetKind.SERVICE_DOMAIN,
                             representativeAccess,
                             CollectionUtils.isNotEmpty(apiDocDefinitions));
+                    List<ChannelServiceDefinition> runtimeRouteDefinitions = new java.util.ArrayList<>(inboundDefinitions);
+                    runtimeRouteDefinitions.addAll(observationDefinitions);
                     return new RuntimeServicePlan(
                             gatewayChannel,
                             representativeAccess,
                             representativeAccess.getService(),
                             memberAccesses,
-                            inboundDefinitions);
+                            List.copyOf(runtimeRouteDefinitions));
                 })
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private List<ChannelServiceDefinition> inboundDefinitions(List<ChannelServiceDefinition> definitions) {
+    private List<ChannelServiceDefinition> runtimeRouteDefinitions(List<ChannelServiceDefinition> definitions) {
         return definitions.stream()
-                .filter(this::isInboundDefinition)
+                .filter(definition -> isInboundDefinition(definition) || isObservationDefinition(definition))
                 .toList();
     }
 
@@ -204,6 +217,10 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
 
     private boolean isApiDocDefinition(ChannelServiceDefinition definition) {
         return definition.getType() == ChannelServiceDefinitionType.API_DOC;
+    }
+
+    private boolean isObservationDefinition(ChannelServiceDefinition definition) {
+        return definition.getType() == ChannelServiceDefinitionType.OBSERVATION;
     }
 
     private String serviceKey(ChannelServiceAccess access) {

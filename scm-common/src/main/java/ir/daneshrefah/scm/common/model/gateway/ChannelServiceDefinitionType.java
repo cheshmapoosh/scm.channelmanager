@@ -4,4 +4,5 @@ public enum ChannelServiceDefinitionType {
     INBOUND,
     API_DOC,
     SVC_DOMAIN_MEMBER,
+    OBSERVATION,
 }
