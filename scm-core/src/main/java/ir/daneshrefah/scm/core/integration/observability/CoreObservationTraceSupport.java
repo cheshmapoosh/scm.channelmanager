@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.observability;
 
 import ir.daneshrefah.scm.common.exception.ErrorCodeAwareException;
 import ir.daneshrefah.scm.common.model.error.ScmFault;
+import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
@@ -17,6 +18,7 @@ import ir.daneshrefah.scm.observation.starter.TraceContext;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationContext;
 import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
+import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
@@ -26,6 +28,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -107,26 +111,16 @@ public class CoreObservationTraceSupport {
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, firstText(
                         preparedContext == null ? null : preparedContext.gatewayName(),
                         fields.get("gatewayName")))
-                .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, firstText(
-                        preparedContext == null ? null : preparedContext.channelCode(),
-                        fields.get("channelCode")))
-                .attribute(CommonTraceAttributes.SCM_PROTOCOL, firstText(
-                        preparedContext == null ? null : preparedContext.protocol(),
-                        RouteLogSupport.protocol(exchange)))
-                .attribute(CommonTraceAttributes.SCM_REQUEST_NAME, firstText(
-                        preparedContext == null ? null : preparedContext.requestName(),
-                        requestName(servletRequest)))
-                .attribute(CommonTraceAttributes.SCM_ROUTE_ID, exchange.getFromRouteId())
-                .attribute(CoreTraceAttributes.EXCHANGE_ID, exchange.getExchangeId())
+                .attribute(CoreTraceAttributes.GATEWAY_CHANNEL_CODE, gatewayChannelCode(exchange, preparedContext, fields))
+                .attribute(CoreTraceAttributes.CLIENT_ID, header(exchange, Constants.SCM_PARAMETER_CLIENT_ID))
+                .attribute(CoreTraceAttributes.CLIENT_CHANNEL_CODE, clientDeclaredChannelCode(exchange))
+                .attribute(CoreTraceAttributes.CLIENT_CHANNEL_VALIDATED, clientChannelValidated(exchange))
+                .attribute(CoreTraceAttributes.CLIENT_USERNAME, header(exchange, Constants.SCM_PARAMETER_USERNAME))
+                .attribute(CoreTraceAttributes.CLIENT_ADDRESS, clientAddress(exchange, servletRequest))
+                .attribute(CoreTraceAttributes.CLIENT_CORRELATION_ID, header(exchange, Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID))
                 .attribute(CoreTraceAttributes.SERVICE_CODE, service == null ? fields.get("serviceCode") : service.getCode())
                 .attribute(CoreTraceAttributes.SERVICE_NAME, service == null ? null : service.getName())
                 .attribute(CoreTraceAttributes.SERVICE_VERSION, fields.get("serviceVersion"))
-                .attribute(CommonTraceAttributes.HTTP_METHOD, httpMethod(exchange, servletRequest))
-                .attribute(CommonTraceAttributes.URL_PATH, requestPath(exchange, servletRequest))
-                .attribute(CommonTraceAttributes.HTTP_QUERY_PRESENT, hasQuery(exchange, servletRequest))
-                .attribute(CommonTraceAttributes.CLIENT_IP, clientIp(servletRequest))
-                .attribute(CommonTraceAttributes.CLIENT_ADDRESS, stringAttribute(
-                        servletRequest, CommonTraceAttributes.CLIENT_ADDRESS.name()))
                 .attribute("scm.observation.legacy.enabled", requestAttribute(
                         servletRequest, "scm.observation.legacy.enabled"))
                 .attribute("scm.observation.legacy.service.code", requestAttribute(
@@ -161,6 +155,11 @@ public class CoreObservationTraceSupport {
         if (statusCode != null) {
             attributes.put(CommonTraceAttributes.HTTP_STATUS_CODE.name(), statusCode);
         }
+        attributes.put(CommonTraceAttributes.HTTP_RESPONSE_BODY_SIZE.name(), bodySize(exchange.getMessage().getBody()));
+        String contentType = responseContentType(exchange);
+        if (contentType != null) {
+            attributes.put(CommonTraceAttributes.HTTP_RESPONSE_HEADER_CONTENT_TYPE.name(), contentType);
+        }
         gatewayScope.event("gateway.response.completed", attributes);
     }
 
@@ -169,7 +168,6 @@ public class CoreObservationTraceSupport {
             return;
         }
         Throwable failure = exchangeFailure(exchange);
-        Integer statusCode = httpStatus(exchange);
         FailureDetails failureDetails = failureDetails(exchange, failure);
         boolean failed = failureDetails != null;
         exchange.removeProperty(BUSINESS_FAILURE_PROPERTY);
@@ -178,9 +176,6 @@ public class CoreObservationTraceSupport {
         ObservationScope scope = removeScope(exchange, GATEWAY_SCOPE_PROPERTY, GATEWAY_CONTEXT_PROPERTY);
         try {
             if (scope != null) {
-                if (statusCode != null) {
-                    scope.attribute(CommonTraceAttributes.HTTP_STATUS_CODE, statusCode);
-                }
                 finishScope(scope, failed ? failure : null, failureDetails, 0L, null);
             }
         } finally {
@@ -544,6 +539,49 @@ public class CoreObservationTraceSupport {
         return firstText(request.getRemoteAddr());
     }
 
+    private String gatewayChannelCode(
+            Exchange exchange,
+            GatewayObservationContext preparedContext,
+            Map<String, String> fields
+    ) {
+        GatewayChannel gatewayChannel = exchange.getProperty(Message.GATEWAY_CHANNEL, GatewayChannel.class);
+        return firstText(
+                gatewayChannel != null && gatewayChannel.getChannel() != null
+                        ? gatewayChannel.getChannel().getCode()
+                        : null,
+                preparedContext == null ? null : preparedContext.channelCode(),
+                fields == null ? null : fields.get("channelCode")
+        );
+    }
+
+    private String clientDeclaredChannelCode(Exchange exchange) {
+        return firstText(
+                header(exchange, IncomingChannelCodeResolver.SCM_CHANNEL_HEADER),
+                header(exchange, IncomingChannelCodeResolver.CHANNEL_CODE_HEADER),
+                header(exchange, Message.CHANNEL_CODE)
+        );
+    }
+
+    private Boolean clientChannelValidated(Exchange exchange) {
+        String declared = clientDeclaredChannelCode(exchange);
+        if (declared == null) {
+            return null;
+        }
+        GatewayChannel gatewayChannel = exchange.getProperty(Message.GATEWAY_CHANNEL, GatewayChannel.class);
+        String configured = gatewayChannel != null && gatewayChannel.getChannel() != null
+                ? gatewayChannel.getChannel().getCode()
+                : null;
+        return configured != null && configured.equalsIgnoreCase(declared);
+    }
+
+    private String clientAddress(Exchange exchange, HttpServletRequest request) {
+        return firstText(
+                stringAttribute(request, CoreTraceAttributes.CLIENT_ADDRESS.name()),
+                clientIp(request),
+                exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_REMOTE_ADDRESS, String.class)
+        );
+    }
+
     private String correlationId(Exchange exchange) {
         return firstText(
                 exchange.getMessage().getHeader("X-Correlation-Id", String.class),
@@ -564,6 +602,26 @@ public class CoreObservationTraceSupport {
 
     private Integer httpStatus(Exchange exchange) {
         return exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
+    }
+
+    private long bodySize(Object body) {
+        if (body == null) {
+            return 0L;
+        }
+        if (body instanceof byte[] bytes) {
+            return bytes.length;
+        }
+        if (body instanceof ByteBuffer buffer) {
+            return buffer.asReadOnlyBuffer().remaining();
+        }
+        return String.valueOf(body).getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    private String responseContentType(Exchange exchange) {
+        return firstText(
+                exchange.getMessage().getHeader(Exchange.CONTENT_TYPE, String.class),
+                exchange.getMessage().getHeader("Content-Type", String.class)
+        );
     }
 
     private Throwable exchangeFailure(Exchange exchange) {

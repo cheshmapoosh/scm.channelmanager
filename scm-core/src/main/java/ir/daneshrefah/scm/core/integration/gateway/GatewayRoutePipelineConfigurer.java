@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.core.integration.gateway.contract.RequestContractDecod
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
+import ir.daneshrefah.scm.core.integration.observability.gateway.GatewayObservationEnrichmentSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
@@ -37,6 +38,7 @@ public class GatewayRoutePipelineConfigurer {
     private final ServiceRouteUriResolver serviceRouteUriResolver;
     private final ScmExchangeMdc scmExchangeMdc;
     private final IncomingChannelCodeResolver incomingChannelCodeResolver;
+    private final GatewayObservationEnrichmentSupport gatewayObservationEnrichmentSupport;
 
     public void configureGatewayRoute(ChannelRouteBuildContext context,
                                       InboundRouteDefinition inboundRoute,
@@ -66,16 +68,22 @@ public class GatewayRoutePipelineConfigurer {
         pipeline.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(servicePlan.gatewayChannel().getProtocolType()));
         pipeline.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(inboundRoute.channelServiceDefinition()));
         pipeline.setProperty(Message.SERVICE_VERSION, constant(inboundRoute.serviceVersion()));
+        pipeline.setProperty(GatewayObservationEnrichmentSupport.DEFINITION_PROPERTY,
+                constant(gatewayObservationEnrichmentSupport.definitionFor(routePlan, servicePlan, inboundRoute)));
 
         defineExceptionHandler(route);
         route.onCompletion()
+                .process(gatewayObservationEnrichmentSupport::captureResponseAndExtract)
+                .process(gatewayObservationEnrichmentSupport::applyGatewaySpanAttributes)
                 .process(exchange -> finishGatewaySpan.accept(exchange))
                 .process(exchange -> scmExchangeMdc.clear())
                 .end();
         pipeline.process(exchange -> {
             exchange.setProperty(RouteLogSupport.GATEWAY_START_NANOS, System.nanoTime());
             applyIncomingChannel(exchange, routePlan, servicePlan, inboundRoute);
+            gatewayObservationEnrichmentSupport.captureRequest(exchange);
             startGatewaySpan.accept(exchange);
+            gatewayObservationEnrichmentSupport.recordGatewayRequestReceived(exchange);
             Map<String, String> fields = scmExchangeMdc.put(exchange);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} routeId={} exchangeId={} correlationId={} outcome=started",
                     RouteLogEvents.GATEWAY_REQUEST_RECEIVED,

@@ -9,9 +9,51 @@ import java.util.List;
 public final class CoreTraceAttributes {
     private static final String OWNER = "scm-core";
 
+    public static final ObservationAttributeKey<String> GATEWAY_CHANNEL_CODE = keyword(
+            "scm.gateway.channel.code", "Configured gateway channel code.");
+    public static final ObservationAttributeKey<String> CLIENT_ID = keyword("scm.client.id", "Client identifier.");
+    public static final ObservationAttributeKey<String> CLIENT_TYPE = keyword("scm.client.type", "Client type.");
+    public static final ObservationAttributeKey<String> CLIENT_CHANNEL_CODE = keyword(
+            "scm.client.channel.code", "Client declared channel code.");
+    public static final ObservationAttributeKey<Boolean> CLIENT_CHANNEL_VALIDATED = TraceAttribute.booleanValue(
+            "scm.client.channel.validated", OWNER, ObservationAttributePresence.EVENT_OPTIONAL,
+            "Whether the client channel was validated for the gateway.");
+    public static final ObservationAttributeKey<String> CLIENT_USERNAME = keyword(
+            "scm.client.username", "Client supplied username.");
+    public static final ObservationAttributeKey<String> CLIENT_ADDRESS = keyword(
+            "scm.client.address", "Client network address.");
+    public static final ObservationAttributeKey<String> CLIENT_CORRELATION_ID = keyword(
+            "scm.client.correlation.id", "Client supplied correlation identifier.");
+    public static final ObservationAttributeKey<String> AUTH_TYPE = keyword("scm.auth.type", "Authentication type.");
+    public static final ObservationAttributeKey<String> AUTH_SCHEME = keyword("scm.auth.scheme", "Authentication scheme.");
+    public static final ObservationAttributeKey<String> AUTH_CLIENT_ID = keyword(
+            "scm.auth.client.id", "Authenticated client identifier.");
+    public static final ObservationAttributeKey<String> AUTH_CLIENT_ACCEPT_ADDRESS = keyword(
+            "scm.auth.client.accept_address", "Authenticated client accepted address.");
+    public static final ObservationAttributeKey<String> AUTH_SUBJECT_ID = keyword(
+            "scm.auth.subject.id", "Authenticated subject identifier.");
+    public static final ObservationAttributeKey<String> AUTH_SUBJECT_USERNAME = keyword(
+            "scm.auth.subject.username", "Authenticated subject username.");
+    public static final ObservationAttributeKey<String> AUTH_ISSUER = keyword(
+            "scm.auth.issuer", "Authentication issuer.");
+    public static final ObservationAttributeKey<List<String>> AUTH_AUDIENCE = TraceAttribute.keywordCollection(
+            "scm.auth.audience", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Authentication audiences.");
+    public static final ObservationAttributeKey<List<String>> AUTH_SCOPES = TraceAttribute.keywordCollection(
+            "scm.auth.scopes", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Authentication scopes.");
+    public static final ObservationAttributeKey<String> AUTH_LOGIN_METHOD = keyword(
+            "scm.auth.login_method", "Authentication login method.");
+    public static final ObservationAttributeKey<String> AUTH_TRANSACTION_METHOD = keyword(
+            "scm.auth.transaction_method", "Authentication transaction method.");
     public static final ObservationAttributeKey<String> SERVICE_CODE = keyword("scm.service.code", "Service code.");
     public static final ObservationAttributeKey<String> SERVICE_NAME = keyword("scm.service.name", "Service name.");
     public static final ObservationAttributeKey<String> SERVICE_VERSION = keyword("scm.service.version", "Service version.");
+    public static final ObservationAttributeKey<String> STATUS_CODE = keyword("scm.status.code", "Business status code.");
+    public static final ObservationAttributeKey<String> STATUS_OUTCOME = keyword(
+            "scm.status.outcome", "Business status outcome.");
+    public static final ObservationAttributeKey<String> STATUS_MESSAGE = keyword(
+            "scm.status.message", "Business status message.");
+    public static final ObservationAttributeKey<String> STATUS_DESCRIPTION = keyword(
+            "scm.status.description", "Business status description.");
     public static final ObservationAttributeKey<String> OPERATION_CODE = keyword("scm.operation.code", "Operation code.");
     public static final ObservationAttributeKey<String> OPERATION_NAME = keyword("scm.operation.name", "Operation name.");
     public static final ObservationAttributeKey<String> OPERATION_TYPE = keyword("scm.operation.type", "Operation type.");
@@ -33,7 +75,14 @@ public final class CoreTraceAttributes {
 
     public static List<ObservationAttributeKey<?>> attributes() {
         return List.of(
+                GATEWAY_CHANNEL_CODE,
+                CLIENT_ID, CLIENT_TYPE, CLIENT_CHANNEL_CODE, CLIENT_CHANNEL_VALIDATED, CLIENT_USERNAME,
+                CLIENT_ADDRESS, CLIENT_CORRELATION_ID,
+                AUTH_TYPE, AUTH_SCHEME, AUTH_CLIENT_ID, AUTH_CLIENT_ACCEPT_ADDRESS,
+                AUTH_SUBJECT_ID, AUTH_SUBJECT_USERNAME, AUTH_ISSUER, AUTH_AUDIENCE, AUTH_SCOPES,
+                AUTH_LOGIN_METHOD, AUTH_TRANSACTION_METHOD,
                 SERVICE_CODE, SERVICE_NAME, SERVICE_VERSION,
+                STATUS_CODE, STATUS_OUTCOME, STATUS_MESSAGE, STATUS_DESCRIPTION,
                 OPERATION_CODE, OPERATION_NAME, OPERATION_TYPE, OPERATION_DURATION_MS, SERVICE_DURATION_MS,
                 EXCHANGE_ID, TARGET_KIND,
                 PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_PHASE, PLUGIN_LAYER, PLUGIN_DURATION_MS

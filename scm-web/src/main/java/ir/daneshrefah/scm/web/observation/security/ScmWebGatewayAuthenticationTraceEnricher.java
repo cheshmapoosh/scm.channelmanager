@@ -3,23 +3,20 @@ package ir.daneshrefah.scm.web.observation.security;
 import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.observability.GatewayAuthenticationTraceEnricher;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
-import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
-import ir.daneshrefah.scm.web.observation.attributes.WebTraceAttributes;
 import org.apache.camel.Exchange;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Component
 public class ScmWebGatewayAuthenticationTraceEnricher implements GatewayAuthenticationTraceEnricher {
-    public static final String JWT_CONTEXT_PROPERTY = "scm.observation.context.gateway.jwt";
+    private final ObjectProvider<GatewayAuthenticationTraceContributor> contributors;
 
-    private final GatewayJwtTraceContextResolver contextResolver;
-
-    public ScmWebGatewayAuthenticationTraceEnricher(GatewayJwtTraceContextResolver contextResolver) {
-        this.contextResolver = contextResolver;
+    public ScmWebGatewayAuthenticationTraceEnricher(ObjectProvider<GatewayAuthenticationTraceContributor> contributors) {
+        this.contributors = contributors;
     }
 
     @Override
@@ -27,12 +24,10 @@ public class ScmWebGatewayAuthenticationTraceEnricher implements GatewayAuthenti
         if (exchange == null) {
             return;
         }
-        GatewayJwtTraceContext context = resolve(authentication);
-        if (context.isEmpty()) {
-            exchange.removeProperty(JWT_CONTEXT_PROPERTY);
+        Map<String, Object> attributes = attributes(authentication);
+        if (attributes.isEmpty()) {
             return;
         }
-        exchange.setProperty(JWT_CONTEXT_PROPERTY, context);
 
         ObservationScope gatewayScope = exchange.getProperty(
                 CoreObservationTraceSupport.GATEWAY_SCOPE_PROPERTY,
@@ -41,29 +36,23 @@ public class ScmWebGatewayAuthenticationTraceEnricher implements GatewayAuthenti
         if (gatewayScope == null) {
             return;
         }
-        gatewayScope.attribute(WebTraceAttributes.USER_NICKNAME, context.nickname())
-                .attribute(WebTraceAttributes.JWT_SCOPE, nonEmpty(context.scopes()))
-                .attribute(WebTraceAttributes.JWT_ISSUER, context.issuer())
-                .attribute(WebTraceAttributes.CLIENT_ADDRESS, context.clientAddress())
-                .attribute(WebTraceAttributes.JWT_ISSUE_AT, instant(context.issuedAt()))
-                .attribute(WebTraceAttributes.JWT_EXPIRE_AT, instant(context.expiresAt()))
-                .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, context.channelCode())
-                .attribute(WebTraceAttributes.JWT_AUDIENCE, nonEmpty(context.audiences()))
-                .attribute(WebTraceAttributes.JWT_GENERATOR, context.generator())
-                .attribute(WebTraceAttributes.AUTH_TRANSACTION_METHOD, context.transactionMethod())
-                .attribute(WebTraceAttributes.AUTH_LOGIN_METHOD, context.loginMethod());
+        gatewayScope.attributes(attributes);
     }
 
-    private GatewayJwtTraceContext resolve(Authentication authentication) {
-        GatewayJwtTraceContext context = contextResolver.resolve(authentication);
-        return context == null ? GatewayJwtTraceContext.empty() : context;
-    }
-
-    private List<String> nonEmpty(List<String> values) {
-        return values == null || values.isEmpty() ? null : values;
-    }
-
-    private String instant(Instant value) {
-        return value == null ? null : value.toString();
+    private Map<String, Object> attributes(Authentication authentication) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        contributors.orderedStream().forEach(contributor -> {
+            try {
+                if (contributor.supports(authentication)) {
+                    Map<String, Object> contributed = contributor.attributes(authentication);
+                    if (contributed != null) {
+                        attributes.putAll(contributed);
+                    }
+                }
+            } catch (RuntimeException ignored) {
+                // Authentication trace enrichment must never affect authentication or business processing.
+            }
+        });
+        return attributes.isEmpty() ? Map.of() : Map.copyOf(attributes);
     }
 }

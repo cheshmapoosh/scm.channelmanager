@@ -29,6 +29,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
+    private static final String SCM_FAULT_RESPONSE_PROPERTY = "scm.gateway.response.scmFault";
+
     private final ClientContractResolver clientContractResolver;
     private final Map<String, ResponseContractEncoder> responseContractEncoders;
     private final Map<String, FaultContractEncoder> faultContractEncoders;
@@ -62,10 +64,15 @@ public class GatewayGlobalResponseHandlerRouteBuilder extends RouteBuilder {
                                 contract.name(), serviceVersion(exchange), exchange.getFromRouteId(), exchange.getExchangeId());
                     }
                     exchange.getMessage().setBody(encodedBody);
-                    observationTraceSupport.gatewayResponseCompleted(exchange, scmFault);
+                    exchange.setProperty(SCM_FAULT_RESPONSE_PROPERTY, scmFault);
                 })
                 .marshal()
-                .json(JsonLibrary.Jackson);
+                .json(JsonLibrary.Jackson)
+                .process(exchange -> {
+                    boolean scmFault = Boolean.TRUE.equals(exchange.getProperty(SCM_FAULT_RESPONSE_PROPERTY, Boolean.class));
+                    exchange.removeProperty(SCM_FAULT_RESPONSE_PROPERTY);
+                    observationTraceSupport.gatewayResponseCompleted(exchange, scmFault);
+                });
     }
 
     private Object encodeFault(Exchange exchange, ScmFault fault, ClientContract contract) {

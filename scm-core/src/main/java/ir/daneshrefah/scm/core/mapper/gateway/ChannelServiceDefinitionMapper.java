@@ -45,7 +45,7 @@ public abstract class ChannelServiceDefinitionMapper {
         return switch (channelServiceDefinitionEntity.getType()) {
             case INBOUND -> toRest(channelServiceDefinitionEntity);
             case API_DOC -> toApiDoc(channelServiceDefinitionEntity);
-            case SVC_DOMAIN_MEMBER -> channelServiceDefinitionEntityToModel(channelServiceDefinitionEntity);
+            case SVC_DOMAIN_MEMBER, OBSERVATION -> channelServiceDefinitionEntityToModel(channelServiceDefinitionEntity);
         };
     }
 
