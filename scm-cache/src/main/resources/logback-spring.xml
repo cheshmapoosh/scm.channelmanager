@@ -1,8 +1,9 @@
 <configuration scan="true" scanPeriod="30 seconds">
-
-    <!-- ===== Spring / Config Server properties ===== -->
     <springProperty scope="context" name="APP_NAME"
                     source="spring.application.name" defaultValue="scm-cache" />
+
+    <springProperty scope="context" name="POD_NAME"
+                    source="pod.name" defaultValue="local" />
 
     <springProperty scope="context" name="LOG_DIR"
                     source="scm.log.app.file-directory" defaultValue="log" />
@@ -10,40 +11,39 @@
     <springProperty scope="context" name="ARCHIVE_DIR"
                     source="scm.log.app.rolling-archive-directory" defaultValue="${LOG_DIR}/archive" />
 
-    <!-- Rolling knobs -->
+    <springProperty scope="context" name="APP_LOG_FILE_NAME"
+                    source="scm.log.app.file-name" defaultValue="app-${POD_NAME}.log" />
+
+    <springProperty scope="context" name="APP_LOG_FILE_NAME_PATTERN"
+                    source="scm.log.app.file-name-pattern"
+                    defaultValue="app-${POD_NAME}.%d{yyyy-MM-dd}.%i.log" />
+
     <springProperty scope="context" name="MAX_HISTORY_DAYS"
                     source="scm.log.app.max-history" defaultValue="50" />
-    <!--<springProperty scope="context" name="TOTAL_SIZE_CAP"
-                    source="scm.log.app.total-size-cap" defaultValue="10GB" />-->
+
     <springProperty scope="context" name="MAX_FILE_SIZE"
                     source="scm.log.app.max-file-size" defaultValue="100MB" />
 
-    <!-- Root level -->
     <springProperty scope="context" name="ROOT_LEVEL"
                     source="scm.log.root-level" defaultValue="INFO" />
 
-    <!-- Console toggle (prod default: false) -->
     <springProperty scope="context" name="CONSOLE_ENABLED"
                     source="scm.log.console.enabled" defaultValue="false" />
 
-    <!-- Optional: fine-grained levels -->
     <springProperty scope="context" name="SPRING_LEVEL"
                     source="scm.log.level.spring" defaultValue="INFO" />
+
     <springProperty scope="context" name="HIBERNATE_LEVEL"
                     source="scm.log.level.hibernate" defaultValue="WARN" />
 
-    <!-- ===== Derived paths ===== -->
-    <property name="ACTIVE_LOG" value="${LOG_DIR}/${APP_NAME}.log" />
-    <!-- daily + index + gzip -->
-    <property name="ARCHIVE_PATTERN" value="${ARCHIVE_DIR}/${APP_NAME}.%d{yyyy-MM-dd}.%i.log.gz" />
+    <property name="ACTIVE_LOG" value="${LOG_DIR}/${APP_LOG_FILE_NAME}" />
+    <property name="ARCHIVE_PATTERN" value="${ARCHIVE_DIR}/${APP_LOG_FILE_NAME_PATTERN}" />
 
-    <!-- ===== Encoders ===== -->
-    <!-- Pattern optimized for prod parsing -->
     <property name="LOG_PATTERN"
               value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %logger{36} - %msg%n" />
 
-    <!-- ===== Appenders ===== -->
-    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="ROLLING_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${ACTIVE_LOG}</file>
         <append>true</append>
         <prudent>false</prudent>
@@ -52,7 +52,6 @@
             <fileNamePattern>${ARCHIVE_PATTERN}</fileNamePattern>
             <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
             <maxHistory>${MAX_HISTORY_DAYS}</maxHistory>
-
             <cleanHistoryOnStart>false</cleanHistoryOnStart>
         </rollingPolicy>
 
@@ -61,20 +60,22 @@
         </encoder>
     </appender>
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${LOG_PATTERN}</pattern>
         </encoder>
     </appender>
 
-    <!-- ===== Noise control loggers (tunable from Config Server) ===== -->
     <logger name="org.springframework" level="${SPRING_LEVEL}" />
     <logger name="org.hibernate" level="${HIBERNATE_LEVEL}" />
 
-    <!-- ===== Root ===== -->
     <root level="${ROOT_LEVEL}">
         <appender-ref ref="ROLLING_FILE" />
-
+        <if condition='property("CONSOLE_ENABLED").equalsIgnoreCase("true")'>
+            <then>
+                <appender-ref ref="CONSOLE" />
+            </then>
+        </if>
     </root>
-
 </configuration>
