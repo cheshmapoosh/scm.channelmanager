@@ -5,12 +5,17 @@ import lombok.experimental.UtilityClass;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 @UtilityClass
 public class DateAndTimeConverter {
-    public PersianDate convertMsToPersianDate(Long millis){
+    public Long convertMsToPersianDate(Long millis) {
+        if (Objects.isNull(millis) || millis.equals(0L)) {
+            return null;
+        }
         System.out.println(millis);
         LocalDate date = Instant.ofEpochMilli(millis)
                 .atZone(ZoneId.systemDefault())
@@ -20,10 +25,14 @@ public class DateAndTimeConverter {
 
         System.out.println(persianDate);
 
-        return persianDate;
+        return Long.valueOf(persianDate.toString().replace("-", ""));
     }
 
-    public Long convertPersianDateToMs(String persianDate){
+    public Long convertPersianDateToMs(String persianDate) {
+        if (Objects.isNull(persianDate) ||  persianDate.isEmpty()) {
+            return null;
+        }
+
         persianDate = persianDate.replace("-", "");
 
         int year = Integer.parseInt(persianDate.substring(0, 4));
@@ -32,13 +41,12 @@ public class DateAndTimeConverter {
 
         PersianDate pDate = PersianDate.of(year, month, day);
 
-        long millis = pDate
-                .toGregorian()
+        LocalDate gregorianDate = pDate.toGregorian();
+
+        long millis = gregorianDate
                 .atStartOfDay(ZoneId.systemDefault())
                 .toInstant()
                 .toEpochMilli();
-
-        System.out.println(millis);
 
         return millis;
     }

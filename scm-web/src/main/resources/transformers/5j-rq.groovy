@@ -1,12 +1,12 @@
 package transformers
 
 import ir.daneshrefah.scm.utils.date.DateUtils
+import org.slf4j.LoggerFactory
 
 def b = exchange.in.body;
-println("5j body before transform : " + b)
-println("permitServiceId : " + b['permitServiceId'])
-println("privileges : " + b['privileges'])
-println("customer count : " + b.customerCount)
+
+def log = LoggerFactory.getLogger("5jRqGroovyTransformer")
+log.info("5j rq body {}", b)
 
 
 def f = { value, len -> value = value?.toString() ?: ''; value.length() > len ? value[0..<len] : value.padRight(len, ' ') };
@@ -100,13 +100,13 @@ def nabRequest = [
                         ["name": "accountNo", "length": 18, "required": true],
                         ["name": "nationalCode", "length": 10, "required": true],
                         ["name": "cardNo", "length": 20, "required": false],
-                        ["name": "customerCount", "length": 1, "required": isDelete? false : true],
-                        ["name": "customersStr", "length": 108, "required": isDelete? false : true],
+                        ["name": "customerCount", "length": 1, "required": isDelete ? false : true],
+                        ["name": "customersStr", "length": 108, "required": isDelete ? false : true],
                         ["name": "insDel", "length": 1, "required": true],
-                        ["name": "privilages", "length": 10, "required": isDelete? false : true],
-                        ["name": "maxAmounts", "length": 72, "required": isDelete? false : true],
-                        ["name": "expireDate", "length": 8, "required": isDelete? false : true],
-                        ["name": "permistServiceId", "length": 10, "required": isDelete? false : true]
+                        ["name": "privilages", "length": 10, "required": isDelete ? false : true],
+                        ["name": "maxAmounts", "length": 72, "required": isDelete ? false : true],
+                        ["name": "expireDate", "length": 8, "required": isDelete ? false : true],
+                        ["name": "permistServiceId", "length": 10, "required": isDelete ? false : true]
                 ]
         ],
         "response": [
@@ -116,5 +116,5 @@ def nabRequest = [
         ]
 ]
 
-println("5j transformed json : " + nabRequest)
+log.info("5j transformed nab request : {}", nabRequest)
 return nabRequest

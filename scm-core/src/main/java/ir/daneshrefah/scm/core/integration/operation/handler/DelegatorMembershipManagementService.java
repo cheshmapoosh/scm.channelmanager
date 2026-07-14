@@ -8,6 +8,8 @@ import ir.daneshrefah.scm.common.constant.CustomerRelationType;
 import ir.daneshrefah.scm.common.constant.OperationCode;
 import ir.daneshrefah.scm.common.data.entity.asset.*;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.GeneralRealPersonEntity;
+import ir.daneshrefah.scm.common.data.entity.person.IndividualPersonEntity;
 import ir.daneshrefah.scm.common.data.mapper.MembershipMapper;
 import ir.daneshrefah.scm.common.data.mapper.PersonMapper;
 import ir.daneshrefah.scm.common.data.repository.PersonRepository;
@@ -84,30 +86,28 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         validate(accountNo, customerNo, isCreate);
 
         GeneralPersonEntity person = getKarpardaz(nationalCode);
-        log.info("current personId (karpardaz) is {}", person.getId());
+        try {
+            log.info("current personId (karpardaz) is {}, nationalCode {}", person.getId(), ((IndividualPersonEntity)person).getNationalCode());
+        }catch (ClassCastException e) {}
 
         if (!isCreate) {
             return deactivateDelegator(person, customerNo);
         }
         Long memId = createDelegator(person, customerNo, accountNo);
-        removeXuserDetail(person.getId());
+        removeXuserDetail(person.getId(), exchange);
         return memId;
     }
 
-    private void removeXuserDetail(int userId) {
-        uaaApi.removeXUserByUsername(userId);
+    private void removeXuserDetail(int userId, Exchange exchange) {
+        log.info("start Removing user {} from membership manager", userId);
+        String authorization = exchange.getIn().getHeader("Authorization", String.class);
+        if (Objects.isNull(authorization) || !authorization.startsWith("Bearer ")) {
+            throw new AuthenticationRequiredException();
+        }
+        String token = authorization.split(" ")[1];
+        uaaApi.removeXUserByUsername(userId, token);
 //        String nickName = getKarpardazNickName(userId);
 //        xUserDetailService.removeXUserByUsername(nickName);
-    }
-
-    private String getKarpardazNickName(int userId) {
-        return "";
-//        UserChannelAuthentication userChannelAuthentication = authenticationRepository.findByUserId(userId);
-//        if (Objects.isNull(userChannelAuthentication)) {
-//            log.info("user channel authentication with userId {} does not exist", userId);
-//            throw new NoMatchRecordFoundException("user channel authentication with userId {} does not exist", userId+"");
-//        }
-//        return userChannelAuthentication.getNickName();
     }
 
     private Long createDelegator(GeneralPersonEntity person, String customerNo, String accountNo) {
