@@ -63,7 +63,7 @@ spec:
             - name: SPRING_APPLICATION_NAME
               value: scm-web
             - name: VERSION
-              value: 8.5.4
+              value: 9.0.0
             - name: SERVER_PORT
               value: "8082"
             - name: SPRING_CLOUD_CONFIG_URI
@@ -76,6 +76,10 @@ spec:
                 configMapKeyRef:
                   key: SPRING_SECURITY_ISSUER_URI
                   name: scm-uaa-configmap
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           ports:
             - name: http
               containerPort: 8082

@@ -30,7 +30,7 @@ def user = (User) AuthenticationUtils.getAuthentication().getPrincipal()
 def accessParameter = user.getAccessParameters()
 def mobileNumber = accessParameter[0]
 def telNbr = user.getPerson().getPhone1()
-def ip = " "//header['ip']
+def ip =  header['X-Forwarded-For'] ?: ''
 def amount = body.amount
 
 if (mobileNumber.isEmpty() && telNbr.isEmpty() && ip.isEmpty()) {

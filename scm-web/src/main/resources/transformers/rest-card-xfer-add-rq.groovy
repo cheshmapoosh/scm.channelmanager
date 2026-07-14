@@ -34,7 +34,7 @@ if (amountStr.length() < 12) {
     println("amount : " + amountStr)
 }
 
-def ip = " "//header['ip']
+def ip = header['X-Forwarded-For'] ?: ''
 //println("pin before encrypt : " + pin)
 //pin = CardSystemSecurityUtil.encryptPin(pin, card)
 //println("pin after encrypt : " + pin)

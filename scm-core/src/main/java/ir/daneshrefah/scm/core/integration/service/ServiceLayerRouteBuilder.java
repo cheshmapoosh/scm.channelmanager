@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.service;
 
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
+import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.Service;
@@ -30,6 +31,7 @@ import ir.daneshrefah.scm.logging.utils.TraceUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.RouteDefinition;
@@ -516,43 +518,50 @@ public class ServiceLayerRouteBuilder extends RouteBuilder {
     }
 
     private void defineExceptionHandler(RouteDefinition route, RuntimeServicePlan servicePlan) {
+        routeServiceExceptions(route, exchange -> handleServiceException(exchange, servicePlan));
+    }
+
+    static void routeServiceExceptions(RouteDefinition route, Processor errorProcessor) {
         route.onException(Exception.class)
                 .handled(true)
-                .process(exchange -> {
-                    Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
-                    scmExchangeMdc.put(exchange);
-                    TraceUtils traceUtils = TraceUtils.getInstance();
-                    if (traceUtils != null) {
-                        traceUtils.traceException(exchange, exception);
-                    }
-                    globalErrorHandler.handle(exchange);
-                    servicePluginMetrics.recordServiceExecution(
-                            servicePlan.gatewayChannel().getName(),
-                            channelCode(exchange, servicePlan),
-                            servicePlan.service().getCode(),
-                            exchange.getProperty(Message.OPERATION_NAME, String.class),
-                            serviceDuration(exchange),
-                            false);
-                    serviceAuditEventPublisher.recordFailure(exchange, exception);
-                    Map<String, String> fields = scmExchangeMdc.fields(exchange);
-                    log.warn("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
-                            RouteLogEvents.SERVICE_REQUEST_FAILED,
-                            servicePlan.gatewayChannel().getName(),
-                            RouteLogSupport.targetKind(exchange),
-                            servicePlan.gatewayChannel().getProtocolType(),
-                            channelCode(exchange, servicePlan),
-                            RouteLogSupport.channelServiceAccessId(servicePlan),
-                            servicePlan.service().getCode(),
-                            serviceVersion(exchange),
-                            exchange.getProperty(Message.OPERATION_NAME, String.class),
-                            exchange.getFromRouteId(),
-                            exchange.getExchangeId(),
-                            fields.get("correlationId"),
-                            serviceDuration(exchange) / 1_000_000L,
-                            RouteLogSupport.failureType(exception),
-                            RouteLogSupport.failureMessage(exception),
-                            exception);
-                });
+                .process(errorProcessor)
+                .to(Routes.GLOBAL_RESPONSE_HANDLER);
+    }
+
+    private void handleServiceException(Exchange exchange, RuntimeServicePlan servicePlan) {
+        Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+        scmExchangeMdc.put(exchange);
+        TraceUtils traceUtils = TraceUtils.getInstance();
+        if (traceUtils != null) {
+            traceUtils.traceException(exchange, exception);
+        }
+        globalErrorHandler.handle(exchange);
+        servicePluginMetrics.recordServiceExecution(
+                servicePlan.gatewayChannel().getName(),
+                channelCode(exchange, servicePlan),
+                servicePlan.service().getCode(),
+                exchange.getProperty(Message.OPERATION_NAME, String.class),
+                serviceDuration(exchange),
+                false);
+        serviceAuditEventPublisher.recordFailure(exchange, exception);
+        Map<String, String> fields = scmExchangeMdc.fields(exchange);
+        log.warn("event={} layer=service gatewayName={} targetKind={} protocol={} channelCode={} channelServiceAccessId={} serviceCode={} serviceVersion={} operationName={} routeId={} exchangeId={} correlationId={} durationMs={} outcome=failed failureType={} failureMessage={}",
+                RouteLogEvents.SERVICE_REQUEST_FAILED,
+                servicePlan.gatewayChannel().getName(),
+                RouteLogSupport.targetKind(exchange),
+                servicePlan.gatewayChannel().getProtocolType(),
+                channelCode(exchange, servicePlan),
+                RouteLogSupport.channelServiceAccessId(servicePlan),
+                servicePlan.service().getCode(),
+                serviceVersion(exchange),
+                exchange.getProperty(Message.OPERATION_NAME, String.class),
+                exchange.getFromRouteId(),
+                exchange.getExchangeId(),
+                fields.get("correlationId"),
+                serviceDuration(exchange) / 1_000_000L,
+                RouteLogSupport.failureType(exception),
+                RouteLogSupport.failureMessage(exception),
+                exception);
     }
 
     private long serviceDuration(Exchange exchange) {

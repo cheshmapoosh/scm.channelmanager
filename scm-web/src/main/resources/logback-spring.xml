@@ -12,11 +12,11 @@
                     source="scm.log.app.rolling-archive-directory" defaultValue="${LOG_DIR}/archive" />
 
     <springProperty scope="context" name="APP_LOG_FILE_NAME"
-                    source="scm.log.app.file-name" defaultValue="app-${POD_NAME}.log" />
+                    source="scm.log.app.file-name" defaultValue="${POD_NAME}.log" />
 
     <springProperty scope="context" name="APP_LOG_FILE_NAME_PATTERN"
                     source="scm.log.app.file-name-pattern"
-                    defaultValue="app-${POD_NAME}.%d{yyyy-MM-dd}.%i.log" />
+                    defaultValue="${POD_NAME}.%d{yyyy-MM-dd}.%i.log" />
 
     <springProperty scope="context" name="MAX_HISTORY_DAYS"
                     source="scm.log.app.keep-log-history" defaultValue="50" />
