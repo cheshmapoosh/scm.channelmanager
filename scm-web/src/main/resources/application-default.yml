@@ -10,7 +10,7 @@ scm:
   gateway:
     idempotency:
       enabled: true
-      map-name: rest-gateway-idempotent-repository
+      map-name: restGatewayIdempotentRepository
       api-paths:
         - card/cardPasswordInquiry
     client-contracts:
