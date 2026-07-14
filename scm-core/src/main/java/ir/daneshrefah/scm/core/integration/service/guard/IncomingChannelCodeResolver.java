@@ -12,9 +12,11 @@ import java.util.Optional;
 public class IncomingChannelCodeResolver {
     public static final String SCM_CHANNEL_HEADER = "X-SCM-Channel";
     public static final String CHANNEL_CODE_HEADER = "channelCode";
+    public static final String CHANNEL_HEADER = "channel";
 
     public Optional<String> resolve(Exchange exchange) {
         return firstNonBlank(
+                exchange.getMessage().getHeader(CHANNEL_HEADER, String.class),
                 exchange.getProperty(Message.CHANNEL_CODE, String.class),
                 exchange.getMessage().getHeader(Message.CHANNEL_CODE, String.class),
                 exchange.getMessage().getHeader(SCM_CHANNEL_HEADER, String.class),

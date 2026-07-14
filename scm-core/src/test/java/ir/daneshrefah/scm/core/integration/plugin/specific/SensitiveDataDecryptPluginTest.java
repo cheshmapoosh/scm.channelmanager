@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.core.integration.plugin.specific;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
+import ir.daneshrefah.scm.core.integration.plugin.support.PluginMessageValueReader;
 import ir.daneshrefah.scm.core.services.crypto.SensitiveDataDecryptService;
 import org.apache.camel.Exchange;
 import org.apache.camel.impl.DefaultCamelContext;
@@ -106,6 +107,21 @@ class SensitiveDataDecryptPluginTest {
         )));
 
         assertEquals("123", exchange.getMessage().getHeader("cvv2"));
+    }
+
+    @Test
+    void keepsBodyReadableForFollowingPlugins() {
+        Exchange exchange = exchange();
+        exchange.getMessage().setBody("""
+                {"card":{"sourceCardNumber":"5894631240207563"},"trk2EquivData":{"cvv2":"encrypted-cvv2"}}
+                """);
+        when(decryptService.decrypt("encrypted-cvv2")).thenReturn("123");
+
+        plugin.handle(exchange, pluginDetail(baseConfig()));
+
+        PluginMessageValueReader reader = new PluginMessageValueReader(new ObjectMapper());
+        assertEquals("5894631240207563", reader.readValue(exchange.getMessage(), "body:card.sourceCardNumber"));
+        assertEquals("5894631240207563", reader.readValue(exchange.getMessage(), "body:card.sourceCardNumber"));
     }
 
     private Exchange exchange() {

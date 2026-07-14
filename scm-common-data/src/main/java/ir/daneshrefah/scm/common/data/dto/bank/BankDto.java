@@ -13,5 +13,7 @@ public class BankDto implements Serializable {
     private String name;
 
     private String iin;
+
+    private String imageUrl;
 }
 

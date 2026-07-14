@@ -18,7 +18,6 @@ import org.apache.camel.model.RouteDefinition;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +46,7 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
 
     @Override
     public void handle(Exchange exchange, PluginDetail pluginDetail) {
+        log.info("SensitiveDataDecryptPlugin handle exchangeId={} plugin={}", exchange.getExchangeId(), pluginDetail.getName());
         SensitiveDataDecryptConfig config = resolveConfig(pluginDetail);
 
 
@@ -244,7 +244,7 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
 
             ObjectNode body = resolveBodyAsObjectNode(message);
             setBodyPath(body, path, value);
-            writeJsonBodyAsInputStream(message, body);
+            writeJsonBody(message, body);
             return;
         }
 
@@ -260,7 +260,7 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
         switch (body) {
             case null -> {
                 ObjectNode empty = objectMapper.createObjectNode();
-                writeJsonBodyAsInputStream(message, empty);
+                writeJsonBody(message, empty);
                 return empty;
             }
             case JsonNode jsonNode -> {
@@ -269,13 +269,13 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
             case String text -> {
                 if (StringUtils.isBlank(text)) {
                     ObjectNode empty = objectMapper.createObjectNode();
-                    writeJsonBodyAsInputStream(message, empty);
+                    writeJsonBody(message, empty);
                     return empty;
                 }
 
                 try {
                     JsonNode jsonNode = objectMapper.readTree(text);
-                    writeJsonBodyAsInputStream(message, jsonNode);
+                    writeJsonBody(message, jsonNode);
                     return jsonNode;
                 } catch (Exception e) {
                     throw new IllegalArgumentException("Could not parse String body as JSON", e);
@@ -284,7 +284,7 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
             case byte[] bytes -> {
                 try {
                     JsonNode jsonNode = objectMapper.readTree(bytes);
-                    writeJsonBodyAsInputStream(message, jsonNode);
+                    writeJsonBody(message, jsonNode);
                     return jsonNode;
                 } catch (Exception e) {
                     throw new IllegalArgumentException("Could not parse byte[] body as JSON", e);
@@ -294,7 +294,7 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
                 try {
                     JsonNode jsonNode = objectMapper.readTree(inputStream);
 
-                    writeJsonBodyAsInputStream(message, jsonNode);
+                    writeJsonBody(message, jsonNode);
                     return jsonNode;
                 } catch (Exception e) {
                     throw new IllegalArgumentException("Could not parse InputStream body as JSON", e);
@@ -306,7 +306,7 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
 
         try {
             JsonNode jsonNode = objectMapper.valueToTree(body);
-            writeJsonBodyAsInputStream(message, jsonNode);
+            writeJsonBody(message, jsonNode);
             return jsonNode;
         } catch (Exception e) {
             throw new IllegalArgumentException("Could not convert request body to JsonNode. bodyType=" + body.getClass().getName(), e);
@@ -393,17 +393,16 @@ public class SensitiveDataDecryptPlugin implements PluginHandler {
 
     }
 
-    private void writeJsonBodyAsInputStream(Message message, JsonNode body) {
+    private void writeJsonBody(Message message, JsonNode body) {
         try {
             byte[] jsonBytes = objectMapper.writeValueAsBytes(body);
 
-
-            message.setBody(new ByteArrayInputStream(jsonBytes));
+            message.setBody(jsonBytes);
             message.setHeader(Exchange.CONTENT_TYPE, APPLICATION_JSON_UTF8);
             message.setHeader(Exchange.CONTENT_LENGTH, jsonBytes.length);
 
         } catch (Exception e) {
-            throw new IllegalStateException("Could not write JSON body as InputStream", e);
+            throw new IllegalStateException("Could not write JSON body", e);
         }
 
 

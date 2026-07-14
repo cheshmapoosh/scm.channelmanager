@@ -67,6 +67,8 @@ def cardNo = destCardNumber?.toString()?.replace('"', '')?.trim()
 def bankPrefix = cardNo?.length() >= 6 ? cardNo[0..5] : null
 println("card prefix : " + bankPrefix)
 def detection = exchange.context.registry.lookupByName("bankListLoader")
+def cardIinBitmapService = exchange.context.registry.lookupByName("cardIinBitmapService")
+def cardBitmap = cardIinBitmapService.findBitmapByCardNumber(cardNo)
 BankDto bank = bankPrefix == null ? null : detection.getBank(bankPrefix)
 println("bank name : " + (bank == null ? "" : bank.getName()))
 
@@ -90,7 +92,7 @@ println("end tcp card inquiry!")
 return [
         "card"        : [
                 "destinationBankName": bank == null ? "" : bank.getName(),
-                "imageUrl"           : ""
+                "imageUrl"           : cardBitmap
         ],
         "customerName": [
                 "firstName": customerName,

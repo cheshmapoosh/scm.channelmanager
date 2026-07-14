@@ -7,6 +7,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +28,9 @@ import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_ANON
 @Getter
 public class UserProfile implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = -7921811624990925197L;
+//    private static final long serialVersionUID = -7914405144470318271L;
     /**
      * this property in delegation mode refer to delegated user and in normal mode hold the logged-in nickname
      * */

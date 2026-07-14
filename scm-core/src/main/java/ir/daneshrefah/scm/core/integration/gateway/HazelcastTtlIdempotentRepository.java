@@ -1,31 +1,35 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
+import com.hazelcast.map.IMap;
+import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
 import org.apache.camel.spi.IdempotentRepository;
 import org.apache.camel.support.service.ServiceSupport;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.stereotype.Component;
 
 import java.util.Objects;
-
+@Component
 public class HazelcastTtlIdempotentRepository extends ServiceSupport
         implements IdempotentRepository {
 
     private static final String PRESENT = "1";
-
+    public static final String REST_GATEWAY_IDEMPOTENT_REPOSITORY =
+            "restGatewayIdempotentRepository";
     private final Cache cache;
 
     public HazelcastTtlIdempotentRepository(
-            CacheManager cacheManager,
-            String cacheName) {
+            CacheManager cacheManager) {
+
 
         Objects.requireNonNull(cacheManager, "cacheManager");
-        Objects.requireNonNull(cacheName, "cacheName");
+        Objects.requireNonNull(REST_GATEWAY_IDEMPOTENT_REPOSITORY, "cacheName");
 
-        this.cache = cacheManager.getCache(cacheName);
+        this.cache = cacheManager.getCache(REST_GATEWAY_IDEMPOTENT_REPOSITORY);
 
         if (this.cache == null) {
             throw new IllegalStateException(
-                    "Cache '" + cacheName + "' not found in CacheManager"
+                    "Cache '" + REST_GATEWAY_IDEMPOTENT_REPOSITORY + "' not found in CacheManager"
             );
         }
     }

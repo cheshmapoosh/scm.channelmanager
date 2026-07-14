@@ -46,14 +46,14 @@ public class MembershipEntity extends AbstractEntity<Long> {
     @Column(name = "CLOSE")
     private Boolean close;
 
-    @Column(name = "CUSTOMER_NO")
-    private String customerNo;
+//    @Column(name = "CUSTOMER_NO")
+//    private String customerNo;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "MEMBERSHIP_TYPE")
-    private MembershipType membershipType;
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "MEMBERSHIP_TYPE")
+//    private MembershipType membershipType;
 
-    @Column(name = "ACTIVE_DELEGATE")
-    private Boolean activeDelegate;
+//    @Column(name = "ACTIVE_DELEGATE")
+//    private Boolean activeDelegate;
 
 }

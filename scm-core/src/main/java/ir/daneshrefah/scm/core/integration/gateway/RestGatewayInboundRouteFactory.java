@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static ir.daneshrefah.scm.core.config.RestGatewayIdempotencyConfig.REST_GATEWAY_IDEMPOTENT_REPOSITORY;
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
 @Component

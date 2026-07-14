@@ -84,22 +84,23 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
             membershipEntity.setArchiveNumber(0);
             membershipEntity.setDefaultAccount(false);
             membershipEntity.setPerson(personMapper.toPersonEntity(person));
-            membershipEntity.setCustomerNo(customerNo);
-            membershipEntity.setMembershipType(MembershipType.DELEGATOR);
+//            membershipEntity.setCustomerNo(customerNo);
+//            membershipEntity.setMembershipType(MembershipType.DELEGATOR);
             membershipEntity.setCustomerAccount(getCustomerAccount(customerNo, accountNo));
         }
-        membershipEntity.setActiveDelegate(true);
+//        membershipEntity.setActiveDelegate(true);
 
         return membershipRepository.save(membershipEntity).getId();
     }
 
     private MembershipEntity getMembership(GeneralPerson person, String customerNo) {
-        MembershipEntity membershipEntity = membershipRepository.findMembershipListByUserIdAndMembershipTypeAndCustomerNo(
-                person.getId(),
-                MembershipType.DELEGATOR,
-                customerNo);
-        return membershipEntity;
+        return membershipRepository.findMembershipListByUserId(person.getId()).stream()
+                .filter(membership -> Objects.equals("000", customerNo))
+                .findFirst()
+                .orElse(null);
     }
+
+
 
     private Long deactivateDelegator(GeneralPerson person, String customerNo) {
         MembershipEntity membershipEntity = getMembership(person, customerNo);
@@ -108,7 +109,7 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
             throw new NoMatchRecordFoundException("active delegator karpardaz membership not found! customerNo : " + customerNo);
         }
 
-        membershipEntity.setActiveDelegate(false);
+//        membershipEntity.setActiveDelegate(false);
         MembershipEntity savedDelegatorMembership = membershipRepository.save(membershipEntity);
         log.info("deActive delegator karpardaz membership! customerNo {} & membershipId {}", customerNo, savedDelegatorMembership.getId());
         return savedDelegatorMembership.getId();

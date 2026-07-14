@@ -21,4 +21,7 @@ public class BankEntity {
 
     @Column(name = "IIN", nullable = false)
     private String iin;
+
+    @Column(name = "IMAGE_URL", nullable = false)
+    private String imageUrl;
 }
