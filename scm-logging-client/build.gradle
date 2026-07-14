@@ -28,4 +28,5 @@ dependencies {
     annotationProcessor 'org.mapstruct:mapstruct-processor'
     implementation 'org.apache.camel:camel-core'
     implementation("org.apache.commons:commons-lang3:3.18.0")
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 }

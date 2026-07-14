@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.logging.utils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
@@ -30,6 +33,7 @@ public class TraceUtils {
 
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     @Getter
     private static TraceUtils instance;
     private final Tracer tracer;
@@ -93,7 +97,7 @@ public class TraceUtils {
         String messageId = UUID.randomUUID().toString().replace("-", "");
         span.setStatus(StatusCode.OK);
         span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), messageId); // maximum char must be 32
-        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
+        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? maskCvv2(exchange.getIn().getBody(String.class)) : "");
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
         legacyGatewayLogSpanEnricher.enrichGatewayRequest(exchange, service, span, messageId);
@@ -127,7 +131,7 @@ public class TraceUtils {
         apply(exchange, span -> {
             Span exchangeSpan = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
             span.setStatus(StatusCode.OK);
-            span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
+            span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), exchange.getIn() != null ? removeImageUrl(exchange.getIn().getBody(String.class)) : "");
             span.setAttribute(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName(), TRANSACTION_TYPE_RESPONSE);
             trace(exchange, operation, exchangeSpan);
             legacyGatewayLogSpanEnricher.markScmWebSpan(exchange, exchangeSpan);
@@ -209,5 +213,73 @@ public class TraceUtils {
         String stackTraceString = ExceptionUtils.getStackTrace(ex);
         span.setAttribute(LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName(), ex.getClass().getName());
         span.setAttribute(LogAttribute.ERROR_DETAILS.getAttributeName(), stackTraceString);
+    }
+
+    private String maskCvv2(String body) {
+        if (StringUtils.isBlank(body)) {
+            return body;
+        }
+
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(body);
+            maskCvv2(root);
+            return OBJECT_MAPPER.writeValueAsString(root);
+        } catch (Exception e) {
+            return body;
+        }
+    }
+
+    private void maskCvv2(JsonNode node) {
+        if (node == null) {
+            return;
+        }
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node;
+            JsonNode cvv2 = objectNode.get("cvv2");
+            if (cvv2 != null) {
+                objectNode.put("cvv2", maskLongValue(cvv2.asText()));
+            }
+            objectNode.fields().forEachRemaining(entry -> maskCvv2(entry.getValue()));
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(this::maskCvv2);
+        }
+    }
+
+    private String removeImageUrl(String body) {
+        if (StringUtils.isBlank(body)) {
+            return body;
+        }
+
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(body);
+            removeImageUrl(root);
+            return OBJECT_MAPPER.writeValueAsString(root);
+        } catch (Exception e) {
+            return body;
+        }
+    }
+
+    private void removeImageUrl(JsonNode node) {
+        if (node == null) {
+            return;
+        }
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node;
+            objectNode.remove("imageUrl");
+            objectNode.fields().forEachRemaining(entry -> removeImageUrl(entry.getValue()));
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(this::removeImageUrl);
+        }
+    }
+
+    private String maskLongValue(String value) {
+        if (value == null || value.length() <= 6) {
+            return "****";
+        }
+        return value.substring(0, 3) + "****" + value.substring(value.length() - 3);
     }
 }
