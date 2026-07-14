@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: scm-web
+  config:
+    import: 'optional:configserver:'
+    activate:
+      on-profile: mbcard4dev
+  cloud:
+    config:
+      username: scm
+      password: scm
+      name: scm
+      enabled: true
+      uri: http://10.10.4.125:8888/config
+      allow-override: true
+
+scm:
+  otp:
+    rest-client:
+      base-url: ${SPRING_SECURITY_ISSUER_URI}
+      verify-logged-in-url: "/api/otp/verify-by-logged-in-user"
