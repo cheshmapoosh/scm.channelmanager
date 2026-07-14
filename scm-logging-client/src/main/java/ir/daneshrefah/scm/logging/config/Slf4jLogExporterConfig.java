@@ -10,6 +10,7 @@ import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -28,11 +29,11 @@ public class Slf4jLogExporterConfig implements SpanExporter {
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
-    private final Logger logger;
+    private final Logger traceLogger;
 
 
-    public Slf4jLogExporterConfig(Logger logger) {
-        this.logger = logger;
+    public Slf4jLogExporterConfig(@Qualifier("logger") Logger traceLogger) {
+        this.traceLogger = traceLogger;
     }
 
     @Override
@@ -49,9 +50,9 @@ public class Slf4jLogExporterConfig implements SpanExporter {
             }
             try {
                 String json = objectMapper.writeValueAsString(span);
-                logger.info(json);
+                traceLogger.info(json);
             } catch (Exception e) {
-                logger.error("Error logging span as JSON", e);
+                traceLogger.error("Error logging span as JSON", e);
             }
         });
         return CompletableResultCode.ofSuccess();

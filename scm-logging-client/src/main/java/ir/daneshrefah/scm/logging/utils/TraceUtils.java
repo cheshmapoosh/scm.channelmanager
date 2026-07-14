@@ -34,6 +34,12 @@ public class TraceUtils {
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String CARD = "card";
+    private static final String CVV2 = "cvv2";
+    private static final String IMAGE_URL = "imageUrl";
+    private static final String PIN = "pin";
+    private static final String SECURITY = "security";
+    private static final String TRK2_EQUIV_DATA = "trk2EquivData";
     @Getter
     private static TraceUtils instance;
     private final Tracer tracer;
@@ -97,7 +103,7 @@ public class TraceUtils {
         String messageId = UUID.randomUUID().toString().replace("-", "");
         span.setStatus(StatusCode.OK);
         span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), messageId); // maximum char must be 32
-        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? maskCvv2(exchange.getIn().getBody(String.class)) : "");
+        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? maskSensitiveRequestValues(exchange.getIn().getBody(String.class)) : "");
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
         legacyGatewayLogSpanEnricher.enrichGatewayRequest(exchange, service, span, messageId);
@@ -118,7 +124,7 @@ public class TraceUtils {
         Span span = createExchangeSpan(exchange);
         span.setStatus(StatusCode.OK);
         span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), UUID.randomUUID().toString().replace("-", "")); // maximum char must be 32
-        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
+        span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? maskSensitiveRequestValues(exchange.getIn().getBody(String.class)) : "");
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, operation, span);
         legacyGatewayLogSpanEnricher.markScmWebSpan(exchange, span);
@@ -131,7 +137,7 @@ public class TraceUtils {
         apply(exchange, span -> {
             Span exchangeSpan = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
             span.setStatus(StatusCode.OK);
-            span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), exchange.getIn() != null ? removeImageUrl(exchange.getIn().getBody(String.class)) : "");
+            span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), exchange.getIn() != null ? maskImageUrl(exchange.getIn().getBody(String.class)) : "");
             span.setAttribute(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName(), TRANSACTION_TYPE_RESPONSE);
             trace(exchange, operation, exchangeSpan);
             legacyGatewayLogSpanEnricher.markScmWebSpan(exchange, exchangeSpan);
@@ -215,64 +221,44 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.ERROR_DETAILS.getAttributeName(), stackTraceString);
     }
 
-    private String maskCvv2(String body) {
+    private String maskSensitiveRequestValues(String body) {
         if (StringUtils.isBlank(body)) {
             return body;
         }
 
         try {
             JsonNode root = OBJECT_MAPPER.readTree(body);
-            maskCvv2(root);
+            maskObjectField(root, TRK2_EQUIV_DATA, CVV2);
+            maskObjectField(root, TRK2_EQUIV_DATA, PIN);
+            maskObjectField(root, SECURITY, CVV2);
+            maskObjectField(root, SECURITY, PIN);
             return OBJECT_MAPPER.writeValueAsString(root);
         } catch (Exception e) {
             return body;
         }
     }
 
-    private void maskCvv2(JsonNode node) {
-        if (node == null) {
-            return;
+    private String maskImageUrl(String body) {
+        if (StringUtils.isBlank(body)) {
+            return body;
         }
-        if (node.isObject()) {
-            ObjectNode objectNode = (ObjectNode) node;
-            JsonNode cvv2 = objectNode.get("cvv2");
-            if (cvv2 != null) {
-                objectNode.put("cvv2", maskLongValue(cvv2.asText()));
+
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(body);
+            maskObjectField(root, CARD, IMAGE_URL);
+            return OBJECT_MAPPER.writeValueAsString(root);
+        } catch (Exception e) {
+            return body;
+        }
+    }
+
+    private void maskObjectField(JsonNode root, String parentFieldName, String fieldName) {
+        JsonNode parent = root != null ? root.path(parentFieldName) : null;
+        if (parent instanceof ObjectNode objectNode) {
+            JsonNode field = objectNode.get(fieldName);
+            if (field != null) {
+                objectNode.put(fieldName, maskLongValue(field.asText()));
             }
-            objectNode.fields().forEachRemaining(entry -> maskCvv2(entry.getValue()));
-            return;
-        }
-        if (node.isArray()) {
-            node.forEach(this::maskCvv2);
-        }
-    }
-
-    private String removeImageUrl(String body) {
-        if (StringUtils.isBlank(body)) {
-            return body;
-        }
-
-        try {
-            JsonNode root = OBJECT_MAPPER.readTree(body);
-            removeImageUrl(root);
-            return OBJECT_MAPPER.writeValueAsString(root);
-        } catch (Exception e) {
-            return body;
-        }
-    }
-
-    private void removeImageUrl(JsonNode node) {
-        if (node == null) {
-            return;
-        }
-        if (node.isObject()) {
-            ObjectNode objectNode = (ObjectNode) node;
-            objectNode.remove("imageUrl");
-            objectNode.fields().forEachRemaining(entry -> removeImageUrl(entry.getValue()));
-            return;
-        }
-        if (node.isArray()) {
-            node.forEach(this::removeImageUrl);
         }
     }
 

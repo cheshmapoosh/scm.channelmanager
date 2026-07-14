@@ -24,27 +24,27 @@ public class OpenTelemetryConfig {
 
     @Bean
     @Primary
-    public SpanExporter SpanExporter(){
+    public SpanExporter spanExporter(){
         return slf4jLogExporterConfig;
     }
 
 
     @Bean
-    public OpenTelemetry openTelemetry() {
+    public OpenTelemetry openTelemetry(SpanExporter spanExporter) {
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
                 .setSpanLimits(
                         SpanLimits.builder()
-                        .setMaxNumberOfAttributes(128)
+                        .setMaxNumberOfAttributes(512)
                         .build()
                 )
                 .setSampler(Sampler.alwaysOn())
-                .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter()))
+                .addSpanProcessor(SimpleSpanProcessor.create(spanExporter))
                 .build();
         return OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build();
     }
 
     @Bean
-    public Tracer tracer() {
-        return openTelemetry().getTracer(this.applicationName);
+    public Tracer tracer(OpenTelemetry openTelemetry) {
+        return openTelemetry.getTracer(this.applicationName);
     }
 }

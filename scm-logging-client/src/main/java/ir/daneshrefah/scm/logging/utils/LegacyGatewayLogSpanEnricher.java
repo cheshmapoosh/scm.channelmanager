@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.logging.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.opentelemetry.api.trace.Span;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.model.ScmResponse;
@@ -384,13 +385,29 @@ public class LegacyGatewayLogSpanEnricher {
         if (body == null) {
             return "";
         }
-        if (body instanceof String text) {
-            return text;
-        }
         try {
-            return OBJECT_MAPPER.writeValueAsString(body);
+            JsonNode root = body instanceof String text
+                    ? OBJECT_MAPPER.readTree(text)
+                    : OBJECT_MAPPER.valueToTree(body);
+            removeImageUrl(root);
+            return OBJECT_MAPPER.writeValueAsString(root);
         } catch (Exception ignored) {
             return String.valueOf(body);
+        }
+    }
+
+    private void removeImageUrl(JsonNode node) {
+        if (node == null) {
+            return;
+        }
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node;
+            objectNode.remove("imageUrl");
+            objectNode.fields().forEachRemaining(entry -> removeImageUrl(entry.getValue()));
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(this::removeImageUrl);
         }
     }
 
