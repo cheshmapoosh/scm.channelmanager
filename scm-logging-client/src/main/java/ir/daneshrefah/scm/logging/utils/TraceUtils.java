@@ -30,10 +30,10 @@ public class TraceUtils {
 
     private static final Integer TRANSACTION_TYPE_REQUEST = 1;
     private static final Integer TRANSACTION_TYPE_RESPONSE = 2;
-    private static final ThreadLocal<Span> SCM_REQ_RESP = new ThreadLocal<>();
     @Getter
     private static TraceUtils instance;
     private final Tracer tracer;
+    private final LegacyGatewayLogSpanEnricher legacyGatewayLogSpanEnricher;
     @Value("${scm.application.version:#{null}}")
     private String version;
     @Value("${scm.application.build:#{null}}")
@@ -90,22 +90,22 @@ public class TraceUtils {
 
     public void traceScmRequest(Exchange exchange,Service service) {
         Span span = createExchangeSpan(exchange);
+        String messageId = UUID.randomUUID().toString().replace("-", "");
         span.setStatus(StatusCode.OK);
-        span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), UUID.randomUUID().toString().replace("-", "")); // maximum char must be 32
+        span.setAttribute(LogAttribute.MESSAGE_ID.getAttributeName(), messageId); // maximum char must be 32
         span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
-        SCM_REQ_RESP.set(span);
+        legacyGatewayLogSpanEnricher.enrichGatewayRequest(exchange, service, span, messageId);
         putTraceMdc(span);
     }
 
     public void traceScmResponse(Exchange exchange,Service service) {
-        Span localSpan = SCM_REQ_RESP.get();
+        Span localSpan = legacyGatewayLogSpanEnricher.gatewaySpan(exchange);
         apply(exchange, localSpan, (span) -> {
             span.setStatus(StatusCode.OK);
-            span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
-            span.setAttribute(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName(), TRANSACTION_TYPE_RESPONSE);
             trace(exchange, service, span);
+            legacyGatewayLogSpanEnricher.enrichGatewayResponse(exchange, service, span);
         },true);
     }
 
@@ -117,23 +117,40 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, operation, span);
+        legacyGatewayLogSpanEnricher.markScmWebSpan(exchange, span);
         putTraceMdc(span);
     }
 
 
     public void traceAfterOperation(Exchange exchange, Operation operation) {
+        legacyGatewayLogSpanEnricher.captureProviderResponse(exchange, operation);
         apply(exchange, span -> {
             Span exchangeSpan = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
             span.setStatus(StatusCode.OK);
             span.setAttribute(LogAttribute.MESSAGE_RESPONSE.getAttributeName(), exchange.getIn() != null ? exchange.getIn().getBody(String.class) : "");
             span.setAttribute(LogAttribute.TRANSACTION_TYPE_RESPONSE.getAttributeName(), TRANSACTION_TYPE_RESPONSE);
             trace(exchange, operation, exchangeSpan);
+            legacyGatewayLogSpanEnricher.markScmWebSpan(exchange, exchangeSpan);
         }, true);
     }
 
     public void traceException(Exchange exchange, Exception exception) {
+        legacyGatewayLogSpanEnricher.recordException(exchange, exception);
+        Span currentSpan = (Span) exchange.getProperty(Message.CURRENT_OPEN_TELEMETRY_SPAN);
+        if (legacyGatewayLogSpanEnricher.isGatewaySpan(exchange, currentSpan)) {
+            apply(exchange, currentSpan, span -> {
+                if (exception != null) {
+                    recordExceptionTrace(exception, span);
+                }
+                span.setStatus(StatusCode.ERROR);
+                putTraceMdc(span);
+            }, false);
+            return;
+        }
         apply(exchange, span -> {
-            recordExceptionTrace(exception, span);
+            if (exception != null) {
+                recordExceptionTrace(exception, span);
+            }
             span.setStatus(StatusCode.ERROR);
             putTraceMdc(span);
         },true);
@@ -157,7 +174,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.SERVICE_CODE.getAttributeName(), service != null ? service.getCode().trim() : "");
         span.setAttribute(LogAttribute.END_POINT.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_URI, String.class));
         span.setAttribute(LogAttribute.METHOD_TYPE.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_METHOD, String.class));
-        span.setAttribute(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_REFERER, String.class));
+        span.setAttribute(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(), legacyGatewayLogSpanEnricher.clientIpAddress(exchange));
         span.setAttribute(LogAttribute.DELEGATOR_USERNAME.getAttributeName(), exchange.getMessage().getHeader(Constants.SCM_PARAMETER_USERNAME, String.class));
         span.setAttribute(LogAttribute.USERNAME.getAttributeName(), AuthenticationUtils.getEffectiveUsername().orElse(""));
         span.setAttribute(LogAttribute.NICKNAME.getAttributeName(), AuthenticationUtils.getEffectiveNickname().orElse(""));
@@ -178,7 +195,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.METHOD_TYPE.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_METHOD, String.class));
         span.setAttribute(LogAttribute.END_POINT.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_URI, String.class));
         span.setAttribute(LogAttribute.DELEGATOR_USERNAME.getAttributeName(), exchange.getMessage().getHeader(Constants.SCM_PARAMETER_USERNAME, String.class));
-        span.setAttribute(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_REFERER, String.class));
+        span.setAttribute(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(), legacyGatewayLogSpanEnricher.clientIpAddress(exchange));
         span.setAttribute(LogAttribute.DELEGATOR_NICKNAME.getAttributeName(), AuthenticationUtils.getDelegatorNickname().orElse(""));
         span.setAttribute(LogAttribute.USERNAME.getAttributeName(), AuthenticationUtils.getEffectiveUsername().orElse(""));
         span.setAttribute(LogAttribute.NICKNAME.getAttributeName(), AuthenticationUtils.getEffectiveNickname().orElse(""));
