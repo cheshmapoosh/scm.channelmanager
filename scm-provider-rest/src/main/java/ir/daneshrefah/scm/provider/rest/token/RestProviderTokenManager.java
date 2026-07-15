@@ -609,6 +609,7 @@ public class RestProviderTokenManager implements ProviderAuthTokenProvider {
         }
         span.addEvent(eventName);
         span.setAttribute("scm.provider.name", providerConfig.provider());
+        span.setAttribute("scm.span.level", "provider");
         span.setAttribute("scm.provider.scheme", providerConfig.scheme());
         span.setAttribute("scm.provider.uri", providerConfig.scheme() + ":" + providerConfig.provider());
         span.setAttribute("scm.provider.service_code", serviceCode(context));

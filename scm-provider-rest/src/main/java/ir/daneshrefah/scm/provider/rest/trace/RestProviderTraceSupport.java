@@ -39,6 +39,7 @@ public class RestProviderTraceSupport {
             putMdc(span);
             span.setAttribute("scm.provider.name", config.provider());
             span.setAttribute("scm.provider.scheme", config.scheme());
+            span.setAttribute("scm.span.level", "provider");
             span.setAttribute("scm.provider.uri", config.scheme() + ":" + config.provider());
             span.setAttribute("http.request.method", request.method().name());
 
@@ -93,6 +94,7 @@ public class RestProviderTraceSupport {
             putMdc(span);
             span.setAttribute("scm.provider.name", value(context.providerCode()));
             span.setAttribute("scm.provider.scheme", value(context.scheme()));
+            span.setAttribute("scm.span.level", "provider");
             span.setAttribute("scm.provider.uri", value(context.providerUri()));
             span.setAttribute("scm.provider.service_code", value(context.serviceCode()));
             span.setAttribute("scm.provider.operation_code", value(context.operationCode()));

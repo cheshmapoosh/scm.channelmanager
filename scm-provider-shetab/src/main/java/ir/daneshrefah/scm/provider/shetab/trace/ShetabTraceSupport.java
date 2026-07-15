@@ -32,6 +32,7 @@ public class ShetabTraceSupport {
         try (Scope ignored = span.makeCurrent()) {
             putMdc(span);
             span.setAttribute("scm.provider.name", config.provider());
+            span.setAttribute("scm.span.level", "provider");
             span.setAttribute("scm.provider.scheme", config.scheme());
             span.setAttribute("scm.provider.uri", config.scheme() + ":" + config.provider());
             String primaryEndpoint = primaryEndpoint(config);
@@ -74,6 +75,7 @@ public class ShetabTraceSupport {
         try (Scope ignored = span.makeCurrent()) {
             putMdc(span);
             span.setAttribute("scm.provider.name", value(context.providerCode()));
+            span.setAttribute("scm.span.level", "provider");
             span.setAttribute("scm.provider.scheme", value(context.scheme()));
             span.setAttribute("scm.provider.uri", value(context.providerUri()));
             span.setAttribute("scm.provider.service_code", value(context.serviceCode()));
