@@ -234,6 +234,9 @@ scm:
       caches:
         bank:
           type: local
+        userCards:
+          type: remote
+          ttl: ${SCM_USER_CARDS_CACHE_TTL:10m}
       config:
         clusterName: scm
         network-config:

@@ -23,7 +23,7 @@ public class CardOwnershipUserProfileCacheService {
     private static final String CACHE_KEY_PREFIX = "USER_PROFILE";
 
     private final CacheManager cacheManager;
-    private final CardService cardService;
+    private final UserCardService userCardService;
     private final PersonProfileLoader personProfileLoader;
 
     public CardOwnershipUserProfileCacheResult getValidatedUserProfile(String cacheName,
@@ -39,7 +39,7 @@ public class CardOwnershipUserProfileCacheService {
         UserProfile threadLocalProfile = UserProfileThreadLocal.get().orElse(null);
         if (threadLocalProfile != null) {
             if (sameUser(threadLocalProfile, initialProfile, authentication)) {
-                return validateProfile(threadLocalProfile, cardNumber, failIfCardNotOwnedByUser);
+                return validateProfile(threadLocalProfile, authentication, cardNumber, failIfCardNotOwnedByUser);
             }
             UserProfileThreadLocal.clear();
         }
@@ -49,14 +49,13 @@ public class CardOwnershipUserProfileCacheService {
         UserProfile cached = cache == null ? null : cache.get(cacheKey, UserProfile.class);
         if (cached != null) {
             UserProfileThreadLocal.set(cached);
-            return validateProfile(cached, cardNumber, failIfCardNotOwnedByUser);
+            return validateProfile(cached, authentication, cardNumber, failIfCardNotOwnedByUser);
         }
 
         UserProfile profile = personProfileLoader.preparePersonProfileMemberships(authentication);
         if (profile == null) {
             throw new AccessDeniedException("CURRENT_USER_NOT_RESOLVED", ErrorCodes.ERROR_CODE_ACCESS_DENIED, "CURRENT_USER_NOT_RESOLVED");
         }
-        loadCardsIfRequired(profile, authentication);
         if (cache != null) {
             cache.put(cacheKey, profile);
             String resolvedCacheKey = cacheKey(profile, authentication);
@@ -65,13 +64,14 @@ public class CardOwnershipUserProfileCacheService {
             }
         }
         UserProfileThreadLocal.set(profile);
-        return validateProfile(profile, cardNumber, failIfCardNotOwnedByUser);
+        return validateProfile(profile, authentication, cardNumber, failIfCardNotOwnedByUser);
     }
 
     private CardOwnershipUserProfileCacheResult validateProfile(UserProfile profile,
+                                                               Authentication authentication,
                                                                String cardNumber,
                                                                boolean failIfCardNotOwnedByUser) {
-        boolean owned = profile.hasCard(cardNumber);
+        boolean owned = userCardService.hasCard(profile, authentication.getName(), cardNumber);
         if (!owned) {
             if (failIfCardNotOwnedByUser) {
                 throw new AccessDeniedException(
@@ -82,13 +82,6 @@ public class CardOwnershipUserProfileCacheService {
             return new CardOwnershipUserProfileCacheResult(profile, false);
         }
         return new CardOwnershipUserProfileCacheResult(profile, true);
-    }
-
-    private void loadCardsIfRequired(UserProfile profile, Authentication authentication) {
-        if (profile.isCardsLoaded()) {
-            return;
-        }
-        profile.loadCards(cardService.findUserCards(profile, authentication.getName()));
     }
 
     private boolean sameUser(UserProfile threadLocalProfile, UserProfile currentProfile, Authentication authentication) {

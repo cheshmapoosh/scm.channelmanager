@@ -7,7 +7,7 @@ import ir.daneshrefah.scm.common.model.user.AuthenticationMethod;
 import ir.daneshrefah.scm.common.service.PersonProfileLoader;
 import ir.daneshrefah.scm.core.services.card.CardOwnershipUserProfileCacheResult;
 import ir.daneshrefah.scm.core.services.card.CardOwnershipUserProfileCacheService;
-import ir.daneshrefah.scm.core.services.card.CardService;
+import ir.daneshrefah.scm.core.services.card.UserCardService;
 import ir.daneshrefah.scm.common.model.customer.UserProfileThreadLocal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,11 +28,11 @@ class CardOwnershipUserProfileCacheServiceTest {
     private static final String CACHE_NAME = "USER_PROFILE_CARD_OWNERSHIP_CACHE";
     private static final String CARD_NUMBER = "5894631240207563";
 
-    private final CardService cardService = mock(CardService.class);
+    private final UserCardService userCardService = mock(UserCardService.class);
     private final PersonProfileLoader profileLoader = mock(PersonProfileLoader.class);
     private final CardOwnershipUserProfileCacheService service = new CardOwnershipUserProfileCacheService(
             new ConcurrentMapCacheManager(),
-            cardService,
+            userCardService,
             profileLoader);
 
     @BeforeEach
@@ -45,16 +45,15 @@ class CardOwnershipUserProfileCacheServiceTest {
         UserProfile profile = profile(10);
         Authentication authentication = authentication(profile);
         when(profileLoader.preparePersonProfileMemberships(authentication)).thenReturn(profile);
-        when(cardService.findUserCards(profile, "user1")).thenReturn(List.of(card(CARD_NUMBER)));
+        when(userCardService.hasCard(profile, "user1", CARD_NUMBER)).thenReturn(true);
 
         CardOwnershipUserProfileCacheResult result = service.getValidatedUserProfile(
                 CACHE_NAME, true, authentication, CARD_NUMBER, true, true);
 
         assertTrue(result.validated());
         assertSame(profile, result.userProfile());
-        assertTrue(profile.getCards().stream().anyMatch(card -> CARD_NUMBER.equals(card.getCardNumber())));
         verify(profileLoader).preparePersonProfileMemberships(authentication);
-        verify(cardService).findUserCards(profile, "user1");
+        verify(userCardService).hasCard(profile, "user1", CARD_NUMBER);
     }
 
     @Test
@@ -62,24 +61,25 @@ class CardOwnershipUserProfileCacheServiceTest {
         UserProfile profile = profile(10);
         Authentication authentication = authentication(profile);
         when(profileLoader.preparePersonProfileMemberships(authentication)).thenReturn(profile);
-        when(cardService.findUserCards(profile, "user1")).thenReturn(List.of(card(CARD_NUMBER)));
+        when(userCardService.hasCard(profile, "user1", CARD_NUMBER)).thenReturn(true);
 
         service.getValidatedUserProfile(CACHE_NAME, true, authentication, CARD_NUMBER, true, true);
         UserProfileThreadLocal.clear();
         org.mockito.Mockito.reset(profileLoader);
-        org.mockito.Mockito.reset(cardService);
+        org.mockito.Mockito.reset(userCardService);
+        when(userCardService.hasCard(profile, "user1", CARD_NUMBER)).thenReturn(true);
 
         service.getValidatedUserProfile(CACHE_NAME, true, authentication, CARD_NUMBER, true, true);
 
         verify(profileLoader, never()).preparePersonProfileMemberships(authentication);
-        verify(cardService, never()).findUserCards(profile, "user1");
+        verify(userCardService).hasCard(profile, "user1", CARD_NUMBER);
     }
 
     @Test
     void threadLocalHitDoesNotReadCacheOrDatabase() {
         UserProfile profile = profile(10);
-        profile.loadCards(List.of(card(CARD_NUMBER)));
         UserProfileThreadLocal.set(profile);
+        when(userCardService.hasCard(profile, "user1", CARD_NUMBER)).thenReturn(true);
 
         CardOwnershipUserProfileCacheResult result = service.getValidatedUserProfile(
                 CACHE_NAME, true, authentication(profile), CARD_NUMBER, true, true);
@@ -87,7 +87,7 @@ class CardOwnershipUserProfileCacheServiceTest {
         assertTrue(result.validated());
         assertSame(profile, result.userProfile());
         verify(profileLoader, never()).preparePersonProfileMemberships(org.mockito.ArgumentMatchers.any());
-        verify(cardService, never()).findUserCards(profile, "user1");
+        verify(userCardService).hasCard(profile, "user1", CARD_NUMBER);
     }
 
     @Test
@@ -95,7 +95,7 @@ class CardOwnershipUserProfileCacheServiceTest {
         UserProfile profile = profile(10);
         Authentication authentication = authentication(profile);
         when(profileLoader.preparePersonProfileMemberships(authentication)).thenReturn(profile);
-        when(cardService.findUserCards(profile, "user1")).thenReturn(List.of(card("5894631240207564")));
+        when(userCardService.hasCard(profile, "user1", CARD_NUMBER)).thenReturn(false);
 
         assertThrows(AccessDeniedException.class,
                 () -> service.getValidatedUserProfile(CACHE_NAME, true, authentication, CARD_NUMBER, true, true));
@@ -106,7 +106,7 @@ class CardOwnershipUserProfileCacheServiceTest {
         UserProfile profile = profile(10);
         Authentication authentication = authentication(profile);
         when(profileLoader.preparePersonProfileMemberships(authentication)).thenReturn(profile);
-        when(cardService.findUserCards(profile, "user1")).thenReturn(List.of(card("589463******7563")));
+        when(userCardService.hasCard(profile, "user1", CARD_NUMBER)).thenReturn(true);
 
         CardOwnershipUserProfileCacheResult result = service.getValidatedUserProfile(
                 CACHE_NAME, true, authentication, CARD_NUMBER, true, true);
@@ -117,12 +117,6 @@ class CardOwnershipUserProfileCacheServiceTest {
 
     private UserProfile profile(Integer userId) {
         return new UserProfile("user1", "person1", userId);
-    }
-
-    private ir.daneshrefah.scm.common.model.customer.Card card(String cardNumber) {
-        ir.daneshrefah.scm.common.model.customer.Card card = new ir.daneshrefah.scm.common.model.customer.Card();
-        card.setCardNumber(cardNumber);
-        return card;
     }
 
     private Authentication authentication(UserProfile profile) {

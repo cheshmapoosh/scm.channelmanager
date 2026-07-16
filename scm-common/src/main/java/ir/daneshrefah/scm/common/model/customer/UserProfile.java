@@ -12,7 +12,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static ir.daneshrefah.scm.common.constant.SecurityConstants.USERNAME_ANONYMOUS;
 
@@ -37,8 +36,6 @@ public class UserProfile implements Serializable {
     private String personUsername;
     private Integer personId;
     private List<MembershipTerminalAccess> memberships;
-    @Setter
-    private List<Card> cards;
 
     @Setter
     private List<ServiceAccess> serviceAccesses;
@@ -59,54 +56,6 @@ public class UserProfile implements Serializable {
 
     public void loadMembership(List<MembershipTerminalAccess> memberships) {
         this.memberships = memberships;
-    }
-
-    public void loadCards(List<Card> cards) {
-        this.cards = cards;
-    }
-
-    public <T> void loadCards(List<T> sourceCards, Function<T, String> cardNumberExtractor) {
-        if (Objects.isNull(sourceCards)) {
-            this.cards = List.of();
-            return;
-        }
-        this.cards = sourceCards.stream()
-                .map(sourceCard -> toCard(sourceCard, cardNumberExtractor))
-                .toList();
-    }
-
-    private <T> Card toCard(T sourceCard, Function<T, String> cardNumberExtractor) {
-        Card card = new Card();
-        card.setCardNumber(cardNumberExtractor.apply(sourceCard));
-        return card;
-    }
-
-    public boolean isCardsLoaded() {
-        return null != cards;
-    }
-
-    public boolean hasCard(String cardNumber) {
-        if (StringUtils.isBlank(cardNumber) || Objects.isNull(cards) || cards.isEmpty()) {
-            return false;
-        }
-        String requestedCardNumber = StringUtils.deleteWhitespace(cardNumber);
-        return cards.stream()
-                .map(Card::getCardNumber)
-                .anyMatch(profileCardNumber -> cardMatches(profileCardNumber, requestedCardNumber));
-    }
-
-    private boolean cardMatches(String profileCardNumber, String requestedCardNumber) {
-        String profileValue = StringUtils.deleteWhitespace(profileCardNumber);
-        if (StringUtils.isBlank(profileValue) || StringUtils.isBlank(requestedCardNumber)) {
-            return false;
-        }
-        if (!profileValue.contains("*")) {
-            return profileValue.equals(requestedCardNumber);
-        }
-        String[] parts = profileValue.split("\\*+");
-        String prefix = parts.length > 0 ? parts[0] : "";
-        String suffix = parts.length > 1 ? parts[parts.length - 1] : "";
-        return requestedCardNumber.startsWith(prefix) && requestedCardNumber.endsWith(suffix);
     }
 
     public boolean hasMembership(Integer assetProviderId) {
