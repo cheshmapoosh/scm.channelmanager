@@ -14,10 +14,17 @@ import org.springframework.web.client.HttpClientErrorException;
 @Component("legacyMbFaultEncoder")
 @RequiredArgsConstructor
 public class LegacyMbFaultEncoder implements FaultContractEncoder {
+    private final LegacyMbResponseEncoder responseEncoder;
     private final ObjectMapper objectMapper;
 
     @Override
     public Object encode(Exchange exchange, ScmFault fault, ClientContract contract) {
+        exchange.getMessage().setBody(fault);
+        return encodeFault(exchange, fault);
+    }
+
+
+    private FailResponse encodeFault(Exchange exchange, ScmFault fault) {
         Error error = fault.getErrors().getFirst();
         Integer code = extractCode(error.getErrorCode());
         Integer httpStatus = HttpStatusMapper.toHttpStatus(error.getStatus());
@@ -33,6 +40,7 @@ public class LegacyMbFaultEncoder implements FaultContractEncoder {
                 httpStatus = root.path("status").asInt(httpStatus);
                 detail = root.path("message").asText(detail);
             } catch (Exception ignored) {
+                // Keep values resolved from ScmFault when the provider body is not valid JSON.
             }
         }
 

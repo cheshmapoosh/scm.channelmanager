@@ -176,12 +176,7 @@ def srcCard = card.sourceCardNumber
 def reqType = normalizeRequestType(body.requestType)
 def amount = body.amount
 
-safeLog("reqType : " + reqType)
-safeLog("srcCard : " + srcCard)
-safeLog("cvv2 exists : " + !isBlank(cvv2))
-safeLog("cvv2  : " + cvv2)
-safeLog("pin exists : " + !isBlank(pin))
-safeLog("additionalInformation : " + additionalInformation)
+
 
 if (isBlank(srcCard)) {
     throw new IllegalArgumentException("sourceCardNumber is required")
