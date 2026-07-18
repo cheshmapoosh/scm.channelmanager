@@ -13,8 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.userdetails.UserCache;
 
 @AutoConfiguration(afterName = {
-        "ir.daneshrefah.scm.cache.client.config.CacheClientAutoConfiguration",
-        "ir.daneshrefah.scm.cache.client.config.CacheClientSpringCacheAutoConfiguration",
+        "ir.daneshrefah.scm.cache.starter.config.CacheClientAutoConfiguration",
+        "ir.daneshrefah.scm.cache.starter.config.CacheClientSpringCacheAutoConfiguration",
         "org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration"
 })
 @ConditionalOnBean(CacheManager.class)
