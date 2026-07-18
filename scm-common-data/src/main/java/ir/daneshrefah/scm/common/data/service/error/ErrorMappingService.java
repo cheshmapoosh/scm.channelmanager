@@ -97,7 +97,7 @@ public class ErrorMappingService {
     public Optional<ErrorMapping> findByRemoteErrorCode(String remoteErrorCode) {
         return ERROR_MAPPINGS_CACHE
                 .stream()
-                .filter(errorMapping -> errorMapping.getProviderErrorCode().equals(remoteErrorCode))
+                .filter(errorMapping -> Objects.equals(errorMapping.getProviderErrorCode(), remoteErrorCode))
                 .findFirst();
     }
 

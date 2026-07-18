@@ -28,7 +28,7 @@ if (fields == null) {
 
 println("tcp card inq rs action code" + fields[ISOField.ACTION_CODE.getPosition().toString()])
 if (fields[ISOField.ACTION_CODE.getPosition().toString()] == null || !fields[ISOField.ACTION_CODE.getPosition().toString()].toString().equals(ResponseCode.APPROVED.getCode())) {
-    throw new CardException(fields[ISOField.ACTION_CODE.getPosition().toString()].toString(), "tcp card inq rs action code : " + fields[ISOField.ACTION_CODE.getPosition().toString()].toString())
+    throw new CardException(fields[ISOField.ACTION_CODE.getPosition().toString()].toString(),fields[ISOField.ACTION_CODE.getPosition().toString()].toString(), "tcp card inq rs action code : " + fields[ISOField.ACTION_CODE.getPosition().toString()].toString())
 }
 
 def customerNameFamily = fields[ISOField.ADDITIONAL_RESPONSE_DATA.getPosition().toString()].toString()

@@ -38,4 +38,5 @@ dependencies {
     api 'com.bucket4j:bucket4j_jdk17-core'
     api 'com.bucket4j:bucket4j_jdk17-hazelcast'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation ('org.codehaus.janino:janino')
 }

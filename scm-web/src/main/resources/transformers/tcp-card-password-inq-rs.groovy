@@ -41,6 +41,7 @@ if (actionCode == null) {
 if (!actionCode.toString().equals(ResponseCode.APPROVED.getCode())) {
     throw new CardException(
             actionCode.toString(),
+            actionCode.toString(),
             "tcp card password notification rs action code : " + actionCode.toString()
     )
 }

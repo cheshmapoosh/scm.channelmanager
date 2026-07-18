@@ -10,10 +10,10 @@ import ir.daneshrefah.scm.common.model.error.Error;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -26,18 +26,37 @@ public class CardExceptionReslover extends ExceptionResolver<CardException> {
     }
 
     @Override
-    public List<ir.daneshrefah.scm.common.model.error.Error> resolve(CardException exception, Locale locale) {
-        ErrorMapping errorMapping = errorMappingService.findByExceptionClassNameAndErrorCode(exception.getClass().getName(), exception.getCode()).orElseThrow(RuntimeException::new);
+    public List<Error> resolve(CardException exception, Locale locale) {
+        if (Objects.nonNull(exception.getIsoErrorCode())) {
+            return resolve(exception, locale, exception.getIsoErrorCode());
+        }
 
-        List<ir.daneshrefah.scm.common.model.error.Error> errors = new ArrayList<>();
-        errors.add(new Error(
+        ErrorMapping errorMapping = errorMappingService
+                .findByExceptionClassNameAndErrorCode(exception.getClass().getName(), exception.getCode())
+                .orElseThrow(() -> new IllegalStateException(
+                        "No error mapping found for card error code: " + exception.getCode()));
+
+        return List.of(new Error(
                 null,
                 exception.getCode(),
                 getMessage(locale, exception, exception.getCode()),
                 getMessage(AccessibleLocale.FA_IR.getLocale(), exception, exception.getCode()),
                 errorMapping.getStatus(),
                 exception));
-        return errors;
+    }
+
+    @Override
+    public List<Error> resolve(CardException exception, Locale locale, String isoErrorCode) {
+        ErrorMapping errorMapping = errorMappingService.findByRemoteErrorCode(isoErrorCode)
+                .orElseThrow(() -> new IllegalStateException(
+                        "No error mapping found for ISO error code: " + isoErrorCode));
+
+        return List.of(new Error(
+                null,
+                errorMapping.getScmErrorCode(),
+                getMessage(locale, exception, isoErrorCode),
+                getMessage(AccessibleLocale.FA_IR.getLocale(), exception, isoErrorCode),
+                errorMapping.getStatus(),
+                exception));
     }
 }
-

@@ -24,6 +24,14 @@ public abstract class ExceptionResolver<E extends Throwable> {
 
     public abstract List<Error> resolve(E exception, Locale locale);
 
+    /**
+     * Resolve an exception using an error code returned by a remote provider.
+     * Resolvers that do not need the remote code keep their existing behavior.
+     */
+    public List<Error> resolve(E exception, Locale locale, String remoteErrorCode) {
+        return resolve(exception, locale);
+    }
+
     public List<Error> resolve(Message message, E exception, Locale locale){
         return resolve(exception,locale);
     }

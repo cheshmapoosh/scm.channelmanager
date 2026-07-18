@@ -228,7 +228,7 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://10.10.4.126:8000
+    issuer-uri: http://localhost:8000
   cache:
     client:
       distributed: true
@@ -239,10 +239,10 @@ scm:
           type: remote
           ttl: ${SCM_USER_CARDS_CACHE_TTL:10m}
       config:
-        clusterName: scm
+        clusterName: dev3
         network-config:
           addresses:
-            - '10.10.4.122:5701'
+            - '127.0.0.1:5701'
         nearCacheConfigMap:
           myMap:
             in-memory-format: object

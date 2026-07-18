@@ -72,6 +72,7 @@ if (actionCode == null) {
 if (!actionCode.toString().equals(ResponseCode.APPROVED.getCode())) {
     throw new CardException(
             actionCode.toString(),
+            actionCode.toString(),
             "card xfer add rs action code : " + actionCode.toString()
     )
 }
