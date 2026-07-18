@@ -50,19 +50,26 @@ final class ShetabChannelSessionManager {
             BooleanSupplier running,
             ConnectionGuard guard
     ) throws InterruptedException {
-        return ensureConnected(deadline, running, guard, Integer.MAX_VALUE);
+        return ensureConnected(deadline, running, guard, Integer.MAX_VALUE, null);
     }
 
     private ChannelSession ensureConnected(
             Deadline deadline,
             BooleanSupplier running,
             ConnectionGuard guard,
-            int maxConnectAttempts
+            int maxConnectAttempts,
+            Long failedGeneration
     ) throws InterruptedException {
         ChannelSession current = activeSession;
 
         if (current != null) {
             return current;
+        }
+
+        Long connectionFailureGeneration = failedGeneration;
+        if (connectionFailureGeneration == null) {
+            long invalidatedGeneration = reconnectGenerationIfNeeded();
+            connectionFailureGeneration = invalidatedGeneration >= 0L ? invalidatedGeneration : null;
         }
 
         int connectAttempts = 0;
@@ -99,8 +106,14 @@ final class ShetabChannelSessionManager {
                     return published != null ? published : null;
                 }
 
-                log.trace("Connected Shetab ISOChannel provider={} remoteEndpoint={} generation={}",
-                        config.provider(), publishResult.session().endpoint(), publishResult.session().generation());
+                log.info("event=SHETAB_SESSION_CONNECTED provider={} endpoint={} generation={} "
+                                + "connectTimeoutMs={} socketTimeoutMs={} keepAlive={}",
+                        config.provider(),
+                        publishResult.session().endpoint(),
+                        publishResult.session().generation(),
+                        config.connectTimeoutMs(),
+                        config.socketTimeoutMs(),
+                        config.keepAlive());
 
                 return publishResult.session();
 
@@ -117,13 +130,19 @@ final class ShetabChannelSessionManager {
 
                 ConnectionFailure failure = recordConnectionFailure(e);
 
-                log.error("Shetab connection failed provider={} remoteEndpoint={} failureCount={} limit={} retryInMs={}",
-                        config.provider(),
-                        failure.endpoint(),
-                        failure.failureCount(),
-                        maxSameEndpointReconnectAttempts(),
-                        config.reconnectDelayMs(),
-                        e);
+                if (connectionFailureGeneration == null) {
+                    log.error("event=SHETAB_INITIAL_CONNECT_FAILED provider={} phase=INITIAL_CONNECT endpoint={} "
+                                    + "failureCount={} attemptLimit={} retryInMs={} causeType={} causeMessage={}",
+                            config.provider(), failure.endpoint(), failure.failureCount(),
+                            maxSameEndpointReconnectAttempts(), config.reconnectDelayMs(),
+                            e.getClass().getName(), safeExceptionMessage(e), e);
+                } else {
+                    log.error("event=SHETAB_RECONNECT_FAILED provider={} failedGeneration={} endpoint={} "
+                                    + "failureCount={} attemptLimit={} retryInMs={} causeType={} causeMessage={}",
+                            config.provider(), connectionFailureGeneration, failure.endpoint(), failure.failureCount(),
+                            maxSameEndpointReconnectAttempts(), config.reconnectDelayMs(),
+                            e.getClass().getName(), safeExceptionMessage(e), e);
+                }
 
                 if (connectAttempts >= maxConnectAttempts) {
                     return null;
@@ -138,13 +157,37 @@ final class ShetabChannelSessionManager {
     }
 
     void reconnect(long failedGeneration, BooleanSupplier running) throws InterruptedException {
+        ReconnectDecision decision;
         synchronized (sessionLock) {
-            if (!running.getAsBoolean()
-                    || activeSession != null
-                    || lastInvalidatedGeneration != failedGeneration) {
-                return;
-            }
+            String reason = !running.getAsBoolean()
+                    ? "CLIENT_STOPPED"
+                    : activeSession != null
+                    ? "ACTIVE_SESSION_EXISTS"
+                    : lastInvalidatedGeneration != failedGeneration
+                    ? "FAILED_GENERATION_NOT_CURRENT"
+                    : null;
+            decision = new ReconnectDecision(
+                    reason == null,
+                    reason,
+                    activeSession != null ? activeSession.generation() : -1L,
+                    lastInvalidatedGeneration,
+                    leasedEndpoint != null ? leasedEndpoint.endpoint() : null,
+                    sameEndpointFailureCount
+            );
         }
+
+        if (!decision.proceed()) {
+            log.debug("event=SHETAB_STALE_RECONNECT_IGNORED provider={} failedGeneration={} "
+                            + "activeGeneration={} lastInvalidatedGeneration={} reason={}",
+                    config.provider(), failedGeneration, decision.activeGeneration(),
+                    decision.lastInvalidatedGeneration(), decision.reason());
+            return;
+        }
+
+        log.info("event=SHETAB_RECONNECT_STARTED provider={} failedGeneration={} endpoint={} "
+                        + "sameEndpointFailureCount={} retryDelayMs={}",
+                config.provider(), failedGeneration, decision.endpoint(),
+                decision.failureCount(), config.reconnectDelayMs());
 
         ChannelSession reconnected = ensureConnected(null, running, step -> {
             synchronized (sessionLock) {
@@ -154,7 +197,7 @@ final class ShetabChannelSessionManager {
                     throw new ShetabReconnectCancelledException();
                 }
             }
-        }, 1);
+        }, 1, failedGeneration);
 
         if (reconnected == null
                 && running.getAsBoolean()
@@ -192,11 +235,21 @@ final class ShetabChannelSessionManager {
     }
 
     InvalidationResult invalidateIfCurrent(ChannelSession failedSession, Throwable error) {
+        return invalidateIfCurrent(failedSession, error, () -> {
+        });
+    }
+
+    InvalidationResult invalidateIfCurrent(
+            ChannelSession failedSession,
+            Throwable error,
+            Runnable primaryFailureLog
+    ) {
         if (failedSession == null) {
             return InvalidationResult.notInvalidated(-1L);
         }
 
         ISOChannel channelToClose = null;
+        int failureCount;
 
         synchronized (sessionLock) {
             if (!isCurrentSessionLocked(failedSession)) {
@@ -208,15 +261,20 @@ final class ShetabChannelSessionManager {
             lastConnectionFailure = error;
             lastInvalidatedGeneration = failedSession.generation();
             sameEndpointFailureCount++;
+            failureCount = sameEndpointFailureCount;
             consecutiveResponseTimeoutCount = 0;
             responseTimeoutGeneration = -1L;
             sessionLock.notifyAll();
         }
 
         disconnectQuietly(channelToClose);
+        primaryFailureLog.run();
 
-        log.trace("Invalidated Shetab session provider={} generation={} endpoint={} cause={}",
-                config.provider(), failedSession.generation(), failedSession.endpoint(), rootMessage(error));
+        log.info("event=SHETAB_SESSION_INVALIDATED provider={} endpoint={} generation={} "
+                        + "causeType={} causeMessage={} sameEndpointFailureCount={}",
+                config.provider(), failedSession.endpoint(), failedSession.generation(),
+                error != null ? error.getClass().getName() : null,
+                safeExceptionMessage(error), failureCount);
         return InvalidationResult.invalidated(failedSession.generation());
     }
 
@@ -518,6 +576,16 @@ final class ShetabChannelSessionManager {
         return t.getClass().getSimpleName() + (message != null ? ": " + message : "");
     }
 
+    private String safeExceptionMessage(Throwable error) {
+        if (error == null) {
+            return null;
+        }
+        String message = error.getMessage();
+        String safe = message == null || message.isBlank() ? error.getClass().getSimpleName() : message;
+        safe = safe.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
+        return safe.length() <= 500 ? safe : safe.substring(0, 500) + "...[truncated]";
+    }
+
     @FunctionalInterface
     interface ConnectionGuard {
         void verify(String step);
@@ -537,6 +605,16 @@ final class ShetabChannelSessionManager {
     }
 
     private record ConnectionFailure(String endpoint, int failureCount) {
+    }
+
+    private record ReconnectDecision(
+            boolean proceed,
+            String reason,
+            long activeGeneration,
+            long lastInvalidatedGeneration,
+            String endpoint,
+            int failureCount
+    ) {
     }
 
     private static final class ShetabReconnectCancelledException extends RuntimeException {

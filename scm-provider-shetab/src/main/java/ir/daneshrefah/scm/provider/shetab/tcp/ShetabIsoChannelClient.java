@@ -297,13 +297,17 @@ public class ShetabIsoChannelClient {
                 sessionManager.markValidated(session);
                 logWireDebug("received", response, elapsedMs);
 
-                log.trace("Shetab receive matched provider={} keys={} completed={} mti={} stan={} rrn={}",
+                log.debug("event=SHETAB_RESPONSE_MATCHED provider={} endpoint={} generation={} "
+                                + "mti={} stan={} rrn={} responseCode={} elapsedMs={} completed={}",
                         config.provider(),
-                        tracker.correlationKey().displayKeys(),
-                        completed,
+                        session.endpoint(),
+                        session.generation(),
                         safeMti(response),
                         safeField(response, 11),
-                        safeField(response, 37));
+                        safeField(response, 37),
+                        safeField(response, 39),
+                        elapsedMs,
+                        completed);
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -390,7 +394,19 @@ public class ShetabIsoChannelClient {
 
                 responseRegistry.failIfActive(tracker, deliveryError);
                 ShetabChannelSessionManager.InvalidationResult invalidation =
-                        sessionManager.invalidateIfCurrent(session, e);
+                        sessionManager.invalidateIfCurrent(session, e, () ->
+                                log.error("event=SHETAB_SEND_FAILURE provider={} endpoint={} generation={} key={} "
+                                                + "mti={} stan={} rrn={} causeType={} causeMessage={}",
+                                        config.provider(),
+                                        session.endpoint(),
+                                        session.generation(),
+                                        tracker.correlationKey().display(),
+                                        safeMti(pending.msg()),
+                                        safeField(pending.msg(), 11),
+                                        safeField(pending.msg(), 37),
+                                        e.getClass().getName(),
+                                        safeExceptionMessage(e),
+                                        e));
 
                 if (invalidation.invalidated()) {
                     ShetabConnectionLostAfterSendException connectionError =
@@ -403,11 +419,11 @@ public class ShetabIsoChannelClient {
                     failDeliveredByGeneration(invalidation.generation(), connectionError);
                     requestReconnect(invalidation.generation());
 
-                    log.error("Shetab send failed after delivery started provider={} key={} generation={}",
-                            config.provider(), tracker.correlationKey().display(), session.generation(), e);
                 } else {
-                    log.debug("Ignored stale Shetab send failure provider={} generation={} cause={}",
-                            config.provider(), session.generation(), rootMessage(e));
+                    log.debug("event=SHETAB_STALE_SEND_FAILURE_IGNORED provider={} endpoint={} generation={} "
+                                    + "causeType={} causeMessage={}",
+                            config.provider(), session.endpoint(), session.generation(),
+                            e.getClass().getName(), safeExceptionMessage(e));
                 }
 
                 return true;
@@ -533,20 +549,29 @@ public class ShetabIsoChannelClient {
         }
 
         ShetabChannelSessionManager.InvalidationResult invalidation =
-                sessionManager.invalidateIfCurrent(session, e);
+                sessionManager.invalidateIfCurrent(session, e, () ->
+                        log.warn("event=SHETAB_RECEIVER_FAILURE provider={} endpoint={} generation={} "
+                                        + "causeType={} causeMessage={} lastSentAt={} lastReceivedAt={}",
+                                config.provider(),
+                                session.endpoint(),
+                                session.generation(),
+                                e.getClass().getName(),
+                                safeExceptionMessage(e),
+                                lastSentAtMillis,
+                                lastReceivedAtMillis,
+                                e));
 
         if (!invalidation.invalidated()) {
-            log.debug("Ignored stale Shetab receiver failure provider={} generation={} cause={}",
-                    config.provider(), session.generation(), rootMessage(e));
+            log.debug("event=SHETAB_STALE_RECEIVER_FAILURE_IGNORED provider={} endpoint={} generation={} "
+                            + "causeType={} causeMessage={}",
+                    config.provider(), session.endpoint(), session.generation(),
+                    e.getClass().getName(), safeExceptionMessage(e));
+            if (log.isTraceEnabled()) {
+                log.trace("Stale Shetab receiver failure stack provider={} endpoint={} generation={}",
+                        config.provider(), session.endpoint(), session.generation(), e);
+            }
             return;
         }
-
-        log.trace("Shetab receiver socket disconnected provider={} generation={} lastSentAt={} lastReceivedAt={}",
-                config.provider(),
-                session.generation(),
-                lastSentAtMillis,
-                lastReceivedAtMillis,
-                e);
 
         ShetabConnectionLostAfterSendException connectionError = new ShetabConnectionLostAfterSendException(
                 "Shetab connection lost while receiving provider="
@@ -559,12 +584,22 @@ public class ShetabIsoChannelClient {
     }
 
     private void requestReconnect(long failedGeneration) {
-        if (!running.get() || !reconnectQueued.compareAndSet(false, true)) {
+        if (!running.get()) {
+            return;
+        }
+        if (!reconnectQueued.compareAndSet(false, true)) {
+            log.debug("event=SHETAB_RECONNECT_ALREADY_QUEUED provider={} failedGeneration={} queueSize={}",
+                    config.provider(), failedGeneration, reconnectQueue.size());
             return;
         }
         if (!reconnectQueue.offer(new ReconnectCommand(failedGeneration))) {
             reconnectQueued.set(false);
+            log.warn("event=SHETAB_RECONNECT_QUEUE_REJECTED provider={} failedGeneration={} queueSize={}",
+                    config.provider(), failedGeneration, reconnectQueue.size());
+            return;
         }
+        log.info("event=SHETAB_RECONNECT_SCHEDULED provider={} failedGeneration={} queueSize={}",
+                config.provider(), failedGeneration, reconnectQueue.size());
     }
 
     private PendingRequest pendingRequest(SenderCommand command) {
@@ -800,6 +835,16 @@ public class ShetabIsoChannelClient {
 
         String message = t.getMessage();
         return t.getClass().getSimpleName() + (message != null ? ": " + message : "");
+    }
+
+    private String safeExceptionMessage(Throwable error) {
+        if (error == null) {
+            return null;
+        }
+        String message = error.getMessage();
+        String safe = message == null || message.isBlank() ? error.getClass().getSimpleName() : message;
+        safe = safe.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
+        return safe.length() <= 500 ? safe : safe.substring(0, 500) + "...[truncated]";
     }
 
     private record PendingRequest(
