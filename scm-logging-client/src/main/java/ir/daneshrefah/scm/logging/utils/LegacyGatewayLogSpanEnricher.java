@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.opentelemetry.api.trace.Span;
 import ir.daneshrefah.scm.common.constant.log.LogAttribute;
+import ir.daneshrefah.scm.common.data.service.error.ErrorMappingService;
+import ir.daneshrefah.scm.common.error.ErrorMapping;
 import ir.daneshrefah.scm.common.model.ScmResponse;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ScmFault;
@@ -19,10 +21,7 @@ import org.apache.camel.Exchange;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Component
 public class LegacyGatewayLogSpanEnricher {
@@ -50,12 +49,16 @@ public class LegacyGatewayLogSpanEnricher {
     private static final int TRANSACTION_TYPE_REQUEST = 1;
     private static final int TRANSACTION_TYPE_RESPONSE = 2;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private static final List<String> GATEWAY_SERVICE_CODES = List.of(
             "cardInquiry",
             "cardPasswordInquiry",
             "cardXferAdd"
     );
+    private final ErrorMappingService errorMappingService;
+
+    public LegacyGatewayLogSpanEnricher(ErrorMappingService errorMappingService) {
+        this.errorMappingService = errorMappingService;
+    }
 
     public void enrichGatewayRequest(Exchange exchange, Service service, Span span, String messageId) {
         if (exchange == null || span == null) {
@@ -156,10 +159,11 @@ public class LegacyGatewayLogSpanEnricher {
         if (cause != null) {
             setString(span, LogAttribute.EXCEPTION_CLASS_NAME.getAttributeName(), cause.getClass().getName());
             setString(span, LogAttribute.DESCRIPTION.getAttributeName(), cause.getMessage());
+            setString(span, LogAttribute.STATUS_CODE.getAttributeName(), statusCode(body));
         } else {
             setString(span, LogAttribute.DESCRIPTION.getAttributeName(), description(body));
+            setString(span, LogAttribute.STATUS_CODE.getAttributeName(), statusCode(body));
         }
-        setString(span, LogAttribute.STATUS_CODE.getAttributeName(), statusCode(body));
     }
 
     public void markScmWebSpan(Span span) {
@@ -365,7 +369,14 @@ public class LegacyGatewayLogSpanEnricher {
             case ScmResponse response -> response.getStatus();
             default -> null;
         };
-        return status != null ? status.getCode() : MessageStatus.SC_SUCCESS.getCode();
+
+        status = status != null ? status : MessageStatus.SC_SUCCESS;
+        Optional<ErrorMapping> errorMapping = errorMappingService.findByStatusCode(status.getCode());
+        if (errorMapping.isPresent()) {
+            return String.valueOf(errorMapping.get().getScmErrorCode());
+        } else {
+            return status.getCode();
+        }
     }
 
     private String description(Object body) {

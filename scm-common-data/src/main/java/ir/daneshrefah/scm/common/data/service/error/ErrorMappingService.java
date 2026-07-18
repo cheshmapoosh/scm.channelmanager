@@ -66,6 +66,13 @@ public class ErrorMappingService {
                 .findFirst();
     }
 
+    public Optional<ErrorMapping> findByStatusCode(String statusCode) {
+        return ERROR_MAPPINGS_CACHE
+                .stream()
+                .filter(errorMapping -> errorMapping.getStatus() != null && errorMapping.getStatus().getCode().equals(statusCode))
+                .findFirst();
+    }
+
     public Optional<ErrorMapping> findByExceptionClassName(String className) {
         return findByErrorMessage(className);
     }
