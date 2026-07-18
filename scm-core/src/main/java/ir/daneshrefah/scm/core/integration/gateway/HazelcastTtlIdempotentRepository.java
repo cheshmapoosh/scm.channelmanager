@@ -1,7 +1,5 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
-import com.hazelcast.map.IMap;
-import ir.daneshrefah.scm.cache.client.connector.spring.TtlAwareCache;
 import org.apache.camel.spi.IdempotentRepository;
 import org.apache.camel.support.service.ServiceSupport;
 import org.springframework.cache.Cache;
