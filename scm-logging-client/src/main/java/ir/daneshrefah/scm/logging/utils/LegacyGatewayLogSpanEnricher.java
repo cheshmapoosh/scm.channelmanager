@@ -54,6 +54,7 @@ public class LegacyGatewayLogSpanEnricher {
     private static final String SERVER_CODE = "serverCode";
     private static final int TRANSACTION_TYPE_REQUEST = 1;
     private static final int TRANSACTION_TYPE_RESPONSE = 2;
+    private static final String MESSAGE_SEQ_ID ="MESSAGE_SEQ_ID";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final List<String> GATEWAY_SERVICE_CODES = List.of(
             "cardInquiry",
@@ -89,6 +90,12 @@ public class LegacyGatewayLogSpanEnricher {
         setString(span, LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(), clientIpAddress(exchange));
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         span.setAttribute(REQUEST_LOG_STATUS, REQUEST_TO_CHANNEL);
+        String message_seq = exchange.getMessage().getHeader("x-correlation-id",String.class);
+        String [] splitMSG_SEQ = StringUtils.split(",");
+        if(splitMSG_SEQ != null && splitMSG_SEQ.length>1){
+            message_seq  = splitMSG_SEQ[1];
+        }
+        span.setAttribute(MESSAGE_SEQ_ID,message_seq);
 
         if (!isTargetGatewayService(service)) {
             return;
