@@ -108,7 +108,8 @@ scm:
       packager-class: Shetab7AsciiXAPackager
 
       connect-timeout-ms: 3000
-      socket-timeout-ms: 1000
+      socket-timeout-ms: 0
+      keep-alive: true
       response-timeout-ms: 6000
       send-timeout-ms: 1000
       reconnect-delay-ms: 1000
@@ -168,7 +169,8 @@ scm:
 | تنظیم | مسئولیت |
 | --- | --- |
 | `connect-timeout-ms` | سقف هر تلاش TCP connect؛ همیشه به زمان باقی‌ماندهٔ request محدود می‌شود |
-| `socket-timeout-ms` | timeout عملیات receive برای polling و cleanup؛ یک read timeout به‌تنهایی به معنی disconnect نیست |
+| `socket-timeout-ms` | timeout عملیات receive؛ مقدار پیش‌فرض `0` یعنی receiver تا زمان دریافت یا failure به‌صورت blocking باقی می‌ماند |
+| `keep-alive` | فعال‌سازی TCP keep-alive در channel؛ پیش‌فرض `true` است |
 | `response-timeout-ms` | deadline caller برای کل lifecycle درخواست |
 | `send-timeout-ms` | حداکثر انتظار برای ورود به send queue، محدود به deadline باقی‌مانده |
 | `reconnect-delay-ms` | فاصلهٔ reconnect؛ sleep نباید زیر session lock انجام شود |
@@ -484,7 +486,7 @@ SENT
 
 ## ۱۲. Connection Suspect و Response Timeout
 
-`SocketTimeoutException` در receiver به‌تنهایی به معنی خراب بودن socket نیست؛ `socket-timeout-ms` می‌تواند کوتاه‌تر از `response-timeout-ms` باشد و برای polling استفاده شود.
+`SocketTimeoutException` در receiver یک connection failure محسوب می‌شود، generation فعال را invalidate می‌کند و reconnect عادی را آغاز می‌کند. با مقدار پیش‌فرض `socket-timeout-ms: 0` این exception در idle عادی رخ نمی‌دهد.
 
 اما چند request ارسال‌شدهٔ متوالی که روی generation فعال timeout شوند، connection را suspect می‌کنند.
 

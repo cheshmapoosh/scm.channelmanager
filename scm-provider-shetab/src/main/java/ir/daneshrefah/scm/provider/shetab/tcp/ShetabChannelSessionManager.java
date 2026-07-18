@@ -9,6 +9,7 @@ import org.jpos.core.SimpleConfiguration;
 import org.jpos.iso.ISOChannel;
 import org.jpos.iso.channel.ASCIIChannel;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.BooleanSupplier;
@@ -27,6 +28,7 @@ final class ShetabChannelSessionManager {
     private volatile ShetabEndpointLease leasedEndpoint = ShetabEndpointLease.none();
     private volatile Throwable lastConnectionFailure;
     private volatile long lastConnectedAtMillis;
+    private volatile long lastInvalidatedGeneration = -1L;
 
     private long generationSequence;
     private long responseTimeoutGeneration = -1L;
@@ -48,12 +50,22 @@ final class ShetabChannelSessionManager {
             BooleanSupplier running,
             ConnectionGuard guard
     ) throws InterruptedException {
+        return ensureConnected(deadline, running, guard, Integer.MAX_VALUE);
+    }
+
+    private ChannelSession ensureConnected(
+            Deadline deadline,
+            BooleanSupplier running,
+            ConnectionGuard guard,
+            int maxConnectAttempts
+    ) throws InterruptedException {
         ChannelSession current = activeSession;
 
         if (current != null) {
             return current;
         }
 
+        int connectAttempts = 0;
         while (running.getAsBoolean()) {
             guard.verify("before lease acquisition");
             ShetabEndpointLease lease = ensureLease(running, guard);
@@ -67,22 +79,24 @@ final class ShetabChannelSessionManager {
             ISOChannel newChannel = null;
 
             try {
+                connectAttempts++;
                 newChannel = createChannel(lease);
                 guard.verify("after socket creation");
 
                 newChannel.connect();
+
+                if (!newChannel.isConnected()) {
+                    throw new IOException("Shetab channel did not become connected");
+                }
+
                 guard.verify("after TCP connect");
 
                 PublishResult publishResult = publish(newChannel, lease.endpoint(), running);
 
                 if (publishResult.session() == null) {
                     disconnectQuietly(newChannel);
-                    return null;
-                }
-
-                if (publishResult.previousSession() != null
-                        && publishResult.previousSession().channel() != newChannel) {
-                    disconnectQuietly(publishResult.previousSession().channel());
+                    ChannelSession published = activeSession;
+                    return published != null ? published : null;
                 }
 
                 log.trace("Connected Shetab ISOChannel provider={} remoteEndpoint={} generation={}",
@@ -111,12 +125,48 @@ final class ShetabChannelSessionManager {
                         config.reconnectDelayMs(),
                         e);
 
+                if (connectAttempts >= maxConnectAttempts) {
+                    return null;
+                }
+
                 guard.verify("after connection failure");
                 sleepBeforeReconnect(deadline, guard);
             }
         }
 
         return null;
+    }
+
+    void reconnect(long failedGeneration, BooleanSupplier running) throws InterruptedException {
+        synchronized (sessionLock) {
+            if (!running.getAsBoolean()
+                    || activeSession != null
+                    || lastInvalidatedGeneration != failedGeneration) {
+                return;
+            }
+        }
+
+        ChannelSession reconnected = ensureConnected(null, running, step -> {
+            synchronized (sessionLock) {
+                if (!running.getAsBoolean()
+                        || activeSession != null
+                        || lastInvalidatedGeneration != failedGeneration) {
+                    throw new ShetabReconnectCancelledException();
+                }
+            }
+        }, 1);
+
+        if (reconnected == null
+                && running.getAsBoolean()
+                && reconnectGenerationIfNeeded() == failedGeneration) {
+            Thread.sleep(Math.max(1L, config.reconnectDelayMs()));
+        }
+    }
+
+    long reconnectGenerationIfNeeded() {
+        synchronized (sessionLock) {
+            return activeSession == null ? lastInvalidatedGeneration : -1L;
+        }
     }
 
     ChannelSession waitForActiveSession(BooleanSupplier running) throws InterruptedException {
@@ -141,64 +191,44 @@ final class ShetabChannelSessionManager {
                 && current.channel() == session.channel();
     }
 
-    SessionInvalidation invalidate(ChannelSession failedSession, Throwable error, boolean incrementFailureCount) {
+    InvalidationResult invalidateIfCurrent(ChannelSession failedSession, Throwable error) {
         if (failedSession == null) {
-            return SessionInvalidation.none();
+            return InvalidationResult.notInvalidated(-1L);
         }
 
-        ISOChannel channelToClose;
-        ShetabEndpointLease leaseToClose = null;
-        boolean activeInvalidated = false;
+        ISOChannel channelToClose = null;
 
         synchronized (sessionLock) {
-            ChannelSession current = activeSession;
-
-            if (current != null
-                    && current.generation() == failedSession.generation()
-                    && current.channel() == failedSession.channel()) {
-                activeSession = null;
-                activeInvalidated = true;
-                channelToClose = current.channel();
-                lastConnectionFailure = error;
-                consecutiveResponseTimeoutCount = 0;
-                responseTimeoutGeneration = -1L;
-
-                if (incrementFailureCount) {
-                    sameEndpointFailureCount++;
-                    leaseToClose = releaseLeaseIfLimitReachedLocked();
-                }
-
-                sessionLock.notifyAll();
-            } else {
-                channelToClose = failedSession.channel();
+            if (!isCurrentSessionLocked(failedSession)) {
+                return InvalidationResult.notInvalidated(failedSession.generation());
             }
+
+            activeSession = null;
+            channelToClose = failedSession.channel();
+            lastConnectionFailure = error;
+            lastInvalidatedGeneration = failedSession.generation();
+            sameEndpointFailureCount++;
+            consecutiveResponseTimeoutCount = 0;
+            responseTimeoutGeneration = -1L;
+            sessionLock.notifyAll();
         }
 
         disconnectQuietly(channelToClose);
-        closeLeaseQuietly(leaseToClose);
 
-        if (activeInvalidated) {
-            log.trace("Invalidated Shetab session provider={} generation={} endpoint={} cause={}",
-                    config.provider(), failedSession.generation(), failedSession.endpoint(), rootMessage(error));
-            return SessionInvalidation.active(failedSession.generation());
-        }
-
-        log.debug("Ignored stale Shetab session invalidation provider={} generation={} cause={}",
-                config.provider(), failedSession.generation(), rootMessage(error));
-
-        return SessionInvalidation.none();
+        log.trace("Invalidated Shetab session provider={} generation={} endpoint={} cause={}",
+                config.provider(), failedSession.generation(), failedSession.endpoint(), rootMessage(error));
+        return InvalidationResult.invalidated(failedSession.generation());
     }
 
-    SessionInvalidation recordResponseTimeout(long generation, Throwable error) {
+    InvalidationResult recordResponseTimeout(long generation, Throwable error) {
         ISOChannel channelToClose = null;
-        ShetabEndpointLease leaseToClose = null;
         boolean suspect = false;
 
         synchronized (sessionLock) {
             ChannelSession current = activeSession;
 
             if (current == null || current.generation() != generation) {
-                return SessionInvalidation.none();
+                return InvalidationResult.notInvalidated(generation);
             }
 
             if (responseTimeoutGeneration != generation) {
@@ -213,25 +243,24 @@ final class ShetabChannelSessionManager {
                 suspect = true;
                 channelToClose = current.channel();
                 lastConnectionFailure = error;
+                lastInvalidatedGeneration = current.generation();
                 sameEndpointFailureCount++;
                 consecutiveResponseTimeoutCount = 0;
                 responseTimeoutGeneration = -1L;
-                leaseToClose = releaseLeaseIfLimitReachedLocked();
                 sessionLock.notifyAll();
             }
         }
 
         disconnectQuietly(channelToClose);
-        closeLeaseQuietly(leaseToClose);
 
         if (!suspect) {
-            return SessionInvalidation.none();
+            return InvalidationResult.notInvalidated(generation);
         }
 
         log.warn("Marked Shetab session suspect after response timeouts provider={} generation={} cause={}",
                 config.provider(), generation, rootMessage(error));
 
-        return SessionInvalidation.active(generation);
+        return InvalidationResult.invalidated(generation);
     }
 
     void markValidated(ChannelSession session) {
@@ -252,6 +281,7 @@ final class ShetabChannelSessionManager {
             responseTimeoutGeneration = session.generation();
             sameEndpointFailureCount = 0;
             lastConnectionFailure = null;
+            lastInvalidatedGeneration = -1L;
         }
     }
 
@@ -268,6 +298,7 @@ final class ShetabChannelSessionManager {
             responseTimeoutGeneration = -1L;
             sameEndpointFailureCount = 0;
             lastConnectionFailure = null;
+            lastInvalidatedGeneration = -1L;
             sessionLock.notifyAll();
         }
 
@@ -298,7 +329,19 @@ final class ShetabChannelSessionManager {
     }
 
     private ShetabEndpointLease ensureLease(BooleanSupplier running, ConnectionGuard guard) {
-        ShetabEndpointLease current = leasedEndpoint;
+        ShetabEndpointLease leaseToClose = null;
+        ShetabEndpointLease current;
+
+        synchronized (sessionLock) {
+            if (sameEndpointFailureCount >= maxSameEndpointReconnectAttempts() && !isEmptyLease(leasedEndpoint)) {
+                leaseToClose = leasedEndpoint;
+                leasedEndpoint = ShetabEndpointLease.none();
+                sameEndpointFailureCount = 0;
+            }
+            current = leasedEndpoint;
+        }
+
+        closeLeaseQuietly(leaseToClose);
 
         if (!isEmptyLease(current)) {
             return current;
@@ -352,6 +395,7 @@ final class ShetabChannelSessionManager {
         channelConfig.put("port", String.valueOf(remotePort));
         channelConfig.put("timeout", String.valueOf(config.socketTimeoutMs()));
         channelConfig.put("connect-timeout", String.valueOf(config.connectTimeoutMs()));
+        channelConfig.put("keep-alive", Boolean.toString(config.keepAlive()));
         channelConfig.put("length-digits", String.valueOf(SHETAB_LENGTH_DIGITS));
 
         asciiChannel.setConfiguration(new SimpleConfiguration(channelConfig));
@@ -361,11 +405,10 @@ final class ShetabChannelSessionManager {
 
     private PublishResult publish(ISOChannel channel, String endpoint, BooleanSupplier running) {
         synchronized (sessionLock) {
-            if (!running.getAsBoolean()) {
-                return new PublishResult(null, null);
+            if (!running.getAsBoolean() || activeSession != null || !channel.isConnected()) {
+                return new PublishResult(null);
             }
 
-            ChannelSession previous = activeSession;
             ChannelSession session = new ChannelSession(++generationSequence, channel, endpoint);
             activeSession = session;
             lastConnectedAtMillis = System.currentTimeMillis();
@@ -373,8 +416,15 @@ final class ShetabChannelSessionManager {
             responseTimeoutGeneration = session.generation();
             sessionLock.notifyAll();
 
-            return new PublishResult(session, previous);
+            return new PublishResult(session);
         }
+    }
+
+    private boolean isCurrentSessionLocked(ChannelSession candidate) {
+        return candidate != null
+                && activeSession != null
+                && activeSession.generation() == candidate.generation()
+                && activeSession.channel() == candidate.channel();
     }
 
     private ConnectionFailure recordConnectionFailure(Throwable error) {
@@ -402,13 +452,14 @@ final class ShetabChannelSessionManager {
 
         ShetabEndpointLease leaseToClose = leasedEndpoint;
         leasedEndpoint = ShetabEndpointLease.none();
+        sameEndpointFailureCount = 0;
         return leaseToClose;
     }
 
     private void sleepBeforeReconnect(Deadline deadline, ConnectionGuard guard) throws InterruptedException {
         guard.verify("before reconnect sleep");
 
-        long remainingMs = deadline.remainingMillisCeiling();
+        long remainingMs = deadline == null ? Long.MAX_VALUE : deadline.remainingMillisCeiling();
 
         if (remainingMs <= 0L) {
             guard.verify("after reconnect sleep");
@@ -472,20 +523,23 @@ final class ShetabChannelSessionManager {
         void verify(String step);
     }
 
-    record SessionInvalidation(boolean activeInvalidated, long generation) {
-        static SessionInvalidation active(long generation) {
-            return new SessionInvalidation(true, generation);
+    record InvalidationResult(boolean invalidated, long generation) {
+        static InvalidationResult invalidated(long generation) {
+            return new InvalidationResult(true, generation);
         }
 
-        static SessionInvalidation none() {
-            return new SessionInvalidation(false, -1L);
+        static InvalidationResult notInvalidated(long generation) {
+            return new InvalidationResult(false, generation);
         }
     }
 
-    private record PublishResult(ChannelSession session, ChannelSession previousSession) {
+    private record PublishResult(ChannelSession session) {
     }
 
     private record ConnectionFailure(String endpoint, int failureCount) {
+    }
+
+    private static final class ShetabReconnectCancelledException extends RuntimeException {
     }
 }
 

@@ -99,7 +99,8 @@ scm:
         - 10.15.1.61:32001
       packager-class: Shetab7AsciiXAPackager
       connect-timeout-ms: 3000
-      socket-timeout-ms: 1000
+      socket-timeout-ms: 0
+      keep-alive: true
       response-timeout-ms: 10000
       send-timeout-ms: 1000
       reconnect-delay-ms: 1000

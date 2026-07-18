@@ -5,12 +5,12 @@ import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOUtil;
 
+import java.util.Arrays;
 import java.util.Set;
 
 public final class SafeIsoLogFormatter {
 
     private static final Set<Integer> FULLY_HIDDEN_FIELDS = Set.of(
-            52,   // PIN block
             55,   // EMV/ICC data - may contain sensitive data
             64,   // MAC
             128   // MAC
@@ -27,7 +27,7 @@ public final class SafeIsoLogFormatter {
 
     // Explicit allowlist: unknown fields are redacted by default.
     private static final Set<Integer> ALLOWED_CLEAR_FIELDS = Set.of(
-            3, 4, 6, 7, 11, 12, 13, 15, 18, 22, 24, 25, 26, 32, 33, 37, 38, 39, 41, 42, 43, 49, 56, 70, 90
+            3, 4, 6, 7, 11, 12, 13, 15, 18, 22, 24, 25, 26, 32, 33, 37, 38, 39, 41, 42, 43, 48, 49, 56, 70, 90
     );
 
     private static final int MAX_FIELD_VALUE_LENGTH = 120;
@@ -44,6 +44,8 @@ public final class SafeIsoLogFormatter {
         if (msg == null) {
             return "null";
         }
+
+        msg = sanitize(msg);
 
         StringBuilder out = new StringBuilder(512);
 
@@ -92,9 +94,66 @@ public final class SafeIsoLogFormatter {
         return out.toString();
     }
 
+    public static ISOMsg sanitize(ISOMsg source) {
+        if (source == null) {
+            return null;
+        }
+
+        ISOMsg safe = (ISOMsg) source.clone();
+        maskWholeField(safe, 14);
+        maskWholeField(safe, 52);
+        maskCvv2(safe);
+        return safe;
+    }
+
+    private static void maskWholeField(ISOMsg msg, int field) {
+        if (!msg.hasField(field)) {
+            return;
+        }
+
+        try {
+            Object value = msg.getComponent(field).getValue();
+            if (value instanceof byte[] bytes) {
+                byte[] masked = new byte[bytes.length];
+                Arrays.fill(masked, (byte) '*');
+                msg.set(field, masked);
+            } else if (value != null) {
+                msg.set(field, "*".repeat(String.valueOf(value).length()));
+            }
+        } catch (Exception e) {
+            msg.unset(field);
+        }
+    }
+
+    private static void maskCvv2(ISOMsg msg) {
+        if (!msg.hasField(48)) {
+            return;
+        }
+
+        try {
+            Object raw = msg.getComponent(48).getValue();
+            if (raw instanceof byte[] bytes) {
+                byte[] masked = new byte[bytes.length];
+                Arrays.fill(masked, (byte) '*');
+                msg.set(48, masked);
+                return;
+            }
+            if (raw == null) {
+                return;
+            }
+            msg.set(48, maskField48Value(String.valueOf(raw)));
+        } catch (Exception e) {
+            msg.unset(48);
+        }
+    }
+
     private static String formatFieldValue(int field, ISOComponent component) throws ISOException {
         if (component == null) {
             return "null";
+        }
+
+        if (field == 52) {
+            return starsForLoggedValue(component.getValue());
         }
 
         if (FULLY_HIDDEN_FIELDS.contains(field)) {
@@ -162,7 +221,7 @@ public final class SafeIsoLogFormatter {
         return switch (field) {
             case 2 -> maskPan(textValue);
             case 35, 45 -> maskTrackData(textValue);
-            case 14 -> "**/**";
+            case 14 -> "*".repeat(textValue.length());
             case 102, 103 -> maskAccount(textValue);
             default -> "[MASKED]";
         };
@@ -230,6 +289,14 @@ public final class SafeIsoLogFormatter {
             return value == null ? "null" : "";
         }
 
+        return limit(maskField48Value(value));
+    }
+
+    private static String maskField48Value(String value) {
+        if (value == null || value.isBlank()) {
+            return value == null ? "null" : "";
+        }
+
         StringBuilder rebuilt = new StringBuilder(value.length());
         boolean masked = false;
         int index = 0;
@@ -250,7 +317,7 @@ public final class SafeIsoLogFormatter {
 
             rebuilt.append(tag).append(lengthText);
             if ("P92".equals(tag)) {
-                rebuilt.append("[CVV2_MASKED,len=").append(segmentLength).append("]");
+                rebuilt.append("*".repeat(segmentLength));
                 masked = true;
             } else {
                 rebuilt.append(value, valueStart, valueEnd);
@@ -262,7 +329,41 @@ public final class SafeIsoLogFormatter {
             rebuilt.append(value.substring(index));
         }
 
-        return limit(masked ? rebuilt.toString() : value);
+        return maskMalformedP92(masked ? rebuilt.toString() : value);
+    }
+
+    private static String maskMalformedP92(String value) {
+        int tagIndex = value.indexOf("P92");
+        if (tagIndex < 0) {
+            return value;
+        }
+
+        StringBuilder masked = new StringBuilder(value);
+        int searchFrom = 0;
+        while ((tagIndex = value.indexOf("P92", searchFrom)) >= 0) {
+            int lengthStart = tagIndex + 3;
+            int valueStart = Math.min(lengthStart + 3, value.length());
+            int valueEnd = value.length();
+            if (valueStart == lengthStart + 3) {
+                String encodedLength = value.substring(lengthStart, valueStart);
+                if (isNumeric(encodedLength)) {
+                    valueEnd = Math.min(value.length(), valueStart + Integer.parseInt(encodedLength));
+                }
+            }
+            for (int index = valueStart; index < valueEnd; index++) {
+                masked.setCharAt(index, '*');
+            }
+            searchFrom = Math.max(valueStart, tagIndex + 3);
+        }
+        return masked.toString();
+    }
+
+    private static String starsForLoggedValue(Object value) {
+        if (value == null) {
+            return "null";
+        }
+        int length = value instanceof byte[] bytes ? bytes.length * 2 : String.valueOf(value).length();
+        return "*".repeat(length);
     }
 
     private static boolean isNumeric(String value) {

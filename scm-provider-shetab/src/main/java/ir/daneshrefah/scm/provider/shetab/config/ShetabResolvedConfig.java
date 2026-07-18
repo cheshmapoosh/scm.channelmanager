@@ -14,6 +14,7 @@ public record ShetabResolvedConfig(
         String packagerXml,
         int connectTimeoutMs,
         int socketTimeoutMs,
+        boolean keepAlive,
         int responseTimeoutMs,
         int sendTimeoutMs,
         int reconnectDelayMs,
@@ -47,7 +48,7 @@ public record ShetabResolvedConfig(
             RateLimit rateLimit,
             EndpointLease endpointLease
     ) {
-        this(provider, ShetabConfigResolver.COMPONENT_SCHEME, endpoints, packagerClass, packagerXml, connectTimeoutMs, socketTimeoutMs,
+        this(provider, ShetabConfigResolver.COMPONENT_SCHEME, endpoints, packagerClass, packagerXml, connectTimeoutMs, socketTimeoutMs, true,
                 responseTimeoutMs, sendTimeoutMs, reconnectDelayMs, sameEndpointReconnectAttempts, queueCapacity,
                 Map.of(), ProviderMessageCustomizerPipeline.empty(), rateLimit, endpointLease);
     }
@@ -71,7 +72,7 @@ public record ShetabResolvedConfig(
             return this;
         }
         return new ShetabResolvedConfig(provider, scheme, endpoints, packagerClass, packagerXml, connectTimeoutMs,
-                socketTimeoutMs, resolvedResponseTimeoutMs, sendTimeoutMs, reconnectDelayMs,
+                socketTimeoutMs, keepAlive, resolvedResponseTimeoutMs, sendTimeoutMs, reconnectDelayMs,
                 sameEndpointReconnectAttempts, queueCapacity, providerConfig, messageCustomizerPipeline,
                 new RateLimit(rateLimitEnabled, rateLimitBucket, rateLimitKey), endpointLease);
     }

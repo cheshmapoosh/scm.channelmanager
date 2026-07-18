@@ -83,6 +83,7 @@ public class ShetabTcpClientRegistry implements ShetabClientRegistry {
             String packagerXml,
             int connectTimeoutMs,
             int socketTimeoutMs,
+            boolean keepAlive,
             int sendTimeoutMs,
             int reconnectDelayMs,
             int sameEndpointReconnectAttempts,
@@ -101,6 +102,7 @@ public class ShetabTcpClientRegistry implements ShetabClientRegistry {
                     normalize(config.packagerXml()),
                     config.connectTimeoutMs(),
                     config.socketTimeoutMs(),
+                    config.keepAlive(),
                     config.sendTimeoutMs(),
                     config.reconnectDelayMs(),
                     config.sameEndpointReconnectAttempts(),
@@ -120,6 +122,7 @@ public class ShetabTcpClientRegistry implements ShetabClientRegistry {
             addDifference(differences, "packagerXml", packagerXml, other.packagerXml);
             addDifference(differences, "connectTimeoutMs", connectTimeoutMs, other.connectTimeoutMs);
             addDifference(differences, "socketTimeoutMs", socketTimeoutMs, other.socketTimeoutMs);
+            addDifference(differences, "keepAlive", keepAlive, other.keepAlive);
             addDifference(differences, "sendTimeoutMs", sendTimeoutMs, other.sendTimeoutMs);
             addDifference(differences, "reconnectDelayMs", reconnectDelayMs, other.reconnectDelayMs);
             addDifference(differences, "sameEndpointReconnectAttempts", sameEndpointReconnectAttempts,

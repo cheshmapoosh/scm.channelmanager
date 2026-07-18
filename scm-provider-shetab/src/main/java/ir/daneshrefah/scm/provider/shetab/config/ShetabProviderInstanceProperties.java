@@ -20,6 +20,7 @@ public class ShetabProviderInstanceProperties {
     private String packagerXml;
     private Integer connectTimeoutMs;
     private Integer socketTimeoutMs;
+    private Boolean keepAlive = true;
     private Integer responseTimeoutMs;
     private Integer sendTimeoutMs;
     private Integer reconnectDelayMs;
