@@ -17,13 +17,19 @@ import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationProvider;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
 import ir.daneshrefah.scm.utils.constant.Constants;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.*;
 
 @Component
+@Slf4j
 public class LegacyGatewayLogSpanEnricher {
 
     public static final String GATEWAY_SPAN_PROPERTY = "scm.web.legacy.gateway.log.span";
@@ -54,10 +60,19 @@ public class LegacyGatewayLogSpanEnricher {
             "cardPasswordInquiry",
             "cardXferAdd"
     );
+
+
+
+
     private final ErrorMappingService errorMappingService;
 
-    public LegacyGatewayLogSpanEnricher(ErrorMappingService errorMappingService) {
+    private final Logger logger;
+
+
+
+    public LegacyGatewayLogSpanEnricher(ErrorMappingService errorMappingService, Logger logger) {
         this.errorMappingService = errorMappingService;
+        this.logger = logger;
     }
 
     public void enrichGatewayRequest(Exchange exchange, Service service, Span span, String messageId) {
@@ -192,12 +207,18 @@ public class LegacyGatewayLogSpanEnricher {
         if (exchange == null || exchange.getMessage() == null) {
             return "";
         }
+        HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
+        if(request != null && StringUtils.isNoneEmpty( request.getRemoteAddr())) {
+            return request.getRemoteAddr();
+        }
+
         for (String header : List.of(
                 "X-Forwarded-For",
+                "Proxy-Client-IP",
+                "WL-Proxy-Client-IP",
+                "HTTP_CLIENT_IP",
+                "HTTP_X_FORWARDED_FOR",
                 "X-Real-IP",
-                "Forwarded",
-                Constants.CAMEL_PARAMETER_HTTP_REMOTE_ADDRESS,
-                LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(),
                 "ip"
         )) {
             String value = exchange.getMessage().getHeader(header, String.class);
@@ -206,6 +227,7 @@ public class LegacyGatewayLogSpanEnricher {
                 return parsed;
             }
         }
+        log.warn("clientIpAddress is not detected");
         return "";
     }
 

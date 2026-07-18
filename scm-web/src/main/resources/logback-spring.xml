@@ -69,6 +69,7 @@
 
     <logger name="org.springframework" level="${SPRING_LEVEL}" />
     <logger name="org.hibernate" level="${HIBERNATE_LEVEL}" />
+    <logger name="ir.daneshrefah.scm.logging.utils" level="WARN" />
 
     <root level="${ROOT_LEVEL}">
         <appender-ref ref="ROLLING_FILE" />

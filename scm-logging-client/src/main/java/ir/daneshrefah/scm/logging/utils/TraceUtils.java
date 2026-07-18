@@ -40,6 +40,8 @@ public class TraceUtils {
     private static final String PIN = "pin";
     private static final String SECURITY = "security";
     private static final String TRK2_EQUIV_DATA = "trk2EquivData";
+    private static final String CARD_EXPIRATION_YEAR_MONTH = "cardExpirationYearMonth";
+
     @Getter
     private static TraceUtils instance;
     private final Tracer tracer;
@@ -230,6 +232,7 @@ public class TraceUtils {
             JsonNode root = OBJECT_MAPPER.readTree(body);
             maskObjectField(root, TRK2_EQUIV_DATA, CVV2);
             maskObjectField(root, TRK2_EQUIV_DATA, PIN);
+            maskObjectField(root, TRK2_EQUIV_DATA, CARD_EXPIRATION_YEAR_MONTH);
             maskObjectField(root, SECURITY, CVV2);
             maskObjectField(root, SECURITY, PIN);
             return OBJECT_MAPPER.writeValueAsString(root);
