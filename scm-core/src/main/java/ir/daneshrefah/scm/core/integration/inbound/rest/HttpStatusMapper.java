@@ -123,6 +123,7 @@ public class HttpStatusMapper {
         statusMappingMap.put(MessageStatus.FORMAT_ERROR, 500);
         statusMappingMap.put(MessageStatus.MANA_VALIDATION_ERROR, 500);
         statusMappingMap.put(MessageStatus.ETC, 500);
+        statusMappingMap.put(MessageStatus.CONTACT_NOT_FOUND, 404);
     }
 
     public static Integer toHttpStatus(MessageStatus status) {

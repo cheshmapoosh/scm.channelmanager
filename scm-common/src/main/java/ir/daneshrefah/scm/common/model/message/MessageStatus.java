@@ -113,6 +113,7 @@ public enum MessageStatus {
     PIN_VERIFICATION_ERROR("pin_err"),
     TRANSACTION_PROCESSING_ERROR("trns_proc_err"),
     SERVER_PROCESSING_ERROR("srvr_err"),
+    CONTACT_NOT_FOUND("CONTACT_NOT_FOUND"),
     MANA_VALIDATION_ERROR("mana_err");
 
 

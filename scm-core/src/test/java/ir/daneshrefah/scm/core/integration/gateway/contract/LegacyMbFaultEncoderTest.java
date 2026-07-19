@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.gateway.contract;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.data.service.bundle.ResourceBundleService;
-import ir.daneshrefah.scm.common.model.FailResponse;
+import ir.daneshrefah.scm.common.exception.CardException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ScmFault;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
@@ -53,14 +53,13 @@ class LegacyMbFaultEncoderTest {
                 .build();
         Object encoded = faultEncoder.encode(exchange, fault, contract);
 
-        assertThat(encoded).isInstanceOf(FailResponse.class);
-        FailResponse response = (FailResponse) encoded;
-        assertThat(response.getStatus()).isEqualTo(502);
-        assertThat(response.getCode()).isEqualTo(1017);
-        assertThat(response.getMessage()).isEqualTo("Database English message");
-        assertThat(response.getDetail()).isEqualTo("پیام فارسی دیتابیس");
-        assertThat(response.getMessageKey()).isEqualTo(BUNDLE_KEY);
-        assertThat(response.getError()).isEqualTo("Shetab connection lost after send");
+        assertThat(encoded).isInstanceOf(LegacyMbFaultResponse.class);
+        LegacyMbFaultResponse response = (LegacyMbFaultResponse) encoded;
+        assertThat(response.code()).isEqualTo(502);
+        assertThat(response.text()).isEqualTo("Database English message");
+        assertThat(response.detail()).isEqualTo("پیام فارسی دیتابیس");
+        assertThat(response.messageKey()).isEqualTo(MessageStatus.SC_ERROR_UNREACHABLE_PROVIDER.name());
+        assertThat(response.httpCode()).isEqualTo("BAD_GATEWAY");
         assertThat(exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class))
                 .isEqualTo(502);
     }
@@ -73,10 +72,39 @@ class LegacyMbFaultEncoderTest {
                 .build();
         Object encoded = faultEncoder.encode(exchange, malformedFault, contract);
 
-        assertThat(encoded).isInstanceOf(FailResponse.class);
-        FailResponse response = (FailResponse) encoded;
-        assertThat(response.getStatus()).isEqualTo(500);
-        assertThat(response.getCode()).isEqualTo(500);
-        assertThat(response.getError()).isEqualTo("INTERNAL_SERVER_ERROR");
+        assertThat(encoded).isInstanceOf(LegacyMbFaultResponse.class);
+        LegacyMbFaultResponse response = (LegacyMbFaultResponse) encoded;
+        assertThat(response.code()).isEqualTo(500);
+        assertThat(response.messageKey()).isEqualTo(MessageStatus.SC_ERROR_SYSTEM.name());
+        assertThat(response.httpCode()).isEqualTo("INTERNAL_SERVER_ERROR");
+    }
+
+    @Test
+    void mapsIncorrectPinToLegacySecurityViolationContract() throws Exception {
+        Exchange exchange = new DefaultExchange(new DefaultCamelContext());
+        CardException exception = new CardException("117", "117", "incorrect pin");
+        String pinBundleKey = "ex::ir.daneshrefah.scm.common.exception.CardException:1171700";
+        when(resourceBundleService.get(new Locale("en", "US"), pinBundleKey))
+                .thenReturn(Optional.of("incorrect pin"));
+        when(resourceBundleService.get(new Locale("fa", "IR"), pinBundleKey))
+                .thenReturn(Optional.of("نام کاربری یا گذرواژه اشتباه است"));
+        Error error = new Error(
+                null,
+                1171700,
+                "Unknown error",
+                "خطای ناشناخته",
+                MessageStatus.INCORRECT_PIN,
+                exception);
+        ScmFault fault = ScmFault.builder()
+                .status(MessageStatus.INCORRECT_PIN)
+                .errors(java.util.List.of(error))
+                .build();
+
+        LegacyMbFaultResponse response = (LegacyMbFaultResponse) faultEncoder.encode(exchange, fault, contract);
+
+        assertThat(new ObjectMapper().writeValueAsString(response)).isEqualTo(
+                "{\"detail\":\"نام کاربری یا گذرواژه اشتباه است\",\"code\":406,\"messageKey\":\"SECURITY_VIOLATION\",\"text\":\"incorrect pin\",\"httpCode\":\"NOT_ACCEPTABLE\"}");
+        assertThat(exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class))
+                .isEqualTo(406);
     }
 }
