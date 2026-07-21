@@ -28,10 +28,21 @@ public class NabResponseParser {
         ObjectNode status = statusNode(code, statusSpec.successCode().equals(code), statusSpec.successListCode().equals(code));
         result.set("status", status);
 
+//        if (statusSpec.successCode().equals(code)) {
+//            String dataFragment = afterStatus(firstLine, statusSpec);
+//            result.set("data", decoder.decode(dataFragment, responseSpec.fields()));
+//            log.debug("Parsed successful NAB response code={} fields={}", code, responseSpec.fields().size());
+//            return result;
+//        }
         if (statusSpec.successCode().equals(code)) {
             String dataFragment = afterStatus(firstLine, statusSpec);
-            result.set("data", decoder.decode(dataFragment, responseSpec.fields()));
-            log.debug("Parsed successful NAB response code={} fields={}", code, responseSpec.fields().size());
+
+            ArrayNode records = objectMapper.createArrayNode();
+            records.add(decoder.decode(dataFragment, responseSpec.fields()));
+
+            result.set("records", records);
+
+            log.debug("Parsed successful NAB response code={} records={}", code, records.size());
             return result;
         }
 

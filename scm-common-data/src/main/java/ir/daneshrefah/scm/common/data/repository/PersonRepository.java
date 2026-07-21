@@ -24,6 +24,9 @@ public interface PersonRepository extends JpaRepository<GeneralPersonEntity, Int
     @Query("SELECT p FROM GeneralRealPersonEntity p WHERE p.nationalCode = :nationalCode")
     GeneralRealPersonEntity findRealPersonByNationalCode(@Param("nationalCode") String nationalCode);
 
+    @Query("SELECT p FROM GeneralRealPersonEntity p WHERE p.nationalCode = :nationalCode and p.personType = :personType")
+    GeneralRealPersonEntity findRealPersonByNationalCodeAndPersonType(@Param("nationalCode") String nationalCode, PersonType personType);
+
     @Query("SELECT p FROM IndividualPersonEntity p WHERE p.nationalCode = :nationalCode")
     IndividualPersonEntity findIndividualPersonByNationalCode(@Param("nationalCode") String nationalCode);
 

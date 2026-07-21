@@ -4,18 +4,22 @@ import ir.daneshrefah.scm.common.model.person.GeneralLegalPerson
 import ir.daneshrefah.scm.common.model.person.GeneralPerson
 import ir.daneshrefah.scm.common.model.person.GeneralRealPerson
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils
+import org.slf4j.LoggerFactory
 
-
+def log = LoggerFactory.getLogger("5mRqGroovyTransformer")
 def loggedInUser = AuthenticationUtils.getLoggedInUser();
 def person = Objects.requireNonNull(loggedInUser).getPerson()
 String nationalId = ""
 
-if(person instanceof GeneralPerson){
-        nationalId = ((GeneralRealPerson) person).getNationalCode()
+if (person instanceof GeneralPerson) {
+    nationalId = ((GeneralRealPerson) person).getNationalCode()
 }
 
+log.info("5m currentt user national code : {}", nationalId)
 def nationalIdRaw = nationalId //"0047672064"
-if(!nationalIdRaw){throw new IllegalArgumentException("nationalId not found")}
+if (!nationalIdRaw) {
+    throw new IllegalArgumentException("nationalId not found")
+}
 
 def nabRequest = [
         "command" : [
@@ -23,7 +27,7 @@ def nabRequest = [
                 "protocol": "ATPS"
         ],
         "data"    : [
-                "nationalId" : nationalId
+                "nationalId": nationalId
         ],
         "request" : [
                 "fields": [
@@ -62,4 +66,5 @@ def nabRequest = [
         ]
 ]
 
+log.info("5m transformed nab request : {}", nabRequest)
 return nabRequest

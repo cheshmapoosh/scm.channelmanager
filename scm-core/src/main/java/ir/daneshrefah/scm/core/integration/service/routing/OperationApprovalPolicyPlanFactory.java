@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class OperationApprovalPolicyPlanFactory {
     private final OperationApprovalPolicyRegistry policyRegistry;
     private final DefaultOperationApprovalPolicy defaultPolicy;
+    private final OperationApprovalPolicyCodeExtractor policyCodeExtractor;
 
     public OperationApprovalPolicy resolvePolicy(
             Service service,

@@ -17,7 +17,10 @@ public class NabStatusHandler implements StatusHandler {
     public void handle(Exchange exchange) {
         JsonNode jsonBody = exchange.getIn().getBody(JsonNode.class);
         JsonNode body = jsonBody.get("body");
-        JsonNode header = body.get("header");
+
+        if (Objects.isNull(body)) {
+            return;
+        }
 
         JsonNode pError = body.get("P_ERROR");
         JsonNode pMsg = body.get("P_MESSAGE");
