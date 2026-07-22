@@ -48,8 +48,6 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
     private final MembershipRepository membershipRepository;
     private final CustomerAccountRepository customerAccountRepository;
     private final UaaApi uaaApi;
-//    private final XUserDetailService xUserDetailService;
-//    private UserChannelAuthenticationRepository authenticationRepository;
 
     public DelegatorMembershipManagementService(ServiceProducerTemplate producerTemplate,
                                                 ObjectMapper objectMapper,
@@ -59,8 +57,6 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
                                                 MembershipRepository membershipRepository,
                                                 CustomerAccountRepository customerAccountRepository,
                                                 UaaApi uaaApi
-//                                                XUserDetailService xUserDetailService,
-//                                                UserChannelAuthenticationRepository authenticationRepository
     ) {
         super(producerTemplate, objectMapper);
         this.customerRepository = customerRepository;
@@ -69,8 +65,6 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         this.membershipRepository = membershipRepository;
         this.customerAccountRepository = customerAccountRepository;
         this.uaaApi = uaaApi;
-//        this.xUserDetailService = xUserDetailService;
-//        this.authenticationRepository = authenticationRepository;
     }
 
     @JavaService(operationCode = OperationCode.SVC_GRANT_FUND_TRANSFER)
@@ -106,8 +100,6 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         }
         String token = authorization.split(" ")[1];
         uaaApi.removeXUserByUsername(userId, token);
-//        String nickName = getKarpardazNickName(userId);
-//        xUserDetailService.removeXUserByUsername(nickName);
     }
 
     private Long createDelegator(GeneralPersonEntity person, String customerNo, String accountNo) {
@@ -121,7 +113,7 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
             membershipEntity.setPerson(person);
             membershipEntity.setCustomerNo(customerNo);
             membershipEntity.setMembershipType(MembershipType.DELEGATOR);
-            membershipEntity.setCustomerAccount(getCustomerAccount(customerNo, accountNo));
+            membershipEntity.setCustomerAccount(getCustomerAccount(person, customerNo, accountNo));
         }
         membershipEntity.setActiveDelegate(true);
 
@@ -149,9 +141,10 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         return savedDelegatorMembership.getId();
     }
 
-    private CustomerAccountEntity getCustomerAccount(String customerNo, String accountNo) {
+    private CustomerAccountEntity getCustomerAccount(GeneralPersonEntity person, String customerNo, String accountNo) {
         CustomerAccountEntity customerAccount = null;
-        CustomerEntity customer = getLegalCustomer(customerNo);
+//        CustomerEntity customer = getLegalCustomer(customerNo);
+        CustomerEntity customer = getKarpardazCustomer(person);
         AccountEntity account = getLegalAccount(accountNo);
         Optional<CustomerAccountEntity> opt = customerAccountRepository.findByCustomerAndAccount(customer, account);
         if (opt.isPresent()) {
@@ -182,6 +175,19 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
             throw new NoMatchRecordFoundException("legal customer not found! customerNo : " + customerNo);
         }
         return customer.get();
+    }
+
+    private CustomerEntity getKarpardazCustomer(GeneralPersonEntity person){
+        MembershipEntity karpardazMember = membershipRepository.findMembershipListByUserId(person.getId()).get(0);
+        if (Objects.isNull(karpardazMember)) {
+            log.info("membership with user id {} does not exist", person.getId());
+            throw new NoMatchRecordFoundException("karpardaz membership not found! user id : " + person.getId());
+        }
+        if(Objects.isNull(karpardazMember.getMembershipType())) {
+            log.info("customer account with membership id {} does not exist", karpardazMember.getId());
+            throw new NoMatchRecordFoundException("karpardaz customer account not found! membership id : " + karpardazMember.getId());
+        }
+        return karpardazMember.getCustomerAccount().getCustomer();
     }
 
     private GeneralPersonEntity getKarpardaz(String nationalCode) {
