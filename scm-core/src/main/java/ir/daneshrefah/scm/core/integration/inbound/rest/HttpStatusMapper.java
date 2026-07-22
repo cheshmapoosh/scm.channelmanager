@@ -31,6 +31,7 @@ public class HttpStatusMapper {
         // Authentication & Authorization
         statusMappingMap.put(MessageStatus.SC_UNAUTHORIZED, 401);
         statusMappingMap.put(MessageStatus.SC_ACCESS_DENIED, 403);
+        statusMappingMap.put(MessageStatus.ALLOWABLE_NUMBER_ON_PIN_ENTRY_TRIES_EXCEEDED, 403);
 
         // Not Found
         statusMappingMap.put(MessageStatus.SC_NOT_FOUND, 404);
@@ -44,6 +45,28 @@ public class HttpStatusMapper {
         statusMappingMap.put(MessageStatus.SC_ERROR_VALIDATION, 400);
         statusMappingMap.put(MessageStatus.SC_ERROR_BUSINESS, 400);
         statusMappingMap.put(MessageStatus.SC_ERROR_DATA_INTEGRITY_VIOLATION, 400);
+        statusMappingMap.put(MessageStatus.REFER_TO_CARD_ISSUER, 400);
+        statusMappingMap.put(MessageStatus.REFER_TO_CARD_ISSUER_SPECIAL_CONDITION, 400);
+        statusMappingMap.put(MessageStatus.NO_CREDIT_ACCOUNT, 400);
+        statusMappingMap.put(MessageStatus.NO_CREDIT_ACCOUNT_2, 400);
+        statusMappingMap.put(MessageStatus.NO_CHEQUE_ACCOUNT, 400);
+        statusMappingMap.put(MessageStatus.NO_SAVING_ACCOUNT, 400);
+        statusMappingMap.put(MessageStatus.REJECTED_PICK_UP_CARD, 400);
+        statusMappingMap.put(MessageStatus.EXPIRED_CARD_PICK_UP_CARD, 400);
+        statusMappingMap.put(MessageStatus.FRAUD_SUSPECTED_PICK_UP_CARD, 400);
+        statusMappingMap.put(MessageStatus.RESERVED_USAGE_PICK_UP_CARD, 400);
+        statusMappingMap.put(MessageStatus.ISSUER_CALL_FOR_ACQUIRER_SECURITY_SERVICE_PICK_UP_CARD, 400);
+        statusMappingMap.put(MessageStatus.NUMBER_OF_PIN_VALIDATION_ATTEMPTS_EXCEEDED, 400);
+        statusMappingMap.put(MessageStatus.SPECIAL_CONDITION_PICK_UP_CARD, 400);
+        statusMappingMap.put(MessageStatus.CARD_LOST_PICK_UP_CARD, 400);
+        statusMappingMap.put(MessageStatus.CARD_STOLEN_PICK_UP_CARD, 400);
+        statusMappingMap.put(MessageStatus.FRAUD_SUSPECTED_PICK_UP, 400);
+        statusMappingMap.put(MessageStatus.CARD_PICK_UP, 400);
+        statusMappingMap.put(MessageStatus.EXCEEDS_WITHDRAWAL_FREQUENCY_LIMIT, 400);
+        statusMappingMap.put(MessageStatus.WITHDRAWAL_FREQUENCY_EXCEEDED, 400);
+        statusMappingMap.put(MessageStatus.CARD_NOT_IN_SERVICE, 400);
+        statusMappingMap.put(MessageStatus.ALTERNATIVE_AMOUNT_REVERSED, 400);
+        statusMappingMap.put(MessageStatus.BALANCE_RECORD_CLEARED, 400);
 
         statusMappingMap.put(MessageStatus.INVALID_SOURCE_ACCOUNT, 400);
         statusMappingMap.put(MessageStatus.INVALID_EXPIRE_DATE, 400);
