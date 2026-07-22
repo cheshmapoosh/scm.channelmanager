@@ -16,7 +16,6 @@ import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
 import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
-import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowRole;
 import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowServiceEntrypointRouteBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -93,7 +92,7 @@ public class TaskWorkflowGatewayInboundRouteBuilder extends RouteBuilder {
                 .setProperty(Message.GATEWAY_NAME, constant(gatewayChannel.getName()))
                 .setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(gatewayChannel.getProtocolType()))
                 .setProperty(Message.SERVICE_VERSION, constant(serviceVersion))
-                .setProperty(Message.TASK_WORKFLOW_ROLE, constant(inbound.role().name()));
+                .setProperty(Message.INBOUND_ROUTE_ACTION, constant(inbound.inboundAction()));
 
         defineExceptionHandler(route);
         route.onCompletion()
@@ -112,8 +111,8 @@ public class TaskWorkflowGatewayInboundRouteBuilder extends RouteBuilder {
         route.to(TaskWorkflowServiceEntrypointRouteBuilder.ROUTE_URI);
         route.to(Routes.GLOBAL_RESPONSE_HANDLER);
 
-        log.info("Registered fixed task workflow gateway route routeId={} uri={} role={}",
-                routeId, routeUri, inbound.role());
+        log.info("Registered fixed task workflow gateway route routeId={} uri={} inboundAction={}",
+                routeId, routeUri, inbound.inboundAction());
     }
 
     private void defineExceptionHandler(RouteDefinition route) {
@@ -170,25 +169,25 @@ public class TaskWorkflowGatewayInboundRouteBuilder extends RouteBuilder {
     }
 
     private enum FixedTaskWorkflowInbound {
-        START("start", TaskWorkflowRole.START_PROCESS),
-        APPROVE("approve", TaskWorkflowRole.APPROVE_PROCESS),
-        COMPLETE("complete", TaskWorkflowRole.COMPLETE_PROCESS),
-        CANCEL("cancel", TaskWorkflowRole.CANCEL_PROCESS);
+        START("start", "start"),
+        APPROVE("approve", "approve_and_execute"),
+        COMPLETE("complete", "task_complete"),
+        CANCEL("cancel", "cancel_process");
 
         private final String pathSegment;
-        private final TaskWorkflowRole role;
+        private final String inboundAction;
 
-        FixedTaskWorkflowInbound(String pathSegment, TaskWorkflowRole role) {
+        FixedTaskWorkflowInbound(String pathSegment, String inboundAction) {
             this.pathSegment = pathSegment;
-            this.role = role;
+            this.inboundAction = inboundAction;
         }
 
         String pathSegment() {
             return pathSegment;
         }
 
-        TaskWorkflowRole role() {
-            return role;
+        String inboundAction() {
+            return inboundAction;
         }
     }
 }

@@ -26,11 +26,17 @@ public class TaskWorkflowCommandResolver {
         normalized = normalized.toUpperCase(Locale.ROOT)
                 .replace('-', '_')
                 .replace(' ', '_');
-        try {
-            return TaskWorkflowCommand.valueOf(normalized);
-        } catch (IllegalArgumentException exception) {
-            throw new IllegalStateException("Unsupported TASK_WORKFLOW inboundAction="
-                    + inboundAction, exception);
-        }
+        return switch (normalized) {
+            case "START" -> TaskWorkflowCommand.START;
+            case "TASK_COMPLETE", "COMPLETE_TASK" -> TaskWorkflowCommand.COMPLETE_TASK;
+            case "APPROVE_AND_EXECUTE" -> TaskWorkflowCommand.APPROVE_AND_EXECUTE;
+            case "CANCEL_PROCESS" -> TaskWorkflowCommand.CANCEL_PROCESS;
+            case "FIND_PROCESSES" -> TaskWorkflowCommand.FIND_PROCESSES;
+            case "FIND_TASKS" -> TaskWorkflowCommand.FIND_TASKS;
+            case "FIND_TASKS_BY_PROCESS_ID" -> TaskWorkflowCommand.FIND_TASKS_BY_PROCESS_ID;
+            case "UPDATE_PROCESS_DESCRIPTION" -> TaskWorkflowCommand.UPDATE_PROCESS_DESCRIPTION;
+            default -> throw new IllegalStateException(
+                    "Unsupported TASK_WORKFLOW inboundAction=" + inboundAction);
+        };
     }
 }

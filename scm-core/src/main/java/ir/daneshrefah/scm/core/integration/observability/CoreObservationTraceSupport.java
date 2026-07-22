@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.observability;
 import ir.daneshrefah.scm.common.exception.ErrorCodeAwareException;
 import ir.daneshrefah.scm.common.model.error.ScmFault;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
+import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
@@ -44,6 +45,8 @@ public class CoreObservationTraceSupport {
     public static final String GATEWAY_CONTEXT_PROPERTY = "scm.observation.context.gateway";
     public static final String SERVICE_CONTEXT_PROPERTY = "scm.observation.context.service";
     public static final String OPERATION_CONTEXT_PROPERTY = "scm.observation.context.operation";
+    private static final String ROUTING_STEP_OWNS_OPERATION_SCOPE_PROPERTY =
+            "scm.observation.scope.operation.routing-step-owned";
 
     private static final String BUSINESS_FAILURE_PROPERTY = "scm.observation.business.failure";
     private static final String GATEWAY_RESPONSE_EVENT_PROPERTY = "scm.observation.gateway.response.event.recorded";
@@ -251,6 +254,10 @@ public class CoreObservationTraceSupport {
     }
 
     public void startOperationCall(Exchange exchange, Operation operation) {
+        if (routingStepOwnsOperationScope(exchange)) {
+            enrichRoutingStepOperation(exchange, operation);
+            return;
+        }
         ScmObservation observation = observationProvider.getIfAvailable();
         if (observation == null || exchange == null || exchange.getProperty(OPERATION_SCOPE_PROPERTY) != null) {
             return;
@@ -283,6 +290,9 @@ public class CoreObservationTraceSupport {
     }
 
     public void finishOperationCallSuccess(Exchange exchange, Operation operation) {
+        if (routingStepOwnsOperationScope(exchange)) {
+            return;
+        }
         Throwable failure = exchangeFailure(exchange);
         FailureDetails failureDetails = failureDetails(exchange, failure);
         finishLayerScope(
@@ -298,6 +308,9 @@ public class CoreObservationTraceSupport {
     }
 
     public void finishOperationCallFailure(Exchange exchange, Operation operation, Exception exception) {
+        if (routingStepOwnsOperationScope(exchange)) {
+            return;
+        }
         finishLayerScope(
                 exchange,
                 OPERATION_SCOPE_PROPERTY,
@@ -312,6 +325,138 @@ public class CoreObservationTraceSupport {
 
     public void finishOperationCallOnCompletion(Exchange exchange, Operation operation) {
         finishOperationCallSuccess(exchange, operation);
+    }
+
+    public void startRoutingStepCall(
+            Exchange exchange,
+            String serviceCode,
+            String operationName,
+            RoutingStrategy routingStrategy,
+            int stepIndex,
+            String inboundAction,
+            String taskRole
+    ) {
+        startRoutingStepCall(
+                exchange,
+                serviceCode,
+                operationName,
+                routingStrategy,
+                stepIndex,
+                inboundAction,
+                taskRole,
+                "internal"
+        );
+    }
+
+    public void startRoutingStepCall(
+            Exchange exchange,
+            String serviceCode,
+            String operationName,
+            RoutingStrategy routingStrategy,
+            int stepIndex,
+            String inboundAction,
+            String taskRole,
+            String spanKind
+    ) {
+        if (exchange == null || exchange.getProperty(OPERATION_SCOPE_PROPERTY) != null) {
+            return;
+        }
+        ObservationScope scope = null;
+        try {
+            ScmObservation observation = observationProvider.getIfAvailable();
+            if (observation == null) {
+                return;
+            }
+            TraceContext parent = exchange.getProperty(SERVICE_CONTEXT_PROPERTY, TraceContext.class);
+            TraceContext requestedContext = childContext(parent, exchange);
+            Map<String, String> fields = exchangeMdc.fields(exchange);
+            scope = observation.trace()
+                    .span("operation.call")
+                    .spanKind(firstText(spanKind, "internal"))
+                    .action("operation.call")
+                    .traceId(requestedContext.traceId())
+                    .spanId(requestedContext.spanId())
+                    .parentSpanId(parent == null ? null : parent.spanId())
+                    .traceFlags(requestedContext.traceFlags())
+                    .correlationId(requestedContext.correlationId())
+                    .correlationType(requestedContext.correlationType())
+                    .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
+                    .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, fields.get("channelCode"))
+                    .attribute(CoreTraceAttributes.SERVICE_CODE, firstText(serviceCode, fields.get("serviceCode")))
+                    .attribute(CoreTraceAttributes.OPERATION_CODE, operationName)
+                    .attribute(CoreTraceAttributes.OPERATION_NAME, operationName)
+                    .attribute(CoreTraceAttributes.ROUTING_STRATEGY,
+                            routingStrategy == null ? null : routingStrategy.name())
+                    .attribute(CoreTraceAttributes.ROUTING_STEP_INDEX, (long) stepIndex)
+                    .attribute(CoreTraceAttributes.TASK_INBOUND_ACTION, inboundAction)
+                    .attribute(CoreTraceAttributes.TASK_ROLE, taskRole)
+                    .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))
+                    .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
+                    .startDetached();
+            TraceContext context = startedContext(scope, requestedContext);
+            exchange.setProperty(OPERATION_SCOPE_PROPERTY, scope);
+            exchange.setProperty(ROUTING_STEP_OWNS_OPERATION_SCOPE_PROPERTY, Boolean.TRUE);
+            putContext(exchange, OPERATION_CONTEXT_PROPERTY, context);
+        } catch (RuntimeException ignored) {
+            // Observation must never change routing behavior.
+            exchange.removeProperty(ROUTING_STEP_OWNS_OPERATION_SCOPE_PROPERTY);
+            exchange.removeProperty(OPERATION_SCOPE_PROPERTY);
+            exchange.removeProperty(OPERATION_CONTEXT_PROPERTY);
+            if (scope != null) {
+                scope.close();
+            }
+            restoreMessageContext(exchange, SERVICE_CONTEXT_PROPERTY);
+        }
+    }
+
+    public void finishRoutingStepCall(
+            Exchange exchange,
+            String decision,
+            String normalizedOutcome,
+            Throwable failure,
+            long durationMs
+    ) {
+        if (exchange == null || !routingStepOwnsOperationScope(exchange)) {
+            return;
+        }
+        ObservationScope scope = exchange.getProperty(OPERATION_SCOPE_PROPERTY, ObservationScope.class);
+        exchange.removeProperty(ROUTING_STEP_OWNS_OPERATION_SCOPE_PROPERTY);
+        exchange.removeProperty(OPERATION_SCOPE_PROPERTY);
+        exchange.removeProperty(OPERATION_CONTEXT_PROPERTY);
+        try {
+            if (scope == null) {
+                return;
+            }
+            scope.attribute(CoreTraceAttributes.OPERATION_DURATION_MS, Math.max(0L, durationMs))
+                    .attribute(CoreTraceAttributes.CHAIN_DECISION, decision)
+                    .attribute(CoreTraceAttributes.OPERATION_NORMALIZED_OUTCOME, normalizedOutcome);
+            FailureDetails details = "CONTINUE".equals(decision)
+                    ? null
+                    : failureDetails(exchange, failure);
+            if (details != null) {
+                scope.attribute(CommonTraceAttributes.ERROR_TYPE, details.errorType())
+                        .attribute(CommonTraceAttributes.ERROR_CODE, details.errorCode());
+            }
+            if ("CONTINUE".equals(decision)) {
+                scope.attribute(CommonTraceAttributes.EVENT_OUTCOME, OUTCOME_SUCCESS).success();
+            } else if ("RETRY_LATER".equals(decision)) {
+                scope.attribute(CommonTraceAttributes.EVENT_OUTCOME, "unknown").outcome("unknown");
+            } else if (failure == null) {
+                scope.attribute(CommonTraceAttributes.EVENT_OUTCOME, OUTCOME_FAILURE).failure();
+            } else {
+                scope.attribute(CommonTraceAttributes.EVENT_OUTCOME, OUTCOME_FAILURE).failure(failure);
+            }
+        } catch (RuntimeException ignored) {
+            // Observation must never change routing behavior.
+        } finally {
+            try {
+                if (scope != null) {
+                    scope.close();
+                }
+            } finally {
+                restoreMessageContext(exchange, SERVICE_CONTEXT_PROPERTY);
+            }
+        }
     }
 
     public ObservationScope activeScope(Exchange exchange, String layer) {
@@ -364,6 +509,28 @@ public class CoreObservationTraceSupport {
             finishScope(scope, exception, failureDetails, durationMs, durationField);
         } finally {
             restoreMessageContext(exchange, parentContextProperty);
+        }
+    }
+
+    private boolean routingStepOwnsOperationScope(Exchange exchange) {
+        return exchange != null && Boolean.TRUE.equals(exchange.getProperty(
+                ROUTING_STEP_OWNS_OPERATION_SCOPE_PROPERTY,
+                Boolean.class
+        ));
+    }
+
+    private void enrichRoutingStepOperation(Exchange exchange, Operation operation) {
+        ObservationScope scope = exchange.getProperty(OPERATION_SCOPE_PROPERTY, ObservationScope.class);
+        if (scope == null) {
+            return;
+        }
+        try {
+            Map<String, String> fields = exchangeMdc.fields(exchange);
+            scope.attribute(CoreTraceAttributes.OPERATION_CODE, operationCode(operation))
+                    .attribute(CoreTraceAttributes.OPERATION_NAME, operationName(operation, fields))
+                    .attribute(CoreTraceAttributes.OPERATION_TYPE, operationType(operation));
+        } catch (RuntimeException ignored) {
+            // Observation enrichment must never change operation execution.
         }
     }
 

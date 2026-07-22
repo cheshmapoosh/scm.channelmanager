@@ -2,15 +2,20 @@ package ir.daneshrefah.scm.core.integration.service.routing.customOperationAppro
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.data.constant.ActionCode;
-import ir.daneshrefah.scm.core.integration.service.routing.OperationApprovalContext;
-import ir.daneshrefah.scm.core.integration.service.routing.OperationApprovalPolicy;
+import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecision;
+import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionContext;
+import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionPolicy;
+import ir.daneshrefah.scm.core.integration.service.routing.DefaultSuccessChainStepDecisionPolicy;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
 @Component
-public class KarpardazPolicy implements OperationApprovalPolicy {
+@RequiredArgsConstructor
+public class KarpardazPolicy implements ChainStepDecisionPolicy {
     public static final String CODE = "SUCCESSFUL";
+    private final DefaultSuccessChainStepDecisionPolicy defaultPolicy;
 
     @Override
     public String code() {
@@ -18,18 +23,22 @@ public class KarpardazPolicy implements OperationApprovalPolicy {
     }
 
     @Override
-    public boolean isApproved(OperationApprovalContext context) {
-        JsonNode requestBody = context == null ? null : context.requestBody();
+    public ChainStepDecision decide(ChainStepDecisionContext context) {
+        if (context.failure() != null) {
+            return defaultPolicy.decide(context);
+        }
+        JsonNode requestBody = context.response() instanceof JsonNode node ? node : null;
         if (requestBody == null || requestBody.isNull() || requestBody.isMissingNode()) {
-            return false;
+            return ChainStepDecision.FAIL;
         }
 
         JsonNode actionCodeNode = requestBody.get("actionCode");
         if (actionCodeNode == null || actionCodeNode.isNull()) {
-            return false;
+            return ChainStepDecision.FAIL;
         }
 
         ActionCode actionCode = ActionCode.findByCode(actionCodeNode.asText());
-        return Objects.nonNull(actionCode) && actionCode.getName().equals(CODE);
+        return Objects.nonNull(actionCode) && actionCode.getName().equals(CODE)
+                ? ChainStepDecision.CONTINUE : ChainStepDecision.FAIL;
     }
 }

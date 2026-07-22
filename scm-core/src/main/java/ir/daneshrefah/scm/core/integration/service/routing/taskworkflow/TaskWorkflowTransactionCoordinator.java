@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.event.ScmSafeEventAttributes;
 import ir.daneshrefah.scm.common.event.provider.ScmProviderEvent;
 import ir.daneshrefah.scm.common.event.provider.ScmProviderEventType;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecision;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
@@ -16,19 +17,13 @@ import java.util.Map;
 @Component
 @Slf4j
 public class TaskWorkflowTransactionCoordinator {
-    private final TaskWorkflowBusinessResultClassifier businessResultClassifier;
-    private final TaskWorkflowExceptionClassifier exceptionClassifier;
     private final ObjectProvider<ScmEventPublisher> eventPublisherProvider;
     private final TaskWorkflowExecutionStore executionStore;
 
     public TaskWorkflowTransactionCoordinator(
-            TaskWorkflowBusinessResultClassifier businessResultClassifier,
-            TaskWorkflowExceptionClassifier exceptionClassifier,
             ObjectProvider<ScmEventPublisher> eventPublisherProvider,
             ObjectProvider<TaskWorkflowExecutionStore> executionStoreProvider
     ) {
-        this.businessResultClassifier = businessResultClassifier;
-        this.exceptionClassifier = exceptionClassifier;
         this.eventPublisherProvider = eventPublisherProvider;
         this.executionStore = executionStoreProvider.getIfAvailable(
                 NoopTaskWorkflowExecutionStore::new
@@ -56,75 +51,67 @@ public class TaskWorkflowTransactionCoordinator {
                 exchange, "started", null);
     }
 
-    public TaskWorkflowBusinessResultClassifier.BusinessResult afterBusinessOperation(
+    public void afterBusinessOperation(
             Exchange exchange,
-            Object businessResponse
+            Object businessResponse,
+            ChainStepDecision decision,
+            Throwable failure
     ) {
-        TaskWorkflowBusinessResultClassifier.BusinessResult result =
-                businessResultClassifier.classify(businessResponse);
         exchange.setProperty(
                 TaskWorkflowExchangeProperties.BUSINESS_RESPONSE,
                 businessResponse
         );
-        exchange.setProperty(TaskWorkflowExchangeProperties.BUSINESS_RESULT, result);
-        exchange.setProperty(
-                TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
-                result.name()
-        );
-        if (result == TaskWorkflowBusinessResultClassifier.BusinessResult.SUCCESS) {
-            record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "succeeded");
-            publish(ScmProviderEventType.WORKFLOW_BUSINESS_SUCCEEDED,
-                    exchange, "success", null);
-        } else if (result == TaskWorkflowBusinessResultClassifier.BusinessResult.FAILURE) {
-            record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "failed");
-            publish(ScmProviderEventType.WORKFLOW_BUSINESS_FAILED,
-                    exchange, "failure", null);
+        switch (decision) {
+            case CONTINUE -> {
+                exchange.setProperty(
+                        TaskWorkflowExchangeProperties.BUSINESS_RESULT,
+                        ChainStepDecision.CONTINUE
+                );
+                exchange.setProperty(
+                        TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
+                        ChainStepDecision.CONTINUE.name()
+                );
+                record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "succeeded");
+                publish(ScmProviderEventType.WORKFLOW_BUSINESS_SUCCEEDED,
+                        exchange, "success", null);
+            }
+            case RETRY_LATER -> handleUnknownBusinessResult(exchange, failure);
+            case FAIL -> handleDefinitiveBusinessFailure(exchange, failure);
         }
-        return result;
-    }
-
-    public TaskWorkflowExceptionClassifier.ExceptionResult classifyException(Throwable error) {
-        return exceptionClassifier.classify(error);
     }
 
     public void handleDefinitiveBusinessFailure(Exchange exchange, Throwable error) {
         exchange.setProperty(
                 TaskWorkflowExchangeProperties.BUSINESS_RESULT,
-                TaskWorkflowBusinessResultClassifier.BusinessResult.FAILURE
+                ChainStepDecision.FAIL
         );
         exchange.setProperty(
                 TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
-                TaskWorkflowBusinessResultClassifier.BusinessResult.FAILURE.name()
+                ChainStepDecision.FAIL.name()
         );
         record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "failed");
         publish(ScmProviderEventType.WORKFLOW_BUSINESS_FAILED,
                 exchange, "failure", error);
     }
 
-    public void beforeCompleteProcess(
-            Exchange exchange,
-            TaskWorkflowBusinessResultClassifier.BusinessResult result
-    ) {
+    public void beforeCompleteProcess(Exchange exchange) {
         record(exchange, TaskWorkflowRole.COMPLETE_PROCESS,
-                "requested:" + result.name());
+                "requested:SUCCESS");
     }
 
-    public void afterCompleteProcess(
-            Exchange exchange,
-            TaskWorkflowBusinessResultClassifier.BusinessResult result
-    ) {
+    public void afterCompleteProcess(Exchange exchange) {
         record(exchange, TaskWorkflowRole.COMPLETE_PROCESS,
-                "completed:" + result.name());
+                "completed:SUCCESS");
     }
 
     public void handleUnknownBusinessResult(Exchange exchange, Throwable error) {
         exchange.setProperty(
                 TaskWorkflowExchangeProperties.BUSINESS_RESULT,
-                TaskWorkflowBusinessResultClassifier.BusinessResult.UNKNOWN
+                ChainStepDecision.RETRY_LATER
         );
         exchange.setProperty(
                 TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
-                TaskWorkflowBusinessResultClassifier.BusinessResult.UNKNOWN.name()
+                ChainStepDecision.RETRY_LATER.name()
         );
         record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "unknown");
         publish(ScmProviderEventType.WORKFLOW_BUSINESS_UNKNOWN,
@@ -150,24 +137,24 @@ public class TaskWorkflowTransactionCoordinator {
             String outcome,
             Throwable error
     ) {
-        ScmEventPublisher publisher = eventPublisherProvider.getIfAvailable();
-        if (publisher == null) {
-            return;
-        }
-        Map<String, Object> attributes = new LinkedHashMap<>();
-        put(attributes, "scm.task.correlation_id", correlationId(exchange));
-        put(attributes, "scm.task.process_id",
-                exchange.getProperty(TaskWorkflowExchangeProperties.PROCESS_ID));
-        put(attributes, "scm.task.command",
-                exchange.getProperty(TaskWorkflowExchangeProperties.COMMAND));
-        put(attributes, "scm.task.role", TaskWorkflowRole.BUSINESS_OPERATION);
-        put(attributes, "scm.task.outcome", outcome);
-        if (error != null) {
-            put(attributes, "error.type", error.getClass().getSimpleName());
-            put(attributes, "error.message",
-                    ScmSafeEventAttributes.sanitizeMessage(error.getMessage()));
-        }
         try {
+            ScmEventPublisher publisher = eventPublisherProvider.getIfAvailable();
+            if (publisher == null) {
+                return;
+            }
+            Map<String, Object> attributes = new LinkedHashMap<>();
+            put(attributes, "scm.task.correlation_id", correlationId(exchange));
+            put(attributes, "scm.task.process_id",
+                    exchange.getProperty(TaskWorkflowExchangeProperties.PROCESS_ID));
+            put(attributes, "scm.task.command",
+                    exchange.getProperty(TaskWorkflowExchangeProperties.COMMAND));
+            put(attributes, "scm.task.role", TaskWorkflowRole.BUSINESS_OPERATION);
+            put(attributes, "scm.task.outcome", outcome);
+            if (error != null) {
+                put(attributes, "error.type", error.getClass().getSimpleName());
+                put(attributes, "error.message",
+                        ScmSafeEventAttributes.sanitizeMessage(error.getMessage()));
+            }
             publisher.publish(ScmProviderEvent.of(type, attributes));
         } catch (RuntimeException exception) {
             log.warn("event=TASK_WORKFLOW_EVENT_PUBLISH_FAILED providerEventType={} "

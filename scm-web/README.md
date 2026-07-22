@@ -379,14 +379,14 @@ segments with a dynamic `{command}` variable. Each inbound route has fixed
 semantics:
 
 ```text
-start    -> TaskWorkflowRole.START_PROCESS
-approve  -> TaskWorkflowRole.APPROVE_PROCESS
-complete -> TaskWorkflowRole.COMPLETE_PROCESS
-cancel   -> TaskWorkflowRole.CANCEL_PROCESS
+start    -> inboundAction=start
+approve  -> inboundAction=approve_and_execute
+complete -> inboundAction=task_complete
+cancel   -> inboundAction=cancel_process
 ```
 
 Gateway responsibility is limited to URL matching, reading `serviceCode`,
-reading the channel header, setting the task workflow role, and forwarding to
+reading the channel header, setting the canonical inbound action, and forwarding to
 the service layer. The gateway does not load `EbService` and does not validate
 `EbService.routingStrategy`.
 
@@ -413,9 +413,12 @@ key       = serviceCode
 provider  = scm-cache-starter local cache
 ```
 
-After validation, service routing selects the active `ServiceOperation` whose
-metadata declares the requested `taskWorkflowRole`. The operation layer still
-routes to the connected `Operation`, and the `Operation` resolves its provider:
+After validation, the compatibility entrypoint dispatches to the normal service
+route. `TASK_WORKFLOW` resolves the configured command plan for the inbound
+action and delegates to the shared `FIRST` or `CHAIN_ON_APPROVE` engine. Plan
+steps select active `ServiceOperation` records by `operationName`; role is task
+semantics, not operation identity. The operation layer still routes to the
+connected `Operation`, and the `Operation` resolves its provider:
 
 ```text
 Operation.provider -> OperationProvider.uri -> scm-task:internal

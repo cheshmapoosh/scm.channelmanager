@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +20,9 @@ public class TaskWorkflowInboundCommandConfigExtractor {
     private static final String TASK_WORKFLOW = "taskWorkflow";
     private static final String STEPS = "steps";
     private static final String ROLE = "role";
-    private static final String EXECUTION_ORDER = "executionOrder";
+    private static final String ROUTING_STRATEGY = "routingStrategy";
+    private static final String OPERATION_NAME = "operationName";
+    private static final String DECISION_POLICY = "decisionPolicy";
 
     private final ObjectMapper objectMapper;
     private final TaskWorkflowCommandResolver commandResolver;
@@ -70,6 +73,26 @@ public class TaskWorkflowInboundCommandConfigExtractor {
             throw invalid(service, inboundDefinition, definition, TASK_WORKFLOW,
                     "taskWorkflow object is required");
         }
+        if (taskWorkflow.has("executionStrategy")) {
+            throw invalid(service, inboundDefinition, definition,
+                    "taskWorkflow.executionStrategy", "executionStrategy is not supported; use routingStrategy");
+        }
+        String routingStrategyValue = requiredText(service, inboundDefinition, definition,
+                taskWorkflow, "taskWorkflow." + ROUTING_STRATEGY, ROUTING_STRATEGY);
+        RoutingStrategy routingStrategy;
+        try {
+            routingStrategy = RoutingStrategy.valueOf(normalize(routingStrategyValue));
+        } catch (IllegalArgumentException exception) {
+            throw invalid(service, inboundDefinition, definition,
+                    "taskWorkflow." + ROUTING_STRATEGY,
+                    "invalid routingStrategy=" + routingStrategyValue, exception);
+        }
+        if (routingStrategy != RoutingStrategy.FIRST
+                && routingStrategy != RoutingStrategy.CHAIN_ON_APPROVE) {
+            throw invalid(service, inboundDefinition, definition,
+                    "taskWorkflow." + ROUTING_STRATEGY,
+                    "routingStrategy must be FIRST or CHAIN_ON_APPROVE");
+        }
         JsonNode stepsNode = taskWorkflow.get(STEPS);
         if (stepsNode == null || !stepsNode.isArray() || stepsNode.isEmpty()) {
             throw invalid(service, inboundDefinition, definition, "taskWorkflow.steps",
@@ -94,21 +117,33 @@ public class TaskWorkflowInboundCommandConfigExtractor {
                         "taskWorkflow.steps[" + index + "]." + ROLE,
                         "invalid role=" + roleValue, exception);
             }
-            JsonNode executionOrder = step.get(EXECUTION_ORDER);
-            if (executionOrder == null || !executionOrder.isIntegralNumber()
-                    || !executionOrder.canConvertToInt()) {
+            String operationName = requiredText(service, inboundDefinition, definition, step,
+                    "taskWorkflow.steps[" + index + "]." + OPERATION_NAME, OPERATION_NAME);
+            JsonNode decisionPolicyNode = step.get(DECISION_POLICY);
+            if (decisionPolicyNode != null && !decisionPolicyNode.isNull()
+                    && !decisionPolicyNode.isTextual()) {
                 throw invalid(service, inboundDefinition, definition,
-                        "taskWorkflow.steps[" + index + "]." + EXECUTION_ORDER,
-                        "executionOrder is required and must be an integer");
+                        "taskWorkflow.steps[" + index + "]." + DECISION_POLICY,
+                        "decisionPolicy must be a string when supplied");
+            }
+            String decisionPolicy = decisionPolicyNode == null || decisionPolicyNode.isNull()
+                    ? null
+                    : decisionPolicyNode.asText();
+            if (decisionPolicy != null && StringUtils.isBlank(decisionPolicy)) {
+                throw invalid(service, inboundDefinition, definition,
+                        "taskWorkflow.steps[" + index + "]." + DECISION_POLICY,
+                        "decisionPolicy must be a non-blank string when supplied");
             }
             steps.add(new TaskWorkflowInboundCommandStepConfig(
                     role,
-                    executionOrder.intValue()
+                    operationName.trim(),
+                    decisionPolicy == null ? null : decisionPolicy.trim()
             ));
         }
         return new TaskWorkflowInboundCommandConfig(
                 command,
                 inboundAction.trim(),
+                routingStrategy,
                 steps,
                 inboundDefinition
         );

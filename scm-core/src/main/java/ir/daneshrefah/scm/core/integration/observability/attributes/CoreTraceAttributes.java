@@ -75,6 +75,19 @@ public final class CoreTraceAttributes {
     public static final ObservationAttributeKey<String> OPERATION_CODE = keyword("scm.operation.code", "Operation code.");
     public static final ObservationAttributeKey<String> OPERATION_NAME = keyword("scm.operation.name", "Operation name.");
     public static final ObservationAttributeKey<String> OPERATION_TYPE = keyword("scm.operation.type", "Operation type.");
+    public static final ObservationAttributeKey<String> ROUTING_STRATEGY = keyword(
+            "scm.routing.strategy", "Routing engine used to execute the operation.");
+    public static final ObservationAttributeKey<Long> ROUTING_STEP_INDEX = TraceAttribute.longNumber(
+            "scm.routing.step.index", OWNER, ObservationAttributePresence.EVENT_OPTIONAL,
+            "Zero-based routing step index.");
+    public static final ObservationAttributeKey<String> TASK_INBOUND_ACTION = keyword(
+            "scm.task.inbound_action", "Task workflow inbound action.");
+    public static final ObservationAttributeKey<String> TASK_ROLE = keyword(
+            "scm.task.role", "Task workflow role of the routing step.");
+    public static final ObservationAttributeKey<String> CHAIN_DECISION = keyword(
+            "scm.chain.decision", "Decision returned by the routing step policy.");
+    public static final ObservationAttributeKey<String> OPERATION_NORMALIZED_OUTCOME = keyword(
+            "scm.operation.normalized_outcome", "Normalized operation outcome used by routing.");
     public static final ObservationAttributeKey<Long> OPERATION_DURATION_MS = TraceAttribute.longNumber(
             "scm.operation.duration_ms", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Operation duration in milliseconds.");
     public static final ObservationAttributeKey<Long> SERVICE_DURATION_MS = TraceAttribute.longNumber(
@@ -105,7 +118,10 @@ public final class CoreTraceAttributes {
                 SERVICE_DESTINATION_CARD, SERVICE_DESTINATION_ACCOUNT,
                 SERVICE_DOCUMENT_NUMBER, SERVICE_REFERENCE_NUMBER, SERVICE_TRANSACTION_TYPE,
                 STATUS_CODE, STATUS_OUTCOME, STATUS_MESSAGE, STATUS_DESCRIPTION,
-                OPERATION_CODE, OPERATION_NAME, OPERATION_TYPE, OPERATION_DURATION_MS, SERVICE_DURATION_MS,
+                OPERATION_CODE, OPERATION_NAME, OPERATION_TYPE,
+                ROUTING_STRATEGY, ROUTING_STEP_INDEX, TASK_INBOUND_ACTION, TASK_ROLE,
+                CHAIN_DECISION, OPERATION_NORMALIZED_OUTCOME,
+                OPERATION_DURATION_MS, SERVICE_DURATION_MS,
                 EXCHANGE_ID, TARGET_KIND,
                 PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_PHASE, PLUGIN_LAYER, PLUGIN_DURATION_MS
         );

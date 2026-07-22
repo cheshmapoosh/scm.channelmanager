@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ChainOnApproveStepConfigExtractor {
     private static final String EXECUTION_ORDER = "executionOrder";
-    private static final String APPROVAL_POLICY_CODE = "approvalPolicyCode";
+    private static final String DECISION_POLICY = "decisionPolicy";
 
     private final ObjectMapper objectMapper;
 
@@ -33,12 +33,12 @@ public class ChainOnApproveStepConfigExtractor {
         if (!details.isObject()) {
             throw configurationException(service, serviceOperation, definition, "details",
                     "Definition.details must be a JSON object with integer executionOrder "
-                            + "and optional string approvalPolicyCode");
+                            + "and optional string decisionPolicy");
         }
 
         return new ChainOnApproveStepConfig(
                 extractExecutionOrder(service, serviceOperation, definition, details),
-                extractApprovalPolicyCode(service, serviceOperation, definition, details)
+                extractDecisionPolicy(service, serviceOperation, definition, details)
         );
     }
 
@@ -69,21 +69,21 @@ public class ChainOnApproveStepConfigExtractor {
         return executionOrder.intValue();
     }
 
-    private String extractApprovalPolicyCode(
+    private String extractDecisionPolicy(
             Service service,
             ServiceOperation serviceOperation,
             Definition definition,
             JsonNode details
     ) {
-        JsonNode approvalPolicyCode = details.get(APPROVAL_POLICY_CODE);
-        if (approvalPolicyCode == null || approvalPolicyCode.isNull()) {
+        JsonNode decisionPolicy = details.get(DECISION_POLICY);
+        if (decisionPolicy == null || decisionPolicy.isNull()) {
             return null;
         }
-        if (!approvalPolicyCode.isTextual()) {
-            throw configurationException(service, serviceOperation, definition, APPROVAL_POLICY_CODE,
-                    "approvalPolicyCode must be a string when provided");
+        if (!decisionPolicy.isTextual()) {
+            throw configurationException(service, serviceOperation, definition, DECISION_POLICY,
+                    "decisionPolicy must be a string when provided");
         }
-        String code = approvalPolicyCode.asText();
+        String code = decisionPolicy.asText();
         return StringUtils.isBlank(code) ? null : code.trim();
     }
 

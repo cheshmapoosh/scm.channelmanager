@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingExecutionContext;
 import org.apache.camel.Exchange;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,68 @@ public class TaskWorkflowPayloadMapper {
 
     public TaskWorkflowPayloadMapper(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+    }
+
+    public Object toRequest(
+            Exchange exchange,
+            TaskWorkflowRole role,
+            RoutingExecutionContext context
+    ) {
+        return switch (role) {
+            case APPROVE_PROCESS -> toApproveRequest(exchange);
+            case BUSINESS_OPERATION -> toBusinessRequest(exchange, context);
+            case COMPLETE_PROCESS -> toCompleteProcessRequest(exchange, context);
+            default -> toSimpleRequest(exchange, role);
+        };
+    }
+
+    private ObjectNode toBusinessRequest(Exchange exchange, RoutingExecutionContext context) {
+        Long processId = context.processId();
+        if (processId == null) {
+            processId = exchange.getProperty(
+                    TaskWorkflowExchangeProperties.PROCESS_ID,
+                    Long.class
+            );
+        }
+        if (processId == null) processId = pathLong(exchange, "processId");
+        context.processId(processId);
+        if (processId != null) {
+            exchange.setProperty(TaskWorkflowExchangeProperties.PROCESS_ID, processId);
+        }
+        String correlationId = correlationId(exchange);
+        context.correlationId(correlationId);
+        if (correlationId != null) {
+            exchange.setProperty(TaskWorkflowExchangeProperties.CORRELATION_ID, correlationId);
+        }
+        Object stableTransactionData = context.transactionData();
+        if (stableTransactionData == null) {
+            stableTransactionData = objectMapper.createObjectNode();
+        }
+        context.transactionData(stableTransactionData);
+        ObjectNode request = objectMapper.createObjectNode();
+        if (processId != null) request.put("processId", processId);
+        if (correlationId != null) request.put("correlationId", correlationId);
+        request.set("transactionData", toJsonNode(stableTransactionData));
+        request.set("stepResults", objectMapper.valueToTree(context.stepResults()));
+        return request;
+    }
+
+    public void rememberApproveContext(
+            Object response,
+            RoutingExecutionContext context
+    ) {
+        JsonNode approveResponse = toJsonNode(response);
+        Long processId = longValue(approveResponse.path("id"));
+        if (processId == null) {
+            processId = longValue(approveResponse.path("processId"));
+        }
+        if (processId != null) {
+            context.processId(processId);
+        }
+        JsonNode transactionData = approveResponse.get("transactionData");
+        context.transactionData(transactionData == null || transactionData.isNull()
+                ? approveResponse
+                : transactionData.deepCopy());
     }
 
     public JsonNode toSimpleRequest(Exchange exchange, TaskWorkflowRole role) {
@@ -52,25 +115,17 @@ public class TaskWorkflowPayloadMapper {
         return request;
     }
 
-    public JsonNode toBusinessRequest(Exchange exchange) {
-        JsonNode approveResponse = toJsonNode(exchange.getProperty(
-                TaskWorkflowExchangeProperties.APPROVE_RESPONSE));
-        rememberLong(exchange, TaskWorkflowExchangeProperties.PROCESS_ID,
-                approveResponse.path("id"));
-        JsonNode transactionData = approveResponse.get("transactionData");
-        return transactionData == null || transactionData.isNull()
-                ? approveResponse
-                : transactionData.deepCopy();
-    }
-
-    public ObjectNode toCompleteProcessRequest(
+    private ObjectNode toCompleteProcessRequest(
             Exchange exchange,
-            TaskWorkflowBusinessResultClassifier.BusinessResult businessResult
+            RoutingExecutionContext context
     ) {
-        Long processId = exchange.getProperty(
+        Long processId = context == null ? null : context.processId();
+        if (processId == null) {
+            processId = exchange.getProperty(
                 TaskWorkflowExchangeProperties.PROCESS_ID,
                 Long.class
-        );
+            );
+        }
         if (processId == null) {
             processId = pathLong(exchange, "processId");
         }
@@ -81,32 +136,10 @@ public class TaskWorkflowPayloadMapper {
 
         ObjectNode request = objectMapper.createObjectNode();
         request.put("id", processId);
-        request.put("status", businessResult
-                == TaskWorkflowBusinessResultClassifier.BusinessResult.SUCCESS
-                ? "COMPLETE"
-                : "FAIL");
+        request.put("status", "COMPLETE");
         ObjectNode attribute = request.putObject("attribute");
-        attribute.put("businessResult", businessResult.name());
+        attribute.put("businessResult", "SUCCESS");
         return request;
-    }
-
-    public Long approveProcessId(Object response) {
-        return longValue(toJsonNode(response).path("id"));
-    }
-
-    public ObjectNode toDefinitiveBusinessFailureResponse(Exchange exchange) {
-        ObjectNode response = objectMapper.createObjectNode();
-        response.put("status", "FAIL");
-        response.put("outcome", "FAILURE");
-        response.put("retryable", false);
-        Long processId = exchange.getProperty(
-                TaskWorkflowExchangeProperties.PROCESS_ID,
-                Long.class
-        );
-        if (processId != null) {
-            response.put("processId", processId);
-        }
-        return response;
     }
 
     private ObjectNode withTaskId(Exchange exchange, ObjectNode request) {

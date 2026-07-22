@@ -491,13 +491,13 @@ CHAIN_ON_APPROVE  -> operationهای فعال را به ترتیب اجرا می
 - `ServiceTargetRoutingRegistry` handler مناسب را پیدا می‌کند و handler تکراری، strategy خالی یا strategy پشتیبانی‌نشده را رد می‌کند.
 - هر پیاده‌سازی `ServiceTargetRoutingHandler` مسئول یک strategy است.
 - `ChainOnApproveRoutePlanFactory` هنگام ساخته‌شدن Camel route، operationهای فعال را به یک plan تغییرناپذیر تبدیل می‌کند.
-- هر `ChainOnApproveStepPlan` از قبل operation، `executionOrder`، آدرس endpoint، bean مربوط به `OperationApprovalPolicy` و `Definition` همان مرحله را نگه می‌دارد.
+- هر `RoutingStepPlan` از قبل operation، آدرس endpoint، request factory، و `ChainStepDecisionPolicy` همان مرحله را نگه می‌دارد.
 - `ChainOnApproveStepConfigExtractor` تنظیمات هر مرحله را از JSON موجود در `ServiceOperation.definition.details` می‌خواند.
 - برای هر service-operation فعال در `CHAIN_ON_APPROVE` وجود `Definition` و `Definition.details` الزامی است.
 - فیلد `executionOrder` الزامی است، باید integer باشد، و ترتیب اجرای stepها را مشخص می‌کند.
-- فیلد `approvalPolicyCode` اختیاری است. نبودن یا blank بودن آن یعنی policy پیش‌فرض `DEFAULT`.
-- اگر JSON نامعتبر باشد، `executionOrder` معتبر نباشد، مقدار `executionOrder` در یک chain تکراری باشد، یا `approvalPolicyCode` به policy ثبت‌شده‌ای اشاره نکند، ساخت route همان موقع fail می‌شود.
-- `ChainOnApproveServiceTargetRoutingHandler` با plan آماده route را می‌سازد. قبل از هر فراخوانی، propertyهای `Message.SERVICE_OPERATION` و `Message.OPERATION_NAME` تنظیم می‌شوند.
+- فیلد `decisionPolicy` اختیاری است. نبودن یا blank بودن آن یعنی policy رسمی `DEFAULT_SUCCESS`.
+- اگر JSON نامعتبر باشد، `executionOrder` معتبر نباشد، مقدار `executionOrder` در یک chain تکراری باشد، یا `decisionPolicy` به policy ثبت‌شده‌ای اشاره نکند، ساخت route همان موقع fail می‌شود.
+- `ChainOnApproveServiceTargetRoutingHandler` plan آماده را به `ChainOnApproveRoutingEngine` می‌دهد. executor مشترک قبل از هر فراخوانی propertyهای `Message.SERVICE_OPERATION` و `Message.OPERATION_NAME` را تنظیم می‌کند.
 
 ## TASK_WORKFLOW routing strategy
 
@@ -518,10 +518,10 @@ there is no dynamic `{command}` path variable.
 Gateway mapping:
 
 ```text
-start    -> TaskWorkflowRole.START_PROCESS
-approve  -> TaskWorkflowRole.APPROVE_PROCESS
-complete -> TaskWorkflowRole.COMPLETE_PROCESS
-cancel   -> TaskWorkflowRole.CANCEL_PROCESS
+start    -> inboundAction=start
+approve  -> inboundAction=approve_and_execute
+complete -> inboundAction=task_complete
+cancel   -> inboundAction=cancel_process
 ```
 
 Gateway responsibility:
@@ -530,7 +530,7 @@ Gateway responsibility:
 1. Match the fixed inbound URL.
 2. Read serviceCode from the path.
 3. Read channelCode from the request header.
-4. Set task workflow context and Message.TASK_WORKFLOW_ROLE.
+4. Set the canonical action in Message.INBOUND_ROUTE_ACTION.
 5. Forward to the service layer.
 ```
 
@@ -539,7 +539,7 @@ The gateway must not load `EbService` and must not check
 
 ### Service validation
 
-The service layer receives `serviceCode`, `channelCode`, `TaskWorkflowRole`,
+The service layer receives `serviceCode`, `channelCode`, `inboundAction`,
 and the request payload. It then:
 
 ```text
@@ -548,8 +548,9 @@ and the request payload. It then:
 3. Validates the service exists and is active.
 4. Validates channel access with the existing channel guards.
 5. Requires EbService.routingStrategy == TASK_WORKFLOW.
-6. Resolves the active ServiceOperation connected to the requested role.
-7. Routes to that Operation.
+6. Resolves the action's configured immutable routing plan.
+7. Delegates to the shared FIRST or CHAIN_ON_APPROVE engine.
+8. Executes ordered ServiceOperation records selected by operationName.
 ```
 
 If the selected service is not configured for task workflow, fail with:
@@ -583,28 +584,30 @@ public record EbServiceSnapshot(
 
 The cached value is immutable and does not hold a live JPA entity.
 
-### ServiceOperation role definition
+### ServiceOperation and command plans
 
-Each active task workflow service operation declares its semantic role in
-metadata:
+An active `ServiceOperation` is selected by its `operationName`. The task role
+belongs to the ordered step in the inbound definition; it is not a unique
+operation lookup key. This allows more than one `BUSINESS_OPERATION` step.
 
 ```json
 {
-  "taskWorkflowRole": "START_PROCESS"
+  "inboundAction": "task_complete",
+  "taskWorkflow": {
+    "routingStrategy": "FIRST",
+    "steps": [
+      {
+        "role": "COMPLETE_TASK",
+        "operationName": "complete-paymaster-approval-task"
+      }
+    ]
+  }
 }
 ```
 
-New records should use the `TaskWorkflowRole` model:
-
-```text
-ServiceOperation.service          = FUND_TRANSFER_SHARED
-ServiceOperation.taskWorkflowRole = START_PROCESS
-ServiceOperation.operation        = START_PROCESS
-```
-
-If `ServiceOperation` has no direct `taskWorkflowRole` column, keep the role in
-the existing definition metadata. Do not create new records using
-`SVC_CARTABLE_*`.
+For `CHAIN_ON_APPROVE`, array position is execution order and an omitted
+`decisionPolicy` means `DEFAULT_SUCCESS`. The full configuration and validation
+contract is documented in `scm-provider-task/README.md`.
 
 ### Operation/provider routing
 
@@ -689,46 +692,16 @@ scm:
 If neither bean-name property is configured, default mode is used. If either one
 is configured, both are required.
 
-The fixed task-workflow entrypoint resolves the selected service by code at
-request time through the cached `EbServiceSnapshot`, then loads active
-`ServiceOperation` records for that service id. It keeps synchronous
-`ProducerTemplate` invocation so the same Exchange carries service, operation,
-provider, and task workflow role metadata into the operation layer.
+The fixed task-workflow compatibility entrypoint resolves the selected service
+by code, obtains its existing runtime service plan, and dispatches to the normal
+service route. It does not invoke an operation directly.
 
 ### Business operation records
 
-A process-based service can still bind business operations alongside workflow
-control roles:
-
-```text
-ServiceOperation:
-  service = FUND_TRANSFER_SHARED
-  taskWorkflowRole = START_PROCESS
-  operation = START_PROCESS
-  sortOrder = 10
-
-ServiceOperation:
-  service = FUND_TRANSFER_SHARED
-  taskWorkflowRole = APPROVE_PROCESS
-  operation = APPROVE_PROCESS
-  sortOrder = 20
-
-ServiceOperation:
-  service = FUND_TRANSFER_SHARED
-  taskWorkflowRole = BUSINESS_OPERATION
-  operation = FUND_TRANSFER_PAYA_EXECUTE
-  sortOrder = 30
-
-ServiceOperation:
-  service = FUND_TRANSFER_SHARED
-  taskWorkflowRole = COMPLETE_PROCESS
-  operation = COMPLETE_PROCESS
-  sortOrder = 40
-```
-
-The fixed inbound URLs select the requested control role. Any coordinated
-business workflow must be modeled in service/config logic before the provider is
-called; provider-task remains unaware of business service operation names.
+A process-based service may connect several business operations. Each inbound
+command plan names the required operations explicitly and may assign the same
+`BUSINESS_OPERATION` role to multiple distinct operation names. The provider
+remains unaware of business service operation names.
 
 ### Startup and runtime
 
@@ -743,23 +716,24 @@ GatewayChannel
 ```
 
 At request time, the service entrypoint resolves the service by code, validates
-`TASK_WORKFLOW`, selects the active operation by role, and invokes
-`direct:op.<operationName>`.
+`TASK_WORKFLOW`, and dispatches to its normal service route. That route resolves
+the canonical inbound action, selects its configured shared engine, and invokes
+the ordered `direct:op.<operationName>` steps.
 
 ### approved همیشه مساوی success نیست
 
-`DefaultOperationApprovalPolicy` فقط `Message.isSuccessful()` را approved می‌داند.
+`DEFAULT_SUCCESS` نتیجه استاندارد موفق SCM را `CONTINUE` می‌داند.
 
-ممکن است یک خطای business مثل duplicate data برای ادامه chain قابل قبول باشد. برای این رفتار باید یک bean جدید از `OperationApprovalPolicy` با `code()` مشخص ساخته شود و همان code در JSON فیلد `Definition.details` مرحله قرار بگیرد. `executionOrder` همچنان برای همان مرحله الزامی است:
+ممکن است یک خطای business مثل duplicate data برای ادامه chain قابل قبول باشد. برای این رفتار باید یک bean جدید از `ChainStepDecisionPolicy` با `code()` مشخص ساخته شود و همان code در JSON فیلد `decisionPolicy` مرحله قرار بگیرد:
 
 ```json
 {
   "executionOrder": 10,
-  "approvalPolicyCode": "DUPLICATE_DATA_APPROVED"
+  "decisionPolicy": "DUPLICATE_DATA_APPROVED"
 }
 ```
 
-کل `Definition` از طریق `OperationApprovalContext` به policy می‌رسد. هیچ error code مربوط به duplicate داخل router hard-code نشده است و `Definition.name` فقط metadata هویتی/نمایشی است.
+هیچ error code مربوط به duplicate داخل router hard-code نشده است.
 
 ### مثال
 
@@ -781,17 +755,17 @@ C not approved  -> chain تمام می‌شود
 - `REF.TBL_SCM_DEFINITION.DETAILS` تنظیمات step را به شکل JSON نگه می‌دارد.
 - هر service-operation فعال باید یک definition با `DETAILS` معتبر داشته باشد.
 - فیلد `executionOrder` الزامی است و باید integer باشد.
-- فیلد `approvalPolicyCode` اختیاری است و وقتی مقدار داشته باشد باید با `OperationApprovalPolicy.code()` یک Spring bean برابر باشد.
-- نبودن یا blank بودن `approvalPolicyCode` در JSON معتبر یعنی policy پیش‌فرض `DEFAULT`.
-- `DEFAULT` یعنی chain فقط وقتی ادامه پیدا می‌کند که `Message.isSuccessful()` مقدار true داشته باشد.
-- نبودن definition، null/blank بودن `DETAILS`، JSON نامعتبر، `executionOrder` نامعتبر یا تکراری، یا `approvalPolicyCode` ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
+- فیلد `decisionPolicy` اختیاری است و وقتی مقدار داشته باشد باید با `ChainStepDecisionPolicy.code()` یک Spring bean برابر باشد.
+- نبودن یا blank بودن `decisionPolicy` در JSON معتبر یعنی policy پیش‌فرض `DEFAULT_SUCCESS`.
+- `DEFAULT_SUCCESS` نتیجه موفق استاندارد SCM را ادامه می‌دهد، نتیجه موقت/نامشخص را `RETRY_LATER` و failure قطعی را `FAIL` می‌کند.
+- نبودن definition، null/blank بودن `DETAILS`، JSON نامعتبر، `executionOrder` نامعتبر یا تکراری، یا `decisionPolicy` ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
 
 فرمت `DETAILS` برای هر step:
 
 ```json
 {
   "executionOrder": 10,
-  "approvalPolicyCode": "DUPLICATE_DATA_APPROVED"
+  "decisionPolicy": "DUPLICATE_DATA_APPROVED"
 }
 ```
 
@@ -801,10 +775,10 @@ C not approved  -> chain تمام می‌شود
 TBL_SCM_SERVICE_OPERATION.DEFINITION_ID
   -> TBL_SCM_DEFINITION.DETAILS
   -> executionOrder
-  -> approvalPolicyCode
-  -> OperationApprovalPolicyRegistry
-  -> OperationApprovalPolicy bean
-  -> ChainOnApproveStepPlan
+  -> decisionPolicy
+  -> ChainStepDecisionPolicyRegistry
+  -> ChainStepDecisionPolicy bean
+  -> RoutingStepPlan
 ```
 
 فیلد `ServiceEntity.routingStrategy` با `EnumType.STRING` ذخیره می‌شود. مقدار database:
@@ -830,7 +804,7 @@ EB_SERVICE.ROUTING_STRATEGY = CHAIN_ON_APPROVE
 
 Step 1:
   operation = create-customer
-  definition.details = {"executionOrder":10,"approvalPolicyCode":"DUPLICATE_DATA_APPROVED"}
+  definition.details = {"executionOrder":10,"decisionPolicy":"DUPLICATE_DATA_APPROVED"}
 
 Step 2:
   operation = create-account
@@ -840,7 +814,7 @@ Step 2:
 معنی مثال:
 
 - `create-customer` اول اجرا می‌شود و از custom approval با کد `DUPLICATE_DATA_APPROVED` استفاده می‌کند.
-- `create-account` دوم اجرا می‌شود و از رفتار پیش‌فرض `DEFAULT` استفاده می‌کند.
+- `create-account` دوم اجرا می‌شود و از رفتار پیش‌فرض `DEFAULT_SUCCESS` استفاده می‌کند.
 - policy هر service-operation مستقل است؛ دو مرحله یک سرویس می‌توانند policy متفاوت داشته باشند.
 - اگر bean مربوط به `DUPLICATE_DATA_APPROVED` وجود نداشته باشد، application هنگام ساخت route fail می‌شود، نه هنگام اولین request.
 

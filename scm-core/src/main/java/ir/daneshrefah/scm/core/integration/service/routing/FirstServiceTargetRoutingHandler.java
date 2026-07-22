@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.core.integration.service.routing;
 
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
-import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -10,9 +9,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class FirstServiceTargetRoutingHandler implements ServiceTargetRoutingHandler {
-    private final ServiceOperationSelector operationSelector;
-    private final ServiceOperationEndpointResolver endpointResolver;
-    private final ServiceOperationRouteMetadataSetter metadataSetter;
+    private final FirstRoutePlanFactory routePlanFactory;
+    private final RoutingEngineRegistry engineRegistry;
 
     @Override
     public RoutingStrategy strategy() {
@@ -21,13 +19,10 @@ public class FirstServiceTargetRoutingHandler implements ServiceTargetRoutingHan
 
     @Override
     public void buildTarget(ServiceTargetRouteContext context) {
-        ServiceOperation operation = operationSelector.requireExactlyOneActive(
-                context.service(),
-                strategy()
-        );
+        RoutingPlan plan = routePlanFactory.create(context.service());
         log.debug("Building FIRST service target routeId={} serviceCode={}",
                 context.route().getRouteId(), context.service().getCode());
-        metadataSetter.apply(context.route(), operation);
-        context.route().to(endpointResolver.resolve(operation.getOperationName()));
+        context.route().process(exchange -> exchange.getMessage().setBody(
+                engineRegistry.getRequired(strategy()).execute(exchange, plan).response()));
     }
 }
