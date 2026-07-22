@@ -11,11 +11,11 @@ import lombok.Setter;
 @Setter
 @Entity(name = "CM_CHANNEL")
 @Table(name = "CHANNEL", schema = "REF")
-public class ChannelEntity extends AbstractEntity<Short> {
+public class ChannelEntity extends AbstractEntity<Integer> {
     @Id
     @SequenceGenerator(name = "CHANNEL_id_gen", sequenceName = "SQCONSTANTS", allocationSize = 1)
     @Column(name = "CHANNEL_ID", nullable = false)
-    private Short id;
+    private Integer id;
 
     @Column(name = "PARENT_ID")
     private Integer parentId;

@@ -1,9 +1,12 @@
 package transformers
 
+import org.slf4j.LoggerFactory
+
 def body = exchange.in.body
 def accountId = body['accountNo']
-//def accountId=accountIdRaw.toString()
-//accountId=accountId.length()>18?accountId[0..17]:accountId.padRight(18,' ')
+
+def log = LoggerFactory.getLogger("5kRqGroovyTransformer")
+log.info("5k rq body {}", body)
 
 def nabRequest = [
         "command" : [
@@ -49,4 +52,5 @@ def nabRequest = [
         ]
 ]
 
+log.info("5k transformed nab request : {}", nabRequest)
 return nabRequest

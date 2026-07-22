@@ -6,13 +6,17 @@ import ir.daneshrefah.scm.common.data.entity.asset.AccountTypeEntity
 import ir.daneshrefah.scm.common.data.entity.asset.AccountTypeLoader
 import ir.daneshrefah.scm.common.data.model.CmAccountType
 import ir.daneshrefah.scm.common.data.model.NabAccountType
+import org.slf4j.LoggerFactory
 
 def nabResponse = exchange.in.body
-println("5m nab response : " + nabResponse)
+
+def log = LoggerFactory.getLogger("5mRsGroovyTransformer")
+log.info("5m nab response : {}", nabResponse)
 
 def status = nabResponse.status
 def actionCode = status.code
 def success = status.success
+log.info("5m nab status code : {}", actionCode.asText())
 if (!success) {
     throw new ir.daneshrefah.scm.common.exception.NabError(actionCode.asText(), "nab error!");
 }
@@ -21,7 +25,7 @@ def bodyRawList = nabResponse.records
 
 def responseList = []
 for (def body in bodyRawList) {
-    println("5m response body : " + body);
+    log.info("5m response body : {}", body);
 
     def accountNo = body.accountNo
     def accountType = body.accountType
@@ -49,8 +53,6 @@ for (def body in bodyRawList) {
 
     def privilages = []
 
-    println("start typetrans")
-
     if (typeTrans[0] == "1") {
         privilages << [privilage: "XFER_ADD", amount: maxInternalAmount.asText().trim().toLong(), remDebit: remDebitFt.asText().trim().toLong()]
     }
@@ -64,7 +66,6 @@ for (def body in bodyRawList) {
         privilages << [privilage: "IP_XFER_ADD", amount: maxIpAmount.asText().trim().toLong(), remDebit: remDebitPol.asText().trim().toLong()]
     }
 
-    println("start permits")
     def permitServices = []
     if (permitServiceId[0..0] == "1") {
         permitServices << "atm"
@@ -79,9 +80,6 @@ for (def body in bodyRawList) {
     NabAccountType nabAccountType = NabAccountType.findByCode(accountType.asText())
     CmAccountType cmAccountType = AccountTypeConverter.getInstance().convertNabAccountTypeToCm(nabAccountType)
 
-    println("acc type : " + accountType)
-    println("nab acc type : " + nabAccountType)
-    println("cm acc type : " + cmAccountType)
 //    def accountTypeName = ""
 //    AccountTypeEntity entity = AccountTypeLoader.accountTypeEntityMap[accountType.asText()]
 //    if (entity == null) {
@@ -110,5 +108,5 @@ for (def body in bodyRawList) {
     responseList << item
 }
 
-println("5m transformed responseList : " + responseList)
+log.info("5m transformed responseList : {}", responseList)
 return responseList
