@@ -495,8 +495,9 @@ CHAIN_ON_APPROVE  -> operationهای فعال را به ترتیب اجرا می
 - `ChainOnApproveStepConfigExtractor` تنظیمات هر مرحله را از JSON موجود در `ServiceOperation.definition.details` می‌خواند.
 - برای هر service-operation فعال در `CHAIN_ON_APPROVE` وجود `Definition` و `Definition.details` الزامی است.
 - فیلد `executionOrder` الزامی است، باید integer باشد، و ترتیب اجرای stepها را مشخص می‌کند.
-- فیلد `decisionPolicy` اختیاری است. نبودن یا blank بودن آن یعنی policy رسمی `DEFAULT_SUCCESS`.
-- اگر JSON نامعتبر باشد، `executionOrder` معتبر نباشد، مقدار `executionOrder` در یک chain تکراری باشد، یا `decisionPolicy` به policy ثبت‌شده‌ای اشاره نکند، ساخت route همان موقع fail می‌شود.
+- فیلد `decisionPolicy` اختیاری است. نبودن آن یعنی policy رسمی `DEFAULT_SUCCESS`.
+- `decisionPolicy` نتیجه operation را به `CONTINUE`، `RETRY_LATER` یا `FAIL` تبدیل می‌کند. اگر وجود داشته باشد، باید string غیرخالی و code یک policy ثبت‌شده باشد.
+- فقط `executionOrder` و `decisionPolicy` در JSON این step پشتیبانی می‌شوند. فیلد اضافه، JSON نامعتبر، `executionOrder` نامعتبر یا تکراری، و policy خالی یا ناشناخته باعث fail شدن ساخت route می‌شود.
 - `ChainOnApproveServiceTargetRoutingHandler` plan آماده را به `ChainOnApproveRoutingEngine` می‌دهد. executor مشترک قبل از هر فراخوانی propertyهای `Message.SERVICE_OPERATION` و `Message.OPERATION_NAME` را تنظیم می‌کند.
 
 ## TASK_WORKFLOW routing strategy
@@ -756,9 +757,9 @@ C not approved  -> chain تمام می‌شود
 - هر service-operation فعال باید یک definition با `DETAILS` معتبر داشته باشد.
 - فیلد `executionOrder` الزامی است و باید integer باشد.
 - فیلد `decisionPolicy` اختیاری است و وقتی مقدار داشته باشد باید با `ChainStepDecisionPolicy.code()` یک Spring bean برابر باشد.
-- نبودن یا blank بودن `decisionPolicy` در JSON معتبر یعنی policy پیش‌فرض `DEFAULT_SUCCESS`.
+- نبودن `decisionPolicy` در JSON معتبر یعنی policy پیش‌فرض `DEFAULT_SUCCESS`. مقدار null، blank یا غیر-string نامعتبر است.
 - `DEFAULT_SUCCESS` نتیجه موفق استاندارد SCM را ادامه می‌دهد، نتیجه موقت/نامشخص را `RETRY_LATER` و failure قطعی را `FAIL` می‌کند.
-- نبودن definition، null/blank بودن `DETAILS`، JSON نامعتبر، `executionOrder` نامعتبر یا تکراری، یا `decisionPolicy` ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
+- نبودن definition، null/blank بودن `DETAILS`، JSON نامعتبر، فیلد پشتیبانی‌نشده، `executionOrder` نامعتبر یا تکراری، یا `decisionPolicy` نامعتبر/ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
 
 فرمت `DETAILS` برای هر step:
 

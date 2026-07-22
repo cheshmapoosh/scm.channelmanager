@@ -225,8 +225,11 @@ The exact command shape is:
 Array position is execution order. Every step requires `role` and
 `operationName`. For `CHAIN_ON_APPROVE`, `decisionPolicy` is optional and
 defaults to `DEFAULT_SUCCESS`; `FIRST` does not require or evaluate a chain
-policy. Do not add `executionOrder`. `operationName`, not `role`, selects the
-connected operation. Several differently named
+policy. A decision policy converts an operation result into `CONTINUE`,
+`RETRY_LATER`, or `FAIL`. When supplied, its value must be a nonblank string
+matching a registered `ChainStepDecisionPolicy` code. Do not add
+`executionOrder`. `operationName`, not `role`, selects the connected operation.
+Several differently named
 `BUSINESS_OPERATION` steps are valid; duplicate operation names in one action
 are rejected.
 

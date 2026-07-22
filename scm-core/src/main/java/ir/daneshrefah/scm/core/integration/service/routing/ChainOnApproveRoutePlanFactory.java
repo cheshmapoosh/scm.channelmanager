@@ -35,8 +35,7 @@ public class ChainOnApproveRoutePlanFactory {
 
     private OrderedStep createStep(Service service, ServiceOperation serviceOperation) {
         ChainOnApproveStepConfig stepConfig = stepConfigExtractor.extract(service, serviceOperation);
-        String policyCode = stepConfig.decisionPolicy() == null
-                ? DefaultSuccessChainStepDecisionPolicy.CODE : stepConfig.decisionPolicy();
+        String policyCode = stepConfig.decisionPolicy();
         ChainStepDecisionPolicy decisionPolicy;
         try {
             decisionPolicy = policyRegistry.getRequired(policyCode);

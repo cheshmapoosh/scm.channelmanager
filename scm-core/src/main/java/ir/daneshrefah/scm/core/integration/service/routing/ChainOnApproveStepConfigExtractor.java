@@ -10,11 +10,17 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 @Component
 @RequiredArgsConstructor
 public class ChainOnApproveStepConfigExtractor {
     private static final String EXECUTION_ORDER = "executionOrder";
     private static final String DECISION_POLICY = "decisionPolicy";
+    private static final Set<String> SUPPORTED_FIELDS = Set.of(
+            EXECUTION_ORDER,
+            DECISION_POLICY
+    );
 
     private final ObjectMapper objectMapper;
 
@@ -35,11 +41,26 @@ public class ChainOnApproveStepConfigExtractor {
                     "Definition.details must be a JSON object with integer executionOrder "
                             + "and optional string decisionPolicy");
         }
+        validateSupportedFields(service, serviceOperation, definition, details);
 
         return new ChainOnApproveStepConfig(
                 extractExecutionOrder(service, serviceOperation, definition, details),
                 extractDecisionPolicy(service, serviceOperation, definition, details)
         );
+    }
+
+    private void validateSupportedFields(
+            Service service,
+            ServiceOperation serviceOperation,
+            Definition definition,
+            JsonNode details
+    ) {
+        details.fieldNames().forEachRemaining(fieldName -> {
+            if (!SUPPORTED_FIELDS.contains(fieldName)) {
+                throw configurationException(service, serviceOperation, definition, fieldName,
+                        "Unsupported CHAIN_ON_APPROVE step configuration field");
+            }
+        });
     }
 
     private JsonNode parseDetails(Service service, ServiceOperation serviceOperation, Definition definition) {
@@ -76,15 +97,19 @@ public class ChainOnApproveStepConfigExtractor {
             JsonNode details
     ) {
         JsonNode decisionPolicy = details.get(DECISION_POLICY);
-        if (decisionPolicy == null || decisionPolicy.isNull()) {
-            return null;
+        if (decisionPolicy == null) {
+            return DefaultSuccessChainStepDecisionPolicy.CODE;
         }
         if (!decisionPolicy.isTextual()) {
             throw configurationException(service, serviceOperation, definition, DECISION_POLICY,
                     "decisionPolicy must be a string when provided");
         }
         String code = decisionPolicy.asText();
-        return StringUtils.isBlank(code) ? null : code.trim();
+        if (StringUtils.isBlank(code)) {
+            throw configurationException(service, serviceOperation, definition, DECISION_POLICY,
+                    "decisionPolicy must be non-blank when provided");
+        }
+        return code.trim();
     }
 
     private IllegalStateException configurationException(
