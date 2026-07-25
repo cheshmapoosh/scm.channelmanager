@@ -26,28 +26,22 @@ import java.io.File;
 @Configuration
 public class LoggerConfig {
 
-    private final String logFileName;
     private final String fileDirectory;
     private final String logPattern;
     private final String filePatternName;
     private final String fileSize;
-    private final String rollingArchiveDirectory;
     private final int keepLogHistory;
 
-    public LoggerConfig(@Value("${scm.log.trace.file-name}") String logFileName,
-                        @Value("${scm.log.trace.file-directory}") String fileDirectory,
+    public LoggerConfig(@Value("${scm.log.trace.file-directory}") String fileDirectory,
                         @Value("${scm.log.trace.log-pattern}") String logPattern,
                         @Value("${scm.log.trace.file-name-pattern}") String filePatternName,
                         @Value("${scm.log.trace.file-size}") String fileSize,
-                        @Value("${scm.log.trace.rolling-archive-directory}") String rollingArchiveDirectory,
                         @Value("${scm.log.trace.keep-log-history}") int keepLogHistory) {
-        this.logFileName = logFileName;
         this.fileDirectory = fileDirectory;
         this.logPattern = logPattern;
         this.filePatternName = filePatternName;
         this.fileSize = fileSize;
         this.keepLogHistory = keepLogHistory;
-        this.rollingArchiveDirectory = rollingArchiveDirectory;
     }
 
     @Bean
@@ -69,7 +63,7 @@ public class LoggerConfig {
         RollingFileAppender<ILoggingEvent> rollingFileAppender = new RollingFileAppender<>();
         rollingFileAppender.setContext(context);
         rollingFileAppender.setName("FileAppender");
-        rollingFileAppender.setFile(fileDirectory + File.separator + logFileName);
+        rollingFileAppender.setAppend(true);
 
         // Create and configure the encoder
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
@@ -83,7 +77,7 @@ public class LoggerConfig {
         SizeAndTimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = new SizeAndTimeBasedRollingPolicy<>();
         rollingPolicy.setContext(context);
         rollingPolicy.setParent(rollingFileAppender);
-        rollingPolicy.setFileNamePattern(fileDirectory + File.separator + rollingArchiveDirectory + File.separator + filePatternName);
+        rollingPolicy.setFileNamePattern(fileDirectory + File.separator + filePatternName);
         rollingPolicy.setMaxFileSize(FileSize.valueOf(fileSize)); // Max size of each log file
         rollingPolicy.setMaxHistory(keepLogHistory); // Keep up to ? days of log files
         rollingPolicy.start();

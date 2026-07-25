@@ -140,6 +140,12 @@ scm:
             key: ${SCM_HPS_SHETAB7_MAC_KEY:1C1C1C1C1C1C1C1C}
             field: 128
             verify-response: false
+        - type: hps-shetab-outlet
+          config:
+            key: 42
+            field: 777777777600
+
+
     api-repo:
       scheme: nab-api-repo
       enabled: true
