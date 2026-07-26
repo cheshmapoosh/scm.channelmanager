@@ -1,22 +1,23 @@
 package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 
+import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecision;
 import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionContext;
 import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionPolicy;
 
 final class TaskWorkflowStepDecisionPolicy implements ChainStepDecisionPolicy {
-    private final TaskWorkflowRole role;
+    private final TaskWorkflowStepType stepType;
     private final ChainStepDecisionPolicy delegate;
     private final TaskWorkflowPayloadMapper payloadMapper;
     private final TaskWorkflowTransactionCoordinator transactionCoordinator;
 
     TaskWorkflowStepDecisionPolicy(
-            TaskWorkflowRole role,
+            TaskWorkflowStepType stepType,
             ChainStepDecisionPolicy delegate,
             TaskWorkflowPayloadMapper payloadMapper,
             TaskWorkflowTransactionCoordinator transactionCoordinator
     ) {
-        this.role = role;
+        this.stepType = stepType;
         this.delegate = delegate;
         this.payloadMapper = payloadMapper;
         this.transactionCoordinator = transactionCoordinator;
@@ -33,7 +34,7 @@ final class TaskWorkflowStepDecisionPolicy implements ChainStepDecisionPolicy {
         if (context.failure() != null && decision == ChainStepDecision.CONTINUE) {
             decision = ChainStepDecision.FAIL;
         }
-        switch (role) {
+        switch (stepType) {
             case APPROVE_PROCESS -> handleApprove(context, decision);
             case BUSINESS_OPERATION -> transactionCoordinator.afterBusinessOperation(
                     context.exchange(),

@@ -21,7 +21,7 @@ public class GatewayInboundPathVariablesBinder {
         Set<String> variableNames = variableNames(definition == null ? null : definition.getPath());
         route.process(exchange -> {
             if (variableNames.isEmpty()) {
-                exchange.setProperty(Message.INBOUND_PATH_VARIABLES, Map.of());
+                exchange.setProperty(Message.INBOUND_PARAMETERS, Map.of());
                 return;
             }
             Map<String, Object> variables = new LinkedHashMap<>();
@@ -32,7 +32,7 @@ public class GatewayInboundPathVariablesBinder {
                 }
             }
             exchange.setProperty(
-                    Message.INBOUND_PATH_VARIABLES,
+                    Message.INBOUND_PARAMETERS,
                     Collections.unmodifiableMap(variables)
             );
         });

@@ -82,8 +82,8 @@ public final class CoreTraceAttributes {
             "Zero-based routing step index.");
     public static final ObservationAttributeKey<String> TASK_INBOUND_ACTION = keyword(
             "scm.task.inbound_action", "Task workflow inbound action.");
-    public static final ObservationAttributeKey<String> TASK_ROLE = keyword(
-            "scm.task.role", "Task workflow role of the routing step.");
+    public static final ObservationAttributeKey<String> TASK_WORKFLOW_STEP_TYPE = keyword(
+            "scm.task.step_type", "Task workflow step type.");
     public static final ObservationAttributeKey<String> CHAIN_DECISION = keyword(
             "scm.chain.decision", "Decision returned by the routing step policy.");
     public static final ObservationAttributeKey<String> OPERATION_NORMALIZED_OUTCOME = keyword(
@@ -119,7 +119,7 @@ public final class CoreTraceAttributes {
                 SERVICE_DOCUMENT_NUMBER, SERVICE_REFERENCE_NUMBER, SERVICE_TRANSACTION_TYPE,
                 STATUS_CODE, STATUS_OUTCOME, STATUS_MESSAGE, STATUS_DESCRIPTION,
                 OPERATION_CODE, OPERATION_NAME, OPERATION_TYPE,
-                ROUTING_STRATEGY, ROUTING_STEP_INDEX, TASK_INBOUND_ACTION, TASK_ROLE,
+                ROUTING_STRATEGY, ROUTING_STEP_INDEX, TASK_INBOUND_ACTION, TASK_WORKFLOW_STEP_TYPE,
                 CHAIN_DECISION, OPERATION_NORMALIZED_OUTCOME,
                 OPERATION_DURATION_MS, SERVICE_DURATION_MS,
                 EXCHANGE_ID, TARGET_KIND,

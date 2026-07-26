@@ -7,22 +7,26 @@ import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
+import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Component
 public class TaskWorkflowInboundCommandConfigExtractor {
     private static final String INBOUND_ACTION = "inboundAction";
     private static final String TASK_WORKFLOW = "taskWorkflow";
     private static final String STEPS = "steps";
-    private static final String ROLE = "role";
+    private static final String STEP_TYPE = "stepType";
     private static final String ROUTING_STRATEGY = "routingStrategy";
     private static final String OPERATION_NAME = "operationName";
     private static final String DECISION_POLICY = "decisionPolicy";
+    private static final Set<String> SUPPORTED_STEP_FIELDS =
+            Set.of(STEP_TYPE, OPERATION_NAME, DECISION_POLICY);
 
     private final ObjectMapper objectMapper;
     private final TaskWorkflowCommandResolver commandResolver;
@@ -106,16 +110,17 @@ public class TaskWorkflowInboundCommandConfigExtractor {
                 throw invalid(service, inboundDefinition, definition,
                         "taskWorkflow.steps[" + index + "]", "step must be a JSON object");
             }
-            String roleValue = requiredText(
+            validateSupportedStepFields(service, inboundDefinition, definition, step, index);
+            String stepTypeValue = requiredText(
                     service, inboundDefinition, definition, step,
-                    "taskWorkflow.steps[" + index + "]." + ROLE, ROLE);
-            TaskWorkflowRole role;
+                    "taskWorkflow.steps[" + index + "]." + STEP_TYPE, STEP_TYPE);
+            TaskWorkflowStepType stepType;
             try {
-                role = TaskWorkflowRole.valueOf(normalize(roleValue));
+                stepType = TaskWorkflowStepType.valueOf(normalize(stepTypeValue));
             } catch (IllegalArgumentException exception) {
                 throw invalid(service, inboundDefinition, definition,
-                        "taskWorkflow.steps[" + index + "]." + ROLE,
-                        "invalid role=" + roleValue, exception);
+                        "taskWorkflow.steps[" + index + "]." + STEP_TYPE,
+                        "invalid stepType=" + stepTypeValue, exception);
             }
             String operationName = requiredText(service, inboundDefinition, definition, step,
                     "taskWorkflow.steps[" + index + "]." + OPERATION_NAME, OPERATION_NAME);
@@ -135,7 +140,7 @@ public class TaskWorkflowInboundCommandConfigExtractor {
                         "decisionPolicy must be a non-blank string when supplied");
             }
             steps.add(new TaskWorkflowInboundCommandStepConfig(
-                    role,
+                    stepType,
                     operationName.trim(),
                     decisionPolicy == null ? null : decisionPolicy.trim()
             ));
@@ -147,6 +152,22 @@ public class TaskWorkflowInboundCommandConfigExtractor {
                 steps,
                 inboundDefinition
         );
+    }
+
+    private void validateSupportedStepFields(
+            Service service,
+            InboundChannelServiceDefinition inboundDefinition,
+            Definition definition,
+            JsonNode step,
+            int index
+    ) {
+        step.fieldNames().forEachRemaining(field -> {
+            if (!SUPPORTED_STEP_FIELDS.contains(field)) {
+                throw invalid(service, inboundDefinition, definition,
+                        "taskWorkflow.steps[" + index + "]." + field,
+                        "unsupported step field=" + field);
+            }
+        });
     }
 
     private JsonNode parse(

@@ -32,7 +32,7 @@ public class ScmWebProviderObservationMapper {
             "scm.task.status",
             "scm.task.outcome",
             "scm.task.command",
-            "scm.task.role",
+            "scm.task.step_type",
             "scm.task.operation_name",
             "http.method",
             "http.status_code",

@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.event.ScmSafeEventAttributes;
 import ir.daneshrefah.scm.common.event.provider.ScmProviderEvent;
 import ir.daneshrefah.scm.common.event.provider.ScmProviderEventType;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecision;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
@@ -31,7 +32,7 @@ public class TaskWorkflowTransactionCoordinator {
     }
 
     public void beforeApprove(Exchange exchange) {
-        record(exchange, TaskWorkflowRole.APPROVE_PROCESS, "requested");
+        record(exchange, TaskWorkflowStepType.APPROVE_PROCESS, "requested");
     }
 
     public void afterApprove(Exchange exchange, Object approveResponse, Long processId) {
@@ -42,11 +43,11 @@ public class TaskWorkflowTransactionCoordinator {
         if (processId != null) {
             exchange.setProperty(TaskWorkflowExchangeProperties.PROCESS_ID, processId);
         }
-        record(exchange, TaskWorkflowRole.APPROVE_PROCESS, "succeeded");
+        record(exchange, TaskWorkflowStepType.APPROVE_PROCESS, "succeeded");
     }
 
     public void beforeBusinessOperation(Exchange exchange) {
-        record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "started");
+        record(exchange, TaskWorkflowStepType.BUSINESS_OPERATION, "started");
         publish(ScmProviderEventType.WORKFLOW_BUSINESS_STARTED,
                 exchange, "started", null);
     }
@@ -71,7 +72,7 @@ public class TaskWorkflowTransactionCoordinator {
                         TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
                         ChainStepDecision.CONTINUE.name()
                 );
-                record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "succeeded");
+                record(exchange, TaskWorkflowStepType.BUSINESS_OPERATION, "succeeded");
                 publish(ScmProviderEventType.WORKFLOW_BUSINESS_SUCCEEDED,
                         exchange, "success", null);
             }
@@ -89,18 +90,18 @@ public class TaskWorkflowTransactionCoordinator {
                 TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
                 ChainStepDecision.FAIL.name()
         );
-        record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "failed");
+        record(exchange, TaskWorkflowStepType.BUSINESS_OPERATION, "failed");
         publish(ScmProviderEventType.WORKFLOW_BUSINESS_FAILED,
                 exchange, "failure", error);
     }
 
     public void beforeCompleteProcess(Exchange exchange) {
-        record(exchange, TaskWorkflowRole.COMPLETE_PROCESS,
+        record(exchange, TaskWorkflowStepType.COMPLETE_PROCESS,
                 "requested:SUCCESS");
     }
 
     public void afterCompleteProcess(Exchange exchange) {
-        record(exchange, TaskWorkflowRole.COMPLETE_PROCESS,
+        record(exchange, TaskWorkflowStepType.COMPLETE_PROCESS,
                 "completed:SUCCESS");
     }
 
@@ -113,18 +114,22 @@ public class TaskWorkflowTransactionCoordinator {
                 TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
                 ChainStepDecision.RETRY_LATER.name()
         );
-        record(exchange, TaskWorkflowRole.BUSINESS_OPERATION, "unknown");
+        record(exchange, TaskWorkflowStepType.BUSINESS_OPERATION, "unknown");
         publish(ScmProviderEventType.WORKFLOW_BUSINESS_UNKNOWN,
                 exchange, "unknown", error);
     }
 
-    private void record(Exchange exchange, TaskWorkflowRole role, String state) {
+    private void record(
+            Exchange exchange,
+            TaskWorkflowStepType stepType,
+            String state
+    ) {
         executionStore.record(
                 exchange.getProperty(
                         TaskWorkflowExchangeProperties.COMMAND,
                         TaskWorkflowCommand.class
                 ),
-                role,
+                stepType,
                 state,
                 correlationId(exchange),
                 exchange.getProperty(TaskWorkflowExchangeProperties.PROCESS_ID, Long.class)
@@ -148,7 +153,7 @@ public class TaskWorkflowTransactionCoordinator {
                     exchange.getProperty(TaskWorkflowExchangeProperties.PROCESS_ID));
             put(attributes, "scm.task.command",
                     exchange.getProperty(TaskWorkflowExchangeProperties.COMMAND));
-            put(attributes, "scm.task.role", TaskWorkflowRole.BUSINESS_OPERATION);
+            put(attributes, "scm.task.step_type", TaskWorkflowStepType.BUSINESS_OPERATION);
             put(attributes, "scm.task.outcome", outcome);
             if (error != null) {
                 put(attributes, "error.type", error.getClass().getSimpleName());

@@ -1,6 +1,6 @@
-package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
+package ir.daneshrefah.scm.common.model.taskworkflow;
 
-public enum TaskWorkflowRole {
+public enum TaskWorkflowStepType {
     START_PROCESS,
     COMPLETE_TASK,
     APPROVE_PROCESS,

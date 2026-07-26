@@ -361,73 +361,29 @@ direct:<operationName>
 
 ## 5) TASK_WORKFLOW routing
 
-`scm-web` exposes fixed task-workflow inbound URLs and forwards them to the
-service layer. Channel is read from the existing request header
-`X-SCM-Channel` or `channelCode`; it is not part of the URL.
-
-Canonical inbound URLs:
+TASK_WORKFLOW actions are ordinary configured inbound routes. `scm-web` hosts
+the gateway, service, and operation runtime; the service-definition contract is
+owned by `scm-core`.
 
 ```text
-POST /gateway/{serviceCode}/task-workflow/start
-POST /gateway/{serviceCode}/task-workflow/approve
-POST /gateway/{serviceCode}/task-workflow/complete
-POST /gateway/{serviceCode}/task-workflow/cancel
+Protocol-specific gateway
+    -> inbound route matching
+    -> RequestContractDecoder
+    -> normalized payload and inbound parameters
+    -> GatewayRoutePipelineConfigurer
+    -> service route
+    -> TASK_WORKFLOW command plan
+    -> FIRST / CHAIN_ON_APPROVE
+    -> operation route
+    -> operation provider
 ```
 
-Do not add `{channel}` to these paths, and do not replace the fixed command
-segments with a dynamic `{command}` variable. Each inbound route has fixed
-semantics:
+There is no dedicated TASK_WORKFLOW gateway route builder or fixed
+TASK_WORKFLOW endpoint family. Every external action is configured as an
+`InboundChannelServiceDefinition` and uses the same gateway pipeline as ordinary
+services.
 
-```text
-start    -> inboundAction=start
-approve  -> inboundAction=approve_and_execute
-complete -> inboundAction=task_complete
-cancel   -> inboundAction=cancel_process
-```
-
-Gateway responsibility is limited to URL matching, reading `serviceCode`,
-reading the channel header, setting the canonical inbound action, and forwarding to
-the service layer. The gateway does not load `EbService` and does not validate
-`EbService.routingStrategy`.
-
-The service layer resolves `EbService` by `code`, obtains `id` for downstream
-lookups, validates service activity and channel access, then requires:
-
-```text
-EbService.routingStrategy == TASK_WORKFLOW
-```
-
-If the selected service is not task workflow, the response error is:
-
-```text
-code:    SERVICE_NOT_TASK_WORKFLOW
-message: Service "{serviceCode}" is not configured for task workflow execution.
-```
-
-`EbService` lookup is cached as an immutable `EbServiceSnapshot` using Spring
-Cache:
-
-```text
-cacheName = ebServiceByCode
-key       = serviceCode
-provider  = scm-cache-starter local cache
-```
-
-After validation, the compatibility entrypoint dispatches to the normal service
-route. `TASK_WORKFLOW` resolves the configured command plan for the inbound
-action and delegates to the shared `FIRST` or `CHAIN_ON_APPROVE` engine. Plan
-steps select active `ServiceOperation` records by `operationName`; role is task
-semantics, not operation identity. The operation layer still routes to the
-connected `Operation`, and the `Operation` resolves its provider:
-
-```text
-Operation.provider -> OperationProvider.uri -> scm-task:internal
-```
-
-`scm-provider-task` receives only `providerCode` and `TaskWorkflowRole`. It does
-not know service codes, gateway paths, `SVC_CARTABLE_*`, or legacy cartable
-operation-code aliases. New service and operation records must use the
-`TaskWorkflowRole` model, not `SVC_CARTABLE_*`.
+[Complete TASK_WORKFLOW service definition guide](../scm-core/docs/task-workflow-service.md)
 
 ---
 

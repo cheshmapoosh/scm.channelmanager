@@ -1,18 +1,20 @@
 package ir.daneshrefah.scm.core.integration.service.routing;
 
+import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
+
 public record RoutingStepObservationContext(
         String serviceCode,
         String inboundAction,
-        String taskRole,
+        TaskWorkflowStepType taskWorkflowStepType,
         int stepIndex,
         String spanKind
 ) {
     public RoutingStepObservationContext(
             String serviceCode,
             String inboundAction,
-            String taskRole,
+            TaskWorkflowStepType taskWorkflowStepType,
             int stepIndex
     ) {
-        this(serviceCode, inboundAction, taskRole, stepIndex, "internal");
+        this(serviceCode, inboundAction, taskWorkflowStepType, stepIndex, "internal");
     }
 }

@@ -9,6 +9,7 @@ import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
+import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreTraceAttributes;
 import ir.daneshrefah.scm.core.integration.security.ExchangeAuthenticationContext;
 import ir.daneshrefah.scm.observation.starter.CorrelationType;
@@ -334,7 +335,7 @@ public class CoreObservationTraceSupport {
             RoutingStrategy routingStrategy,
             int stepIndex,
             String inboundAction,
-            String taskRole
+            TaskWorkflowStepType taskWorkflowStepType
     ) {
         startRoutingStepCall(
                 exchange,
@@ -343,7 +344,7 @@ public class CoreObservationTraceSupport {
                 routingStrategy,
                 stepIndex,
                 inboundAction,
-                taskRole,
+                taskWorkflowStepType,
                 "internal"
         );
     }
@@ -355,7 +356,7 @@ public class CoreObservationTraceSupport {
             RoutingStrategy routingStrategy,
             int stepIndex,
             String inboundAction,
-            String taskRole,
+            TaskWorkflowStepType taskWorkflowStepType,
             String spanKind
     ) {
         if (exchange == null || exchange.getProperty(OPERATION_SCOPE_PROPERTY) != null) {
@@ -389,7 +390,8 @@ public class CoreObservationTraceSupport {
                             routingStrategy == null ? null : routingStrategy.name())
                     .attribute(CoreTraceAttributes.ROUTING_STEP_INDEX, (long) stepIndex)
                     .attribute(CoreTraceAttributes.TASK_INBOUND_ACTION, inboundAction)
-                    .attribute(CoreTraceAttributes.TASK_ROLE, taskRole)
+                    .attribute(CoreTraceAttributes.TASK_WORKFLOW_STEP_TYPE,
+                            taskWorkflowStepType == null ? null : taskWorkflowStepType.name())
                     .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))
                     .attribute(CoreTraceAttributes.EXCHANGE_ID, fields.get("exchangeId"))
                     .startDetached();

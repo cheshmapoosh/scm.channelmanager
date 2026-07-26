@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
+import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionPolicyRegistry;
 import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionPolicy;
 import ir.daneshrefah.scm.core.integration.service.routing.DefaultSuccessChainStepDecisionPolicy;
@@ -89,12 +90,14 @@ public class TaskWorkflowRoutePlanFactory {
         TaskWorkflowInboundCommandStepConfig step = config.steps().get(index);
         ServiceOperation operation = operations.get(normalize(step.operationName()));
         if (operation == null) {
-            throw invalid(service, config, index, step.role(), step.operationName(),
+            throw invalid(service, config, index, step.stepType(), step.operationName(),
                     "no matching active ServiceOperation");
         }
+        String spanKind = resolveSpanKind(service, config, index, step, operation);
+        validateProviderCapability(service, config, index, step, operation);
         var decisionPolicy = config.routingStrategy() == RoutingStrategy.CHAIN_ON_APPROVE
                 ? new TaskWorkflowStepDecisionPolicy(
-                        step.role(),
+                        step.stepType(),
                         resolvePolicy(service, config, index, step),
                         payloadMapper,
                         transactionCoordinator)
@@ -102,11 +105,24 @@ public class TaskWorkflowRoutePlanFactory {
         return new RoutingStepPlan(step.operationName(), operation,
                 endpointResolver.resolve(operation.getOperationName()),
                 new TaskWorkflowStepRequestFactory(
-                        step.role(), payloadMapper, transactionCoordinator),
+                        step.stepType(), payloadMapper, transactionCoordinator),
                 decisionPolicy,
                 new RoutingStepObservationContext(service.getCode(), config.inboundAction(),
-                        step.role().name(), index,
-                        resolveSpanKind(service, config, index, step, operation)));
+                        step.stepType(), index, spanKind));
+    }
+
+    private void validateProviderCapability(
+            Service service,
+            TaskWorkflowInboundCommandConfig config,
+            int index,
+            TaskWorkflowInboundCommandStepConfig step,
+            ServiceOperation operation
+    ) {
+        if (step.stepType() == TaskWorkflowStepType.BUSINESS_OPERATION
+                && operationMetadataResolver.targetsTaskProvider(operation.getOperationName())) {
+            throw invalid(service, config, index, step.stepType(), step.operationName(),
+                    "BUSINESS_OPERATION must not target an scm-task provider");
+        }
     }
 
     private String resolveSpanKind(
@@ -120,7 +136,7 @@ public class TaskWorkflowRoutePlanFactory {
             return operationMetadataResolver.spanKind(operation.getOperationName());
         } catch (RuntimeException exception) {
             throw new IllegalStateException(
-                    invalid(service, config, index, step.role(), step.operationName(),
+                    invalid(service, config, index, step.stepType(), step.operationName(),
                             "operation metadata is unavailable").getMessage(),
                     exception
             );
@@ -140,7 +156,7 @@ public class TaskWorkflowRoutePlanFactory {
             return policyRegistry.getRequired(policyCode);
         } catch (RuntimeException exception) {
             throw new IllegalStateException(
-                    invalid(service, config, index, step.role(), step.operationName(),
+                    invalid(service, config, index, step.stepType(), step.operationName(),
                             "invalid decisionPolicy=" + policyCode).getMessage(),
                     exception
             );
@@ -168,7 +184,7 @@ public class TaskWorkflowRoutePlanFactory {
         for (int index = 0; index < config.steps().size(); index++) {
             TaskWorkflowInboundCommandStepConfig step = config.steps().get(index);
             if (!names.add(normalize(step.operationName()))) {
-                throw invalid(service, config, index, step.role(), step.operationName(),
+                throw invalid(service, config, index, step.stepType(), step.operationName(),
                         "duplicate operationName in one inbound action");
             }
         }
@@ -193,12 +209,12 @@ public class TaskWorkflowRoutePlanFactory {
     }
 
     private IllegalStateException invalid(Service service, TaskWorkflowInboundCommandConfig config,
-                                          int index, TaskWorkflowRole role,
+                                          int index, TaskWorkflowStepType stepType,
                                           String operationName, String reason) {
         return new IllegalStateException("Invalid TASK_WORKFLOW command plan serviceCode=" + code(service)
                 + ", inboundAction=" + config.inboundAction()
                 + ", routingStrategy=" + config.routingStrategy()
-                + ", stepIndex=" + index + ", role=" + role
+                + ", stepIndex=" + index + ", stepType=" + stepType
                 + ", operationName=" + operationName + ", reason=" + reason);
     }
 

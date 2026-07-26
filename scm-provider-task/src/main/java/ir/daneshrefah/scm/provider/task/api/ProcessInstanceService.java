@@ -2,12 +2,12 @@ package ir.daneshrefah.scm.provider.task.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.provider.task.event.TaskProviderEventPublisher;
 import ir.daneshrefah.scm.provider.task.model.*;
 import ir.daneshrefah.scm.provider.task.service.ProcessManagementService;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRole;
 import org.apache.camel.Body;
 import org.apache.camel.Exchange;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ public class ProcessInstanceService extends AbstractJavaService {
 
     @SuppressWarnings("unused")
     public ProcessInstanceStartResponse start(Exchange exchange, @Body ProcessInstanceStartRequest processInstanceStartRequest) {
-        String operationName = TaskWorkflowRole.START_PROCESS.name();
+        String operationName = operationName(exchange);
         eventPublisher.publishProcess(PROCESS_START_REQUESTED, exchange, null,
                 processInstanceStartRequest.getProcessCode(), null, operationName, null);
         try {
@@ -60,7 +60,7 @@ public class ProcessInstanceService extends AbstractJavaService {
 
     @SuppressWarnings("unused")
     public void cancelProcess(Exchange exchange, @Body ProcessInstanceCancelRequest request) {
-        String operationName = TaskWorkflowRole.CANCEL_PROCESS.name();
+        String operationName = operationName(exchange);
         eventPublisher.publishProcess(PROCESS_CANCEL_REQUESTED, exchange, request.getId(),
                 null, null, operationName, null);
         try {
@@ -76,7 +76,7 @@ public class ProcessInstanceService extends AbstractJavaService {
 
     @SuppressWarnings("unused")
     public void complete(Exchange exchange, @Body ProcessInstanceCompleteRequest request) {
-        String operationName = TaskWorkflowRole.COMPLETE_PROCESS.name();
+        String operationName = operationName(exchange);
         eventPublisher.publishProcess(PROCESS_COMPLETE_REQUESTED, exchange, request.getId(),
                 null, request.getStatus(), operationName, null);
         try {
@@ -92,7 +92,7 @@ public class ProcessInstanceService extends AbstractJavaService {
 
     @SuppressWarnings("unused")
     public ProcessInstanceApproveResponse approve(Exchange exchange, @Body ProcessInstanceApproveRequest request) {
-        String operationName = TaskWorkflowRole.APPROVE_PROCESS.name();
+        String operationName = operationName(exchange);
         eventPublisher.publishProcess(PROCESS_APPROVE_REQUESTED, exchange, request.getId(),
                 request.getProcessCode(), null, operationName, null);
         try {
@@ -105,5 +105,11 @@ public class ProcessInstanceService extends AbstractJavaService {
                     request.getProcessCode(), null, operationName, exception);
             throw exception;
         }
+    }
+
+    private String operationName(Exchange exchange) {
+        return exchange == null
+                ? null
+                : exchange.getProperty(Message.OPERATION_NAME, String.class);
     }
 }

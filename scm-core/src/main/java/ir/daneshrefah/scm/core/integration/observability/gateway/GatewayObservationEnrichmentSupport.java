@@ -744,7 +744,7 @@ public class GatewayObservationEnrichmentSupport {
     }
 
     private Map<String, Object> pathParameters(Exchange exchange) {
-        Object value = exchange.getProperty(Message.INBOUND_PATH_VARIABLES);
+        Object value = exchange.getProperty(Message.INBOUND_PARAMETERS);
         if (!(value instanceof Map<?, ?> map) || map.isEmpty()) {
             return Map.of();
         }

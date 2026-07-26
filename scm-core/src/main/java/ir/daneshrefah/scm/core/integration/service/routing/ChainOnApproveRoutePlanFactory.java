@@ -95,7 +95,7 @@ public class ChainOnApproveRoutePlanFactory {
                 new RoutingStepObservationContext(
                         observation.serviceCode(),
                         observation.inboundAction(),
-                        observation.taskRole(),
+                        observation.taskWorkflowStepType(),
                         stepIndex,
                         observation.spanKind())
         );

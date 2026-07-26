@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.event.ScmSafeEventAttributes;
 import ir.daneshrefah.scm.common.event.provider.ScmProviderEvent;
 import ir.daneshrefah.scm.common.event.provider.ScmProviderEventType;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
@@ -62,7 +63,16 @@ public class TaskProviderEventPublisher {
         Map<String, Object> attributes = new LinkedHashMap<>();
         put(attributes, "scm.task.correlation_id", correlationId(exchange));
         put(attributes, "scm.task.operation_name", operationName);
+        put(attributes, "scm.task.step_type", stepType(exchange));
         return attributes;
+    }
+
+    private TaskWorkflowStepType stepType(Exchange exchange) {
+        if (exchange == null) {
+            return null;
+        }
+        Object value = exchange.getProperty(Message.TASK_WORKFLOW_STEP_TYPE);
+        return value instanceof TaskWorkflowStepType stepType ? stepType : null;
     }
 
     private String correlationId(Exchange exchange) {

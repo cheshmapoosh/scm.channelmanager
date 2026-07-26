@@ -9,7 +9,7 @@ import ir.daneshrefah.scm.provider.task.camel.TaskProviderOperationAdapter;
 import ir.daneshrefah.scm.provider.task.workflow.InternalTaskWorkflowEngine;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngine;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngineRegistry;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRoleResolver;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowStepTypeResolver;
 import jakarta.persistence.EntityManagerFactory;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.BeansException;
@@ -81,8 +81,8 @@ public class ScmTaskProviderAutoConfiguration {
     @Bean
     @ConditionalOnClass(CamelContext.class)
     @ConditionalOnMissingBean
-    public TaskWorkflowRoleResolver taskWorkflowRoleResolver() {
-        return new TaskWorkflowRoleResolver();
+    public TaskWorkflowStepTypeResolver taskWorkflowStepTypeResolver() {
+        return new TaskWorkflowStepTypeResolver();
     }
 
     @Bean
@@ -115,10 +115,10 @@ public class ScmTaskProviderAutoConfiguration {
     @ConditionalOnClass(CamelContext.class)
     @ConditionalOnMissingBean
     public TaskProviderOperationAdapter taskProviderOperationAdapter(
-            TaskWorkflowRoleResolver roleResolver,
+            TaskWorkflowStepTypeResolver stepTypeResolver,
             TaskWorkflowEngineRegistry engineRegistry
     ) {
-        return new TaskProviderOperationAdapter(roleResolver, engineRegistry);
+        return new TaskProviderOperationAdapter(stepTypeResolver, engineRegistry);
     }
 
     @Bean(name = TaskProviderComponent.SCHEME)

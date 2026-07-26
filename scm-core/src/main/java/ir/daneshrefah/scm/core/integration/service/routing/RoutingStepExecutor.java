@@ -49,14 +49,17 @@ public class RoutingStepExecutor {
                 routingStrategy,
                 observationContext.stepIndex(),
                 observationContext.inboundAction(),
-                observationContext.taskRole(),
+                observationContext.taskWorkflowStepType(),
                 observationContext.spanKind()
         );
         try {
             Object request = step.requestFactory().create(exchange, context);
             metadataSetter.apply(exchange, step.serviceOperation());
-            if (observationContext.taskRole() != null) {
-                exchange.setProperty(Message.TASK_WORKFLOW_ROLE, observationContext.taskRole());
+            if (observationContext.taskWorkflowStepType() != null) {
+                exchange.setProperty(
+                        Message.TASK_WORKFLOW_STEP_TYPE,
+                        observationContext.taskWorkflowStepType()
+                );
             }
             exchange.removeProperty(NORMALIZED_OUTCOME_PROPERTY);
             exchange.removeProperty(Exchange.EXCEPTION_CAUGHT);

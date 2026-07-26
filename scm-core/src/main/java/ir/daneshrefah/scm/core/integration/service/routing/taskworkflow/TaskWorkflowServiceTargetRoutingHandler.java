@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
+import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecision;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingEngineRegistry;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingExecutionResult;
@@ -51,8 +52,8 @@ public class TaskWorkflowServiceTargetRoutingHandler implements ServiceTargetRou
         var stepResults = result.context().stepResults();
         for (int index = commandPlan.routingPlan().steps().size() - 1; index >= 0; index--) {
             var step = commandPlan.routingPlan().steps().get(index);
-            if (TaskWorkflowRole.BUSINESS_OPERATION.name().equals(
-                    step.observationContext().taskRole())
+            if (step.observationContext().taskWorkflowStepType()
+                    == TaskWorkflowStepType.BUSINESS_OPERATION
                     && stepResults.containsKey(step.serviceOperation().getOperationName())) {
                 return stepResults.get(step.serviceOperation().getOperationName());
             }

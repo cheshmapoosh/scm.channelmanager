@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.provider.task.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.plugin.api.integration.ServiceProducerTemplate;
 import ir.daneshrefah.scm.plugin.api.service.AbstractJavaService;
 import ir.daneshrefah.scm.provider.task.event.TaskProviderEventPublisher;
@@ -9,10 +10,8 @@ import ir.daneshrefah.scm.provider.task.model.TaskFilterRequest;
 import ir.daneshrefah.scm.provider.task.model.TaskRequest;
 import ir.daneshrefah.scm.provider.task.model.TaskResponse;
 import ir.daneshrefah.scm.provider.task.service.TaskManagementService;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRole;
 import org.apache.camel.Body;
 import org.apache.camel.Exchange;
-import org.apache.camel.Header;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -43,7 +42,9 @@ public class TaskInstanceService extends AbstractJavaService {
 
     @SuppressWarnings("unused")
     public TaskResponse completeTask(Exchange exchange, @Body TaskRequest taskRequest) {
-        String operationName = TaskWorkflowRole.COMPLETE_TASK.name();
+        String operationName = exchange == null
+                ? null
+                : exchange.getProperty(Message.OPERATION_NAME, String.class);
         eventPublisher.publishTask(TASK_COMPLETE_REQUESTED, exchange, taskRequest.getTaskId(),
                 null, taskRequest.getAction(), operationName, null);
         try {
@@ -61,7 +62,7 @@ public class TaskInstanceService extends AbstractJavaService {
 
 
     @SuppressWarnings("unused")
-    public List<TaskResponse> findAllTasksByProcessId(Exchange exchange, @Header("processID") Long processID) {
-       return taskManagementService.findAllTasksByProcessId(exchange,processID);
+    public List<TaskResponse> findAllTasksByProcessId(Exchange exchange, Long processId) {
+        return taskManagementService.findAllTasksByProcessId(exchange, processId);
     }
 }
