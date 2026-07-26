@@ -31,7 +31,6 @@ public class LoggerConfig {
     private final String logPattern;
     private final String filePatternName;
     private final String fileSize;
-    private final String rollingArchiveDirectory;
     private final int keepLogHistory;
 
     public LoggerConfig(@Value("${scm.log.trace.file-name}") String logFileName,
@@ -39,7 +38,6 @@ public class LoggerConfig {
                         @Value("${scm.log.trace.log-pattern}") String logPattern,
                         @Value("${scm.log.trace.file-name-pattern}") String filePatternName,
                         @Value("${scm.log.trace.file-size}") String fileSize,
-                        @Value("${scm.log.trace.rolling-archive-directory}") String rollingArchiveDirectory,
                         @Value("${scm.log.trace.keep-log-history}") int keepLogHistory) {
         this.logFileName = logFileName;
         this.fileDirectory = fileDirectory;
@@ -47,7 +45,6 @@ public class LoggerConfig {
         this.filePatternName = filePatternName;
         this.fileSize = fileSize;
         this.keepLogHistory = keepLogHistory;
-        this.rollingArchiveDirectory = rollingArchiveDirectory;
     }
 
     @Bean
@@ -64,14 +61,16 @@ public class LoggerConfig {
     @Bean
     public Logger logger() {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        File activeLogFile = new File(fileDirectory, logFileName);
+        File rollingLogFilePattern = new File(activeLogFile.getParentFile(), new File(filePatternName).getName());
 
-        // Create and configure the rolling file appender
         RollingFileAppender<ILoggingEvent> rollingFileAppender = new RollingFileAppender<>();
         rollingFileAppender.setContext(context);
         rollingFileAppender.setName("FileAppender");
-        rollingFileAppender.setFile(fileDirectory + File.separator + logFileName);
+        rollingFileAppender.setFile(activeLogFile.getPath());
+        rollingFileAppender.setAppend(true);
+        rollingFileAppender.setPrudent(false);
 
-        // Create and configure the encoder
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setContext(context);
         encoder.setPattern(logPattern);
@@ -79,36 +78,33 @@ public class LoggerConfig {
 
         rollingFileAppender.setEncoder(encoder);
 
-        // Create and configure the rolling policy
         SizeAndTimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = new SizeAndTimeBasedRollingPolicy<>();
         rollingPolicy.setContext(context);
         rollingPolicy.setParent(rollingFileAppender);
-        rollingPolicy.setFileNamePattern(fileDirectory + File.separator  + File.separator + filePatternName);
-        rollingPolicy.setMaxFileSize(FileSize.valueOf(fileSize)); // Max size of each log file
-        rollingPolicy.setMaxHistory(keepLogHistory); // Keep up to ? days of log files
+        rollingPolicy.setFileNamePattern(rollingLogFilePattern.getPath());
+        rollingPolicy.setMaxFileSize(FileSize.valueOf(fileSize));
+        rollingPolicy.setMaxHistory(keepLogHistory);
         rollingPolicy.start();
 
         rollingFileAppender.setRollingPolicy(rollingPolicy);
         rollingFileAppender.start();
 
-        // Create and configure the AsyncAppender
         AsyncAppender asyncAppender = new AsyncAppender();
         asyncAppender.setQueueSize(512);
         asyncAppender.setContext(context);
         asyncAppender.addAppender(rollingFileAppender);
         asyncAppender.start();
 
-        // Get the logger and attach the async appender
-        Logger logger = LoggerFactory.getLogger(LoggerConfig.class);
-        ((ch.qos.logback.classic.Logger) logger).setLevel(Level.TRACE);
-        ((ch.qos.logback.classic.Logger) logger).detachAndStopAllAppenders();
-        ((ch.qos.logback.classic.Logger) logger).addAppender(asyncAppender);
-        ((ch.qos.logback.classic.Logger) logger).setAdditive(false);
+        ch.qos.logback.classic.Logger logger = context.getLogger(LoggerConfig.class.getName());
+        logger.setLevel(Level.TRACE);
+        logger.detachAndStopAllAppenders();
+        logger.addAppender(asyncAppender);
+        logger.setAdditive(false);
         return logger;
     }
 
     @PreDestroy
     public void shutdown() {
-        ((ch.qos.logback.classic.Logger) logger()).detachAndStopAllAppenders();
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(LoggerConfig.class)).detachAndStopAllAppenders();
     }
 }

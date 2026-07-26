@@ -218,7 +218,7 @@ scm:
       rolling-archive-directory: archive
       file-name: app-${pod.name}.log
       log-pattern: app-${pod.name}. %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %msg%n
-      file-name-pattern: app-${pod.name}.%d{yyyy-MM-dd}.%i.log
+      file-name-pattern: app-${pod.name}.%d{yyyy-MM-dd_HH-mm-ss}.%i.log
       file-size: 1MB  #Max size of each log file
       keep-log-history: 30 #Keep up to 30 days of log files
     app:
