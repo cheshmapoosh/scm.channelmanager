@@ -10,8 +10,8 @@ def log = LoggerFactory.getLogger("5mRqGroovyTransformer")
 def loggedInUser = AuthenticationUtils.getLoggedInUser();
 def person = Objects.requireNonNull(loggedInUser).getPerson()
 String nationalId = ""
-
-if (person instanceof GeneralPerson) {
+if (person instanceof GeneralRealPerson) {
+    println("karpardaz : GeneralRealPerson")
     nationalId = ((GeneralRealPerson) person).getNationalCode()
 }
 

@@ -50,7 +50,7 @@ import static org.apache.camel.language.constant.ConstantLanguage.constant;
 @Slf4j
 public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactory {
     private static final Pattern VERSION_PATH_PATTERN = Pattern.compile("^/?v[1-9][0-9]*(?:/.*)?$");
-    private static final String CLIENT_CORRELATION_ID_HEADER = "X-Correlation-Id";
+    private static final String CLIENT_CORRELATION_ID_HEADER = "X-SCM-Client-Correlation-ID";//"X-Correlation-Id";
 
     private final ClientContractVersionResolver clientContractVersionResolver;
     private final InboundRouteDefinitionValidator inboundRouteDefinitionValidator;
@@ -155,6 +155,10 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         RouteDefinition routeDefinition = context.routeBuilder().from(uri.toString())
                 .routeId(uniqueRouteId(context, serviceCode, serviceVersion, definition, usedRouteIds));
         setEarlyGatewayProperties(routeDefinition, context, definition, service, serviceVersion);
+        routeDefinition.process(exchange -> {
+            Object value = exchange.getProperty(Message.CHANNEL_SERVICE_DEFINITION);
+            log.info("CHANNEL_SERVICE_DEFINITION = {}", value);
+        });
         inboundRouteActionBinder.bind(routeDefinition, actionConfig);
         inboundPathVariablesBinder.bind(routeDefinition, definition);
         ProcessorDefinition<?> pipeline = routeDefinition;
@@ -182,6 +186,12 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         routeDefinition.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(gatewayChannel.getProtocolType()));
         routeDefinition.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(fallbackAccess(routePlan, servicePlan, definition)));
         routeDefinition.setProperty(Message.SERVICE_VERSION, constant(serviceVersion));
+        if(definition==null){
+            System.out.println("vaisa");
+        }
+        log.info("definition before set = {}", definition);
+        log.info("definition class = {}",
+                definition != null ? definition.getClass() : null);
         routeDefinition.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(definition));
     }
 

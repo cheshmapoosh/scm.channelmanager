@@ -172,7 +172,8 @@ public class TaskWorkflowGatewayInboundRouteBuilder extends RouteBuilder {
         START("start", "start"),
         APPROVE("approve", "approve_and_execute"),
         COMPLETE("complete", "task_complete"),
-        CANCEL("cancel", "cancel_process");
+        CANCEL("cancel", "cancel_process"),
+        TASKS("tasks", "find_tasks");
 
         private final String pathSegment;
         private final String inboundAction;

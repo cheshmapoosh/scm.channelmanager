@@ -86,7 +86,7 @@ public class TaskWorkflowServiceEntrypointRouteBuilder extends RouteBuilder {
         }
         return routePlan.servicePlans().stream()
                 .filter(plan -> plan != null && plan.service() != null)
-                .filter(plan -> serviceCode.equalsIgnoreCase(plan.service().getCode()))
+                .filter(plan -> serviceCode.equalsIgnoreCase(plan.service().getCode().trim()))
                 .findFirst()
                 .orElseThrow(() -> new NoMatchRecordFoundException(serviceCode));
     }

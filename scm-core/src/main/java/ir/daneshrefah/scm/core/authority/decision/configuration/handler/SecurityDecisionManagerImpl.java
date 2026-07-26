@@ -42,6 +42,9 @@ public class SecurityDecisionManagerImpl implements AuthorizationDecisionChainMa
             throw new AuthenticationRequiredException();
         }
         BaseChannelServiceDefinition baseChannelServiceDefinition = (BaseChannelServiceDefinition) exchange.getProperty(Message.CHANNEL_SERVICE_DEFINITION);
+        if(Objects.isNull(baseChannelServiceDefinition)) {
+            return;
+        }
         BaseChannelServiceDefinition.AuthorizationConfig authorizationConfig = baseChannelServiceDefinition.getAuthorizationConfig();
         if (Objects.nonNull(authorizationConfig)) {
             String chain = authorizationConfig.getChain();

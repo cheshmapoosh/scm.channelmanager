@@ -15,8 +15,8 @@ public final class WebTraceAttributes {
             "scm.jwt.scope", "Normalized scopes from the validated JWT scope claim.");
     public static final ObservationAttributeKey<String> JWT_ISSUER = keyword(
             "scm.jwt.issuer", "Issuer from the validated JWT.");
-    public static final ObservationAttributeKey<String> CLIENT_ADDRESS = keyword(
-            "scm.client.address", "Client address asserted by the validated JWT acp claim.");
+//    public static final ObservationAttributeKey<String> CLIENT_ADDRESS = keyword(
+//            "scm.client.address", "Client address asserted by the validated JWT acp claim.");
     public static final ObservationAttributeKey<String> JWT_ISSUE_AT = date(
             "scm.jwt.issue_at", "UTC issue time from the validated JWT.");
     public static final ObservationAttributeKey<String> JWT_EXPIRE_AT = date(
@@ -27,8 +27,8 @@ public final class WebTraceAttributes {
             "scm.jwt.generator", "Generator from the validated JWT grn claim.");
     public static final ObservationAttributeKey<String> AUTH_TRANSACTION_METHOD = keyword(
             "scm.auth.txn_method", "Transaction authentication method from the validated JWT.");
-    public static final ObservationAttributeKey<String> AUTH_LOGIN_METHOD = keyword(
-            "scm.auth.login_method", "Login authentication method from the validated JWT.");
+//    public static final ObservationAttributeKey<String> AUTH_LOGIN_METHOD = keyword(
+//            "scm.auth.login_method", "Login authentication method from the validated JWT.");
 
     private WebTraceAttributes() {
     }
@@ -38,13 +38,13 @@ public final class WebTraceAttributes {
                 USER_NICKNAME,
                 JWT_SCOPE,
                 JWT_ISSUER,
-                CLIENT_ADDRESS,
+//                CLIENT_ADDRESS,
                 JWT_ISSUE_AT,
                 JWT_EXPIRE_AT,
                 JWT_AUDIENCE,
                 JWT_GENERATOR,
-                AUTH_TRANSACTION_METHOD,
-                AUTH_LOGIN_METHOD
+                AUTH_TRANSACTION_METHOD
+//                AUTH_LOGIN_METHOD
         );
     }
 
