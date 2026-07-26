@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.service.routing;
 
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.springframework.stereotype.Component;
@@ -14,20 +15,37 @@ public class FirstRoutingEngine implements RoutingEngine {
     public RoutingStrategy strategy() { return RoutingStrategy.FIRST; }
 
     @Override
-    public RoutingExecutionResult execute(Exchange exchange, RoutingPlan plan) {
+    public RoutingExecutionResult execute(
+            Exchange exchange,
+            RoutingPlan plan,
+            RoutingExecutionContext context,
+            RoutingCursor cursor,
+            RoutingExecutionLifecycle lifecycle
+    ) {
         requireStrategy(plan);
-        RoutingExecutionContext context = new RoutingExecutionContext(exchange.getMessage().getBody());
         RoutingStepPlan step = plan.steps().getFirst();
-        RoutingStepExecutionResult result = stepExecutor.execute(exchange, strategy(), step, context);
-        if (result.failure() != null) {
-            throw propagate(result.failure(), step);
+        requireCursor(cursor, step, plan);
+        lifecycle.beforeStep(exchange, plan, step, context);
+        RoutingStepExecutionResult result;
+        try {
+            result = stepExecutor.execute(exchange, strategy(), step, context);
+        } catch (RuntimeException failure) {
+            lifecycle.stepThrew(exchange, plan, step, context, failure);
+            throw routingFailure(plan, step, failure);
         }
-        return new RoutingExecutionResult(
+        lifecycle.afterStep(exchange, plan, step, context, result);
+        if (result.decision() == RoutingDecision.FAIL) {
+            throw new RoutingFailureException(
+                    plan, step, result.decisionResult(), result.failure());
+        }
+        RoutingExecutionResult executionResult = new RoutingExecutionResult(
                 result.response(),
                 context,
                 result.decision(),
-                result.decision() == ChainStepDecision.CONTINUE ? null : step
+                result.decision() == RoutingDecision.SUCCESS ? null : step
         );
+        lifecycle.afterExecution(exchange, plan, executionResult);
+        return executionResult;
     }
 
     private void requireStrategy(RoutingPlan plan) {
@@ -36,9 +54,38 @@ public class FirstRoutingEngine implements RoutingEngine {
         }
     }
 
-    private RuntimeException propagate(Throwable failure, RoutingStepPlan step) {
-        return failure instanceof RuntimeException runtime ? runtime
-                : new IllegalStateException("Routing step failed operationName="
-                + step.serviceOperation().getOperationName(), failure);
+    private void requireCursor(
+            RoutingCursor cursor,
+            RoutingStepPlan step,
+            RoutingPlan plan
+    ) {
+        if (cursor.stepIndex() != 0
+                || !step.stepId().equals(cursor.stepId())
+                || cursor.direction() != RoutingCursor.Direction.FORWARD) {
+            throw new IllegalStateException(
+                    "Invalid FIRST routing cursor for plan=" + plan.planId());
+        }
+    }
+
+    private RoutingFailureException routingFailure(
+            RoutingPlan plan,
+            RoutingStepPlan step,
+            RuntimeException failure
+    ) {
+        if (failure instanceof RoutingFailureException routingFailure) {
+            return routingFailure;
+        }
+        return new RoutingFailureException(
+                plan,
+                step,
+                new RoutingDecisionResult(
+                        RoutingDecision.FAIL,
+                        MessageStatus.SC_ERROR_SYSTEM,
+                        "ROUTING_STEP_EXECUTION_ERROR",
+                        "Routing step execution failed",
+                        null
+                ),
+                failure
+        );
     }
 }

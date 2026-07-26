@@ -10,7 +10,8 @@ import java.util.Arrays;
 public enum ProcessWatcherEnum {
     EMPTY(0),
     REQUEST(1),
-    ATTRIBUTE(2);
+    ATTRIBUTE(2),
+    WORKFLOW_EXECUTION(3);
 
     private Integer code;
 

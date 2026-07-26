@@ -16,7 +16,7 @@ public class ChainOnApproveRoutePlanFactory {
     private final ServiceOperationSelector operationSelector;
     private final ServiceOperationEndpointResolver endpointResolver;
     private final ChainOnApproveStepConfigExtractor stepConfigExtractor;
-    private final ChainStepDecisionPolicyRegistry policyRegistry;
+    private final RoutingDecisionPolicyRegistry policyRegistry;
     private final RoutingOperationMetadataResolver operationMetadataResolver;
 
     public RoutingPlan create(Service service) {
@@ -36,7 +36,7 @@ public class ChainOnApproveRoutePlanFactory {
     private OrderedStep createStep(Service service, ServiceOperation serviceOperation) {
         ChainOnApproveStepConfig stepConfig = stepConfigExtractor.extract(service, serviceOperation);
         String policyCode = stepConfig.decisionPolicy();
-        ChainStepDecisionPolicy decisionPolicy;
+        RoutingDecisionPolicy decisionPolicy;
         try {
             decisionPolicy = policyRegistry.getRequired(policyCode);
         } catch (RuntimeException exception) {
@@ -57,6 +57,7 @@ public class ChainOnApproveRoutePlanFactory {
         }
         return new OrderedStep(stepConfig.executionOrder(), new RoutingStepPlan(
                 serviceOperation.getOperationName(),
+                0,
                 serviceOperation,
                 endpointResolver.resolve(serviceOperation.getOperationName()),
                 (exchange, execution) -> exchange.getMessage().getBody(),
@@ -65,6 +66,7 @@ public class ChainOnApproveRoutePlanFactory {
                         service.getCode(),
                         null,
                         null,
+                        serviceOperation.getOperationName(),
                         stepConfig.executionOrder(),
                         spanKind)
         ));
@@ -87,7 +89,8 @@ public class ChainOnApproveRoutePlanFactory {
     private RoutingStepPlan withStepIndex(RoutingStepPlan step, int stepIndex) {
         RoutingStepObservationContext observation = step.observationContext();
         return new RoutingStepPlan(
-                step.stepName(),
+                step.stepId(),
+                stepIndex,
                 step.serviceOperation(),
                 step.endpointUri(),
                 step.requestFactory(),
@@ -96,6 +99,7 @@ public class ChainOnApproveRoutePlanFactory {
                         observation.serviceCode(),
                         observation.inboundAction(),
                         observation.taskWorkflowStepType(),
+                        observation.stepId(),
                         stepIndex,
                         observation.spanKind())
         );

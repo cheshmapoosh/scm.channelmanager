@@ -80,12 +80,22 @@ public final class CoreTraceAttributes {
     public static final ObservationAttributeKey<Long> ROUTING_STEP_INDEX = TraceAttribute.longNumber(
             "scm.routing.step.index", OWNER, ObservationAttributePresence.EVENT_OPTIONAL,
             "Zero-based routing step index.");
+    public static final ObservationAttributeKey<String> ROUTING_STEP_ID = keyword(
+            "scm.routing.step.id", "Stable routing step identifier.");
+    public static final ObservationAttributeKey<String> ROUTING_EXECUTION_ID = keyword(
+            "scm.routing.execution.id", "Task workflow execution identifier.");
     public static final ObservationAttributeKey<String> TASK_INBOUND_ACTION = keyword(
             "scm.task.inbound_action", "Task workflow inbound action.");
     public static final ObservationAttributeKey<String> TASK_WORKFLOW_STEP_TYPE = keyword(
             "scm.task.step_type", "Task workflow step type.");
-    public static final ObservationAttributeKey<String> CHAIN_DECISION = keyword(
-            "scm.chain.decision", "Decision returned by the routing step policy.");
+    public static final ObservationAttributeKey<String> ROUTING_DECISION = keyword(
+            "scm.routing.decision", "Decision returned by the routing policy.");
+    public static final ObservationAttributeKey<Boolean> ROUTING_RETRYABLE =
+            TraceAttribute.booleanValue(
+                    "scm.routing.retryable",
+                    OWNER,
+                    ObservationAttributePresence.EVENT_OPTIONAL,
+                    "Whether the routing outcome can be retried.");
     public static final ObservationAttributeKey<String> OPERATION_NORMALIZED_OUTCOME = keyword(
             "scm.operation.normalized_outcome", "Normalized operation outcome used by routing.");
     public static final ObservationAttributeKey<Long> OPERATION_DURATION_MS = TraceAttribute.longNumber(
@@ -119,8 +129,9 @@ public final class CoreTraceAttributes {
                 SERVICE_DOCUMENT_NUMBER, SERVICE_REFERENCE_NUMBER, SERVICE_TRANSACTION_TYPE,
                 STATUS_CODE, STATUS_OUTCOME, STATUS_MESSAGE, STATUS_DESCRIPTION,
                 OPERATION_CODE, OPERATION_NAME, OPERATION_TYPE,
-                ROUTING_STRATEGY, ROUTING_STEP_INDEX, TASK_INBOUND_ACTION, TASK_WORKFLOW_STEP_TYPE,
-                CHAIN_DECISION, OPERATION_NORMALIZED_OUTCOME,
+                ROUTING_STRATEGY, ROUTING_STEP_ID, ROUTING_STEP_INDEX,
+                ROUTING_EXECUTION_ID, TASK_INBOUND_ACTION, TASK_WORKFLOW_STEP_TYPE,
+                ROUTING_DECISION, ROUTING_RETRYABLE, OPERATION_NORMALIZED_OUTCOME,
                 OPERATION_DURATION_MS, SERVICE_DURATION_MS,
                 EXCHANGE_ID, TARGET_KIND,
                 PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_PHASE, PLUGIN_LAYER, PLUGIN_DURATION_MS

@@ -6,5 +6,21 @@ import org.apache.camel.Exchange;
 public interface RoutingEngine {
     RoutingStrategy strategy();
 
-    RoutingExecutionResult execute(Exchange exchange, RoutingPlan plan);
+    default RoutingExecutionResult execute(Exchange exchange, RoutingPlan plan) {
+        return execute(
+                exchange,
+                plan,
+                new RoutingExecutionContext(exchange.getMessage().getBody()),
+                RoutingCursor.start(plan),
+                RoutingExecutionLifecycle.NOOP
+        );
+    }
+
+    RoutingExecutionResult execute(
+            Exchange exchange,
+            RoutingPlan plan,
+            RoutingExecutionContext context,
+            RoutingCursor cursor,
+            RoutingExecutionLifecycle lifecycle
+    );
 }

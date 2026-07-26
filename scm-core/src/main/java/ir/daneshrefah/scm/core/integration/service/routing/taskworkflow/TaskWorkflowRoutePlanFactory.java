@@ -1,162 +1,198 @@
 package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 
-import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
-import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
-import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
-import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionPolicyRegistry;
-import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionPolicy;
-import ir.daneshrefah.scm.core.integration.service.routing.DefaultSuccessChainStepDecisionPolicy;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlan;
+import ir.daneshrefah.scm.core.integration.service.routing.DefaultRoutingDecisionPolicy;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionPolicy;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionPolicyRegistry;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingOperationMetadataResolver;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlan;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlanIdentity;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepObservationContext;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepPlan;
+import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationDefinitionClassifier;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationEndpointResolver;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationSelector;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 @Component
+@RequiredArgsConstructor
 public class TaskWorkflowRoutePlanFactory {
     private final ServiceOperationSelector operationSelector;
     private final ServiceOperationEndpointResolver endpointResolver;
-    private final TaskWorkflowInboundCommandConfigExtractor configExtractor;
+    private final TaskWorkflowActionPlanParser actionPlanParser;
     private final TaskWorkflowCommandPlanValidator validator;
-    private final ChainStepDecisionPolicyRegistry policyRegistry;
+    private final RoutingDecisionPolicyRegistry policyRegistry;
     private final TaskWorkflowPayloadMapper payloadMapper;
-    private final TaskWorkflowTransactionCoordinator transactionCoordinator;
     private final RoutingOperationMetadataResolver operationMetadataResolver;
+    private final TaskWorkflowPlanFingerprint fingerprint;
+    private final TaskWorkflowProviderCapabilityRegistry providerCapabilities;
 
-    public TaskWorkflowRoutePlanFactory(
-            ServiceOperationSelector operationSelector,
-            ServiceOperationEndpointResolver endpointResolver,
-            TaskWorkflowInboundCommandConfigExtractor configExtractor,
-            TaskWorkflowCommandPlanValidator validator,
-            ChainStepDecisionPolicyRegistry policyRegistry,
-            TaskWorkflowPayloadMapper payloadMapper,
-            TaskWorkflowTransactionCoordinator transactionCoordinator,
-            RoutingOperationMetadataResolver operationMetadataResolver
-    ) {
-        this.operationSelector = operationSelector;
-        this.endpointResolver = endpointResolver;
-        this.configExtractor = configExtractor;
-        this.validator = validator;
-        this.policyRegistry = policyRegistry;
-        this.payloadMapper = payloadMapper;
-        this.transactionCoordinator = transactionCoordinator;
-        this.operationMetadataResolver = operationMetadataResolver;
-    }
+    public TaskWorkflowRoutePlan create(Service service) {
+        Map<String, ServiceOperation> executableOperations = operationsByName(service);
+        Map<TaskWorkflowActionKey, TaskWorkflowCommandPlan> plans =
+                new LinkedHashMap<>();
 
-    public TaskWorkflowRoutePlan create(Service service, List<ChannelServiceDefinition> definitions) {
-        Map<String, ServiceOperation> operations = operationsByName(service);
-        EnumMap<TaskWorkflowCommand, TaskWorkflowCommandPlan> plans =
-                new EnumMap<>(TaskWorkflowCommand.class);
-        for (InboundChannelServiceDefinition inbound : inboundDefinitions(definitions)) {
-            TaskWorkflowInboundCommandConfig config = configExtractor.extract(service, inbound);
+        for (ServiceOperation actionPlan : operationSelector.activeActionPlans(service)) {
+            TaskWorkflowActionPlanConfig config =
+                    actionPlanParser.parse(service, actionPlan);
             validator.validate(service, config);
-            if (plans.containsKey(config.command())) {
-                throw invalid(service, config, -1, null, null,
-                        "duplicate inbound command");
+            TaskWorkflowActionKey key = new TaskWorkflowActionKey(
+                    config.serviceCode(),
+                    config.inboundAction()
+            );
+            if (plans.containsKey(key)) {
+                throw invalid(service, config, -1, null, null, null,
+                        "duplicate active action plan");
             }
-            rejectDuplicateOperations(service, config);
-            List<RoutingStepPlan> steps = java.util.stream.IntStream.range(0, config.steps().size())
-                    .mapToObj(index -> toStep(service, config, index, operations))
+
+            List<RoutingStepPlan> steps = config.steps().stream()
+                    .map(step -> toStep(
+                            service,
+                            config,
+                            step,
+                            executableOperations
+                    ))
                     .toList();
+            String planFingerprint = fingerprint.create(config);
+            RoutingPlanIdentity identity = new RoutingPlanIdentity(
+                    config.serviceCode(),
+                    config.inboundAction(),
+                    config.actionPlanName(),
+                    config.definitionId(),
+                    planFingerprint
+            );
             RoutingPlan routingPlan = new RoutingPlan(
-                    service.getCode() + ":" + config.inboundAction(),
-                    config.routingStrategy(), steps);
-            plans.put(config.command(), new TaskWorkflowCommandPlan(
-                    config.command(), config.inboundAction(), routingPlan, inbound));
+                    config.serviceCode() + ":" + config.inboundAction()
+                            + ":" + config.actionPlanName(),
+                    identity,
+                    config.routingStrategy(),
+                    steps
+            );
+            plans.put(key, new TaskWorkflowCommandPlan(
+                    config.command(),
+                    config.inboundAction(),
+                    config.actionPlanName(),
+                    routingPlan,
+                    actionPlan
+            ));
         }
         if (plans.isEmpty()) {
             throw new IllegalStateException("TASK_WORKFLOW serviceCode=" + code(service)
-                    + " has no INBOUND command definitions");
+                    + " has no active ACTION_PLAN service operations");
         }
         return new TaskWorkflowRoutePlan(service, plans);
     }
 
-    private RoutingStepPlan toStep(Service service, TaskWorkflowInboundCommandConfig config,
-                                   int index, Map<String, ServiceOperation> operations) {
-        TaskWorkflowInboundCommandStepConfig step = config.steps().get(index);
-        ServiceOperation operation = operations.get(normalize(step.operationName()));
+    private RoutingStepPlan toStep(
+            Service service,
+            TaskWorkflowActionPlanConfig config,
+            TaskWorkflowActionPlanStepConfig step,
+            Map<String, ServiceOperation> executableOperations
+    ) {
+        ServiceOperation operation =
+                executableOperations.get(normalize(step.operationName()));
         if (operation == null) {
-            throw invalid(service, config, index, step.stepType(), step.operationName(),
-                    "no matching active ServiceOperation");
+            throw invalid(service, config, step.stepIndex(), step.stepId(),
+                    step.stepType(), step.operationName(),
+                    missingOperationReason(service, config, step));
         }
-        String spanKind = resolveSpanKind(service, config, index, step, operation);
-        validateProviderCapability(service, config, index, step, operation);
-        var decisionPolicy = config.routingStrategy() == RoutingStrategy.CHAIN_ON_APPROVE
-                ? new TaskWorkflowStepDecisionPolicy(
-                        step.stepType(),
-                        resolvePolicy(service, config, index, step),
-                        payloadMapper,
-                        transactionCoordinator)
-                : null;
-        return new RoutingStepPlan(step.operationName(), operation,
+        validateProviderCapability(service, config, step, operation);
+        String spanKind = resolveSpanKind(service, config, step, operation);
+        RoutingDecisionPolicy decisionPolicy =
+                resolvePolicy(service, config, step);
+        return new RoutingStepPlan(
+                step.stepId(),
+                step.stepIndex(),
+                operation,
                 endpointResolver.resolve(operation.getOperationName()),
                 new TaskWorkflowStepRequestFactory(
-                        step.stepType(), payloadMapper, transactionCoordinator),
+                        step.stepType(),
+                        payloadMapper
+                ),
                 decisionPolicy,
-                new RoutingStepObservationContext(service.getCode(), config.inboundAction(),
-                        step.stepType(), index, spanKind));
+                new RoutingStepObservationContext(
+                        service.getCode(),
+                        config.inboundAction(),
+                        step.stepType(),
+                        step.stepId(),
+                        step.stepIndex(),
+                        spanKind
+                )
+        );
     }
 
     private void validateProviderCapability(
             Service service,
-            TaskWorkflowInboundCommandConfig config,
-            int index,
-            TaskWorkflowInboundCommandStepConfig step,
+            TaskWorkflowActionPlanConfig config,
+            TaskWorkflowActionPlanStepConfig step,
             ServiceOperation operation
     ) {
+        boolean taskProvider = operationMetadataResolver.targetsTaskProvider(
+                operation.getOperationName());
         if (step.stepType() == TaskWorkflowStepType.BUSINESS_OPERATION
-                && operationMetadataResolver.targetsTaskProvider(operation.getOperationName())) {
-            throw invalid(service, config, index, step.stepType(), step.operationName(),
+                && taskProvider) {
+            throw invalid(service, config, step.stepIndex(), step.stepId(),
+                    step.stepType(), step.operationName(),
                     "BUSINESS_OPERATION must not target an scm-task provider");
+        }
+        if (step.stepType() != TaskWorkflowStepType.BUSINESS_OPERATION
+                && !taskProvider) {
+            throw invalid(service, config, step.stepIndex(), step.stepId(),
+                    step.stepType(), step.operationName(),
+                    "non-business workflow steps must target an scm-task provider");
+        }
+        if (taskProvider) {
+            providerCapabilities.requireSupported(
+                    operationMetadataResolver.providerUri(
+                            operation.getOperationName()),
+                    step.stepType()
+            );
         }
     }
 
     private String resolveSpanKind(
             Service service,
-            TaskWorkflowInboundCommandConfig config,
-            int index,
-            TaskWorkflowInboundCommandStepConfig step,
+            TaskWorkflowActionPlanConfig config,
+            TaskWorkflowActionPlanStepConfig step,
             ServiceOperation operation
     ) {
         try {
-            return operationMetadataResolver.spanKind(operation.getOperationName());
+            return operationMetadataResolver.spanKind(
+                    operation.getOperationName());
         } catch (RuntimeException exception) {
             throw new IllegalStateException(
-                    invalid(service, config, index, step.stepType(), step.operationName(),
+                    invalid(service, config, step.stepIndex(), step.stepId(),
+                            step.stepType(), step.operationName(),
                             "operation metadata is unavailable").getMessage(),
                     exception
             );
         }
     }
 
-    private ChainStepDecisionPolicy resolvePolicy(
+    private RoutingDecisionPolicy resolvePolicy(
             Service service,
-            TaskWorkflowInboundCommandConfig config,
-            int index,
-            TaskWorkflowInboundCommandStepConfig step
+            TaskWorkflowActionPlanConfig config,
+            TaskWorkflowActionPlanStepConfig step
     ) {
-        String policyCode = step.decisionPolicy() == null
-                ? DefaultSuccessChainStepDecisionPolicy.CODE
-                : step.decisionPolicy();
+        String policyCode = StringUtils.defaultIfBlank(
+                step.decisionPolicy(),
+                DefaultRoutingDecisionPolicy.CODE
+        );
         try {
             return policyRegistry.getRequired(policyCode);
         } catch (RuntimeException exception) {
             throw new IllegalStateException(
-                    invalid(service, config, index, step.stepType(), step.operationName(),
+                    invalid(service, config, step.stepIndex(), step.stepId(),
+                            step.stepType(), step.operationName(),
                             "invalid decisionPolicy=" + policyCode).getMessage(),
                     exception
             );
@@ -164,60 +200,84 @@ public class TaskWorkflowRoutePlanFactory {
     }
 
     private Map<String, ServiceOperation> operationsByName(Service service) {
-        Map<String, ServiceOperation> operations = new HashMap<>();
+        Map<String, ServiceOperation> operations = new LinkedHashMap<>();
         for (ServiceOperation operation : operationSelector.active(service)) {
             if (StringUtils.isBlank(operation.getOperationName())) {
-                throw new IllegalStateException("Invalid TASK_WORKFLOW operation for serviceCode="
-                        + code(service) + ", operationName=<blank>: operationName is required");
+                throw new IllegalStateException("Invalid TASK_WORKFLOW operation "
+                        + "for serviceCode=" + code(service)
+                        + ", operationName=<blank>: operationName is required");
             }
-            ServiceOperation old = operations.putIfAbsent(normalize(operation.getOperationName()), operation);
+            ServiceOperation old = operations.putIfAbsent(
+                    normalize(operation.getOperationName()),
+                    operation
+            );
             if (old != null) {
                 throw new IllegalStateException("Duplicate active operationName="
-                        + operation.getOperationName() + " for serviceCode=" + code(service));
+                        + operation.getOperationName()
+                        + " for serviceCode=" + code(service));
             }
         }
         return Map.copyOf(operations);
     }
 
-    private void rejectDuplicateOperations(Service service, TaskWorkflowInboundCommandConfig config) {
-        Set<String> names = new HashSet<>();
-        for (int index = 0; index < config.steps().size(); index++) {
-            TaskWorkflowInboundCommandStepConfig step = config.steps().get(index);
-            if (!names.add(normalize(step.operationName()))) {
-                throw invalid(service, config, index, step.stepType(), step.operationName(),
-                        "duplicate operationName in one inbound action");
+    private String missingOperationReason(
+            Service service,
+            TaskWorkflowActionPlanConfig config,
+            TaskWorkflowActionPlanStepConfig step
+    ) {
+        if (normalize(config.actionPlanOperation().getOperationName())
+                .equals(normalize(step.operationName()))) {
+            return "an action-plan service operation cannot reference itself "
+                    + "as an executable step";
+        }
+        if (service != null && service.getServiceOperations() != null) {
+            for (ServiceOperation candidate : service.getServiceOperations()) {
+                if (candidate == null
+                        || StringUtils.isBlank(candidate.getOperationName())
+                        || !normalize(candidate.getOperationName())
+                        .equals(normalize(step.operationName()))) {
+                    continue;
+                }
+                if (ServiceOperationDefinitionClassifier.isActionPlan(candidate)) {
+                    return "an ACTION_PLAN service operation cannot be used "
+                            + "as an executable step";
+                }
+                if (!Boolean.TRUE.equals(candidate.getActive())) {
+                    return "referenced executable service operation is inactive";
+                }
             }
         }
+        return "no matching active executable service operation belongs to "
+                + "the same service";
     }
 
-    private List<InboundChannelServiceDefinition> inboundDefinitions(
-            List<ChannelServiceDefinition> definitions) {
-        if (definitions == null) return List.of();
-        return definitions.stream()
-                .filter(value -> value != null
-                        && value.getType() == ChannelServiceDefinitionType.INBOUND)
-                .map(value -> {
-                    if (value instanceof InboundChannelServiceDefinition inbound) {
-                        return inbound;
-                    }
-                    throw new IllegalStateException(
-                            "Invalid TASK_WORKFLOW inbound definition type="
-                                    + value.getClass().getName()
-                    );
-                })
-                .toList();
-    }
-
-    private IllegalStateException invalid(Service service, TaskWorkflowInboundCommandConfig config,
-                                          int index, TaskWorkflowStepType stepType,
-                                          String operationName, String reason) {
-        return new IllegalStateException("Invalid TASK_WORKFLOW command plan serviceCode=" + code(service)
+    private IllegalStateException invalid(
+            Service service,
+            TaskWorkflowActionPlanConfig config,
+            int index,
+            String stepId,
+            TaskWorkflowStepType stepType,
+            String operationName,
+            String reason
+    ) {
+        return new IllegalStateException("Invalid TASK_WORKFLOW action plan serviceCode="
+                + code(service)
                 + ", inboundAction=" + config.inboundAction()
+                + ", actionPlanName=" + config.actionPlanName()
+                + ", definitionId=" + config.definitionId()
                 + ", routingStrategy=" + config.routingStrategy()
-                + ", stepIndex=" + index + ", stepType=" + stepType
-                + ", operationName=" + operationName + ", reason=" + reason);
+                + ", stepId=" + stepId
+                + ", stepIndex=" + index
+                + ", stepType=" + stepType
+                + ", operationName=" + operationName
+                + ", reason=" + reason);
     }
 
-    private String normalize(String value) { return value.trim().toLowerCase(java.util.Locale.ROOT); }
-    private String code(Service service) { return service == null ? "<null>" : String.valueOf(service.getCode()); }
+    private String normalize(String value) {
+        return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String code(Service service) {
+        return service == null ? "<null>" : String.valueOf(service.getCode());
+    }
 }

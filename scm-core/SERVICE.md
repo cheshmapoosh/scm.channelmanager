@@ -471,35 +471,6 @@ Gateway را تغییر نده.
 
 ---
 
-## CHAIN_ON_APPROVE Routing Strategy
-
-### چه مشکلی را حل می‌کند؟
-
-گاهی یک `Service` به چند `ServiceOperation` فعال وصل است و operationها باید به ترتیب اجرا شوند. در این حالت operation بعدی فقط وقتی اجرا می‌شود که نتیجه operation قبلی از نظر business قابل قبول یا **approved** باشد.
-
-تفاوت strategyها:
-
-```text
-FIRST             -> دقیقا یک operation فعال را اجرا می‌کند.
-FAIL_OVER         -> رفتار failover فعلی را برای operationهای فعال حفظ می‌کند.
-CHAIN_ON_APPROVE  -> operationهای فعال را به ترتیب اجرا می‌کند و قبل از رفتن به مرحله بعد approval را می‌سنجد.
-```
-
-### در کد چگونه کار می‌کند؟
-
-- `ServiceTargetRouter` فقط `RoutingStrategy` را به registry می‌دهد و هیچ `if/else` یا `switch` مربوط به strategy ندارد.
-- `ServiceTargetRoutingRegistry` handler مناسب را پیدا می‌کند و handler تکراری، strategy خالی یا strategy پشتیبانی‌نشده را رد می‌کند.
-- هر پیاده‌سازی `ServiceTargetRoutingHandler` مسئول یک strategy است.
-- `ChainOnApproveRoutePlanFactory` هنگام ساخته‌شدن Camel route، operationهای فعال را به یک plan تغییرناپذیر تبدیل می‌کند.
-- هر `RoutingStepPlan` از قبل operation، آدرس endpoint، request factory، و `ChainStepDecisionPolicy` همان مرحله را نگه می‌دارد.
-- `ChainOnApproveStepConfigExtractor` تنظیمات هر مرحله را از JSON موجود در `ServiceOperation.definition.details` می‌خواند.
-- برای هر service-operation فعال در `CHAIN_ON_APPROVE` وجود `Definition` و `Definition.details` الزامی است.
-- فیلد `executionOrder` الزامی است، باید integer باشد، و ترتیب اجرای stepها را مشخص می‌کند.
-- فیلد `decisionPolicy` اختیاری است. نبودن آن یعنی policy رسمی `DEFAULT_SUCCESS`.
-- `decisionPolicy` نتیجه operation را به `CONTINUE`، `RETRY_LATER` یا `FAIL` تبدیل می‌کند. اگر وجود داشته باشد، باید string غیرخالی و code یک policy ثبت‌شده باشد.
-- فقط `executionOrder` و `decisionPolicy` در JSON این step پشتیبانی می‌شوند. فیلد اضافه، JSON نامعتبر، `executionOrder` نامعتبر یا تکراری، و policy خالی یا ناشناخته باعث fail شدن ساخت route می‌شود.
-- `ChainOnApproveServiceTargetRoutingHandler` plan آماده را به `ChainOnApproveRoutingEngine` می‌دهد. executor مشترک قبل از هر فراخوانی propertyهای `Message.SERVICE_OPERATION` و `Message.OPERATION_NAME` را تنظیم می‌کند.
-
 ## TASK_WORKFLOW routing strategy
 
 `TASK_WORKFLOW` is documented in one canonical guide:
@@ -511,103 +482,9 @@ TASK_WORKFLOW service-definition contract, inbound route boundary, runtime flow,
 database relationships, supported step types, identifier normalization,
 startup validation, examples, and troubleshooting.
 
-## approved همیشه مساوی success نیست
-
-`DEFAULT_SUCCESS` نتیجه استاندارد موفق SCM را `CONTINUE` می‌داند.
-
-ممکن است یک خطای business مثل duplicate data برای ادامه chain قابل قبول باشد. برای این رفتار باید یک bean جدید از `ChainStepDecisionPolicy` با `code()` مشخص ساخته شود و همان code در JSON فیلد `decisionPolicy` مرحله قرار بگیرد:
-
-```json
-{
-  "executionOrder": 10,
-  "decisionPolicy": "DUPLICATE_DATA_APPROVED"
-}
-```
-
-هیچ error code مربوط به duplicate داخل router hard-code نشده است.
-
-### مثال
-
-فرض کن سرویس سه operation فعال `A`، `B` و `C` دارد:
-
-```text
-A approved      -> B اجرا می‌شود
-B approved      -> C اجرا می‌شود
-C not approved  -> chain تمام می‌شود
-```
-
-اگر پاسخ `A` از نظر فنی error باشد ولی policy آن error را approved بداند، `B` همچنان اجرا می‌شود.
-
-### تنظیم database
-
-- `REF.EB_SERVICE.ROUTING_STRATEGY` strategy سرویس را مشخص می‌کند و برای این حالت باید دقیقا `CHAIN_ON_APPROVE` باشد.
-- `REF.TBL_SCM_SERVICE_OPERATION` operationهای سرویس و اتصال هر مرحله به definition را نگه می‌دارد. فقط رکوردهای active وارد plan می‌شوند.
-- `REF.TBL_SCM_SERVICE_OPERATION.DEFINITION_ID` به `REF.TBL_SCM_DEFINITION` اشاره می‌کند.
-- `REF.TBL_SCM_DEFINITION.DETAILS` تنظیمات step را به شکل JSON نگه می‌دارد.
-- هر service-operation فعال باید یک definition با `DETAILS` معتبر داشته باشد.
-- فیلد `executionOrder` الزامی است و باید integer باشد.
-- فیلد `decisionPolicy` اختیاری است و وقتی مقدار داشته باشد باید با `ChainStepDecisionPolicy.code()` یک Spring bean برابر باشد.
-- نبودن `decisionPolicy` در JSON معتبر یعنی policy پیش‌فرض `DEFAULT_SUCCESS`. مقدار null، blank یا غیر-string نامعتبر است.
-- `DEFAULT_SUCCESS` نتیجه موفق استاندارد SCM را ادامه می‌دهد، نتیجه موقت/نامشخص را `RETRY_LATER` و failure قطعی را `FAIL` می‌کند.
-- نبودن definition، null/blank بودن `DETAILS`، JSON نامعتبر، فیلد پشتیبانی‌نشده، `executionOrder` نامعتبر یا تکراری، یا `decisionPolicy` نامعتبر/ناشناخته هنگام startup/ساخت route باعث fail شدن application می‌شود.
-
-فرمت `DETAILS` برای هر step:
-
-```json
-{
-  "executionOrder": 10,
-  "decisionPolicy": "DUPLICATE_DATA_APPROVED"
-}
-```
-
-مسیر resolve شدن policy:
-
-```text
-TBL_SCM_SERVICE_OPERATION.DEFINITION_ID
-  -> TBL_SCM_DEFINITION.DETAILS
-  -> executionOrder
-  -> decisionPolicy
-  -> ChainStepDecisionPolicyRegistry
-  -> ChainStepDecisionPolicy bean
-  -> RoutingStepPlan
-```
-
-فیلد `ServiceEntity.routingStrategy` با `EnumType.STRING` ذخیره می‌شود. مقدار database:
-
-```text
-CHAIN_ON_APPROVE
-```
-
-مثال:
-
-```sql
-UPDATE REF.EB_SERVICE
-SET ROUTING_STRATEGY = 'CHAIN_ON_APPROVE'
-WHERE CODE = 'YOUR_SERVICE_CODE';
-```
-
-طول این مقدار از محدودیت فعلی ستون (`20`) کمتر است. چون enum به شکل string ذخیره می‌شود و seed/migration محدودکننده‌ای برای لیست strategyها در repository وجود ندارد، برای اضافه شدن این مقدار migration جدا لازم نیست.
-
-مثال تنظیم دو مرحله:
-
-```text
-EB_SERVICE.ROUTING_STRATEGY = CHAIN_ON_APPROVE
-
-Step 1:
-  operation = create-customer
-  definition.details = {"executionOrder":10,"decisionPolicy":"DUPLICATE_DATA_APPROVED"}
-
-Step 2:
-  operation = create-account
-  definition.details = {"executionOrder":20}
-```
-
-معنی مثال:
-
-- `create-customer` اول اجرا می‌شود و از custom approval با کد `DUPLICATE_DATA_APPROVED` استفاده می‌کند.
-- `create-account` دوم اجرا می‌شود و از رفتار پیش‌فرض `DEFAULT_SUCCESS` استفاده می‌کند.
-- policy هر service-operation مستقل است؛ دو مرحله یک سرویس می‌توانند policy متفاوت داشته باشند.
-- اگر bean مربوط به `DUPLICATE_DATA_APPROVED` وجود نداشته باشد، application هنگام ساخت route fail می‌شود، نه هنگام اولین request.
+The current routing decision contract is `SUCCESS`, `RETRY_LATER`, or `FAIL`.
+ActionPlan structure, decision policies, durable recovery, and
+`CHAIN_ON_APPROVE` response selection are defined only in the canonical guide.
 
 ---
 

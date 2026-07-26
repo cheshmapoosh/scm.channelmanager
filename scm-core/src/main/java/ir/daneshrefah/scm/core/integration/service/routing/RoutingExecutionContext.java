@@ -12,6 +12,21 @@ public final class RoutingExecutionContext {
     private final Map<String, Object> stepResults = new LinkedHashMap<>();
 
     public RoutingExecutionContext(Object originalRequest) { this.originalRequest = originalRequest; }
+    public RoutingExecutionContext(
+            Object originalRequest,
+            Long processId,
+            String correlationId,
+            Object transactionData,
+            Map<String, Object> stepResults
+    ) {
+        this.originalRequest = originalRequest;
+        this.processId = processId;
+        this.correlationId = correlationId;
+        this.transactionData = transactionData;
+        if (stepResults != null) {
+            this.stepResults.putAll(stepResults);
+        }
+    }
     public Object originalRequest() { return originalRequest; }
     public Long processId() { return processId; }
     public void processId(Long processId) { this.processId = processId; }
@@ -22,5 +37,6 @@ public final class RoutingExecutionContext {
     public Map<String, Object> stepResults() {
         return Collections.unmodifiableMap(new LinkedHashMap<>(stepResults));
     }
-    public void record(String operationName, Object response) { stepResults.put(operationName, response); }
+    public void record(String stepId, Object response) { stepResults.put(stepId, response); }
+    public Object result(String stepId) { return stepResults.get(stepId); }
 }

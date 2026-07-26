@@ -3,10 +3,14 @@ package ir.daneshrefah.scm.core.integration.gateway;
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.Service;
+import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContract;
 import ir.daneshrefah.scm.core.integration.gateway.contract.ClientContractResolver;
 import ir.daneshrefah.scm.core.integration.gateway.contract.RequestContractDecoder;
+import ir.daneshrefah.scm.core.integration.gateway.taskworkflow.TaskWorkflowGatewayIdentityProcessor;
+import ir.daneshrefah.scm.core.integration.gateway.taskworkflow.TaskWorkflowRuntimeServiceRegistry;
+import ir.daneshrefah.scm.core.integration.gateway.taskworkflow.TaskWorkflowRuntimeServiceResolver;
 import ir.daneshrefah.scm.core.integration.observability.ScmExchangeMdc;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogSupport;
@@ -39,6 +43,8 @@ public class GatewayRoutePipelineConfigurer {
     private final ScmExchangeMdc scmExchangeMdc;
     private final IncomingChannelCodeResolver incomingChannelCodeResolver;
     private final GatewayObservationEnrichmentSupport gatewayObservationEnrichmentSupport;
+    private final TaskWorkflowGatewayIdentityProcessor taskWorkflowGatewayIdentityProcessor;
+    private final TaskWorkflowRuntimeServiceResolver taskWorkflowRuntimeServiceResolver;
 
     public void configureGatewayRoute(ChannelRouteBuildContext context,
                                       InboundRouteDefinition inboundRoute,
@@ -68,6 +74,16 @@ public class GatewayRoutePipelineConfigurer {
         pipeline.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(servicePlan.gatewayChannel().getProtocolType()));
         pipeline.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(inboundRoute.channelServiceDefinition()));
         pipeline.setProperty(Message.SERVICE_VERSION, constant(inboundRoute.serviceVersion()));
+        boolean taskWorkflowRoute = service.getRoutingStrategy() == RoutingStrategy.TASK_WORKFLOW;
+        if (taskWorkflowRoute) {
+            TaskWorkflowRuntimeServiceRegistry serviceRegistry =
+                    taskWorkflowRuntimeServiceResolver.compile(routePlan);
+            pipeline.process(exchange ->
+                    taskWorkflowGatewayIdentityProcessor.resolve(
+                            exchange,
+                            serviceRegistry
+                    ));
+        }
         GatewayObservationEnrichmentSupport.GatewayObservationDefinition observationDefinition =
                 gatewayObservationEnrichmentSupport.definitionFor(routePlan, servicePlan, inboundRoute);
         if (observationDefinition.requiresBodyExtraction()) {
@@ -85,7 +101,8 @@ public class GatewayRoutePipelineConfigurer {
                 .end();
         pipeline.process(exchange -> {
             exchange.setProperty(RouteLogSupport.GATEWAY_START_NANOS, System.nanoTime());
-            applyIncomingChannel(exchange, routePlan, servicePlan, inboundRoute);
+            RuntimeServicePlan resolvedServicePlan = resolvedServicePlan(exchange, servicePlan);
+            applyIncomingChannel(exchange, routePlan, resolvedServicePlan, inboundRoute);
             gatewayObservationEnrichmentSupport.captureRequest(exchange);
             startGatewaySpan.accept(exchange);
             gatewayObservationEnrichmentSupport.recordGatewayRequestReceived(exchange);
@@ -96,7 +113,7 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
@@ -111,7 +128,7 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
@@ -127,7 +144,7 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
                     contract.name(),
                     contract.requestDecoder(),
@@ -144,7 +161,7 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
                     contract.name(),
                     contract.requestDecoder(),
@@ -159,7 +176,7 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
                     contract.name(),
                     contract.requestDecoder(),
@@ -168,7 +185,9 @@ public class GatewayRoutePipelineConfigurer {
                     fields.get("correlationId"));
         });
 
-        String targetUri = serviceRouteUriResolver.resolve(routePlan, servicePlan);
+        String targetUri = taskWorkflowRoute
+                ? null
+                : serviceRouteUriResolver.resolve(routePlan, servicePlan);
         pipeline.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=started",
@@ -177,14 +196,18 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
-                    targetUri,
+                    targetUri(exchange, targetUri),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
                     fields.get("correlationId"));
         });
-        pipeline.to(targetUri);
+        if (taskWorkflowRoute) {
+            pipeline.toD("${exchangeProperty." + Message.SERVICE_ROUTE_URI + "}");
+        } else {
+            pipeline.to(targetUri);
+        }
         pipeline.process(exchange -> {
             Map<String, String> fields = scmExchangeMdc.fields(exchange);
             log.info("event={} layer=gateway gatewayName={} targetKind={} protocol={} channelCode={} serviceCode={} serviceVersion={} targetUri={} routeId={} exchangeId={} correlationId={} outcome=success",
@@ -193,9 +216,9 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
-                    targetUri,
+                    targetUri(exchange, targetUri),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
                     fields.get("correlationId"));
@@ -205,7 +228,7 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
@@ -221,7 +244,7 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
@@ -233,7 +256,7 @@ public class GatewayRoutePipelineConfigurer {
                     routePlan.targetKind(),
                     servicePlan.gatewayChannel().getProtocolType(),
                     channelCode(exchange, servicePlan),
-                    service.getCode(),
+                    serviceCode(exchange, service),
                     serviceVersion(exchange),
                     exchange.getFromRouteId(),
                     exchange.getExchangeId(),
@@ -303,8 +326,9 @@ public class GatewayRoutePipelineConfigurer {
     }
 
     private String channelCode(Exchange exchange, RuntimeServicePlan servicePlan) {
+        RuntimeServicePlan resolved = resolvedServicePlan(exchange, servicePlan);
         return incomingChannelCodeResolver.resolve(exchange)
-                .orElseGet(() -> channelCode(servicePlan.channelServiceAccess()));
+                .orElseGet(() -> channelCode(resolved.channelServiceAccess()));
     }
 
     private String fallbackChannelCode(RuntimeRoutePlan routePlan,
@@ -319,6 +343,10 @@ public class GatewayRoutePipelineConfigurer {
                                                 InboundRouteDefinition inboundRoute) {
         if (routePlan.targetKind() != RuntimeTargetKind.CHANNEL) {
             return null;
+        }
+        if (servicePlan.service() != null
+                && servicePlan.service().getRoutingStrategy() == RoutingStrategy.TASK_WORKFLOW) {
+            return servicePlan.channelServiceAccess();
         }
         if (inboundRoute.channelServiceDefinition() != null
                 && inboundRoute.channelServiceDefinition().getChannelServiceAccess() != null) {
@@ -341,6 +369,10 @@ public class GatewayRoutePipelineConfigurer {
     }
 
     private String failureServiceCode(Exchange exchange) {
+        String serviceCode = exchange.getProperty(Message.SERVICE_CODE, String.class);
+        if (serviceCode != null) {
+            return serviceCode;
+        }
         Service service = exchange.getProperty(Message.SERVICE, Service.class);
         if (service != null) {
             return service.getCode();
@@ -351,5 +383,31 @@ public class GatewayRoutePipelineConfigurer {
 
     private String serviceVersion(Exchange exchange) {
         return exchange.getProperty(Message.SERVICE_VERSION, String.class);
+    }
+
+    private RuntimeServicePlan resolvedServicePlan(
+            Exchange exchange,
+            RuntimeServicePlan fallback
+    ) {
+        RuntimeServicePlan resolved = exchange.getProperty(
+                Message.RUNTIME_SERVICE_PLAN, RuntimeServicePlan.class);
+        return resolved == null ? fallback : resolved;
+    }
+
+    private String serviceCode(Exchange exchange, Service fallback) {
+        String serviceCode = exchange.getProperty(Message.SERVICE_CODE, String.class);
+        if (serviceCode != null) {
+            return serviceCode;
+        }
+        Service resolved = exchange.getProperty(Message.SERVICE, Service.class);
+        if (resolved != null) {
+            return resolved.getCode();
+        }
+        return fallback == null ? null : fallback.getCode();
+    }
+
+    private String targetUri(Exchange exchange, String fallback) {
+        String resolved = exchange.getProperty(Message.SERVICE_ROUTE_URI, String.class);
+        return resolved == null ? fallback : resolved;
     }
 }

@@ -3,9 +3,23 @@ package ir.daneshrefah.scm.core.integration.service.routing;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
-public record RoutingPlan(String planId, RoutingStrategy routingStrategy, List<RoutingStepPlan> steps) {
+public record RoutingPlan(
+        String planId,
+        RoutingPlanIdentity identity,
+        RoutingStrategy routingStrategy,
+        List<RoutingStepPlan> steps
+) {
+    public RoutingPlan(
+            String planId,
+            RoutingStrategy routingStrategy,
+            List<RoutingStepPlan> steps
+    ) {
+        this(planId, null, routingStrategy, steps);
+    }
+
     public RoutingPlan {
         Objects.requireNonNull(planId, "planId must not be null");
         Objects.requireNonNull(routingStrategy, "routingStrategy must not be null");
@@ -22,6 +36,24 @@ public record RoutingPlan(String planId, RoutingStrategy routingStrategy, List<R
         if (routingStrategy == RoutingStrategy.CHAIN_ON_APPROVE && steps.isEmpty()) {
             throw new IllegalStateException("CHAIN_ON_APPROVE routing plan=" + planId
                     + " requires at least one step");
+        }
+        for (int index = 0; index < steps.size(); index++) {
+            RoutingStepPlan step = steps.get(index);
+            if (step.stepIndex() != index) {
+                throw new IllegalStateException("Routing plan=" + planId
+                        + " stepId=" + step.stepId()
+                        + " has stepIndex=" + step.stepIndex()
+                        + "; expected " + index);
+            }
+        }
+        long uniqueStepIds = steps.stream()
+                .map(RoutingStepPlan::stepId)
+                .map(stepId -> stepId.toLowerCase(Locale.ROOT))
+                .distinct()
+                .count();
+        if (uniqueStepIds != steps.size()) {
+            throw new IllegalStateException(
+                    "Routing plan=" + planId + " contains duplicate stepId values");
         }
     }
 }

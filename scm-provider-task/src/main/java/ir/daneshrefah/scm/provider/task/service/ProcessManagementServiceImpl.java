@@ -65,13 +65,29 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
 
     @Override
     public ProcessInstanceStartResponse start(Exchange exchange, ProcessInstanceStartRequest request) {
+        String executionId = org.apache.commons.lang3.StringUtils.trimToNull(
+                exchange.getProperty(Message.EXECUTION_ID, String.class)
+        );
+        if (executionId != null) {
+            Optional<ProcessInstanceEntity> existing =
+                    processInstanceRepository.findByCorrelationId(executionId);
+            if (existing.isPresent()) {
+                return processInstanceMapper.toProcessInstanceStartResponse(
+                        existing.get());
+            }
+        }
         processTaskDefinitionService.validateProcessBeforeStart(exchange,request);
-        ProcessInstanceEntity processInstanceEntity = createProcessInstanceEntity(request);
-        ProcessInstanceEntity processInstance = processInstanceRepository.save(processInstanceEntity);
+        ProcessInstanceEntity processInstanceEntity =
+                createProcessInstanceEntity(request, executionId);
+        ProcessInstanceEntity processInstance =
+                processInstanceRepository.save(processInstanceEntity);
         return processInstanceMapper.toProcessInstanceStartResponse(processInstance);
     }
 
-    private ProcessInstanceEntity createProcessInstanceEntity(ProcessInstanceStartRequest request) {
+    private ProcessInstanceEntity createProcessInstanceEntity(
+            ProcessInstanceStartRequest request,
+            String executionId
+    ) {
         UserModel confirmUserModel = request.getConfirmUser();
         GeneralPerson generalPerson = null;
         ProcessInstanceEntity processInstanceEntity = new ProcessInstanceEntity();
@@ -80,6 +96,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         processInstanceEntity.setAmount(request.getAmount());
         processInstanceEntity.setDescription(request.getDescription());
         processInstanceEntity.setDestination(request.getDestination());
+        processInstanceEntity.setCorrelationId(executionId);
         if (Objects.nonNull(request.getConfirmUser()) && StringUtils.isNotBlank(request.getConfirmUser().getNationalId())) {
             generalPerson = findUserByPersonTypeAndNationalCodeAndSubOrg(confirmUserModel);
             processInstanceEntity.setConfirmUserId(generalPerson.getId());
@@ -218,6 +235,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     public ProcessInstanceApproveResponse approve(Exchange exchange, ProcessInstanceApproveRequest request) {
         validateApproveRequest(exchange, request);
         ProcessInstanceEntity processInstance = findByID(exchange, request.getId());
+        initializeCorrelationIfAbsent(processInstance, request);
         Integer loggedInUserId = AuthenticationUtils.getLoggedInUserId();
         validateProcessStatus(processInstance.getProcessStatus(), EnumSet.of(ProcessStatusEnum.WAITING_FOR_CONFIRM));
         validateTaskStates(processInstance, TaskStatusEnum.WAITING_FOR_CONFIRM);
@@ -227,7 +245,6 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
 
         taskEntity.setTaskStatus(TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         processInstance.setProcessStatus(ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE);
-        processInstance.setCorrelationId(request.getCorrelationId());
         ProcessInstanceApproveResponse response = createResponseWithConfirmUser(processInstance);
         List<UserModel> users = getTaskUsers(processInstance);
         response.setUsers(users);
@@ -274,9 +291,20 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
 
     private void validateApproveRequest(Exchange exchange, ProcessInstanceApproveRequest request) {
         processTaskDefinitionService.validateProcessBeforeApprove(exchange, request);
-        ValidationUtils.checkEmptyString(request.getCorrelationId(), () -> {
-            throw new InvalidInputException("correlationId");
-        });
+    }
+
+    private void initializeCorrelationIfAbsent(
+            ProcessInstanceEntity processInstance,
+            ProcessInstanceApproveRequest request
+    ) {
+        if (StringUtils.isNotBlank(processInstance.getCorrelationId())) {
+            return;
+        }
+        ValidationUtils.checkBlankString(
+                request.getCorrelationId(),
+                () -> new InvalidInputException("correlationId")
+        );
+        processInstance.setCorrelationId(request.getCorrelationId());
     }
 
     private void persistTaskLogEntity(Exchange exchange, TaskEntity taskEntity) {
@@ -368,4 +396,3 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         });
     }
 }
-

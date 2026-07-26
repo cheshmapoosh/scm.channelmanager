@@ -98,7 +98,7 @@ public class ChainOnApproveStepConfigExtractor {
     ) {
         JsonNode decisionPolicy = details.get(DECISION_POLICY);
         if (decisionPolicy == null) {
-            return DefaultSuccessChainStepDecisionPolicy.CODE;
+            return DefaultRoutingDecisionPolicy.CODE;
         }
         if (!decisionPolicy.isTextual()) {
             throw configurationException(service, serviceOperation, definition, DECISION_POLICY,

@@ -26,6 +26,10 @@ public class RoutingOperationMetadataResolver {
         return metadata(operationName).targetsTaskProvider();
     }
 
+    public String providerUri(String operationName) {
+        return metadata(operationName).providerUri();
+    }
+
     private OperationRoutingMetadata metadata(String operationName) {
         if (operationName == null || operationName.isBlank()) {
             throw new IllegalArgumentException("operationName is required for routing metadata");
@@ -56,6 +60,7 @@ public class RoutingOperationMetadataResolver {
                 : StringUtils.trimToNull(operation.getProvider().getUri());
         return new OperationRoutingMetadata(
                 spanKind,
+                providerUri,
                 operation.getType() == OperationType.PROVIDER
                         && StringUtils.startsWithIgnoreCase(providerUri, "scm-task:")
         );
@@ -63,6 +68,7 @@ public class RoutingOperationMetadataResolver {
 
     private record OperationRoutingMetadata(
             String spanKind,
+            String providerUri,
             boolean targetsTaskProvider
     ) {
     }

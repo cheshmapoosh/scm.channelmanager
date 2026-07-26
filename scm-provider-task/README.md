@@ -104,13 +104,13 @@ provider URIs, or legacy cartable operation-code names.
 Runtime flow:
 
 ```text
-InboundChannelServiceDefinition
+Shared TASK_WORKFLOW InboundChannelServiceDefinition
   -> GatewayChannelLayerRouteBuilder
   -> GatewayInboundRouteFactory
   -> GatewayRoutePipelineConfigurer
-  -> matches the inbound route and supplies inboundAction
+  -> TaskWorkflowRouteIdentityResolver supplies serviceCode and inboundAction
 Service layer
-  -> resolves inboundAction and its ordered routing plan
+  -> resolves serviceCode + inboundAction to a service-owned ActionPlan
   -> selects the shared FIRST or CHAIN_ON_APPROVE engine
   -> executes configured operations by operationName
 Operation layer
@@ -122,9 +122,9 @@ scm-provider-task
 ```
 
 `scm-provider-task` does not decide which business service should use task
-workflow. It does not know service routing strategies, service codes, or gateway
-paths. TASK_WORKFLOW routes use the same generic gateway pipeline as ordinary
-services; there is no dedicated TASK_WORKFLOW gateway route builder.
+workflow. It does not parse service codes, inbound actions, ActionPlan JSON, or
+gateway paths. The shared TASK_WORKFLOW category uses the existing generic
+gateway pipeline; this provider does not add a gateway route builder.
 
 Task and process identifiers arrive through normalized SCM input. A REST adapter
 normalizes configured path variables into `Message.INBOUND_PARAMETERS`; ISO,
@@ -160,6 +160,20 @@ scm:
 
 If neither bean-name property is configured, default mode is used. If either one
 is configured, both are required and the named beans must exist at startup.
+
+The provider also supplies the mandatory durable recovery store. It writes the
+versioned workflow snapshot through the unchanged
+`TBL_PRC_PROCESS_INSTANCE_WATCHER` mapping with:
+
+```text
+TYPE   = WORKFLOW_EXECUTION
+ROW_NO = 0
+```
+
+Process correlation remains backward compatible. A workflow start initializes
+the existing process correlation from `Message.EXECUTION_ID`. Approve preserves
+that value. For a legacy process whose stored correlation is null or blank,
+approve still requires and stores the request `correlationId`.
 
 ## Events and Observation
 

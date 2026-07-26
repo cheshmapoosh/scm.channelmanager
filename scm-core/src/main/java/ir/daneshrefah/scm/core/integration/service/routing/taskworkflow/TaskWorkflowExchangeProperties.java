@@ -10,6 +10,8 @@ public final class TaskWorkflowExchangeProperties {
     public static final String PROCESS_ID = "scmTaskWorkflowProcessId";
     public static final String TASK_ID = "scmTaskWorkflowTaskId";
     public static final String CORRELATION_ID = "scmTaskWorkflowCorrelationId";
+    public static final String PROVIDER_IDEMPOTENCY_KEY =
+            "scmTaskWorkflowProviderIdempotencyKey";
 
     private TaskWorkflowExchangeProperties() {
     }

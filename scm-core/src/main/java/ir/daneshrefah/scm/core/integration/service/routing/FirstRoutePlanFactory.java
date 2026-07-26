@@ -26,12 +26,16 @@ public class FirstRoutePlanFactory {
                     + ": operation metadata is unavailable", exception);
         }
         return new RoutingPlan(service.getCode(), RoutingStrategy.FIRST, List.of(new RoutingStepPlan(
-                operation.getOperationName(), operation, endpointResolver.resolve(operation.getOperationName()),
+                operation.getOperationName(),
+                0,
+                operation,
+                endpointResolver.resolve(operation.getOperationName()),
                 (exchange, context) -> context.originalRequest(), null,
                 new RoutingStepObservationContext(
                         service.getCode(),
                         null,
                         null,
+                        operation.getOperationName(),
                         0,
                         spanKind)
         )));

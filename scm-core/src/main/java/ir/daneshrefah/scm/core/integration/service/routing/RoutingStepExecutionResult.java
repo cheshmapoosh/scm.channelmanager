@@ -4,16 +4,13 @@ public record RoutingStepExecutionResult(
         Object response,
         Throwable failure,
         long elapsedMs,
-        ChainStepDecision decision,
-        String normalizedOutcome
+        RoutingDecisionResult decisionResult
 ) {
-    public RoutingStepExecutionResult(Object response, Throwable failure, long elapsedMs) {
-        this(
-                response,
-                failure,
-                elapsedMs,
-                failure == null ? ChainStepDecision.CONTINUE : ChainStepDecision.FAIL,
-                null
-        );
+    public RoutingDecision decision() {
+        return decisionResult.decision();
+    }
+
+    public String normalizedOutcome() {
+        return decisionResult.normalizedOutcome();
     }
 }

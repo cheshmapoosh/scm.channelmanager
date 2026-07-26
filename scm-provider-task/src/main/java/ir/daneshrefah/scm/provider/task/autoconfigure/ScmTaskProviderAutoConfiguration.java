@@ -2,14 +2,21 @@ package ir.daneshrefah.scm.provider.task.autoconfigure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.persistence.JpaManagedPackageContributor;
+import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowRecoveryStore;
 import ir.daneshrefah.scm.provider.task.api.ProcessInstanceService;
 import ir.daneshrefah.scm.provider.task.api.TaskInstanceService;
 import ir.daneshrefah.scm.provider.task.camel.TaskProviderComponent;
 import ir.daneshrefah.scm.provider.task.camel.TaskProviderOperationAdapter;
 import ir.daneshrefah.scm.provider.task.workflow.InternalTaskWorkflowEngine;
+import ir.daneshrefah.scm.provider.task.workflow.ProviderTaskWorkflowRecoveryStore;
+import ir.daneshrefah.scm.provider.task.workflow.ProviderTaskWorkflowCapability;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngine;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngineRegistry;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowStepTypeResolver;
+import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceRepository;
+import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceWatcherRepository;
+import ir.daneshrefah.scm.provider.task.repository.TaskRepository;
+import ir.daneshrefah.scm.provider.task.service.ProcessInstanceWatcherService;
 import jakarta.persistence.EntityManagerFactory;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.BeansException;
@@ -119,6 +126,32 @@ public class ScmTaskProviderAutoConfiguration {
             TaskWorkflowEngineRegistry engineRegistry
     ) {
         return new TaskProviderOperationAdapter(stepTypeResolver, engineRegistry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ProviderTaskWorkflowCapability providerTaskWorkflowCapability(
+            TaskWorkflowEngineRegistry engineRegistry
+    ) {
+        return new ProviderTaskWorkflowCapability(engineRegistry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(TaskWorkflowRecoveryStore.class)
+    public TaskWorkflowRecoveryStore taskWorkflowRecoveryStore(
+            ProcessInstanceRepository processRepository,
+            ProcessInstanceWatcherRepository watcherRepository,
+            TaskRepository taskRepository,
+            ProcessInstanceWatcherService watcherService,
+            ObjectMapper objectMapper
+    ) {
+        return new ProviderTaskWorkflowRecoveryStore(
+                processRepository,
+                watcherRepository,
+                taskRepository,
+                watcherService,
+                objectMapper
+        );
     }
 
     @Bean(name = TaskProviderComponent.SCHEME)

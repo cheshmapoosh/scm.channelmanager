@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.integration.service.routing;
 
-public enum ChainStepDecision {
-    CONTINUE,
+public enum RoutingDecision {
+    SUCCESS,
     RETRY_LATER,
     FAIL
 }

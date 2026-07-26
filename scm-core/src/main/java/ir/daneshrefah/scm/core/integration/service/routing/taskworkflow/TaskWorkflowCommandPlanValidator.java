@@ -9,16 +9,10 @@ import java.util.List;
 
 @Component
 public class TaskWorkflowCommandPlanValidator {
-    public void validate(Service service, TaskWorkflowInboundCommandConfig config) {
-        List<TaskWorkflowInboundCommandStepConfig> steps = config.steps();
+    public void validate(Service service, TaskWorkflowActionPlanConfig config) {
+        List<TaskWorkflowActionPlanStepConfig> steps = config.steps();
         if (config.routingStrategy() == RoutingStrategy.FIRST) {
             require(steps.size() == 1, service, config, 0, "FIRST requires exactly one step");
-        }
-        if (config.command() == TaskWorkflowCommand.COMPLETE_TASK) {
-            require(config.routingStrategy() == RoutingStrategy.FIRST
-                            && steps.size() == 1
-                            && steps.getFirst().stepType() == TaskWorkflowStepType.COMPLETE_TASK,
-                    service, config, 0, "task_complete requires FIRST with stepType COMPLETE_TASK");
         }
         if (config.command() == TaskWorkflowCommand.APPROVE_AND_EXECUTE) {
             require(config.routingStrategy() == RoutingStrategy.CHAIN_ON_APPROVE,
@@ -34,22 +28,42 @@ public class TaskWorkflowCommandPlanValidator {
                         service, config, i, "middle stepTypes must be BUSINESS_OPERATION");
             }
         } else {
-            for (int i = 0; i < steps.size(); i++) {
-                require(steps.get(i).stepType() != TaskWorkflowStepType.COMPLETE_PROCESS,
-                        service, config, i, "COMPLETE_PROCESS cannot be a direct inbound action");
-            }
+            require(config.routingStrategy() == RoutingStrategy.FIRST,
+                    service, config, 0, "direct actions require FIRST");
+            TaskWorkflowStepType requiredStepType = requiredDirectStepType(config.command());
+            require(steps.size() == 1 && steps.getFirst().stepType() == requiredStepType,
+                    service, config, 0, config.inboundAction()
+                            + " requires stepType " + requiredStepType);
         }
     }
 
+    private TaskWorkflowStepType requiredDirectStepType(TaskWorkflowCommand command) {
+        return switch (command) {
+            case START -> TaskWorkflowStepType.START_PROCESS;
+            case COMPLETE_TASK -> TaskWorkflowStepType.COMPLETE_TASK;
+            case CANCEL_PROCESS -> TaskWorkflowStepType.CANCEL_PROCESS;
+            case FIND_PROCESSES -> TaskWorkflowStepType.FIND_ALL_PROCESS;
+            case FIND_TASKS -> TaskWorkflowStepType.FIND_ALL_TASK;
+            case FIND_TASKS_BY_PROCESS_ID -> TaskWorkflowStepType.FIND_TASK_BY_PROCESS_ID;
+            case UPDATE_PROCESS_DESCRIPTION ->
+                    TaskWorkflowStepType.UPDATE_PROCESS_DESCRIPTION;
+            case APPROVE_AND_EXECUTE -> throw new IllegalArgumentException(
+                    "APPROVE_AND_EXECUTE is not a direct action");
+        };
+    }
+
     private void require(boolean condition, Service service,
-                         TaskWorkflowInboundCommandConfig config, int index, String reason) {
+                         TaskWorkflowActionPlanConfig config, int index, String reason) {
         if (condition) return;
-        TaskWorkflowInboundCommandStepConfig step = index >= 0 && index < config.steps().size()
+        TaskWorkflowActionPlanStepConfig step = index >= 0 && index < config.steps().size()
                 ? config.steps().get(index) : null;
         throw new IllegalStateException("Invalid TASK_WORKFLOW command plan serviceCode="
                 + (service == null ? "<null>" : service.getCode())
                 + ", inboundAction=" + config.inboundAction()
+                + ", actionPlanName=" + config.actionPlanName()
+                + ", definitionId=" + config.definitionId()
                 + ", routingStrategy=" + config.routingStrategy()
+                + ", stepId=" + (step == null ? null : step.stepId())
                 + ", stepIndex=" + index + ", stepType=" + (step == null ? null : step.stepType())
                 + ", operationName=" + (step == null ? null : step.operationName())
                 + ", reason=" + reason);

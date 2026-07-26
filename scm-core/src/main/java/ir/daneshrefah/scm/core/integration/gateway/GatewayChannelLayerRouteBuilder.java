@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.service.GatewayService;
 import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.observability.RouteLogEvents;
@@ -203,7 +204,12 @@ public class GatewayChannelLayerRouteBuilder extends RouteBuilder {
     }
 
     private void startGatewayReceive(Exchange exchange, RuntimeServicePlan servicePlan) {
-        observationTraceSupport.startGatewayReceive(exchange, servicePlan.service());
+        RuntimeServicePlan resolved = exchange.getProperty(
+                Message.RUNTIME_SERVICE_PLAN, RuntimeServicePlan.class);
+        observationTraceSupport.startGatewayReceive(
+                exchange,
+                resolved == null ? servicePlan.service() : resolved.service()
+        );
     }
 
     private void finishGatewayReceive(Exchange exchange) {

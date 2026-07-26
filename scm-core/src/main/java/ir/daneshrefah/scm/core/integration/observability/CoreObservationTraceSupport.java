@@ -333,6 +333,7 @@ public class CoreObservationTraceSupport {
             String serviceCode,
             String operationName,
             RoutingStrategy routingStrategy,
+            String stepId,
             int stepIndex,
             String inboundAction,
             TaskWorkflowStepType taskWorkflowStepType
@@ -342,6 +343,7 @@ public class CoreObservationTraceSupport {
                 serviceCode,
                 operationName,
                 routingStrategy,
+                stepId,
                 stepIndex,
                 inboundAction,
                 taskWorkflowStepType,
@@ -354,6 +356,7 @@ public class CoreObservationTraceSupport {
             String serviceCode,
             String operationName,
             RoutingStrategy routingStrategy,
+            String stepId,
             int stepIndex,
             String inboundAction,
             TaskWorkflowStepType taskWorkflowStepType,
@@ -388,7 +391,10 @@ public class CoreObservationTraceSupport {
                     .attribute(CoreTraceAttributes.OPERATION_NAME, operationName)
                     .attribute(CoreTraceAttributes.ROUTING_STRATEGY,
                             routingStrategy == null ? null : routingStrategy.name())
+                    .attribute(CoreTraceAttributes.ROUTING_STEP_ID, stepId)
                     .attribute(CoreTraceAttributes.ROUTING_STEP_INDEX, (long) stepIndex)
+                    .attribute(CoreTraceAttributes.ROUTING_EXECUTION_ID,
+                            exchange.getProperty(Message.EXECUTION_ID, String.class))
                     .attribute(CoreTraceAttributes.TASK_INBOUND_ACTION, inboundAction)
                     .attribute(CoreTraceAttributes.TASK_WORKFLOW_STEP_TYPE,
                             taskWorkflowStepType == null ? null : taskWorkflowStepType.name())
@@ -430,16 +436,18 @@ public class CoreObservationTraceSupport {
                 return;
             }
             scope.attribute(CoreTraceAttributes.OPERATION_DURATION_MS, Math.max(0L, durationMs))
-                    .attribute(CoreTraceAttributes.CHAIN_DECISION, decision)
+                    .attribute(CoreTraceAttributes.ROUTING_DECISION, decision)
+                    .attribute(CoreTraceAttributes.ROUTING_RETRYABLE,
+                            "RETRY_LATER".equals(decision))
                     .attribute(CoreTraceAttributes.OPERATION_NORMALIZED_OUTCOME, normalizedOutcome);
-            FailureDetails details = "CONTINUE".equals(decision)
+            FailureDetails details = "SUCCESS".equals(decision)
                     ? null
                     : failureDetails(exchange, failure);
             if (details != null) {
                 scope.attribute(CommonTraceAttributes.ERROR_TYPE, details.errorType())
                         .attribute(CommonTraceAttributes.ERROR_CODE, details.errorCode());
             }
-            if ("CONTINUE".equals(decision)) {
+            if ("SUCCESS".equals(decision)) {
                 scope.attribute(CommonTraceAttributes.EVENT_OUTCOME, OUTCOME_SUCCESS).success();
             } else if ("RETRY_LATER".equals(decision)) {
                 scope.attribute(CommonTraceAttributes.EVENT_OUTCOME, "unknown").outcome("unknown");

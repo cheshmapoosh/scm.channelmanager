@@ -23,6 +23,7 @@ import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
+import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationDefinitionClassifier;
 import ir.daneshrefah.scm.common.service.operation.OperationService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
 import ir.daneshrefah.scm.observation.starter.ObservationContext;
@@ -149,6 +150,9 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 .stream()
                 .flatMap(this::serviceOperations)
                 .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
+                .filter(serviceOperation ->
+                        !ServiceOperationDefinitionClassifier.isActionPlan(
+                                serviceOperation))
                 .map(ServiceOperation::getOperationName)
                 .map(StringUtils::trimToNull)
                 .filter(Objects::nonNull)

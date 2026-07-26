@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.service.routing;
 
 import org.apache.camel.Exchange;
 
-public record ChainStepDecisionContext(
+public record RoutingDecisionContext(
         Exchange exchange,
         RoutingStepPlan step,
         RoutingExecutionContext executionContext,

@@ -1,8 +1,8 @@
 package ir.daneshrefah.scm.core.integration.service.routing;
 
-import ir.daneshrefah.scm.common.model.error.ScmFault;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
@@ -18,7 +18,7 @@ public class RoutingStepExecutor {
 
     private final ServiceOperationRouteMetadataSetter metadataSetter;
     private final ProducerTemplate producerTemplate;
-    private final RoutingResultClassifier resultClassifier;
+    private final DefaultRoutingDecisionPolicy defaultDecisionPolicy;
     private final CoreObservationTraceSupport observationTraceSupport;
 
     public RoutingStepExecutionResult execute(
@@ -39,7 +39,7 @@ public class RoutingStepExecutor {
         RoutingStepExecutionResult completed = null;
         Object response = null;
         Throwable failure = null;
-        ChainStepDecision decision = null;
+        RoutingDecisionResult decisionResult = null;
         String normalizedOutcome = null;
         RoutingStepObservationContext observationContext = step.observationContext();
         observationTraceSupport.startRoutingStepCall(
@@ -47,6 +47,7 @@ public class RoutingStepExecutor {
                 observationContext.serviceCode(),
                 step.serviceOperation().getOperationName(),
                 routingStrategy,
+                step.stepId(),
                 observationContext.stepIndex(),
                 observationContext.inboundAction(),
                 observationContext.taskWorkflowStepType(),
@@ -86,34 +87,40 @@ public class RoutingStepExecutor {
             response = exchange.getMessage().getBody();
             preserveFailure(exchange, failure);
 
-            ChainStepDecisionContext decisionContext = new ChainStepDecisionContext(
+            RoutingDecisionContext decisionContext = new RoutingDecisionContext(
                     exchange, step, context, response, failure);
-            decision = decide(routingStrategy, step, decisionContext);
-            if (failure != null && decision == ChainStepDecision.CONTINUE) {
-                decision = ChainStepDecision.FAIL;
-            }
-            normalizedOutcome = normalizedOutcome(step, decisionContext, decision, exchange);
-            if (failure == null && decision == ChainStepDecision.CONTINUE) {
-                context.record(step.serviceOperation().getOperationName(), response);
+            decisionResult = decide(step, decisionContext);
+            normalizedOutcome = decisionResult.normalizedOutcome();
+            if (decisionResult.decision() == RoutingDecision.SUCCESS) {
+                context.record(step.stepId(), response);
             }
             completed = new RoutingStepExecutionResult(
                     response,
                     failure,
                     elapsedMs(startedNanos),
-                    decision,
-                    normalizedOutcome
+                    decisionResult
             );
+            exchange.setException(null);
+            exchange.removeProperty(Exchange.EXCEPTION_CAUGHT);
             return completed;
         } catch (RuntimeException executionFailure) {
             failure = executionFailure;
-            decision = ChainStepDecision.FAIL;
+            decisionResult = new RoutingDecisionResult(
+                    RoutingDecision.FAIL,
+                    MessageStatus.SC_ERROR_SYSTEM,
+                    "ROUTING_STEP_EXECUTION_ERROR",
+                    "Routing step execution failed",
+                    normalizedOutcome
+            );
             preserveFailure(exchange, executionFailure);
             throw executionFailure;
         } finally {
             long durationMs = completed == null ? elapsedMs(startedNanos) : completed.elapsedMs();
             observationTraceSupport.finishRoutingStepCall(
                     exchange,
-                    decision == null ? null : decision.name(),
+                    decisionResult == null
+                            ? null
+                            : decisionResult.decision().name(),
                     normalizedOutcome,
                     failure,
                     durationMs
@@ -122,42 +129,14 @@ public class RoutingStepExecutor {
         }
     }
 
-    private ChainStepDecision decide(
-            RoutingStrategy routingStrategy,
+    private RoutingDecisionResult decide(
             RoutingStepPlan step,
-            ChainStepDecisionContext context
+            RoutingDecisionContext context
     ) {
         if (step.decisionPolicy() != null) {
             return step.decisionPolicy().decide(context);
         }
-        if (routingStrategy == RoutingStrategy.FIRST
-                && context.failure() == null
-                && !(context.response() instanceof Message)
-                && !(context.response() instanceof ScmFault)) {
-            return ChainStepDecision.CONTINUE;
-        }
-        return switch (resultClassifier.classify(context.response(), context.failure())) {
-            case SUCCESS -> ChainStepDecision.CONTINUE;
-            case TEMPORARY_OR_UNKNOWN -> ChainStepDecision.RETRY_LATER;
-            case DEFINITIVE_FAILURE -> ChainStepDecision.FAIL;
-        };
-    }
-
-    private String normalizedOutcome(
-            RoutingStepPlan step,
-            ChainStepDecisionContext context,
-            ChainStepDecision decision,
-            Exchange exchange
-    ) {
-        Object property = exchange.getProperty(NORMALIZED_OUTCOME_PROPERTY);
-        try {
-            String policyOutcome = step.decisionPolicy() == null
-                    ? null
-                    : step.decisionPolicy().normalizedOutcome(context, decision);
-            return policyOutcome != null ? policyOutcome : property == null ? null : String.valueOf(property);
-        } catch (RuntimeException ignored) {
-            return property == null ? null : String.valueOf(property);
-        }
+        return defaultDecisionPolicy.decide(context);
     }
 
     private void preserveFailure(Exchange exchange, Throwable failure) {

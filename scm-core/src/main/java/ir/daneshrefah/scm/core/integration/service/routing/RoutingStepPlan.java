@@ -5,15 +5,22 @@ import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import java.util.Objects;
 
 public record RoutingStepPlan(
-        String stepName,
+        String stepId,
+        int stepIndex,
         ServiceOperation serviceOperation,
         String endpointUri,
         RoutingStepRequestFactory requestFactory,
-        ChainStepDecisionPolicy decisionPolicy,
+        RoutingDecisionPolicy decisionPolicy,
         RoutingStepObservationContext observationContext
 ) {
     public RoutingStepPlan {
-        Objects.requireNonNull(stepName, "stepName must not be null");
+        Objects.requireNonNull(stepId, "stepId must not be null");
+        if (stepId.isBlank()) {
+            throw new IllegalArgumentException("stepId must not be blank");
+        }
+        if (stepIndex < 0) {
+            throw new IllegalArgumentException("stepIndex must not be negative");
+        }
         Objects.requireNonNull(serviceOperation, "serviceOperation must not be null");
         Objects.requireNonNull(endpointUri, "endpointUri must not be null");
         Objects.requireNonNull(requestFactory, "requestFactory must not be null");

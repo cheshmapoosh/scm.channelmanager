@@ -3,39 +3,46 @@ package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.NabError;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecision;
-import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionContext;
-import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecisionPolicy;
-import ir.daneshrefah.scm.core.integration.service.routing.DefaultSuccessChainStepDecisionPolicy;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
+import ir.daneshrefah.scm.core.integration.service.routing.DefaultRoutingDecisionPolicy;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecision;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionContext;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionPolicy;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class NabPaymasterRegistrationDecisionPolicy implements ChainStepDecisionPolicy {
+public class NabPaymasterRegistrationDecisionPolicy implements RoutingDecisionPolicy {
     public static final String CODE = "NAB_PAYMASTER_REGISTRATION";
     public static final String SUCCESS_ALREADY_APPLIED = "SUCCESS_ALREADY_APPLIED";
-    private final DefaultSuccessChainStepDecisionPolicy defaultPolicy;
+    private final DefaultRoutingDecisionPolicy defaultPolicy;
 
     @Override
     public String code() { return CODE; }
 
     @Override
-    public ChainStepDecision decide(ChainStepDecisionContext context) {
+    public RoutingDecisionResult decide(RoutingDecisionContext context) {
         if (containsNabBusinessFailure(context.failure())) {
-            return ChainStepDecision.FAIL;
+            return new RoutingDecisionResult(
+                    RoutingDecision.FAIL,
+                    MessageStatus.SC_ERROR_BUSINESS,
+                    "NAB_PAYMASTER_REGISTRATION_FAILED",
+                    "NAB rejected paymaster registration",
+                    null
+            );
         }
         if (context.failure() == null && alreadyApplied(context.response())) {
-            return ChainStepDecision.CONTINUE;
+            return new RoutingDecisionResult(
+                    RoutingDecision.SUCCESS,
+                    MessageStatus.SC_SUCCESS,
+                    "NAB_PAYMASTER_REGISTRATION_ALREADY_APPLIED",
+                    null,
+                    SUCCESS_ALREADY_APPLIED
+            );
         }
         return defaultPolicy.decide(context);
-    }
-
-    @Override
-    public String normalizedOutcome(ChainStepDecisionContext context, ChainStepDecision decision) {
-        return decision == ChainStepDecision.CONTINUE && alreadyApplied(context.response())
-                ? SUCCESS_ALREADY_APPLIED
-                : null;
     }
 
     private boolean containsNabBusinessFailure(Throwable failure) {

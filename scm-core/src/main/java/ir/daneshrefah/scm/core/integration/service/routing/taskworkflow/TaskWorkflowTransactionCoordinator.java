@@ -6,7 +6,9 @@ import ir.daneshrefah.scm.common.event.provider.ScmProviderEvent;
 import ir.daneshrefah.scm.common.event.provider.ScmProviderEventType;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
-import ir.daneshrefah.scm.core.integration.service.routing.ChainStepDecision;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecision;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepExecutionResult;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepPlan;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
@@ -19,126 +21,90 @@ import java.util.Map;
 @Slf4j
 public class TaskWorkflowTransactionCoordinator {
     private final ObjectProvider<ScmEventPublisher> eventPublisherProvider;
-    private final TaskWorkflowExecutionStore executionStore;
 
     public TaskWorkflowTransactionCoordinator(
-            ObjectProvider<ScmEventPublisher> eventPublisherProvider,
-            ObjectProvider<TaskWorkflowExecutionStore> executionStoreProvider
+            ObjectProvider<ScmEventPublisher> eventPublisherProvider
     ) {
         this.eventPublisherProvider = eventPublisherProvider;
-        this.executionStore = executionStoreProvider.getIfAvailable(
-                NoopTaskWorkflowExecutionStore::new
-        );
     }
 
-    public void beforeApprove(Exchange exchange) {
-        record(exchange, TaskWorkflowStepType.APPROVE_PROCESS, "requested");
-    }
-
-    public void afterApprove(Exchange exchange, Object approveResponse, Long processId) {
-        exchange.setProperty(
-                TaskWorkflowExchangeProperties.APPROVE_RESPONSE,
-                approveResponse
-        );
-        if (processId != null) {
-            exchange.setProperty(TaskWorkflowExchangeProperties.PROCESS_ID, processId);
+    public void beforeStep(Exchange exchange, RoutingStepPlan step) {
+        if (step.observationContext().taskWorkflowStepType()
+                == TaskWorkflowStepType.BUSINESS_OPERATION) {
+            publish(
+                    ScmProviderEventType.WORKFLOW_BUSINESS_STARTED,
+                    exchange,
+                    step,
+                    null,
+                    "started",
+                    null
+            );
         }
-        record(exchange, TaskWorkflowStepType.APPROVE_PROCESS, "succeeded");
     }
 
-    public void beforeBusinessOperation(Exchange exchange) {
-        record(exchange, TaskWorkflowStepType.BUSINESS_OPERATION, "started");
-        publish(ScmProviderEventType.WORKFLOW_BUSINESS_STARTED,
-                exchange, "started", null);
-    }
-
-    public void afterBusinessOperation(
+    public void afterStep(
             Exchange exchange,
-            Object businessResponse,
-            ChainStepDecision decision,
-            Throwable failure
+            RoutingStepPlan step,
+            RoutingStepExecutionResult result
     ) {
+        TaskWorkflowStepType stepType =
+                step.observationContext().taskWorkflowStepType();
+        if (stepType == TaskWorkflowStepType.APPROVE_PROCESS
+                && result.decision() == RoutingDecision.SUCCESS) {
+            exchange.setProperty(
+                    TaskWorkflowExchangeProperties.APPROVE_RESPONSE,
+                    result.response()
+            );
+        }
+        if (stepType != TaskWorkflowStepType.BUSINESS_OPERATION) {
+            return;
+        }
+
         exchange.setProperty(
                 TaskWorkflowExchangeProperties.BUSINESS_RESPONSE,
-                businessResponse
+                result.response()
         );
-        switch (decision) {
-            case CONTINUE -> {
-                exchange.setProperty(
-                        TaskWorkflowExchangeProperties.BUSINESS_RESULT,
-                        ChainStepDecision.CONTINUE
-                );
-                exchange.setProperty(
-                        TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
-                        ChainStepDecision.CONTINUE.name()
-                );
-                record(exchange, TaskWorkflowStepType.BUSINESS_OPERATION, "succeeded");
-                publish(ScmProviderEventType.WORKFLOW_BUSINESS_SUCCEEDED,
-                        exchange, "success", null);
-            }
-            case RETRY_LATER -> handleUnknownBusinessResult(exchange, failure);
-            case FAIL -> handleDefinitiveBusinessFailure(exchange, failure);
+        exchange.setProperty(
+                TaskWorkflowExchangeProperties.BUSINESS_RESULT,
+                result.decision()
+        );
+        exchange.setProperty(
+                TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
+                result.decision().name()
+        );
+        switch (result.decision()) {
+            case SUCCESS -> publish(
+                    ScmProviderEventType.WORKFLOW_BUSINESS_SUCCEEDED,
+                    exchange,
+                    step,
+                    result,
+                    "success",
+                    null
+            );
+            case RETRY_LATER -> publish(
+                    ScmProviderEventType.WORKFLOW_BUSINESS_UNKNOWN,
+                    exchange,
+                    step,
+                    result,
+                    "unknown",
+                    result.failure()
+            );
+            case FAIL -> publish(
+                    ScmProviderEventType.WORKFLOW_BUSINESS_FAILED,
+                    exchange,
+                    step,
+                    result,
+                    "failure",
+                    result.failure()
+            );
         }
-    }
-
-    public void handleDefinitiveBusinessFailure(Exchange exchange, Throwable error) {
-        exchange.setProperty(
-                TaskWorkflowExchangeProperties.BUSINESS_RESULT,
-                ChainStepDecision.FAIL
-        );
-        exchange.setProperty(
-                TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
-                ChainStepDecision.FAIL.name()
-        );
-        record(exchange, TaskWorkflowStepType.BUSINESS_OPERATION, "failed");
-        publish(ScmProviderEventType.WORKFLOW_BUSINESS_FAILED,
-                exchange, "failure", error);
-    }
-
-    public void beforeCompleteProcess(Exchange exchange) {
-        record(exchange, TaskWorkflowStepType.COMPLETE_PROCESS,
-                "requested:SUCCESS");
-    }
-
-    public void afterCompleteProcess(Exchange exchange) {
-        record(exchange, TaskWorkflowStepType.COMPLETE_PROCESS,
-                "completed:SUCCESS");
-    }
-
-    public void handleUnknownBusinessResult(Exchange exchange, Throwable error) {
-        exchange.setProperty(
-                TaskWorkflowExchangeProperties.BUSINESS_RESULT,
-                ChainStepDecision.RETRY_LATER
-        );
-        exchange.setProperty(
-                TaskWorkflowExchangeProperties.BUSINESS_RESULT_STATUS,
-                ChainStepDecision.RETRY_LATER.name()
-        );
-        record(exchange, TaskWorkflowStepType.BUSINESS_OPERATION, "unknown");
-        publish(ScmProviderEventType.WORKFLOW_BUSINESS_UNKNOWN,
-                exchange, "unknown", error);
-    }
-
-    private void record(
-            Exchange exchange,
-            TaskWorkflowStepType stepType,
-            String state
-    ) {
-        executionStore.record(
-                exchange.getProperty(
-                        TaskWorkflowExchangeProperties.COMMAND,
-                        TaskWorkflowCommand.class
-                ),
-                stepType,
-                state,
-                correlationId(exchange),
-                exchange.getProperty(TaskWorkflowExchangeProperties.PROCESS_ID, Long.class)
-        );
     }
 
     private void publish(
             ScmProviderEventType type,
             Exchange exchange,
+            RoutingStepPlan step,
+            RoutingStepExecutionResult result,
             String outcome,
             Throwable error
     ) {
@@ -149,11 +115,21 @@ public class TaskWorkflowTransactionCoordinator {
             }
             Map<String, Object> attributes = new LinkedHashMap<>();
             put(attributes, "scm.task.correlation_id", correlationId(exchange));
+            put(attributes, "scm.task.execution_id",
+                    exchange.getProperty(Message.EXECUTION_ID));
             put(attributes, "scm.task.process_id",
                     exchange.getProperty(TaskWorkflowExchangeProperties.PROCESS_ID));
             put(attributes, "scm.task.command",
                     exchange.getProperty(TaskWorkflowExchangeProperties.COMMAND));
-            put(attributes, "scm.task.step_type", TaskWorkflowStepType.BUSINESS_OPERATION);
+            put(attributes, "scm.task.step_type",
+                    step.observationContext().taskWorkflowStepType());
+            put(attributes, "scm.task.step_id", step.stepId());
+            put(attributes, "scm.task.step_index", step.stepIndex());
+            put(attributes, "scm.task.routing_decision",
+                    result == null ? null : result.decision());
+            put(attributes, "scm.task.retryable",
+                    result == null ? null
+                            : result.decision() == RoutingDecision.RETRY_LATER);
             put(attributes, "scm.task.outcome", outcome);
             if (error != null) {
                 put(attributes, "error.type", error.getClass().getSimpleName());
@@ -181,7 +157,11 @@ public class TaskWorkflowTransactionCoordinator {
         return exchange.getProperty(Message.CORRELATION_ID, String.class);
     }
 
-    private void put(Map<String, Object> attributes, String key, Object value) {
+    private void put(
+            Map<String, Object> attributes,
+            String key,
+            Object value
+    ) {
         if (value != null) {
             attributes.put(key, value);
         }

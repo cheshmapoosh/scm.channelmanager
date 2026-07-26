@@ -47,7 +47,10 @@ public class TaskWorkflowPayloadMapper {
         if (processId != null) {
             exchange.setProperty(TaskWorkflowExchangeProperties.PROCESS_ID, processId);
         }
-        String correlationId = correlationId(exchange);
+        String correlationId = context.correlationId();
+        if (correlationId == null) {
+            correlationId = correlationId(exchange);
+        }
         context.correlationId(correlationId);
         if (correlationId != null) {
             exchange.setProperty(TaskWorkflowExchangeProperties.CORRELATION_ID, correlationId);
@@ -78,9 +81,36 @@ public class TaskWorkflowPayloadMapper {
             context.processId(processId);
         }
         JsonNode transactionData = approveResponse.get("transactionData");
-        context.transactionData(transactionData == null || transactionData.isNull()
-                ? approveResponse
-                : transactionData.deepCopy());
+        if (transactionData != null && !transactionData.isNull()) {
+            context.transactionData(transactionData.deepCopy());
+        }
+    }
+
+    public void rememberStepContext(
+            Exchange exchange,
+            TaskWorkflowStepType stepType,
+            Object response,
+            RoutingExecutionContext context
+    ) {
+        if (stepType == TaskWorkflowStepType.APPROVE_PROCESS) {
+            rememberApproveContext(response, context);
+        } else if (context.processId() == null) {
+            JsonNode responseNode = toJsonNode(response);
+            Long processId = firstLong(
+                    responseNode.path("processId"),
+                    responseNode.path("id"),
+                    responseNode.path("processInstance").path("id")
+            );
+            if (processId != null) {
+                context.processId(processId);
+            }
+        }
+        if (context.processId() != null) {
+            exchange.setProperty(
+                    TaskWorkflowExchangeProperties.PROCESS_ID,
+                    context.processId()
+            );
+        }
     }
 
     public JsonNode toSimpleRequest(Exchange exchange, TaskWorkflowStepType stepType) {
@@ -245,6 +275,16 @@ public class TaskWorkflowPayloadMapper {
         }
     }
 
+    private Long firstLong(JsonNode... values) {
+        for (JsonNode value : values) {
+            Long resolved = longValue(value);
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+        return null;
+    }
+
     private String textValue(JsonNode value) {
         if (value == null || value.isNull() || value.isMissingNode()) {
             return null;
@@ -254,6 +294,11 @@ public class TaskWorkflowPayloadMapper {
     }
 
     private String correlationId(Exchange exchange) {
+        String executionId = exchange.getProperty(
+                Message.EXECUTION_ID, String.class);
+        if (executionId != null && !executionId.isBlank()) {
+            return executionId;
+        }
         String correlationId = exchange.getProperty(Message.CORRELATION_ID, String.class);
         if (correlationId != null && !correlationId.isBlank()) {
             return correlationId;

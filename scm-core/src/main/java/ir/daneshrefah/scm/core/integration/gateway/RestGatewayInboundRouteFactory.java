@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.core.integration.gateway;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.exception.DuplicatedRecordFoundException;
 import ir.daneshrefah.scm.common.exception.MissingRequiredInputException;
 import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
@@ -7,6 +9,7 @@ import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.protocol.ProtocolType;
@@ -39,6 +42,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -56,6 +60,7 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
     private final InboundRouteDefinitionValidator inboundRouteDefinitionValidator;
     private final GatewayInboundRouteActionBinder inboundRouteActionBinder;
     private final GatewayInboundPathVariablesBinder inboundPathVariablesBinder;
+    private final ObjectMapper objectMapper;
 
     private final IdempotentRepository idempotentRepository;
     private final RestGatewayIdempotencyProperties idempotencyProperties;
@@ -97,6 +102,12 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         RuntimeServicePlan servicePlan = context.servicePlan();
         List<InboundRouteDefinition> routeDefinitions = new ArrayList<>();
         Service service = servicePlan.service();
+        if (service.getRoutingStrategy() == RoutingStrategy.TASK_WORKFLOW) {
+            return createTaskWorkflowCategoryRoutes(
+                    context,
+                    clientContractVersionResolver
+            );
+        }
         List<ChannelServiceDefinition> channelServiceDefinitions = servicePlan.routeDefinitions();
         if (channelServiceDefinitions == null || channelServiceDefinitions.isEmpty()) {
             return routeDefinitions;
@@ -126,7 +137,8 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
                                 service,
                                 (InboundChannelServiceDefinition) channelServiceDefinition,
                                 actionConfigs.get((InboundChannelServiceDefinition) channelServiceDefinition),
-                                usedRouteIds);
+                                usedRouteIds,
+                                null);
                         // API_DOC and SVC_DOMAIN_MEMBER are metadata only; they must never create inbound routes.
                         default -> Collections.emptyList();
                     }
@@ -140,9 +152,13 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
                                                                    Service service,
                                                                    InboundChannelServiceDefinition definition,
                                                                    InboundRouteActionConfig actionConfig,
-                                                                   Set<String> usedRouteIds) {
+                                                                   Set<String> usedRouteIds,
+                                                                   String routeIdentityCode) {
         GatewayChannel gatewayChannel = context.gatewayChannel();
-        String serviceCode = service.getCode().trim();
+        String serviceCode = StringUtils.defaultIfBlank(
+                routeIdentityCode,
+                service.getCode()
+        ).trim();
         String serviceVersion = clientContractVersionResolver.resolve(definition);
         URIBuilder uri = createDefaultUri(gatewayChannel, serviceCode, serviceVersion);
         if (definition != null) {
@@ -155,10 +171,6 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         RouteDefinition routeDefinition = context.routeBuilder().from(uri.toString())
                 .routeId(uniqueRouteId(context, serviceCode, serviceVersion, definition, usedRouteIds));
         setEarlyGatewayProperties(routeDefinition, context, definition, service, serviceVersion);
-        routeDefinition.process(exchange -> {
-            Object value = exchange.getProperty(Message.CHANNEL_SERVICE_DEFINITION);
-            log.info("CHANNEL_SERVICE_DEFINITION = {}", value);
-        });
         inboundRouteActionBinder.bind(routeDefinition, actionConfig);
         inboundPathVariablesBinder.bind(routeDefinition, definition);
         ProcessorDefinition<?> pipeline = routeDefinition;
@@ -186,13 +198,136 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         routeDefinition.setProperty(Message.GATEWAY_CHANNEL_PROTOCOL, constant(gatewayChannel.getProtocolType()));
         routeDefinition.setProperty(Message.CHANNEL_SERVICE_ACCESS, constant(fallbackAccess(routePlan, servicePlan, definition)));
         routeDefinition.setProperty(Message.SERVICE_VERSION, constant(serviceVersion));
-        if(definition==null){
-            System.out.println("vaisa");
-        }
-        log.info("definition before set = {}", definition);
-        log.info("definition class = {}",
-                definition != null ? definition.getClass() : null);
         routeDefinition.setProperty(Message.CHANNEL_SERVICE_DEFINITION, constant(definition));
+    }
+
+    private List<InboundRouteDefinition> createTaskWorkflowCategoryRoutes(
+            GatewayInboundRouteContext context,
+            ClientContractVersionResolver versionResolver
+    ) {
+        List<TaskWorkflowCategoryDefinition> categories =
+                taskWorkflowCategoryDefinitions(context, versionResolver);
+        if (categories.isEmpty()) {
+            throw new IllegalStateException("Gateway " + context.gatewayChannel().getName()
+                    + " has active TASK_WORKFLOW services but no shared REST inbound category");
+        }
+        List<TaskWorkflowCategoryDefinition> owned = categories.stream()
+                .filter(category -> category.servicePlan() == context.servicePlan())
+                .toList();
+        if (owned.isEmpty()) {
+            return List.of();
+        }
+        List<InboundChannelServiceDefinition> definitions = owned.stream()
+                .map(TaskWorkflowCategoryDefinition::definition)
+                .toList();
+        inboundRouteDefinitionValidator.validate(context, definitions);
+        Set<String> usedRouteIds = new HashSet<>();
+        List<InboundRouteDefinition> routes = new ArrayList<>();
+        for (TaskWorkflowCategoryDefinition category : owned) {
+            validateTaskWorkflowCategory(category);
+            routes.addAll(createRestRouteDefinition(
+                    context,
+                    versionResolver,
+                    context.servicePlan().service(),
+                    category.definition(),
+                    InboundRouteActionConfig.absent(),
+                    usedRouteIds,
+                    "task-workflow"
+            ));
+        }
+        return List.copyOf(routes);
+    }
+
+    private List<TaskWorkflowCategoryDefinition> taskWorkflowCategoryDefinitions(
+            GatewayInboundRouteContext context,
+            ClientContractVersionResolver versionResolver
+    ) {
+        Map<String, TaskWorkflowCategoryDefinition> unique = new LinkedHashMap<>();
+        for (RuntimeServicePlan plan : context.routePlan().servicePlans()) {
+            if (plan == null || plan.service() == null
+                    || plan.service().getRoutingStrategy() != RoutingStrategy.TASK_WORKFLOW
+                    || plan.routeDefinitions() == null) {
+                continue;
+            }
+            for (ChannelServiceDefinition routeDefinition : plan.routeDefinitions()) {
+                if (routeDefinition == null
+                        || routeDefinition.getType() != ChannelServiceDefinitionType.INBOUND) {
+                    continue;
+                }
+                if (!(routeDefinition instanceof InboundChannelServiceDefinition inbound)) {
+                    throw new IllegalStateException("TASK_WORKFLOW INBOUND definition "
+                            + routeDefinition.getId()
+                            + " is not an InboundChannelServiceDefinition");
+                }
+                String version = versionResolver.resolve(inbound);
+                String key = taskWorkflowCategoryKey(inbound, version);
+                TaskWorkflowCategoryDefinition category =
+                        new TaskWorkflowCategoryDefinition(plan, inbound, version);
+                TaskWorkflowCategoryDefinition previous = unique.putIfAbsent(key, category);
+                if (previous != null) {
+                    throw new IllegalStateException(
+                            "Duplicate shared TASK_WORKFLOW REST category method/path/version="
+                                    + key + " on serviceCode="
+                                    + previous.servicePlan().service().getCode()
+                                    + " and serviceCode=" + plan.service().getCode());
+                }
+            }
+        }
+        return List.copyOf(unique.values());
+    }
+
+    private String taskWorkflowCategoryKey(
+            InboundChannelServiceDefinition definition,
+            String version
+    ) {
+        String method = definition.getMethod() == null
+                ? "POST"
+                : definition.getMethod().name();
+        return method + ":" + normalizePath(definition.getPath()).toLowerCase(Locale.ROOT)
+                + ":" + version.toLowerCase(Locale.ROOT);
+    }
+
+    private void validateTaskWorkflowCategory(
+            TaskWorkflowCategoryDefinition category
+    ) {
+        InboundChannelServiceDefinition definition = category.definition();
+        String path = normalizePath(definition.getPath());
+        if (!path.toLowerCase(Locale.ROOT).contains("task-workflow")
+                || !path.contains("{serviceCode}")
+                || !path.contains("{inboundAction}")) {
+            throw new IllegalStateException(
+                    "Shared TASK_WORKFLOW REST definition " + definition.getId()
+                            + " must expose a path equivalent to "
+                            + "/task-workflow/{serviceCode}/{inboundAction}");
+        }
+        if (definition.getDefinition() == null
+                || StringUtils.isBlank(definition.getDefinition().getDetails())) {
+            return;
+        }
+        try {
+            JsonNode details = objectMapper.readTree(
+                    definition.getDefinition().getDetails());
+            for (String forbidden : List.of(
+                    "inboundAction",
+                    "actionPlan",
+                    "routingStrategy",
+                    "steps")) {
+                if (details.has(forbidden)) {
+                    throw new IllegalStateException(
+                            "Shared TASK_WORKFLOW gateway definition "
+                                    + definition.getId()
+                                    + " must not own service action-plan field="
+                                    + forbidden);
+                }
+            }
+        } catch (IllegalStateException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException(
+                    "Shared TASK_WORKFLOW gateway definition "
+                            + definition.getId() + " contains invalid JSON",
+                    exception);
+        }
     }
 
     void reserveIdempotentRequest(Exchange exchange) {
@@ -302,5 +437,12 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
         if (StringUtils.isNotBlank(normalizedPath)) {
             uri.appendPath(normalizedPath);
         }
+    }
+
+    private record TaskWorkflowCategoryDefinition(
+            RuntimeServicePlan servicePlan,
+            InboundChannelServiceDefinition definition,
+            String serviceVersion
+    ) {
     }
 }

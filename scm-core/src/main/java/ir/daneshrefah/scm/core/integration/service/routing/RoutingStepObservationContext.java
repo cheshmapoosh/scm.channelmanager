@@ -6,6 +6,7 @@ public record RoutingStepObservationContext(
         String serviceCode,
         String inboundAction,
         TaskWorkflowStepType taskWorkflowStepType,
+        String stepId,
         int stepIndex,
         String spanKind
 ) {
@@ -13,8 +14,9 @@ public record RoutingStepObservationContext(
             String serviceCode,
             String inboundAction,
             TaskWorkflowStepType taskWorkflowStepType,
+            String stepId,
             int stepIndex
     ) {
-        this(serviceCode, inboundAction, taskWorkflowStepType, stepIndex, "internal");
+        this(serviceCode, inboundAction, taskWorkflowStepType, stepId, stepIndex, "internal");
     }
 }

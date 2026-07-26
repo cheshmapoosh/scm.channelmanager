@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.exception.MessagePayloadMergeException;
 import ir.daneshrefah.scm.common.model.error.Error;
 import ir.daneshrefah.scm.common.model.error.ErrorCodes;
+import ir.daneshrefah.scm.common.model.taskworkflow.ExecutionOutcome;
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +33,7 @@ public class Message implements Serializable {
     public final static String ORIGINAL_BODY = "scmOriginalBody";
     public final static String ORIGINAL_HEADERS = "scmOriginalHeaders";
     public static final String SERVICE = "scmService";
+    public static final String SERVICE_CODE = "scmServiceCode";
     public static final String SERVICE_VERSION = "scmServiceVersion";
     public static final String OPERATION = "scmOperation";
     public static final String CHANNEL_CODE = "scmChannelCode";
@@ -50,6 +52,8 @@ public class Message implements Serializable {
     public static final String TRACE_ID = "scmTraceId";
     public static final String SPAN_ID = "scmSpanId";
     public static final String CORRELATION_ID = "scmCorrelationId";
+    public static final String EXECUTION_ID = "scmExecutionId";
+    public static final String SERVICE_ROUTE_URI = "scmServiceRouteUri";
     public static final String OPERATION_NAME = "scmOperationName";
     public static final String TASK_WORKFLOW_STEP_TYPE = "scmTaskWorkflowStepType";
     public static final String TEMPLATE_VARIABLES = "scmTemplateVariables";
@@ -63,6 +67,7 @@ public class Message implements Serializable {
     private MessageStatus status;
     private JsonNode payload;
     private List<Error> errors;
+    private ExecutionOutcome executionOutcome;
 
     public void addError(Error error, MessageStatus status) {
         if (null == errors)
@@ -109,6 +114,11 @@ public class Message implements Serializable {
         if (null != status) {
             this.status = status;
         }
+    }
+
+    public Message executionOutcome(ExecutionOutcome outcome) {
+        this.executionOutcome = outcome;
+        return this;
     }
 
     public void appendPayload(JsonNode newPayload) {

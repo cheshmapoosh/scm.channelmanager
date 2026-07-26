@@ -139,6 +139,10 @@ public class ScmExchangeMdc {
     }
 
     private String serviceCode(Exchange exchange) {
+        String canonical = property(exchange, Message.SERVICE_CODE);
+        if (canonical != null) {
+            return canonical;
+        }
         Service service = exchange.getProperty(Message.SERVICE, Service.class);
         return service != null ? service.getCode() : null;
     }

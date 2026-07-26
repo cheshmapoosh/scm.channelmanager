@@ -361,27 +361,28 @@ direct:<operationName>
 
 ## 5) TASK_WORKFLOW routing
 
-TASK_WORKFLOW actions are ordinary configured inbound routes. `scm-web` hosts
-the gateway, service, and operation runtime; the service-definition contract is
-owned by `scm-core`.
+`scm-web` hosts the shared TASK_WORKFLOW REST category and the existing
+gateway, service, and operation pipelines. Service-specific orchestration is
+owned by `scm-core`, not by the gateway definition.
 
 ```text
-Protocol-specific gateway
-    -> inbound route matching
+POST /task-workflow/{serviceCode}/{inboundAction}
+    -> REST path-variable normalization
+    -> TaskWorkflowRouteIdentityResolver
+    -> canonical serviceCode and inboundAction
+    -> gateway-owned serviceVersion
     -> RequestContractDecoder
-    -> normalized payload and inbound parameters
-    -> GatewayRoutePipelineConfigurer
-    -> service route
-    -> TASK_WORKFLOW command plan
+    -> dynamically resolved service route
+    -> service-owned ActionPlan
     -> FIRST / CHAIN_ON_APPROVE
-    -> operation route
+    -> direct:op.<operationName>
     -> operation provider
 ```
 
-There is no dedicated TASK_WORKFLOW gateway route builder or fixed
-TASK_WORKFLOW endpoint family. Every external action is configured as an
-`InboundChannelServiceDefinition` and uses the same gateway pipeline as ordinary
-services.
+Only TASK_WORKFLOW uses the dynamic identity resolver. Normal services retain
+their static `RuntimeServicePlan` identity. The shared category still uses the
+normal global response and error handlers; there is no task-workflow-specific
+encoder.
 
 [Complete TASK_WORKFLOW service definition guide](../scm-core/docs/task-workflow-service.md)
 

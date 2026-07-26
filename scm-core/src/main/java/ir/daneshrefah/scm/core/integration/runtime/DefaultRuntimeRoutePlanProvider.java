@@ -6,6 +6,7 @@ import ir.daneshrefah.scm.common.dto.asset.ChannelServiceAccess;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.ChannelServiceDefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
+import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.service.ChannelServiceAccessService;
@@ -180,7 +181,9 @@ public class DefaultRuntimeRoutePlanProvider implements RuntimeRoutePlanProvider
                             .getOrDefault(entry.getKey(), List.of());
                     List<ChannelServiceDefinition> observationDefinitions = observationDefinitionsByService
                             .getOrDefault(entry.getKey(), List.of());
-                    if (CollectionUtils.isEmpty(inboundDefinitions)) {
+                    if (CollectionUtils.isEmpty(inboundDefinitions)
+                            && representativeAccess.getService().getRoutingStrategy()
+                            != RoutingStrategy.TASK_WORKFLOW) {
                         log.warn("Service-domain membership skipped gatewayName={} serviceKey={} {} reason=missing-inbound-definition",
                                 gatewayChannel.getName(),
                                 entry.getKey(),

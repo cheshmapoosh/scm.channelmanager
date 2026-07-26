@@ -31,6 +31,19 @@ public class ServiceOperationSelector {
     }
 
     public List<ServiceOperation> active(Service service) {
+        return activeAll(service).stream()
+                .filter(operation ->
+                        !ServiceOperationDefinitionClassifier.isActionPlan(operation))
+                .toList();
+    }
+
+    public List<ServiceOperation> activeActionPlans(Service service) {
+        return activeAll(service).stream()
+                .filter(ServiceOperationDefinitionClassifier::isActionPlan)
+                .toList();
+    }
+
+    public List<ServiceOperation> activeAll(Service service) {
         if (service == null || service.getServiceOperations() == null) {
             return List.of();
         }
