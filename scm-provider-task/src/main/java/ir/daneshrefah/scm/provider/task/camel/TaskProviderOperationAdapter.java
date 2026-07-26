@@ -1,5 +1,8 @@
 package ir.daneshrefah.scm.provider.task.camel;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngine;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngineRegistry;
@@ -9,13 +12,16 @@ import org.apache.camel.Exchange;
 public class TaskProviderOperationAdapter {
     private final TaskWorkflowStepTypeResolver stepTypeResolver;
     private final TaskWorkflowEngineRegistry engineRegistry;
+    private final ObjectMapper objectMapper;
 
     public TaskProviderOperationAdapter(
             TaskWorkflowStepTypeResolver stepTypeResolver,
-            TaskWorkflowEngineRegistry engineRegistry
+            TaskWorkflowEngineRegistry engineRegistry,
+            ObjectMapper objectMapper
     ) {
         this.stepTypeResolver = stepTypeResolver;
         this.engineRegistry = engineRegistry;
+        this.objectMapper = objectMapper;
     }
 
     public String endpointProviderCode(String remaining) {
@@ -30,6 +36,15 @@ public class TaskProviderOperationAdapter {
                     + " engine-type=" + engine.engineType()
                     + " does not support stepType=" + stepType);
         }
-        exchange.getMessage().setBody(engine.execute(stepType, exchange));
+        Object result = engine.execute(stepType, exchange);
+        if (exchange.getProperty(Message.TASK_WORKFLOW_STEP_TYPE) != null
+                && !(result instanceof Message)
+                && engine.isExplicitSuccess(stepType, result)) {
+            result = Message.builder()
+                    .status(MessageStatus.SC_SUCCESS)
+                    .payload(objectMapper.valueToTree(result))
+                    .build();
+        }
+        exchange.getMessage().setBody(result);
     }
 }

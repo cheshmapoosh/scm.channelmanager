@@ -2,11 +2,11 @@ package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingCursor;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecision;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlan;
-import org.springframework.stereotype.Component;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionDecision;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionSnapshot;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionState;
 
-@Component
 public class ChainOnApproveRoutingRecoveryPolicy implements RoutingRecoveryPolicy {
     @Override
     public RoutingStrategy strategy() {
@@ -16,10 +16,12 @@ public class ChainOnApproveRoutingRecoveryPolicy implements RoutingRecoveryPolic
     @Override
     public RoutingCursor resolveRetryCursor(
             RoutingPlan plan,
-            RoutingExecutionSnapshot snapshot
+            TaskWorkflowExecutionSnapshot snapshot
     ) {
-        if (snapshot.decision() != RoutingDecision.RETRY_LATER
-                || snapshot.executionState() != RoutingExecutionState.RETRY_PENDING) {
+        if (snapshot.decision()
+                != TaskWorkflowExecutionDecision.RETRY_LATER
+                || snapshot.executionState()
+                != TaskWorkflowExecutionState.RETRY_PENDING) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "Recovery is allowed only for a RETRY_LATER snapshot");
         }
@@ -39,16 +41,18 @@ public class ChainOnApproveRoutingRecoveryPolicy implements RoutingRecoveryPolic
         for (int index = 0; index < plan.steps().size(); index++) {
             var planStep = plan.steps().get(index);
             var savedStep = snapshot.steps().get(index);
-            if (savedStep.decision() == RoutingDecision.SUCCESS) {
+            if (savedStep.decision()
+                    == TaskWorkflowExecutionDecision.SUCCESS) {
                 continue;
             }
-            if (savedStep.decision() != RoutingDecision.RETRY_LATER) {
+            if (savedStep.decision()
+                    != TaskWorkflowExecutionDecision.RETRY_LATER) {
                 throw corrupted("first non-successful step is not RETRY_LATER at "
                         + "stepIndex=" + index);
             }
             for (int earlier = 0; earlier < index; earlier++) {
                 if (snapshot.steps().get(earlier).decision()
-                        != RoutingDecision.SUCCESS) {
+                        != TaskWorkflowExecutionDecision.SUCCESS) {
                     throw corrupted("an earlier step is not SUCCESS at stepIndex="
                             + earlier);
                 }

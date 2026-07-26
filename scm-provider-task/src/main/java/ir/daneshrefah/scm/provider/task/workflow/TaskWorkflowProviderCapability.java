@@ -1,4 +1,4 @@
-package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
+package ir.daneshrefah.scm.provider.task.workflow;
 
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 

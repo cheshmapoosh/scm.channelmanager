@@ -2,11 +2,11 @@ package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingCursor;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecision;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlan;
-import org.springframework.stereotype.Component;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionDecision;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionSnapshot;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionState;
 
-@Component
 public class FirstRoutingRecoveryPolicy implements RoutingRecoveryPolicy {
     @Override
     public RoutingStrategy strategy() {
@@ -16,7 +16,7 @@ public class FirstRoutingRecoveryPolicy implements RoutingRecoveryPolicy {
     @Override
     public RoutingCursor resolveRetryCursor(
             RoutingPlan plan,
-            RoutingExecutionSnapshot snapshot
+            TaskWorkflowExecutionSnapshot snapshot
     ) {
         requireRetryLater(snapshot);
         if (plan.steps().size() != 1 || snapshot.steps().size() != 1) {
@@ -27,16 +27,21 @@ public class FirstRoutingRecoveryPolicy implements RoutingRecoveryPolicy {
         var savedStep = snapshot.steps().getFirst();
         if (savedStep.stepIndex() != 0
                 || !planStep.stepId().equals(savedStep.stepId())
-                || savedStep.decision() != RoutingDecision.RETRY_LATER) {
+                || savedStep.decision()
+                != TaskWorkflowExecutionDecision.RETRY_LATER) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "FIRST retry snapshot step identity or decision is inconsistent");
         }
         return RoutingCursor.start(plan);
     }
 
-    private void requireRetryLater(RoutingExecutionSnapshot snapshot) {
-        if (snapshot.decision() != RoutingDecision.RETRY_LATER
-                || snapshot.executionState() != RoutingExecutionState.RETRY_PENDING) {
+    private void requireRetryLater(
+            TaskWorkflowExecutionSnapshot snapshot
+    ) {
+        if (snapshot.decision()
+                != TaskWorkflowExecutionDecision.RETRY_LATER
+                || snapshot.executionState()
+                != TaskWorkflowExecutionState.RETRY_PENDING) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "Recovery is allowed only for a RETRY_LATER snapshot");
         }

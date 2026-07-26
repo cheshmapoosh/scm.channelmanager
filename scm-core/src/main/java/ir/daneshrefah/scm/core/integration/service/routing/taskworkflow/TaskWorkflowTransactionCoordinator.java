@@ -121,6 +121,14 @@ public class TaskWorkflowTransactionCoordinator {
                     exchange.getProperty(TaskWorkflowExchangeProperties.PROCESS_ID));
             put(attributes, "scm.task.command",
                     exchange.getProperty(TaskWorkflowExchangeProperties.COMMAND));
+            put(attributes, "scm.task.inbound_action",
+                    exchange.getProperty(Message.INBOUND_ROUTE_ACTION));
+            put(attributes, "scm.task.action_plan_name",
+                    exchange.getProperty(
+                            TaskWorkflowExchangeProperties.ACTION_PLAN_NAME));
+            put(attributes, "scm.task.routing_strategy",
+                    exchange.getProperty(
+                            TaskWorkflowExchangeProperties.ROUTING_STRATEGY));
             put(attributes, "scm.task.step_type",
                     step.observationContext().taskWorkflowStepType());
             put(attributes, "scm.task.step_id", step.stepId());

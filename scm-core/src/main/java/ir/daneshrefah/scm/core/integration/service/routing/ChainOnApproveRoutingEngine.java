@@ -50,6 +50,7 @@ public class ChainOnApproveRoutingEngine implements RoutingEngine {
                 if (step.observationContext().taskWorkflowStepType()
                         == TaskWorkflowStepType.BUSINESS_OPERATION) {
                     lastBusinessResponse = result.response();
+                    context.lastBusinessResponse(lastBusinessResponse);
                 }
                 continue;
             }
@@ -80,7 +81,7 @@ public class ChainOnApproveRoutingEngine implements RoutingEngine {
             RoutingExecutionContext context,
             int beforeStepIndex
     ) {
-        Object selected = null;
+        Object selected = context.lastBusinessResponse();
         for (int index = 0; index < beforeStepIndex; index++) {
             RoutingStepPlan step = plan.steps().get(index);
             if (step.observationContext().taskWorkflowStepType()

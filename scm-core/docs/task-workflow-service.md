@@ -81,6 +81,39 @@ Normal services keep their statically resolved identity from
 `RuntimeServicePlan` and their inbound route. Only a TASK_WORKFLOW category
 passes through the dynamic task-workflow identity resolver.
 
+### Optional task-provider integration
+
+Module ownership is deliberately one-way:
+
+```text
+scm-core
+    -- optional compile-time API use -->
+scm-provider-task
+
+scm-provider-task
+    -X-> scm-core
+```
+
+`scm-provider-task` owns `TaskWorkflowRecoveryStore`,
+`TaskWorkflowProviderCapability`, the watcher snapshot DTOs, and their
+implementations. `ScmTaskProviderAutoConfiguration` publishes those beans when
+`scm.provider.task.enabled=true`. `scm-core` maps its routing state to those
+provider-owned DTOs and registers the coordinator through a
+`@ConditionalOnClass` integration configuration.
+
+This gives the following startup behavior:
+
+```text
+provider absent or disabled + no active TASK_WORKFLOW service
+    -> normal startup
+
+active TASK_WORKFLOW service + provider integration absent
+    -> route construction fails with the service code
+
+active TASK_WORKFLOW service + missing/duplicate capability or recovery store
+    -> route construction fails; no no-op persistence fallback
+```
+
 ## Gateway route and configuration boundary
 
 ### Shared REST inbound category
@@ -176,6 +209,13 @@ The owning definition must be classified in the runtime model as:
 Definition.type = ACTION_PLAN
 ```
 
+`Definition.type` is persisted through the existing
+`REF.TBL_SCM_DEFINITION.DEFINITION_TYPE` column, mapped as a 30-character enum
+string. This mapping adds no column or migration. Legacy records may contain
+`null`; a null type remains an ordinary unspecified definition and is never
+inferred to be an ActionPlan. An active `TASK_WORKFLOW` service must have at
+least one active definition explicitly typed `ACTION_PLAN`.
+
 A complete definition is:
 
 ```json
@@ -257,6 +297,13 @@ does not create direct:op.task-workflow-paymaster-approval-plan
 
 All other active service operations retain the existing executable route
 behavior.
+
+There is currently no `ServiceOperationService.save` API or replacement create
+endpoint. Provision the owning record through the same approved
+database/administrative configuration path used for existing service-operation
+records. The normal read API remains available. Do not put `inboundAction`,
+ActionPlan name, or gateway version into invented top-level service-operation
+fields.
 
 ## Executable operations
 
@@ -410,6 +457,26 @@ returned.
 A decision policy only classifies an outcome. It must not update process/task
 state, write snapshots, publish lifecycle events, or invoke gateway encoders.
 
+The default classifier is fail-safe:
+
+```text
+explicit success
+    -> SUCCESS
+
+explicit business/validation rejection
+    -> FAIL
+
+timeout, connection error, temporary provider error, null result,
+unknown provider outcome, ambiguous/unrecognized JSON or Java object
+    -> RETRY_LATER
+```
+
+An unknown non-null object is not success. Provider-specific policies such as
+`NAB_PAYMASTER_REGISTRATION` and the Karpardaz policy may recognize documented
+domain outcomes; otherwise they defer to the safe default. The internal task
+engine explicitly recognizes its own non-null, normally completed results.
+Custom task engines default to no such recognition.
+
 ## Execution identity, process correlation, and compatibility
 
 `Message.EXECUTION_ID` is the canonical TASK_WORKFLOW execution identity.
@@ -439,9 +506,22 @@ during start. The second path preserves legacy/non-workflow behavior for
 processes created without a correlation. An approve request correlation is not
 automatically a workflow execution ID.
 
-There is no database uniqueness constraint on process correlation. The current
-start path performs a lookup before insert and can return an existing process,
-but this is not a cluster-wide exactly-once guarantee for concurrent starts.
+There is no database uniqueness constraint on process correlation. Concurrent
+workflow starts are coordinated by the existing distributed lock
+infrastructure. Under the start lock, SCM rechecks the process by correlation;
+an existing process is returned idempotently, otherwise creation commits before
+the lock is released.
+
+The start lock key is:
+
+```text
+scm:task-workflow:start:<TRIMMED_UPPER_SERVICE_CODE>:<SHA-256(TRIMMED_EXECUTION_ID)>
+```
+
+The raw execution ID is never included in the lock name. Start idempotency is
+cluster-safe only while every writer uses this distributed path and the lock
+infrastructure remains available; there is still no database uniqueness
+constraint.
 
 ## Durable snapshots and recovery
 
@@ -458,10 +538,31 @@ TBL_PRC_PROCESS_INSTANCE_WATCHER
 
 The snapshot records execution identity, external action, internal ActionPlan
 name, gateway contract version, definition ID, deterministic fingerprint,
-strategy, state, decision, process ID, stable step identities, minimal recovery
-context, attempts, and timestamps. It excludes Camel exchanges, Java exception
-objects, stack traces, authentication data, sensitive headers, and unfiltered
-provider payloads.
+strategy, state, decision, process ID, stable step identities, retry cursor
+state, attempts, and timestamps.
+
+Only typed minimal recovery data is retained:
+
+- stable process and correlation IDs;
+- sanitized transaction data required by a later business step;
+- `executionId + ":" + stepId` as the provider idempotency key;
+- a sanitized retry request only when deterministic reconstruction is not
+  possible;
+- the last business result needed by chain response selection;
+- one canonical terminal/retry response for replay, or typed safe failure
+  metadata.
+
+The snapshot does not contain all step responses, the original request, a
+Camel `Exchange`, arbitrary headers/maps, authentication material, tokens,
+cookies, Java exception objects, stack traces, or unfiltered provider
+responses.
+
+The unchanged watcher `DATA` mapping declares no expanded length, so the
+recovery store enforces the JPA default capacity of exactly 255 serialized
+characters before every write. It serializes the final snapshot, checks the
+actual character count, and throws
+`TaskWorkflowSnapshotTooLargeException` with execution ID, process ID, actual
+size, and limit. It never truncates or silently drops required state.
 
 The plan fingerprint is SHA-256 over an explicitly ordered representation of:
 
@@ -478,15 +579,35 @@ Gateway service version and JSON formatting are excluded from the fingerprint.
 The version is retained separately in the snapshot to prevent a retry from
 returning through a different client contract.
 
+For retry, `processId` is the lookup identity and `executionId` is a validation
+identity. SCM never scans all watcher JSON by execution ID:
+
+```text
+request processId
+    -> lock/load that process
+    -> load its WORKFLOW_EXECUTION watcher
+
+request taskId
+    -> resolve taskId to processId
+    -> lock/load that process and watcher
+
+neither processId nor resolvable taskId
+    -> reject retry; do not scan and do not restart
+
+loaded snapshot
+    -> validate executionId, inboundAction, gatewayServiceVersion,
+       plan fingerprint, RETRY_LATER and RETRY_PENDING
+```
+
 Recovery is allowed only when the persisted top-level decision is
-`RETRY_LATER`:
+`RETRY_LATER` and state is `RETRY_PENDING`:
 
 ```text
 no explicit executionId
     -> new execution
 
-explicit executionId
-    -> locate process and load snapshot
+explicit executionId + process identity
+    -> load the process snapshot and validate executionId
 
 snapshot SUCCESS
     -> return stored successful response idempotently
@@ -498,13 +619,58 @@ snapshot RETRY_LATER
 snapshot FAIL
     -> recreate and throw stored typed failure
 
-snapshot missing, corrupt, or plan changed
+snapshot missing
+    -> reconstruct only the narrowly defined idempotent START case below
+    -> otherwise throw TaskWorkflowSnapshotUnavailableException
+
+snapshot corrupt or plan changed
     -> fail safely; never restart blindly
 ```
 
 For `FIRST`, a retry starts at step zero. For `CHAIN_ON_APPROVE`, every earlier
 step must be persisted as `SUCCESS`, and the selected step must be the first
 `RETRY_LATER` step with matching `stepId` and `stepIndex`.
+
+### Missing-watcher START reconstruction
+
+There is one recoverable crash window:
+
+```text
+process creation committed
+    -> pod stopped before the WORKFLOW_EXECUTION watcher was persisted
+```
+
+SCM reconstructs durable state only when all of these checks pass under the
+same distributed start lock:
+
+```text
+command                    = START
+canonical executionId      = explicitly supplied
+correlated process         = found by that exact executionId
+process correlationId      = exactly equal to executionId
+routingStrategy            = FIRST
+step count                 = 1
+steps[0].stepType          = START_PROCESS
+workflow watcher           = absent
+```
+
+The coordinator creates an initial snapshot with the existing process ID and
+current plan identity. Normal attempt registration then creates the missing
+`WORKFLOW_EXECUTION` watcher before invoking the operation route. The
+`START_PROCESS` provider operation is still called; SCM does not synthesize
+success from the process row. The task provider validates and returns the
+already-correlated process idempotently, allowing the normal lifecycle to
+rebuild the canonical response and persist `COMPLETED`/`SUCCESS`.
+
+The persisted terminal snapshot contains the canonical response and clears
+`activeAttemptId`, `activeStepId`, and `activeStepIndex`. There is no
+non-durable or best-effort workflow execution mode.
+
+This exception is deliberately limited to one-step
+`FIRST`/`START_PROCESS`. A missing watcher for a non-START action, a multi-step
+plan, a plan containing `BUSINESS_OPERATION`, or a retry request fails closed
+with `TaskWorkflowSnapshotUnavailableException`. SCM never guesses completed
+steps or starts such a plan from step zero.
 
 Before a retry, the provider takes a short pessimistic process lock, validates
 the snapshot, writes a new attempt marker, and commits. The remote provider is
@@ -518,6 +684,22 @@ or inquiry support.
 If a pod crashes after a remote call but before the outcome is saved, the
 active attempt is not blindly replayed. Operational inquiry or provider
 idempotency is required to resolve the unknown outcome.
+
+The execution coordinator also holds a fail-fast distributed process lock for
+the complete attempt:
+
+```text
+scm:task-workflow:process:<processId>
+```
+
+The process—not action, step, or execution ID—is the concurrency aggregate.
+The distributed lock may remain held during the remote call, but neither
+pessimistic database transaction does. Lock acquisition uses the configured
+remote Hazelcast CP `FencedLock` through the injected lock utility and
+`tryLock` with no wait. A request that cannot acquire it receives a typed,
+retryable “execution already in progress” fault. Missing, local-only, or
+unavailable distributed-lock infrastructure prevents an active TASK_WORKFLOW
+route from starting safely.
 
 ## Persistence relationships
 
@@ -545,7 +727,7 @@ ServiceOperation.operationName
 | `CHANNEL_SERVICE_ACCESS` | Active channel-to-service permission | channel and `EB_SERVICE_ID` | One service/channel binding |
 | `TBL_SCM_CHN_SVC_DEFINITION` | Shared inbound category membership and gateway | access, gateway, type, definition | Shared external category; do not duplicate per action |
 | `TBL_SCM_GATEWAY_CHANNEL` | Active protocol endpoint | channel and protocol type | Shared |
-| `TBL_SCM_DEFINITION` | Gateway details or ActionPlan JSON, depending on the owning relationship | `DEFINITION_ID` | Separate record per role/action plan |
+| `TBL_SCM_DEFINITION` | Gateway details or ActionPlan JSON, depending on the owning relationship | `DEFINITION_ID`; existing `DEFINITION_TYPE` identifies `ACTION_PLAN` | Separate record per role/action plan |
 | `TBL_SCM_SERVICE_OPERATION` | Active technical ActionPlan owner or executable operation name | service and definition | One ActionPlan owner per external action; executable records may be reused by steps |
 | `TBL_SCM_OPERATION` | Active executable operation metadata | name and provider | Shared operation catalog |
 | `TBL_SCM_OPERATION_PROVIDER` | Active provider URI | provider ID | Shared provider |
@@ -566,6 +748,7 @@ Startup or route construction rejects:
 - a missing or non-`ACTION_PLAN` definition;
 - blank service code, source service-operation ID, technical operation name, or definition ID;
 - blank or invalid JSON details;
+- ActionPlan details longer than the existing 2,048-character limit;
 - unsupported JSON fields;
 - missing or unsupported `inboundAction`;
 - missing or blank ActionPlan name;
@@ -584,6 +767,8 @@ Startup or route construction rejects:
 - a non-business step targeting a non-task provider;
 - a task-provider capability mismatch;
 - a missing or duplicate recovery-store implementation;
+- a missing or duplicate task-provider capability;
+- missing or local-only distributed-lock infrastructure;
 - a missing shared REST category;
 - a shared category without both route variables;
 - duplicate shared method/path/version;
@@ -780,10 +965,15 @@ step, and resumes at `register-in-nab`.
 11. Configure one active channel access and active gateway channel.
 12. Configure one shared inbound category with the two route variables.
 13. Confirm the gateway category and ActionPlan use separate definitions.
-14. Confirm exactly one durable task-workflow recovery store is active.
-15. Start the application and resolve every route-construction validation error.
-16. Verify safe observation fields for service, action, strategy, execution, step, and decision.
-17. Verify provider idempotency/inquiry behavior before enabling retries.
+14. Enable `scm-provider-task` and confirm exactly one provider capability and
+    durable recovery store are active.
+15. Configure the lock utility so task-workflow lock names resolve to the
+    remote backend.
+16. Start the application and resolve every route-construction validation error.
+17. Verify safe observation fields for service, action, strategy, execution, step, and decision.
+18. Verify provider idempotency/inquiry behavior before enabling retries.
+19. Confirm the minimal serialized snapshot fits the existing 255-character
+    watcher `DATA` capacity in the target deployment.
 
 ## Troubleshooting
 
@@ -800,10 +990,14 @@ step, and resumes at `register-in-nab`.
 | Identifier unavailable | Adapter did not normalize `taskId`/`processId` | Canonical payload and `Message.INBOUND_PARAMETERS` |
 | Conflicting identifier | Payload and inbound parameters disagree | Send one value or equal values |
 | Retry rejected | Snapshot is not `RETRY_LATER`, execution ID differs, or attempt is active | Watcher state and safe execution metadata |
+| Retry cannot locate state | Request has neither `processId` nor a `taskId` that resolves to one | Normalize a process identity; execution ID alone is never scanned globally |
 | Plan changed during retry | Definition ID or fingerprint differs | Finish/reconcile old execution; do not replay against new plan |
-| Snapshot missing or corrupt | Watcher absent/invalid or deployed DATA capacity exceeded | Recovery store and watcher row; do not restart blindly |
+| Snapshot missing or corrupt | Watcher absent/invalid | Only an exact-correlation, one-step `FIRST`/`START_PROCESS` request can reconstruct a missing watcher; every other path fails closed |
+| Snapshot too large | Final serialized snapshot exceeds 255 characters | Reduce the required safe resume/response data; the implementation does not truncate or alter the schema |
 | Recovery store missing | Provider module disabled or multiple stores registered | Task-provider auto-configuration |
-| Concurrent attempt rejected | Another pod owns the active attempt marker | Wait for reconciliation; do not force replay |
+| Provider capability missing | Provider module disabled or zero/multiple matching capabilities | Task-provider auto-configuration and provider URI |
+| Distributed lock unavailable | Lock backend is local, Hazelcast is unavailable, or lock bean count is invalid | Configure one remote lock utility; do not bypass the guard |
+| Concurrent attempt rejected | Another pod owns the process lock or active attempt marker | Retry later or reconcile; do not force replay |
 | Provider outcome unknown after crash | Remote call completed without saved result | Provider inquiry/idempotency; never blind replay |
 | Legacy approve rejects correlation | Process has no stored correlation and request omitted it | Supply legacy approve `correlationId` |
 | Workflow correlation appears unchanged after approve | Expected behavior | Existing process correlation is stable and is never overwritten |
@@ -813,19 +1007,20 @@ step, and resumes at `register-in-nab`.
 - `Definition.details` retains the existing 2048-character validation limit.
   Keep realistic plans below that limit; no CLOB or schema expansion is part of
   this architecture.
-- `DefinitionEntity.type` is currently a transient JPA property. The database
-  row therefore does not durably retain `ACTION_PLAN` after a reload. The
-  runtime configuration source must supply that enum value; otherwise route
-  construction reports no active ActionPlan. This cannot be fixed under the
-  no-entity/no-database-change constraint.
-- The watcher `DATA` mapping is unchanged and declares no expanded capacity.
-  The deployed database limit is authoritative. An oversized snapshot fails as
-  a typed persistence error rather than returning a retryable response.
+- `Definition.type` now maps the existing `DEFINITION_TYPE` column. Legacy
+  null values remain unspecified and are not ActionPlans.
+- The unchanged watcher `DATA` mapping has a 255-character default capacity.
+  Because a versioned execution snapshot can exceed that small limit, deployers
+  must verify that required minimal snapshots fit. Oversized snapshots fail
+  safely; no truncation, chunking, CLOB change, or migration is included.
 - Action-plan uniqueness is enforced in memory during route construction, not
   by a database constraint.
-- Start idempotency has no database uniqueness constraint and is not a hard
-  cluster-wide guarantee.
+- Start idempotency depends on the shared remote distributed lock because the
+  process correlation column has no uniqueness constraint. Lock-infrastructure
+  failure is fail-closed.
 - Remote exactly-once behavior depends on provider idempotency or inquiry.
+- The technical ActionPlan-owning `ServiceOperation` must currently be
+  provisioned outside the removed save API.
 - Only REST has a task-workflow route identity resolver today.
 - Future contextual selection may choose different ActionPlans by channel,
   tenant, segment, feature flag, policy, effective date, or service profile.

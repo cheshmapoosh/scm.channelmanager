@@ -44,6 +44,42 @@ If no providers map is configured, `internal -> internal` is used as the default
 provider mapping. Unknown provider codes fail fast when the endpoint is created
 or used. Unknown enabled engine types fail during provider validation.
 
+For TASK_WORKFLOW classification, a custom engine must either return a
+canonical `Message` with an explicit status, return a response shape recognized
+by its decision policy, or explicitly recognize its normal result through
+`TaskWorkflowEngine.isExplicitSuccess`. The default is `false`; null and
+unrecognized results remain retryable instead of being treated as success.
+
+### Module boundary and optional activation
+
+This module owns:
+
+```text
+TaskWorkflowProviderCapability
+TaskWorkflowRecoveryStore
+TaskWorkflowExecutionSnapshot and persistence DTOs
+ProviderTaskWorkflowCapability
+ProviderTaskWorkflowRecoveryStore
+```
+
+`ScmTaskProviderAutoConfiguration` publishes one capability and one durable
+store when the provider is enabled. These capability and persistence contracts
+use provider-owned DTOs, JDK types, and stable common models; they do not expose
+`scm-core` routing plans, cursors, execution contexts, failures, or Camel
+exchanges.
+
+The dependency direction is:
+
+```text
+scm-core -- optional compile-time API use --> scm-provider-task
+scm-provider-task -X-> scm-core
+```
+
+Consequently, an application with no active TASK_WORKFLOW service can start
+when this provider is absent or disabled. An active TASK_WORKFLOW service
+requires exactly one capability and exactly one recovery store and fails route
+construction if either is missing or duplicated.
+
 ## Endpoint Contract
 
 The endpoint shape is fixed:
@@ -170,10 +206,59 @@ TYPE   = WORKFLOW_EXECUTION
 ROW_NO = 0
 ```
 
+Retry state is loaded by process:
+
+```text
+processId
+    -> pessimistically lock process
+    -> load WORKFLOW_EXECUTION watcher for that process
+    -> validate executionId from the loaded snapshot
+```
+
+For task-based requests, `taskId` is resolved to `processId` first. The store
+never scans all watcher JSON for an execution ID.
+
+The snapshot contains stable execution/plan/step identities, attempt metadata,
+minimal sanitized resume data, and one safe terminal/retry response or typed
+failure. It does not persist all step responses, the original request, Camel
+exchanges, arbitrary headers, authentication material, tokens, stack traces,
+or unfiltered provider responses.
+
+The unchanged watcher `DATA` field declares no expanded length. The
+implementation therefore enforces the JPA default limit of 255 serialized
+characters before every write. Oversized state raises
+`TaskWorkflowSnapshotTooLargeException`; it is never truncated.
+
+Attempt coordination uses short transactions. One transaction locks the
+process and records the attempt; the remote provider call occurs without a
+database lock; a second transaction locks and verifies the same attempt before
+persisting its outcome. Attempt registration may create the watcher only when
+the process exists, the watcher is absent, and no prior attempt ID is expected.
+A missing watcher with a non-null expected attempt ID is conflicting durable
+state and fails. Persisted terminal and retry outcomes clear the active
+attempt/step markers after validating the recorded attempt.
+
+The only missing-watcher reconstruction is the crash window where a
+correlation-idempotent `START_PROCESS` committed its process before the watcher
+was saved. Core rechecks the exact process correlation and the one-step
+`FIRST` plan under the distributed start lock, then normal attempt registration
+creates the watcher before the provider operation is invoked again. Other
+missing-watcher actions fail closed; the provider has no persistence-disabled
+execution mode.
+
 Process correlation remains backward compatible. A workflow start initializes
 the existing process correlation from `Message.EXECUTION_ID`. Approve preserves
 that value. For a legacy process whose stored correlation is null or blank,
 approve still requires and stores the request `correlationId`.
+
+The logical provider idempotency identity is:
+
+```text
+executionId + ":" + stepId
+```
+
+Exactly-once execution is not guaranteed unless the remote provider honors
+that identity or offers safe inquiry/reconciliation.
 
 ## Events and Observation
 

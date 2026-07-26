@@ -31,14 +31,12 @@ public class KarpardazPolicy implements RoutingDecisionPolicy {
         }
         JsonNode requestBody = context.response() instanceof JsonNode node ? node : null;
         if (requestBody == null || requestBody.isNull() || requestBody.isMissingNode()) {
-            return failure("KARPARDAZ_EMPTY_RESPONSE",
-                    "Karpardaz response is empty");
+            return defaultPolicy.decide(context);
         }
 
         JsonNode actionCodeNode = requestBody.get("actionCode");
         if (actionCodeNode == null || actionCodeNode.isNull()) {
-            return failure("KARPARDAZ_ACTION_CODE_MISSING",
-                    "Karpardaz response actionCode is missing");
+            return defaultPolicy.decide(context);
         }
 
         ActionCode actionCode = ActionCode.findByCode(actionCodeNode.asText());
@@ -50,6 +48,9 @@ public class KarpardazPolicy implements RoutingDecisionPolicy {
                     null,
                     actionCode.getName()
             );
+        }
+        if (actionCode == null) {
+            return defaultPolicy.decide(context);
         }
         return failure("KARPARDAZ_UNSUCCESSFUL",
                 "Karpardaz response is not successful");

@@ -2,7 +2,6 @@ package ir.daneshrefah.scm.provider.task.autoconfigure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.persistence.JpaManagedPackageContributor;
-import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowRecoveryStore;
 import ir.daneshrefah.scm.provider.task.api.ProcessInstanceService;
 import ir.daneshrefah.scm.provider.task.api.TaskInstanceService;
 import ir.daneshrefah.scm.provider.task.camel.TaskProviderComponent;
@@ -13,6 +12,8 @@ import ir.daneshrefah.scm.provider.task.workflow.ProviderTaskWorkflowCapability;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngine;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngineRegistry;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowStepTypeResolver;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRecoveryStore;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderCapability;
 import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceRepository;
 import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceWatcherRepository;
 import ir.daneshrefah.scm.provider.task.repository.TaskRepository;
@@ -123,14 +124,19 @@ public class ScmTaskProviderAutoConfiguration {
     @ConditionalOnMissingBean
     public TaskProviderOperationAdapter taskProviderOperationAdapter(
             TaskWorkflowStepTypeResolver stepTypeResolver,
-            TaskWorkflowEngineRegistry engineRegistry
+            TaskWorkflowEngineRegistry engineRegistry,
+            ObjectMapper objectMapper
     ) {
-        return new TaskProviderOperationAdapter(stepTypeResolver, engineRegistry);
+        return new TaskProviderOperationAdapter(
+                stepTypeResolver,
+                engineRegistry,
+                objectMapper
+        );
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public ProviderTaskWorkflowCapability providerTaskWorkflowCapability(
+    @ConditionalOnMissingBean(TaskWorkflowProviderCapability.class)
+    public TaskWorkflowProviderCapability providerTaskWorkflowCapability(
             TaskWorkflowEngineRegistry engineRegistry
     ) {
         return new ProviderTaskWorkflowCapability(engineRegistry);

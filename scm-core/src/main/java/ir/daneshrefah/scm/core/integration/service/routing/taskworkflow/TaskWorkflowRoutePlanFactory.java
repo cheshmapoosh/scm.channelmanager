@@ -16,14 +16,12 @@ import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationEndpo
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationSelector;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-@Component
 @RequiredArgsConstructor
 public class TaskWorkflowRoutePlanFactory {
     private final ServiceOperationSelector operationSelector;
@@ -115,6 +113,7 @@ public class TaskWorkflowRoutePlanFactory {
                 operation,
                 endpointResolver.resolve(operation.getOperationName()),
                 new TaskWorkflowStepRequestFactory(
+                        step.stepId(),
                         step.stepType(),
                         payloadMapper
                 ),
@@ -152,6 +151,7 @@ public class TaskWorkflowRoutePlanFactory {
         }
         if (taskProvider) {
             providerCapabilities.requireSupported(
+                    code(service),
                     operationMetadataResolver.providerUri(
                             operation.getOperationName()),
                     step.stepType()

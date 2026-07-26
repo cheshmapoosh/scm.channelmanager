@@ -13,6 +13,7 @@ import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
@@ -45,7 +46,7 @@ public class RoutingResultClassifier {
             return Result.TEMPORARY_OR_UNKNOWN;
         }
         if (response instanceof ScmFault) {
-            return Result.DEFINITIVE_FAILURE;
+            return Result.TEMPORARY_OR_UNKNOWN;
         }
         if (response == null) {
             return Result.TEMPORARY_OR_UNKNOWN;
@@ -53,10 +54,18 @@ public class RoutingResultClassifier {
         if (response instanceof JsonNode jsonNode) {
             return classifyJson(jsonNode);
         }
+        if (response instanceof Map<?, ?> values) {
+            return classifyMap(values);
+        }
+        if (response instanceof Boolean successful) {
+            return successful
+                    ? Result.SUCCESS
+                    : Result.DEFINITIVE_FAILURE;
+        }
         if (response instanceof CharSequence text) {
             return classifyText(text.toString(), Result.TEMPORARY_OR_UNKNOWN);
         }
-        return Result.SUCCESS;
+        return Result.TEMPORARY_OR_UNKNOWN;
     }
 
     private Result classifyStatus(MessageStatus status) {
@@ -91,7 +100,42 @@ public class RoutingResultClassifier {
             Result classified = classifyText(value.asText(), null);
             return classified == null ? Result.TEMPORARY_OR_UNKNOWN : classified;
         }
-        return Result.SUCCESS;
+        return Result.TEMPORARY_OR_UNKNOWN;
+    }
+
+    private Result classifyMap(Map<?, ?> response) {
+        for (String field : new String[]{"successful", "success"}) {
+            Object value = value(response, field);
+            if (value instanceof Boolean successful) {
+                return successful
+                        ? Result.SUCCESS
+                        : Result.DEFINITIVE_FAILURE;
+            }
+        }
+        for (String field : new String[]{
+                "status", "outcome", "result", "responseCode", "code"
+        }) {
+            Object value = value(response, field);
+            if (value == null) {
+                continue;
+            }
+            Result classified = classifyText(String.valueOf(value), null);
+            return classified == null
+                    ? Result.TEMPORARY_OR_UNKNOWN
+                    : classified;
+        }
+        return Result.TEMPORARY_OR_UNKNOWN;
+    }
+
+    private Object value(Map<?, ?> values, String name) {
+        for (Map.Entry<?, ?> entry : values.entrySet()) {
+            if (entry.getKey() != null
+                    && name.equalsIgnoreCase(
+                    String.valueOf(entry.getKey()))) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     private Result classifyText(String value, Result fallback) {
@@ -132,14 +176,15 @@ public class RoutingResultClassifier {
                     || name.contains("socket") || name.contains("unreachable")) {
                 return true;
             }
-            if (name.contains("business") || name.contains("validation")
+            if (current instanceof IllegalArgumentException
+                    || name.contains("business") || name.contains("validation")
                     || name.contains("rejected") || name.contains("declined")
                     || name.contains("invalidinput")) {
                 return false;
             }
             current = current.getCause();
         }
-        return false;
+        return true;
     }
 
     private String normalize(String value) {

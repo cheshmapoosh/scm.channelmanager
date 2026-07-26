@@ -20,6 +20,7 @@ import java.util.Set;
 
 @Component
 public class TaskWorkflowActionPlanParser {
+    private static final int DEFINITION_DETAILS_MAX_CHARACTERS = 2048;
     private static final String INBOUND_ACTION = "inboundAction";
     private static final String ACTION_PLAN = "actionPlan";
     private static final String NAME = "name";
@@ -86,6 +87,18 @@ public class TaskWorkflowActionPlanParser {
         if (StringUtils.isBlank(definition.getDetails())) {
             throw invalid(service, serviceOperation, definition, "details",
                     "ACTION_PLAN Definition.details must not be blank");
+        }
+        if (definition.getDetails().length()
+                > DEFINITION_DETAILS_MAX_CHARACTERS) {
+            throw invalid(
+                    service,
+                    serviceOperation,
+                    definition,
+                    "details",
+                    "ACTION_PLAN Definition.details exceeds the existing "
+                            + DEFINITION_DETAILS_MAX_CHARACTERS
+                            + "-character persistence limit"
+            );
         }
 
         JsonNode root = parseDetails(service, serviceOperation, definition);

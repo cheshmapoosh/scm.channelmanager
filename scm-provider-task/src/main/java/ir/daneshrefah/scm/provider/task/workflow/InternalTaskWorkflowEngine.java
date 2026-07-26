@@ -61,6 +61,14 @@ public class InternalTaskWorkflowEngine implements TaskWorkflowEngine {
     }
 
     @Override
+    public boolean isExplicitSuccess(
+            TaskWorkflowStepType stepType,
+            Object result
+    ) {
+        return supports(stepType) && result != null;
+    }
+
+    @Override
     public Object execute(TaskWorkflowStepType stepType, Exchange exchange) {
         if (!supports(stepType)) {
             throw unsupported(stepType);

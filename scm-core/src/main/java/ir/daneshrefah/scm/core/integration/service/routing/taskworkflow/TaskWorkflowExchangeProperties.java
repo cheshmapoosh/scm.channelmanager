@@ -3,6 +3,10 @@ package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 public final class TaskWorkflowExchangeProperties {
     public static final String COMMAND = "scmTaskWorkflowCommand";
     public static final String COMMAND_PLAN = "scmTaskWorkflowCommandPlan";
+    public static final String ACTION_PLAN_NAME =
+            "scmTaskWorkflowActionPlanName";
+    public static final String ROUTING_STRATEGY =
+            "scmTaskWorkflowRoutingStrategy";
     public static final String APPROVE_RESPONSE = "scmTaskWorkflowApproveResponse";
     public static final String BUSINESS_RESPONSE = "scmTaskWorkflowBusinessResponse";
     public static final String BUSINESS_RESULT = "scmTaskWorkflowBusinessResult";
@@ -12,6 +16,8 @@ public final class TaskWorkflowExchangeProperties {
     public static final String CORRELATION_ID = "scmTaskWorkflowCorrelationId";
     public static final String PROVIDER_IDEMPOTENCY_KEY =
             "scmTaskWorkflowProviderIdempotencyKey";
+    public static final String CURRENT_STEP_REQUEST =
+            "scmTaskWorkflowCurrentStepRequest";
 
     private TaskWorkflowExchangeProperties() {
     }

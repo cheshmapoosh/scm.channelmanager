@@ -45,6 +45,7 @@ dependencies {
     implementation 'org.apache.commons:commons-text'
 
     api project(':scm-common-data')
+    compileOnly project(':scm-provider-task')
     api project(':scm-plugin-nab')
     api project(':scm-plugin-pichack')
     api project(':scm-plugin-sayad')

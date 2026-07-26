@@ -1,7 +1,6 @@
 package ir.daneshrefah.scm.provider.task.workflow;
 
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
-import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowProviderCapability;
 
 public class ProviderTaskWorkflowCapability
         implements TaskWorkflowProviderCapability {

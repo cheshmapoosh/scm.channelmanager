@@ -6,9 +6,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * DTO for {@link ir.daneshrefah.scm.core.entity.definition.DefinitionEntity}
- */
 @Getter
 @Setter
 public class Definition extends AbstractAuditableModel<String> {

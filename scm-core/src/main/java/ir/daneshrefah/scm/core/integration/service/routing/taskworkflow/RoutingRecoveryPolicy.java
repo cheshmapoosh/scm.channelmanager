@@ -3,6 +3,7 @@ package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingCursor;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlan;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionSnapshot;
 
 public interface RoutingRecoveryPolicy {
 
@@ -10,6 +11,6 @@ public interface RoutingRecoveryPolicy {
 
     RoutingCursor resolveRetryCursor(
             RoutingPlan plan,
-            RoutingExecutionSnapshot snapshot
+            TaskWorkflowExecutionSnapshot snapshot
     );
 }

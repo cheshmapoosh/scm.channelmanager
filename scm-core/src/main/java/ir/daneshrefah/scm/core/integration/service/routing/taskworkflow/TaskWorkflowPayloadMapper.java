@@ -26,9 +26,14 @@ public class TaskWorkflowPayloadMapper {
 
     public Object toRequest(
             Exchange exchange,
+            String stepId,
             TaskWorkflowStepType stepType,
             RoutingExecutionContext context
     ) {
+        if (stepId.equals(context.retryStepId())
+                && context.retryRequest() != null) {
+            return toJsonNode(context.retryRequest());
+        }
         return switch (stepType) {
             case APPROVE_PROCESS -> toApproveRequest(exchange);
             case BUSINESS_OPERATION -> toBusinessRequest(exchange, context);
@@ -79,6 +84,12 @@ public class TaskWorkflowPayloadMapper {
         }
         if (processId != null) {
             context.processId(processId);
+        }
+        String correlationId = textValue(
+                approveResponse.get("correlationId")
+        );
+        if (correlationId != null) {
+            context.correlationId(correlationId);
         }
         JsonNode transactionData = approveResponse.get("transactionData");
         if (transactionData != null && !transactionData.isNull()) {

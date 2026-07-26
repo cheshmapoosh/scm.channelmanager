@@ -1,15 +1,10 @@
-package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
-
-import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecision;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingFailureDetails;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlanIdentity;
+package ir.daneshrefah.scm.provider.task.workflow;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-public record RoutingExecutionSnapshot(
+public record TaskWorkflowExecutionSnapshot(
         int schemaVersion,
         String executionId,
         String serviceCode,
@@ -18,14 +13,14 @@ public record RoutingExecutionSnapshot(
         String gatewayServiceVersion,
         String definitionId,
         String planFingerprint,
-        RoutingStrategy routingStrategy,
-        RoutingExecutionState executionState,
-        RoutingDecision decision,
+        String routingStrategy,
+        TaskWorkflowExecutionState executionState,
+        TaskWorkflowExecutionDecision decision,
         Long processId,
-        List<RoutingStepSnapshot> steps,
-        RoutingRecoveryContext minimalRecoveryContext,
-        StoredRoutingResponse storedResponse,
-        RoutingFailureDetails storedFailure,
+        List<TaskWorkflowStepSnapshot> steps,
+        TaskWorkflowResumeData resumeData,
+        TaskWorkflowStoredResponse storedResponse,
+        TaskWorkflowStoredFailure storedFailure,
         String activeAttemptId,
         String activeStepId,
         Integer activeStepIndex,
@@ -34,7 +29,7 @@ public record RoutingExecutionSnapshot(
 ) {
     public static final int CURRENT_SCHEMA_VERSION = 1;
 
-    public RoutingExecutionSnapshot {
+    public TaskWorkflowExecutionSnapshot {
         if (schemaVersion <= 0) {
             throw new IllegalArgumentException("schemaVersion must be positive");
         }
@@ -55,13 +50,29 @@ public record RoutingExecutionSnapshot(
         Objects.requireNonNull(updatedAt, "updatedAt must not be null");
     }
 
-    public RoutingPlanIdentity planIdentity() {
-        return new RoutingPlanIdentity(
+    public TaskWorkflowExecutionSnapshot withoutActiveAttempt() {
+        return new TaskWorkflowExecutionSnapshot(
+                schemaVersion,
+                executionId,
                 serviceCode,
                 inboundAction,
                 actionPlanName,
+                gatewayServiceVersion,
                 definitionId,
-                planFingerprint
+                planFingerprint,
+                routingStrategy,
+                executionState,
+                decision,
+                processId,
+                steps,
+                resumeData,
+                storedResponse,
+                storedFailure,
+                null,
+                null,
+                null,
+                createdAt,
+                updatedAt
         );
     }
 }

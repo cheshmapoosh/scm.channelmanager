@@ -12,6 +12,7 @@ import ir.daneshrefah.scm.common.model.operation.OperationType;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreTraceAttributes;
 import ir.daneshrefah.scm.core.integration.security.ExchangeAuthenticationContext;
+import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowExchangeProperties;
 import ir.daneshrefah.scm.observation.starter.CorrelationType;
 import ir.daneshrefah.scm.observation.starter.ObservationIds;
 import ir.daneshrefah.scm.observation.starter.ObservationScope;
@@ -396,6 +397,13 @@ public class CoreObservationTraceSupport {
                     .attribute(CoreTraceAttributes.ROUTING_EXECUTION_ID,
                             exchange.getProperty(Message.EXECUTION_ID, String.class))
                     .attribute(CoreTraceAttributes.TASK_INBOUND_ACTION, inboundAction)
+                    .attribute(
+                            CoreTraceAttributes.TASK_ACTION_PLAN_NAME,
+                            exchange.getProperty(
+                                    TaskWorkflowExchangeProperties.ACTION_PLAN_NAME,
+                                    String.class
+                            )
+                    )
                     .attribute(CoreTraceAttributes.TASK_WORKFLOW_STEP_TYPE,
                             taskWorkflowStepType == null ? null : taskWorkflowStepType.name())
                     .attribute(CommonTraceAttributes.SCM_ROUTE_ID, fields.get("routeId"))

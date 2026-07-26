@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * DTO for {@link RouteConsumerEntity}
- */
 @Getter
 @Setter
 public class ServiceOperation extends AbstractAuditableModel<String> {

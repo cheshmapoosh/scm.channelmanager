@@ -1,36 +1,36 @@
 package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 
+import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.message.Message;
-import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.common.model.taskworkflow.ExecutionOutcome;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingCursor;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecision;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionResult;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingEngineRegistry;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingExecutionContext;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingExecutionLifecycle;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingExecutionResult;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingFailureDetails;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingFailureException;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlan;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepExecutionResult;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepPlan;
-import lombok.RequiredArgsConstructor;
+import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlanIdentity;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowAttemptConflictException;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionDecision;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionSnapshot;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionState;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRecoveryStore;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowSnapshotTooLargeException;
 import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
-@Component
-@RequiredArgsConstructor
+/**
+ * Coordinates durable task-workflow execution while routing engines remain
+ * responsible only for ordered step execution.
+ */
 public class TaskWorkflowExecutionCoordinator {
+
     private final ObjectProvider<TaskWorkflowRecoveryStore> storeProvider;
     private final RoutingEngineRegistry engineRegistry;
     private final RoutingRecoveryPolicyRegistry recoveryPolicyRegistry;
@@ -39,23 +39,106 @@ public class TaskWorkflowExecutionCoordinator {
     private final TaskWorkflowPayloadMapper payloadMapper;
     private final TaskWorkflowSnapshotMapper snapshotMapper;
     private final TaskWorkflowTransactionCoordinator transactionCoordinator;
+    private final TaskWorkflowDistributedLock distributedLock;
 
-    public void verifyDurableStoreAvailable() {
-        requiredStore();
+    public TaskWorkflowExecutionCoordinator(
+            ObjectProvider<TaskWorkflowRecoveryStore> storeProvider,
+            RoutingEngineRegistry engineRegistry,
+            RoutingRecoveryPolicyRegistry recoveryPolicyRegistry,
+            TaskWorkflowExecutionIdentityResolver executionIdentityResolver,
+            TaskWorkflowInputResolver inputResolver,
+            TaskWorkflowPayloadMapper payloadMapper,
+            TaskWorkflowSnapshotMapper snapshotMapper,
+            TaskWorkflowTransactionCoordinator transactionCoordinator,
+            TaskWorkflowDistributedLock distributedLock
+    ) {
+        this.storeProvider = storeProvider;
+        this.engineRegistry = engineRegistry;
+        this.recoveryPolicyRegistry = recoveryPolicyRegistry;
+        this.executionIdentityResolver = executionIdentityResolver;
+        this.inputResolver = inputResolver;
+        this.payloadMapper = payloadMapper;
+        this.snapshotMapper = snapshotMapper;
+        this.transactionCoordinator = transactionCoordinator;
+        this.distributedLock = distributedLock;
+    }
+
+    public void verifyInfrastructureAvailable(String serviceCode) {
+        requiredStore(serviceCode);
+        distributedLock.verifyAvailable(serviceCode);
     }
 
     public RoutingExecutionResult execute(
             Exchange exchange,
             TaskWorkflowCommandPlan commandPlan
     ) {
-        TaskWorkflowRecoveryStore store = requiredStore();
         RoutingPlan plan = commandPlan.routingPlan();
+        String serviceCode = plan.identity().serviceCode();
+        TaskWorkflowRecoveryStore store = requiredStore(serviceCode);
         String gatewayServiceVersion = requireGatewayServiceVersion(exchange);
         TaskWorkflowExecutionIdentityResolver.ResolvedExecutionIdentity execution =
-                executionIdentityResolver.resolve(exchange, commandPlan.command());
-        Object originalRequest = exchange.getMessage().getBody();
+                executionIdentityResolver.resolve(
+                        exchange,
+                        commandPlan.command()
+                );
         Long requestedProcessId = initialProcessId(exchange, plan, store);
 
+        if (commandPlan.command() == TaskWorkflowCommand.START) {
+            return distributedLock.withStartLock(
+                    serviceCode,
+                    execution.executionId(),
+                    () -> executeUnderLock(
+                            exchange,
+                            commandPlan,
+                            execution,
+                            requestedProcessId,
+                            gatewayServiceVersion,
+                            store
+                    )
+            );
+        }
+        if (requestedProcessId != null) {
+            return distributedLock.withProcessLock(
+                    serviceCode,
+                    requestedProcessId,
+                    () -> executeUnderLock(
+                            exchange,
+                            commandPlan,
+                            execution,
+                            requestedProcessId,
+                            gatewayServiceVersion,
+                            store
+                    )
+            );
+        }
+        if (execution.explicitlySupplied()) {
+            throw unavailable(
+                    execution.executionId(),
+                    commandPlan,
+                    gatewayServiceVersion,
+                    "retry requires processId or a taskId that resolves to a process"
+            );
+        }
+        return executeUnderLock(
+                exchange,
+                commandPlan,
+                execution,
+                null,
+                gatewayServiceVersion,
+                store
+        );
+    }
+
+    private RoutingExecutionResult executeUnderLock(
+            Exchange exchange,
+            TaskWorkflowCommandPlan commandPlan,
+            TaskWorkflowExecutionIdentityResolver.ResolvedExecutionIdentity execution,
+            Long requestedProcessId,
+            String gatewayServiceVersion,
+            TaskWorkflowRecoveryStore store
+    ) {
+        RoutingPlan plan = commandPlan.routingPlan();
+        Object originalRequest = exchange.getMessage().getBody();
         ExistingExecution existing = resolveExistingExecution(
                 store,
                 commandPlan,
@@ -63,7 +146,7 @@ public class TaskWorkflowExecutionCoordinator {
                 requestedProcessId,
                 gatewayServiceVersion
         );
-        if (existing.snapshot() != null) {
+        if (existing.state() == ExistingExecutionState.EXISTING_SNAPSHOT) {
             validateSnapshot(
                     existing.snapshot(),
                     execution.executionId(),
@@ -80,9 +163,9 @@ public class TaskWorkflowExecutionCoordinator {
         }
 
         RoutingExecutionContext context;
-        RoutingExecutionSnapshot snapshot;
+        TaskWorkflowExecutionSnapshot snapshot;
         RoutingCursor cursor;
-        if (existing.snapshot() == null) {
+        if (existing.state() != ExistingExecutionState.EXISTING_SNAPSHOT) {
             context = new RoutingExecutionContext(originalRequest);
             context.processId(existing.processId());
             context.correlationId(execution.executionId());
@@ -113,29 +196,25 @@ public class TaskWorkflowExecutionCoordinator {
                     context.processId()
             );
         }
-        AtomicReference<RoutingExecutionSnapshot> snapshotRef =
-                new AtomicReference<>(snapshot);
-        AtomicReference<Message> responseRef = new AtomicReference<>();
-        SnapshotLifecycle lifecycle = new SnapshotLifecycle(
+        TaskWorkflowExecutionLifecycle lifecycle =
+                new TaskWorkflowExecutionLifecycle(
                 store,
                 commandPlan,
                 gatewayServiceVersion,
-                snapshotRef,
-                responseRef
+                snapshot,
+                payloadMapper,
+                snapshotMapper,
+                transactionCoordinator
         );
 
         RoutingExecutionResult engineResult = engineRegistry
                 .getRequired(plan.routingStrategy())
                 .execute(exchange, plan, context, cursor, lifecycle);
-        Message response = responseRef.get();
+        Message response = lifecycle.response();
         if (response == null) {
-            response = canonicalResponse(
-                    exchange,
-                    commandPlan,
-                    gatewayServiceVersion,
-                    engineResult,
-                    engineResult.response(),
-                    null
+            throw new InvalidTaskWorkflowExecutionStateException(
+                    "TASK_WORKFLOW routing lifecycle did not produce a "
+                            + "canonical response"
             );
         }
         return new RoutingExecutionResult(
@@ -153,63 +232,189 @@ public class TaskWorkflowExecutionCoordinator {
             Long requestedProcessId,
             String gatewayServiceVersion
     ) {
-        if (!execution.explicitlySupplied()) {
-            return new ExistingExecution(requestedProcessId, null);
+        if (commandPlan.command() == TaskWorkflowCommand.START) {
+            if (!execution.explicitlySupplied()) {
+                throw unavailable(
+                        execution.executionId(),
+                        commandPlan,
+                        gatewayServiceVersion,
+                        "START reconstruction requires an explicitly supplied "
+                                + "canonical executionId"
+                );
+            }
+            OptionalLong process = findCorrelatedProcess(
+                    store,
+                    execution.executionId()
+            );
+            if (process.isEmpty()) {
+                return ExistingExecution.newExecution(null);
+            }
+            long processId = process.getAsLong();
+            Optional<TaskWorkflowExecutionSnapshot> loaded =
+                    load(store, processId);
+            if (loaded.isEmpty()) {
+                requireReconstructableStart(
+                        commandPlan,
+                        execution,
+                        processId
+                );
+                return ExistingExecution.reconstructableStart(processId);
+            }
+            TaskWorkflowExecutionSnapshot snapshot = loaded.get();
+            if (sameExecutionAction(
+                    snapshot,
+                    execution.executionId(),
+                    commandPlan.inboundAction()
+            )) {
+                return ExistingExecution.existingSnapshot(
+                        processId,
+                        snapshot
+                );
+            }
+            if (snapshot.executionState()
+                    == TaskWorkflowExecutionState.RUNNING
+                    || snapshot.executionState()
+                    == TaskWorkflowExecutionState.RETRY_PENDING) {
+                throw new TaskWorkflowExecutionAlreadyInProgressException(
+                        "process:" + processId
+                );
+            }
+            throw snapshotUnavailable(
+                    execution.executionId(),
+                    processId,
+                    commandPlan,
+                    "workflow watcher belongs to a different execution or "
+                            + "inbound action; non-durable START replay is "
+                            + "forbidden"
+            );
         }
 
-        OptionalLong correlatedProcess =
-                store.findProcessIdByExecutionId(execution.executionId());
-        if (requestedProcessId != null && correlatedProcess.isPresent()
-                && requestedProcessId.longValue()
-                != correlatedProcess.getAsLong()) {
-            throw new InvalidTaskWorkflowExecutionStateException(
-                    "TASK_WORKFLOW executionId resolves to processId="
-                            + correlatedProcess.getAsLong()
-                            + " but the request supplied processId="
-                            + requestedProcessId);
+        if (requestedProcessId == null) {
+            if (execution.explicitlySupplied()) {
+                throw unavailable(
+                        execution.executionId(),
+                        commandPlan,
+                        gatewayServiceVersion,
+                        "process identity is unavailable"
+                );
+            }
+            return ExistingExecution.newExecution(null);
         }
-        Long processId = requestedProcessId != null
-                ? requestedProcessId
-                : correlatedProcess.isPresent()
-                ? correlatedProcess.getAsLong()
-                : null;
-
-        if (processId == null
-                && commandPlan.command() == TaskWorkflowCommand.START) {
-            return new ExistingExecution(null, null);
-        }
-        if (processId == null) {
-            throw unavailable(execution.executionId(), commandPlan,
-                    gatewayServiceVersion,
-                    "process identity is unavailable");
-        }
-
-        Optional<RoutingExecutionSnapshot> loaded = store.loadForUpdate(
-                processId,
-                commandPlan.inboundAction(),
-                gatewayServiceVersion
-        );
+        Optional<TaskWorkflowExecutionSnapshot> loaded =
+                load(store, requestedProcessId);
         if (loaded.isEmpty()) {
-            throw unavailable(execution.executionId(), commandPlan,
-                    gatewayServiceVersion,
+            throw snapshotUnavailable(
+                    execution.executionId(),
+                    requestedProcessId,
+                    commandPlan,
                     commandPlan.routingPlan().steps().stream()
                             .anyMatch(step -> step.observationContext()
                                     .taskWorkflowStepType()
                                     == TaskWorkflowStepType.BUSINESS_OPERATION)
-                            ? "snapshot is missing; a business-operation chain must not be replayed blindly"
-                            : "snapshot is missing; execution must not be restarted blindly");
+                            ? "workflow watcher is missing; a "
+                            + "business-operation chain must not be replayed "
+                            + "blindly"
+                            : "workflow watcher is missing; execution must "
+                            + "not be restarted blindly"
+            );
         }
-        return new ExistingExecution(processId, loaded.get());
+        TaskWorkflowExecutionSnapshot snapshot = loaded.get();
+        if (execution.explicitlySupplied()) {
+            return ExistingExecution.existingSnapshot(
+                    requestedProcessId,
+                    snapshot
+            );
+        }
+        if (isTerminal(snapshot)) {
+            return ExistingExecution.newExecution(requestedProcessId);
+        }
+        throw new TaskWorkflowExecutionAlreadyInProgressException(
+                "process:" + requestedProcessId
+        );
+    }
+
+    private Optional<TaskWorkflowExecutionSnapshot> load(
+            TaskWorkflowRecoveryStore store,
+            long processId
+    ) {
+        try {
+            return store.loadForUpdate(processId);
+        } catch (RuntimeException failure) {
+            throw persistenceFailure("load execution state", failure);
+        }
+    }
+
+    private OptionalLong findCorrelatedProcess(
+            TaskWorkflowRecoveryStore store,
+            String executionId
+    ) {
+        try {
+            return store.findProcessIdByCorrelationId(executionId);
+        } catch (RuntimeException failure) {
+            throw persistenceFailure(
+                    "resolve the exactly correlated process",
+                    failure
+            );
+        }
+    }
+
+    private boolean sameExecutionAction(
+            TaskWorkflowExecutionSnapshot snapshot,
+            String executionId,
+            String inboundAction
+    ) {
+        return executionId.equals(snapshot.executionId())
+                && inboundAction.equalsIgnoreCase(snapshot.inboundAction());
+    }
+
+    private boolean isTerminal(TaskWorkflowExecutionSnapshot snapshot) {
+        boolean completed = snapshot.executionState()
+                == TaskWorkflowExecutionState.COMPLETED
+                && snapshot.decision()
+                == TaskWorkflowExecutionDecision.SUCCESS;
+        boolean failed = snapshot.executionState()
+                == TaskWorkflowExecutionState.FAILED
+                && snapshot.decision()
+                == TaskWorkflowExecutionDecision.FAIL;
+        return completed || failed;
+    }
+
+    private void requireReconstructableStart(
+            TaskWorkflowCommandPlan commandPlan,
+            TaskWorkflowExecutionIdentityResolver.ResolvedExecutionIdentity execution,
+            long processId
+    ) {
+        RoutingPlan plan = commandPlan.routingPlan();
+        boolean reconstructable = commandPlan.command()
+                == TaskWorkflowCommand.START
+                && execution.explicitlySupplied()
+                && plan.routingStrategy() == RoutingStrategy.FIRST
+                && plan.steps().size() == 1
+                && plan.steps().getFirst().observationContext()
+                .taskWorkflowStepType()
+                == TaskWorkflowStepType.START_PROCESS;
+        if (!reconstructable) {
+            throw snapshotUnavailable(
+                    execution.executionId(),
+                    processId,
+                    commandPlan,
+                    "workflow watcher is missing and the action plan is not "
+                            + "a one-step FIRST/START_PROCESS plan"
+            );
+        }
     }
 
     private RoutingExecutionResult terminalResult(
             Object originalRequest,
-            RoutingExecutionSnapshot snapshot
+            TaskWorkflowExecutionSnapshot snapshot
     ) {
-        if (snapshot.decision() == RoutingDecision.SUCCESS) {
-            if (snapshot.executionState() != RoutingExecutionState.COMPLETED) {
+        if (snapshot.decision()
+                == TaskWorkflowExecutionDecision.SUCCESS) {
+            if (snapshot.executionState()
+                    != TaskWorkflowExecutionState.COMPLETED) {
                 throw new InvalidTaskWorkflowExecutionStateException(
-                        "SUCCESS snapshot is not in COMPLETED state");
+                        "SUCCESS snapshot is not in COMPLETED state"
+                );
             }
             return new RoutingExecutionResult(
                     snapshotMapper.restoreResponse(snapshot.storedResponse()),
@@ -218,57 +423,110 @@ public class TaskWorkflowExecutionCoordinator {
                     null
             );
         }
-        if (snapshot.decision() == RoutingDecision.FAIL) {
-            if (snapshot.executionState() != RoutingExecutionState.FAILED
+        if (snapshot.decision() == TaskWorkflowExecutionDecision.FAIL) {
+            if (snapshot.executionState()
+                    != TaskWorkflowExecutionState.FAILED
                     || snapshot.storedFailure() == null) {
                 throw new InvalidTaskWorkflowExecutionStateException(
-                        "FAIL snapshot has no stored typed failure");
+                        "FAIL snapshot has no stored typed failure"
+                );
             }
             throw new RoutingFailureException(
-                    snapshot.storedFailure(),
+                    snapshotMapper.restoreFailure(snapshot.storedFailure()),
                     null
             );
         }
-        if (snapshot.decision() == RoutingDecision.RETRY_LATER) {
+        if (snapshot.decision()
+                == TaskWorkflowExecutionDecision.RETRY_LATER) {
             if (snapshot.executionState()
-                    != RoutingExecutionState.RETRY_PENDING) {
+                    != TaskWorkflowExecutionState.RETRY_PENDING) {
                 throw new InvalidTaskWorkflowExecutionStateException(
-                        "RETRY_LATER snapshot is not in RETRY_PENDING state");
+                        "RETRY_LATER snapshot is not in RETRY_PENDING state"
+                );
             }
             return null;
         }
-        throw new TaskWorkflowAttemptConflictException(
-                "TASK_WORKFLOW execution has an in-progress attempt and cannot be resumed");
+        throw new TaskWorkflowExecutionAlreadyInProgressException(
+                "process:" + snapshot.processId()
+        );
     }
 
     private void validateSnapshot(
-            RoutingExecutionSnapshot snapshot,
+            TaskWorkflowExecutionSnapshot snapshot,
             String executionId,
             RoutingPlan plan,
             String gatewayServiceVersion
     ) {
         if (snapshot.schemaVersion()
-                != RoutingExecutionSnapshot.CURRENT_SCHEMA_VERSION) {
+                != TaskWorkflowExecutionSnapshot.CURRENT_SCHEMA_VERSION) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "Unsupported TASK_WORKFLOW snapshot schemaVersion="
-                            + snapshot.schemaVersion());
+                            + snapshot.schemaVersion()
+            );
         }
         if (!executionId.equals(snapshot.executionId())) {
             throw new InvalidTaskWorkflowExecutionStateException(
-                    "TASK_WORKFLOW executionId does not match the persisted snapshot");
+                    "TASK_WORKFLOW executionId does not match the persisted snapshot"
+            );
         }
         if (!gatewayServiceVersion.equals(
                 snapshot.gatewayServiceVersion())) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "TASK_WORKFLOW retry gateway service version does not "
-                            + "match the persisted request contract");
+                            + "match the persisted request contract"
+            );
         }
-        if (!snapshot.planIdentity().equals(plan.identity())
-                || snapshot.routingStrategy() != plan.routingStrategy()) {
+        RoutingPlanIdentity identity = plan.identity();
+        boolean samePlan = identity.serviceCode().equals(snapshot.serviceCode())
+                && identity.inboundAction().equalsIgnoreCase(
+                snapshot.inboundAction())
+                && identity.actionPlanName().equals(snapshot.actionPlanName())
+                && identity.definitionId().equals(snapshot.definitionId())
+                && identity.planFingerprint().equals(
+                snapshot.planFingerprint())
+                && plan.routingStrategy().name().equals(
+                snapshot.routingStrategy());
+        if (!samePlan) {
             throw new TaskWorkflowPlanChangedException(
                     "TASK_WORKFLOW plan changed during retry; persisted="
-                            + snapshot.planIdentity() + ", current="
-                            + plan.identity());
+                            + snapshot.serviceCode() + ":"
+                            + snapshot.inboundAction() + ":"
+                            + snapshot.actionPlanName() + ":"
+                            + snapshot.definitionId() + ":"
+                            + snapshot.planFingerprint()
+                            + ", current=" + plan.identity()
+            );
+        }
+        validateSnapshotSteps(snapshot, plan);
+    }
+
+    private void validateSnapshotSteps(
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingPlan plan
+    ) {
+        if (snapshot.steps().size() != plan.steps().size()) {
+            throw new InvalidTaskWorkflowExecutionStateException(
+                    "TASK_WORKFLOW snapshot step count does not match the "
+                            + "current plan"
+            );
+        }
+        for (int index = 0; index < plan.steps().size(); index++) {
+            var expected = plan.steps().get(index);
+            var stored = snapshot.steps().get(index);
+            boolean matches = stored != null
+                    && stored.stepIndex() == expected.stepIndex()
+                    && expected.stepId().equals(stored.stepId())
+                    && expected.observationContext().taskWorkflowStepType()
+                    == stored.stepType()
+                    && expected.serviceOperation().getOperationName()
+                    .equals(stored.operationName());
+            if (!matches) {
+                throw new InvalidTaskWorkflowExecutionStateException(
+                        "TASK_WORKFLOW snapshot step identity does not "
+                                + "match the current plan at stepIndex="
+                                + index
+                );
+            }
         }
     }
 
@@ -292,14 +550,16 @@ public class TaskWorkflowExecutionCoordinator {
                 if (taskProcess.isEmpty()) {
                     throw new InvalidTaskWorkflowExecutionStateException(
                             "TASK_WORKFLOW taskId=" + taskId
-                                    + " has no workflow process");
+                                    + " has no workflow process"
+                    );
                 }
                 if (suppliedProcessId != null
                         && suppliedProcessId.longValue()
                         != taskProcess.getAsLong()) {
                     throw new InvalidTaskWorkflowExecutionStateException(
                             "Conflicting TASK_WORKFLOW processId values from "
-                                    + "the request and taskId=" + taskId);
+                                    + "the request and taskId=" + taskId
+                    );
                 }
                 yield taskProcess.getAsLong();
             }
@@ -307,47 +567,16 @@ public class TaskWorkflowExecutionCoordinator {
         };
     }
 
-    private Message canonicalResponse(
-            Exchange exchange,
-            TaskWorkflowCommandPlan commandPlan,
-            String gatewayServiceVersion,
-            RoutingExecutionResult result,
-            Object selectedResponse,
-            String reasonCode
-    ) {
-        RoutingDecision decision = result.decision();
-        MessageStatus status = decision == RoutingDecision.RETRY_LATER
-                ? MessageStatus.SC_PROCESSING
-                : MessageStatus.SC_SUCCESS;
-        ExecutionOutcome outcome = new ExecutionOutcome(
-                exchange.getProperty(Message.EXECUTION_ID, String.class),
-                commandPlan.routingPlan().identity().serviceCode(),
-                commandPlan.inboundAction(),
-                commandPlan.actionPlanName(),
-                gatewayServiceVersion,
-                commandPlan.routingPlan().routingStrategy().name(),
-                decision.name(),
-                decision == RoutingDecision.RETRY_LATER,
-                reasonCode
-        );
-        if (selectedResponse instanceof Message message) {
-            message.status(status);
-            return message.executionOutcome(outcome);
-        }
-        return Message.builder()
-                .status(status)
-                .payload(snapshotMapper.toJsonNode(selectedResponse))
-                .executionOutcome(outcome)
-                .build();
-    }
-
-    private TaskWorkflowRecoveryStore requiredStore() {
+    private TaskWorkflowRecoveryStore requiredStore(String serviceCode) {
         List<TaskWorkflowRecoveryStore> stores =
                 storeProvider.orderedStream().toList();
         if (stores.size() != 1) {
             throw new IllegalStateException(
-                    "Active TASK_WORKFLOW services require exactly one durable "
-                            + "TaskWorkflowRecoveryStore; found " + stores.size());
+                    "Active TASK_WORKFLOW serviceCode=" + serviceCode
+                            + " requires exactly one durable "
+                            + "TaskWorkflowRecoveryStore; found "
+                            + stores.size()
+            );
         }
         return stores.getFirst();
     }
@@ -362,7 +591,23 @@ public class TaskWorkflowExecutionCoordinator {
                 "TASK_WORKFLOW execution state is unavailable executionId="
                         + executionId + ", inboundAction="
                         + plan.inboundAction() + ", gatewayServiceVersion="
-                        + gatewayServiceVersion + ": " + reason);
+                        + gatewayServiceVersion + ": " + reason
+        );
+    }
+
+    private TaskWorkflowSnapshotUnavailableException snapshotUnavailable(
+            String executionId,
+            Long processId,
+            TaskWorkflowCommandPlan plan,
+            String reason
+    ) {
+        return new TaskWorkflowSnapshotUnavailableException(
+                executionId,
+                processId,
+                plan.routingPlan().identity().serviceCode(),
+                plan.inboundAction(),
+                reason
+        );
     }
 
     private String requireGatewayServiceVersion(Exchange exchange) {
@@ -373,7 +618,8 @@ public class TaskWorkflowExecutionCoordinator {
         if (gatewayServiceVersion == null
                 || gatewayServiceVersion.isBlank()) {
             throw new InvalidTaskWorkflowExecutionStateException(
-                    "TASK_WORKFLOW gateway service version is unavailable");
+                    "TASK_WORKFLOW gateway service version is unavailable"
+            );
         }
         return gatewayServiceVersion;
     }
@@ -385,282 +631,83 @@ public class TaskWorkflowExecutionCoordinator {
         if (failure instanceof TaskWorkflowExecutionException) {
             return failure;
         }
+        if (failure instanceof TaskWorkflowAttemptConflictException) {
+            return new TaskWorkflowExecutionAlreadyInProgressException(
+                    "provider-attempt"
+            );
+        }
+        String capacityDetail =
+                failure instanceof TaskWorkflowSnapshotTooLargeException
+                        ? ": " + failure.getMessage()
+                        : "";
         return new TaskWorkflowPersistenceException(
                 "Failed to " + action
-                        + " TASK_WORKFLOW durable execution state",
+                        + " TASK_WORKFLOW durable execution state"
+                        + capacityDetail,
                 failure
         );
     }
 
-    private record ExistingExecution(
-            Long processId,
-            RoutingExecutionSnapshot snapshot
-    ) {
+    private enum ExistingExecutionState {
+        NEW_EXECUTION,
+        EXISTING_SNAPSHOT,
+        RECONSTRUCTABLE_START
     }
 
-    private final class SnapshotLifecycle
-            implements RoutingExecutionLifecycle {
-        private final TaskWorkflowRecoveryStore store;
-        private final TaskWorkflowCommandPlan commandPlan;
-        private final String gatewayServiceVersion;
-        private final AtomicReference<RoutingExecutionSnapshot> snapshotRef;
-        private final AtomicReference<Message> responseRef;
-
-        private SnapshotLifecycle(
-                TaskWorkflowRecoveryStore store,
-                TaskWorkflowCommandPlan commandPlan,
-                String gatewayServiceVersion,
-                AtomicReference<RoutingExecutionSnapshot> snapshotRef,
-                AtomicReference<Message> responseRef
-        ) {
-            this.store = store;
-            this.commandPlan = commandPlan;
-            this.gatewayServiceVersion = gatewayServiceVersion;
-            this.snapshotRef = snapshotRef;
-            this.responseRef = responseRef;
-        }
-
-        @Override
-        public void beforeStep(
-                Exchange exchange,
-                RoutingPlan plan,
-                RoutingStepPlan step,
-                RoutingExecutionContext context
-        ) {
-            RoutingExecutionSnapshot current = snapshotRef.get();
-            String attemptId = UUID.randomUUID().toString();
-            exchange.setProperty(
-                    TaskWorkflowExchangeProperties.PROVIDER_IDEMPOTENCY_KEY,
-                    current.executionId() + ":" + step.stepId()
-            );
-            RoutingExecutionSnapshot attempted = snapshotMapper.attempted(
-                    current,
-                    step,
-                    context,
-                    attemptId,
-                    Instant.now()
-            );
-            if (attempted.processId() != null) {
-                try {
-                    attempted = store.registerAttempt(
-                            attempted.processId(),
-                            attempted,
-                            current.activeAttemptId()
-                    );
-                } catch (RuntimeException failure) {
-                    throw persistenceFailure("register an attempt", failure);
-                }
-            }
-            snapshotRef.set(attempted);
-            transactionCoordinator.beforeStep(exchange, step);
-        }
-
-        @Override
-        public void afterStep(
-                Exchange exchange,
-                RoutingPlan plan,
-                RoutingStepPlan step,
-                RoutingExecutionContext context,
-                RoutingStepExecutionResult result
-        ) {
-            if (result.decision() == RoutingDecision.SUCCESS) {
-                payloadMapper.rememberStepContext(
-                        exchange,
-                        step.observationContext().taskWorkflowStepType(),
-                        result.response(),
-                        context
+    private record ExistingExecution(
+            ExistingExecutionState state,
+            Long processId,
+            TaskWorkflowExecutionSnapshot snapshot
+    ) {
+        private ExistingExecution {
+            if (state == ExistingExecutionState.EXISTING_SNAPSHOT
+                    && snapshot == null) {
+                throw new IllegalArgumentException(
+                        "EXISTING_SNAPSHOT requires a snapshot"
                 );
             }
-
-            boolean lastStep = step.stepIndex() == plan.steps().size() - 1;
-            boolean failed = result.decision() == RoutingDecision.FAIL;
-            RoutingExecutionState state = failed
-                    ? RoutingExecutionState.FAILED
-                    : RoutingExecutionState.RUNNING;
-            RoutingDecision executionDecision = failed
-                    ? RoutingDecision.FAIL
-                    : null;
-            RoutingFailureDetails failureDetails = failed
-                    ? failureDetails(plan, step, result.decisionResult())
-                    : null;
-
-            RoutingExecutionSnapshot updated = snapshotMapper.decided(
-                    snapshotRef.get(),
-                    step,
-                    result,
-                    context,
-                    state,
-                    executionDecision,
-                    null,
-                    failureDetails,
-                    Instant.now()
-            );
-            if (failed) {
-                persistFailed(updated);
-            } else if (result.decision() == RoutingDecision.SUCCESS
-                    && !lastStep) {
-                persistProgress(updated);
+            if (state != ExistingExecutionState.EXISTING_SNAPSHOT
+                    && snapshot != null) {
+                throw new IllegalArgumentException(
+                        state + " must not contain a snapshot"
+                );
             }
-            snapshotRef.set(updated);
-            transactionCoordinator.afterStep(exchange, step, result);
+            if (state == ExistingExecutionState.RECONSTRUCTABLE_START
+                    && processId == null) {
+                throw new IllegalArgumentException(
+                        "RECONSTRUCTABLE_START requires processId"
+                );
+            }
         }
 
-        @Override
-        public void afterExecution(
-                Exchange exchange,
-                RoutingPlan plan,
-                RoutingExecutionResult result
-        ) {
-            if (result.decision() == RoutingDecision.FAIL) {
-                throw new IllegalStateException(
-                        "Routing engine returned a normal FAIL result");
-            }
-            RoutingExecutionSnapshot current = snapshotRef.get();
-            String reasonCode = terminalReasonCode(current, result);
-            Message canonical = canonicalResponse(
-                    exchange,
-                    commandPlan,
-                    gatewayServiceVersion,
-                    result,
-                    result.response(),
-                    reasonCode
-            );
-            RoutingExecutionState state =
-                    result.decision() == RoutingDecision.RETRY_LATER
-                            ? RoutingExecutionState.RETRY_PENDING
-                            : RoutingExecutionState.COMPLETED;
-            RoutingExecutionSnapshot terminal = snapshotMapper.terminal(
-                    current,
-                    result.context(),
-                    state,
-                    result.decision(),
-                    snapshotMapper.storeResponse(canonical),
-                    Instant.now()
-            );
-            persistTerminal(terminal);
-            snapshotRef.set(terminal);
-            responseRef.set(canonical);
-        }
-
-        @Override
-        public void stepThrew(
-                Exchange exchange,
-                RoutingPlan plan,
-                RoutingStepPlan step,
-                RoutingExecutionContext context,
-                RuntimeException failure
-        ) {
-            RoutingFailureDetails details = new RoutingFailureDetails(
-                    plan.identity(),
-                    plan.planId(),
-                    step.stepId(),
-                    step.stepIndex(),
-                    step.serviceOperation().getOperationName(),
-                    RoutingDecision.FAIL,
-                    MessageStatus.SC_ERROR_SYSTEM,
-                    "ROUTING_STEP_EXECUTION_ERROR",
-                    "Routing step execution failed",
+        private static ExistingExecution newExecution(Long processId) {
+            return new ExistingExecution(
+                    ExistingExecutionState.NEW_EXECUTION,
+                    processId,
                     null
             );
-            RoutingExecutionSnapshot failed = snapshotMapper.failed(
-                    snapshotRef.get(),
-                    step,
-                    context,
-                    details,
-                    Instant.now()
+        }
+
+        private static ExistingExecution existingSnapshot(
+                Long processId,
+                TaskWorkflowExecutionSnapshot snapshot
+        ) {
+            return new ExistingExecution(
+                    ExistingExecutionState.EXISTING_SNAPSHOT,
+                    processId,
+                    snapshot
             );
-            if (failed.processId() != null) {
-                try {
-                    store.saveFailed(failed.processId(), failed);
-                } catch (RuntimeException persistenceFailure) {
-                    throw persistenceFailure(
-                            "save a failed execution",
-                            persistenceFailure
-                    );
-                }
-            }
-            snapshotRef.set(failed);
         }
 
-        private void persistProgress(RoutingExecutionSnapshot snapshot) {
-            Long processId = snapshot.processId();
-            if (processId == null) {
-                return;
-            }
-            try {
-                store.saveProgress(processId, snapshot);
-            } catch (RuntimeException failure) {
-                throw persistenceFailure("save execution progress", failure);
-            }
-        }
-
-        private void persistFailed(RoutingExecutionSnapshot snapshot) {
-            Long processId = snapshot.processId();
-            if (processId == null) {
-                return;
-            }
-            try {
-                store.saveFailed(processId, snapshot);
-            } catch (RuntimeException failure) {
-                throw persistenceFailure("save a failed execution", failure);
-            }
-        }
-
-        private void persistTerminal(RoutingExecutionSnapshot snapshot) {
-            Long processId = snapshot.processId();
-            if (processId == null) {
-                if (snapshot.decision() == RoutingDecision.RETRY_LATER) {
-                    throw new TaskWorkflowPersistenceException(
-                            "Cannot return RETRY_LATER without a workflow "
-                                    + "processId for durable state persistence");
-                }
-                return;
-            }
-            try {
-                if (snapshot.decision() == RoutingDecision.RETRY_LATER) {
-                    store.saveRetryLater(processId, snapshot);
-                } else {
-                    store.saveCompleted(processId, snapshot);
-                }
-            } catch (RuntimeException failure) {
-                throw persistenceFailure(
-                        "save a terminal execution outcome",
-                        failure
-                );
-            }
-        }
-
-        private String terminalReasonCode(
-                RoutingExecutionSnapshot snapshot,
-                RoutingExecutionResult result
+        private static ExistingExecution reconstructableStart(
+                long processId
         ) {
-            RoutingStepPlan stoppedAt = result.stoppedAt();
-            int index = stoppedAt == null
-                    ? snapshot.steps().size() - 1
-                    : stoppedAt.stepIndex();
-            if (index < 0 || index >= snapshot.steps().size()) {
-                return null;
-            }
-            return snapshot.steps().get(index).reasonCode();
-        }
-
-        private RoutingFailureDetails failureDetails(
-                RoutingPlan plan,
-                RoutingStepPlan step,
-                RoutingDecisionResult decision
-        ) {
-            return new RoutingFailureDetails(
-                    plan.identity(),
-                    plan.planId(),
-                    step.stepId(),
-                    step.stepIndex(),
-                    step.serviceOperation().getOperationName(),
-                    RoutingDecision.FAIL,
-                    decision.messageStatus(),
-                    decision.reasonCode(),
-                    decision.reasonMessage(),
-                    decision.normalizedOutcome()
+            return new ExistingExecution(
+                    ExistingExecutionState.RECONSTRUCTABLE_START,
+                    processId,
+                    null
             );
         }
     }
+
 }
