@@ -6,7 +6,10 @@ import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
 import ir.daneshrefah.scm.provider.shetab.iso.util.ResponseCode
 import ir.daneshrefah.scm.common.transformerUtil.PersianStringUtil
+import org.slf4j.LoggerFactory
 
+
+def log = LoggerFactory.getLogger("tcp-card-inq-rs")
 def body = exchange.in.body
 println("tcp rs")
 
@@ -15,7 +18,7 @@ if (!(body instanceof Map)) {
 }
 
 def mti = body.get("mti")
-println("tcp card inq rs mti : " + mti)
+
 if (!mti.toString().trim().equals(MTI.AUTHORIZATION_ADVICE_RESPONSE_COMMAND.getCode())) {
     throw new RuntimeException("tcp card inq rs : mti is null")
 }
@@ -26,13 +29,13 @@ if (fields == null) {
     throw new RuntimeException("tcp card inq rs : fields is null")
 }
 
-println("tcp card inq rs action code" + fields[ISOField.ACTION_CODE.getPosition().toString()])
+log.trace("tcp card inq rs action code: {}", fields[ISOField.ACTION_CODE.getPosition().toString()])
 if (fields[ISOField.ACTION_CODE.getPosition().toString()] == null || !fields[ISOField.ACTION_CODE.getPosition().toString()].toString().equals(ResponseCode.APPROVED.getCode())) {
     throw new CardException(fields[ISOField.ACTION_CODE.getPosition().toString()].toString(),fields[ISOField.ACTION_CODE.getPosition().toString()].toString(), "tcp card inq rs action code : " + fields[ISOField.ACTION_CODE.getPosition().toString()].toString())
 }
 
 def customerNameFamily = fields[ISOField.ADDITIONAL_RESPONSE_DATA.getPosition().toString()].toString()
-println("customerNameFamily : " + customerNameFamily)
+log.trace("customerNameFamily : {}", customerNameFamily)
 def name = "";
 def family = "";
 
@@ -59,18 +62,14 @@ if (!(customerNameFamily.isEmpty() || customerNameFamily.length() <= 25)) {
 }
 
 def originalBody = exchange.getProperty(Message.ORIGINAL_BODY)
-println("origin body :" + originalBody)
 def destCardNumber = originalBody?.fundTransfer?.destinationCardNumber
-println("dest card : " + destCardNumber)
 
 def cardNo = destCardNumber?.toString()?.replace('"', '')?.trim()
 def bankPrefix = cardNo?.length() >= 6 ? cardNo[0..5] : null
-println("card prefix : " + bankPrefix)
 def detection = exchange.context.registry.lookupByName("bankListLoader")
 def cardIinBitmapService = exchange.context.registry.lookupByName("cardIinBitmapService")
 def cardBitmap = cardIinBitmapService.findBitmapByCardNumber(cardNo)
 BankDto bank = bankPrefix == null ? null : detection.getBank(bankPrefix)
-println("bank name : " + (bank == null ? "" : bank.getName()))
 
 def customerName = name.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(name))
 def customerLastName = family.isEmpty() ? "" : PersianStringUtil.convertArabicToPersianUTF(PersianStringUtil.cvrtIranSystem2Utf(family))
