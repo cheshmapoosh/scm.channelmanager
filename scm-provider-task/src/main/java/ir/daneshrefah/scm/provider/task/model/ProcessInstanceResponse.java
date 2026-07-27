@@ -11,6 +11,7 @@ import java.util.Objects;
 @Data
 public class ProcessInstanceResponse {
     private Long id;
+    private String executionId;
     private String accountNo;
     private ProcessStatusEnum processStatus;
     private String statusName;

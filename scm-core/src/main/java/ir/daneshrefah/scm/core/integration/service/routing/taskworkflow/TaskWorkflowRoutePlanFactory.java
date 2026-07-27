@@ -14,8 +14,10 @@ import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepPlan;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationDefinitionClassifier;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationEndpointResolver;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationSelector;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderCapabilityRegistry;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,7 +34,8 @@ public class TaskWorkflowRoutePlanFactory {
     private final TaskWorkflowPayloadMapper payloadMapper;
     private final RoutingOperationMetadataResolver operationMetadataResolver;
     private final TaskWorkflowPlanFingerprint fingerprint;
-    private final TaskWorkflowProviderCapabilityRegistry providerCapabilities;
+    private final ObjectProvider<TaskWorkflowProviderCapabilityRegistry>
+            providerCapabilities;
 
     public TaskWorkflowRoutePlan create(Service service) {
         Map<String, ServiceOperation> executableOperations = operationsByName(service);
@@ -150,13 +153,33 @@ public class TaskWorkflowRoutePlanFactory {
                     "non-business workflow steps must target an scm-task provider");
         }
         if (taskProvider) {
-            providerCapabilities.requireSupported(
+            providerCapabilityRegistry(code(service)).requireSupported(
                     code(service),
                     operationMetadataResolver.providerUri(
                             operation.getOperationName()),
                     step.stepType()
             );
+            payloadMapper.requireProviderRequestFactory(
+                    code(service),
+                    step.stepType()
+            );
         }
+    }
+
+    private TaskWorkflowProviderCapabilityRegistry providerCapabilityRegistry(
+            String serviceCode
+    ) {
+        List<TaskWorkflowProviderCapabilityRegistry> registries =
+                providerCapabilities.orderedStream().toList();
+        if (registries.size() != 1) {
+            throw new IllegalStateException(
+                    "Active TASK_WORKFLOW serviceCode=" + serviceCode
+                            + " requires exactly one "
+                            + "TaskWorkflowProviderCapabilityRegistry; found "
+                            + registries.size()
+            );
+        }
+        return registries.getFirst();
     }
 
     private String resolveSpanKind(

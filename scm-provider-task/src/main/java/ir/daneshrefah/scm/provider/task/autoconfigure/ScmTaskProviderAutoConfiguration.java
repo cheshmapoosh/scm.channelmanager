@@ -9,11 +9,14 @@ import ir.daneshrefah.scm.provider.task.camel.TaskProviderOperationAdapter;
 import ir.daneshrefah.scm.provider.task.workflow.InternalTaskWorkflowEngine;
 import ir.daneshrefah.scm.provider.task.workflow.ProviderTaskWorkflowRecoveryStore;
 import ir.daneshrefah.scm.provider.task.workflow.ProviderTaskWorkflowCapability;
+import ir.daneshrefah.scm.provider.task.workflow.ProviderTaskWorkflowRequestFactory;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngine;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowEngineRegistry;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowStepTypeResolver;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRecoveryStore;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderCapability;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderCapabilityRegistry;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderRequestFactory;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRecoveryStore;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowStepTypeResolver;
 import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceRepository;
 import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceWatcherRepository;
 import ir.daneshrefah.scm.provider.task.repository.TaskRepository;
@@ -140,6 +143,25 @@ public class ScmTaskProviderAutoConfiguration {
             TaskWorkflowEngineRegistry engineRegistry
     ) {
         return new ProviderTaskWorkflowCapability(engineRegistry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public TaskWorkflowProviderCapabilityRegistry
+    taskWorkflowProviderCapabilityRegistry(
+            ObjectProvider<TaskWorkflowProviderCapability> capabilities
+    ) {
+        return new TaskWorkflowProviderCapabilityRegistry(
+                capabilities.orderedStream().toList()
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(TaskWorkflowProviderRequestFactory.class)
+    public TaskWorkflowProviderRequestFactory taskWorkflowProviderRequestFactory(
+            ObjectMapper objectMapper
+    ) {
+        return new ProviderTaskWorkflowRequestFactory(objectMapper);
     }
 
     @Bean

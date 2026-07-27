@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.model.taskworkflow.ExecutionOutcome;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecision;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingExecutionContext;
@@ -16,10 +17,6 @@ import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepPlan;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionDecision;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionSnapshot;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionState;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowResumeData;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowStepSnapshot;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowStoredFailure;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowStoredResponse;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,9 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The only mapper between core routing state and provider-owned persistence
- * DTOs. Generic operation responses remain in memory and are never copied into
- * the durable snapshot.
+ * Boundary between core routing state and the provider-owned versioned
+ * persistence model.
  */
 public class TaskWorkflowSnapshotMapper {
 
@@ -64,42 +60,36 @@ public class TaskWorkflowSnapshotMapper {
             Instant now
     ) {
         RoutingPlanIdentity identity = requiredIdentity(plan);
-        List<TaskWorkflowStepSnapshot> steps = plan.steps().stream()
-                .map(step -> new TaskWorkflowStepSnapshot(
-                        step.stepId(),
-                        step.stepIndex(),
-                        step.observationContext().taskWorkflowStepType(),
-                        step.serviceOperation().getOperationName(),
-                        null,
-                        0,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null
-                ))
-                .toList();
+        List<TaskWorkflowExecutionSnapshot.StepState> steps =
+                plan.steps().stream()
+                        .map(step -> new TaskWorkflowExecutionSnapshot.StepState(
+                                step.stepId(),
+                                step.stepIndex(),
+                                null,
+                                0,
+                                null,
+                                null,
+                                null,
+                                null
+                        ))
+                        .toList();
         return new TaskWorkflowExecutionSnapshot(
                 TaskWorkflowExecutionSnapshot.CURRENT_SCHEMA_VERSION,
-                executionId,
-                identity.serviceCode(),
-                identity.inboundAction(),
-                identity.actionPlanName(),
-                gatewayServiceVersion,
-                identity.definitionId(),
-                identity.planFingerprint(),
-                plan.routingStrategy().name(),
-                TaskWorkflowExecutionState.RUNNING,
-                null,
-                processId,
+                new TaskWorkflowExecutionSnapshot.ExecutionIdentity(
+                        executionId,
+                        processId,
+                        gatewayServiceVersion
+                ),
+                new TaskWorkflowExecutionSnapshot.PlanIdentity(
+                        identity.serviceCode(),
+                        identity.inboundAction(),
+                        identity.actionPlanName(),
+                        identity.definitionId(),
+                        identity.planFingerprint()
+                ),
+                runningStatus(null, null),
                 steps,
-                resumeData(context, null, null, null, null),
-                null,
-                null,
-                null,
-                null,
+                resumeData(context, null, null, null),
                 null,
                 now,
                 now
@@ -111,46 +101,29 @@ public class TaskWorkflowSnapshotMapper {
             RoutingStepPlan step,
             RoutingExecutionContext context,
             String attemptId,
-            String providerIdempotencyKey,
             Instant now
     ) {
-        List<TaskWorkflowStepSnapshot> steps = replace(
+        List<TaskWorkflowExecutionSnapshot.StepState> steps = replace(
                 snapshot,
                 step,
-                current -> new TaskWorkflowStepSnapshot(
+                current -> new TaskWorkflowExecutionSnapshot.StepState(
                         current.stepId(),
                         current.stepIndex(),
-                        current.stepType(),
-                        current.operationName(),
                         current.decision(),
                         current.attemptCount() + 1,
-                        attemptId,
                         current.normalizedOutcome(),
                         current.reasonCode(),
-                        current.reasonMessage(),
                         current.messageStatus(),
-                        now,
                         now
                 )
         );
         return copy(
                 snapshot,
-                TaskWorkflowExecutionState.RUNNING,
-                null,
                 processId(snapshot, context),
+                runningStatus(attemptId, step.stepIndex()),
                 steps,
-                resumeData(
-                        context,
-                        snapshot.resumeData(),
-                        null,
-                        null,
-                        providerIdempotencyKey
-                ),
-                snapshot.storedResponse(),
-                snapshot.storedFailure(),
-                attemptId,
-                step.stepId(),
-                step.stepIndex(),
+                resumeData(context, snapshot.resume(), null, null),
+                null,
                 now
         );
     }
@@ -162,50 +135,51 @@ public class TaskWorkflowSnapshotMapper {
             RoutingExecutionContext context,
             TaskWorkflowExecutionState state,
             RoutingDecision executionDecision,
-            TaskWorkflowStoredResponse storedResponse,
-            TaskWorkflowStoredFailure storedFailure,
+            TaskWorkflowExecutionSnapshot.StoredFailure storedFailure,
             Object retryRequest,
-            String providerIdempotencyKey,
             Instant now
     ) {
-        List<TaskWorkflowStepSnapshot> steps = replace(
+        List<TaskWorkflowExecutionSnapshot.StepState> steps = replace(
                 snapshot,
                 step,
-                current -> new TaskWorkflowStepSnapshot(
+                current -> new TaskWorkflowExecutionSnapshot.StepState(
                         current.stepId(),
                         current.stepIndex(),
-                        current.stepType(),
-                        current.operationName(),
                         storedDecision(result.decision()),
                         current.attemptCount(),
-                        current.attemptId(),
                         result.decisionResult().normalizedOutcome(),
                         result.decisionResult().reasonCode(),
-                        result.decisionResult().reasonMessage(),
                         result.decisionResult().messageStatus(),
-                        current.attemptedAt(),
-                        now
+                        current.attemptedAt()
                 )
         );
+        TaskWorkflowExecutionSnapshot.TerminalOutcome terminal =
+                storedFailure == null
+                        ? null
+                        : new TaskWorkflowExecutionSnapshot.TerminalOutcome(
+                                null,
+                                storedFailure
+                        );
         return copy(
                 snapshot,
-                state,
-                storedDecision(executionDecision),
                 processId(snapshot, context),
-                steps,
-                resumeData(
-                        context,
-                        snapshot.resumeData(),
-                        step,
-                        result,
-                        providerIdempotencyKey,
-                        retryRequest
+                new TaskWorkflowExecutionSnapshot.ExecutionStatus(
+                        state,
+                        storedDecision(executionDecision),
+                        snapshot.status().activeAttemptId(),
+                        snapshot.status().activeStepIndex()
                 ),
-                storedResponse,
-                storedFailure,
-                snapshot.activeAttemptId(),
-                snapshot.activeStepId(),
-                snapshot.activeStepIndex(),
+                steps,
+                state == TaskWorkflowExecutionState.FAILED
+                        ? null
+                        : resumeData(
+                                context,
+                                snapshot.resume(),
+                                step,
+                                result,
+                                retryRequest
+                        ),
+                terminal,
                 now
         );
     }
@@ -217,37 +191,37 @@ public class TaskWorkflowSnapshotMapper {
             RoutingFailureDetails failure,
             Instant now
     ) {
-        List<TaskWorkflowStepSnapshot> steps = replace(
+        List<TaskWorkflowExecutionSnapshot.StepState> steps = replace(
                 snapshot,
                 step,
-                current -> new TaskWorkflowStepSnapshot(
+                current -> new TaskWorkflowExecutionSnapshot.StepState(
                         current.stepId(),
                         current.stepIndex(),
-                        current.stepType(),
-                        current.operationName(),
                         TaskWorkflowExecutionDecision.FAIL,
                         Math.max(1, current.attemptCount()),
-                        current.attemptId(),
                         failure.normalizedOutcome(),
                         failure.reasonCode(),
-                        failure.reasonMessage(),
                         failure.messageStatus(),
-                        current.attemptedAt(),
-                        now
+                        current.attemptedAt() == null
+                                ? now
+                                : current.attemptedAt()
                 )
         );
         return copy(
                 snapshot,
-                TaskWorkflowExecutionState.FAILED,
-                TaskWorkflowExecutionDecision.FAIL,
                 processId(snapshot, context),
+                new TaskWorkflowExecutionSnapshot.ExecutionStatus(
+                        TaskWorkflowExecutionState.FAILED,
+                        TaskWorkflowExecutionDecision.FAIL,
+                        snapshot.status().activeAttemptId(),
+                        snapshot.status().activeStepIndex()
+                ),
                 steps,
                 null,
-                null,
-                storeFailure(failure),
-                snapshot.activeAttemptId(),
-                snapshot.activeStepId(),
-                snapshot.activeStepIndex(),
+                new TaskWorkflowExecutionSnapshot.TerminalOutcome(
+                        null,
+                        storeFailure(failure)
+                ),
                 now
         );
     }
@@ -257,101 +231,152 @@ public class TaskWorkflowSnapshotMapper {
             RoutingExecutionContext context,
             TaskWorkflowExecutionState state,
             RoutingDecision decision,
-            TaskWorkflowStoredResponse storedResponse,
+            TaskWorkflowExecutionSnapshot.StoredResponse storedResponse,
             Instant now
     ) {
         return copy(
                 snapshot,
-                state,
-                storedDecision(decision),
                 processId(snapshot, context),
+                new TaskWorkflowExecutionSnapshot.ExecutionStatus(
+                        state,
+                        storedDecision(decision),
+                        snapshot.status().activeAttemptId(),
+                        snapshot.status().activeStepIndex()
+                ),
                 snapshot.steps(),
                 decision == RoutingDecision.RETRY_LATER
-                        ? snapshot.resumeData()
+                        ? snapshot.resume()
                         : null,
-                storedResponse,
-                snapshot.storedFailure(),
-                snapshot.activeAttemptId(),
-                snapshot.activeStepId(),
-                snapshot.activeStepIndex(),
+                new TaskWorkflowExecutionSnapshot.TerminalOutcome(
+                        storedResponse,
+                        null
+                ),
                 now
         );
     }
 
     public RoutingExecutionContext restoreContext(
             Object originalRequest,
-            TaskWorkflowExecutionSnapshot snapshot
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingPlan plan,
+            String processCorrelationId
     ) {
-        TaskWorkflowResumeData resume = snapshot.resumeData();
+        TaskWorkflowExecutionSnapshot.ResumeData resume = snapshot.resume();
         Object lastBusinessResponse = resume == null
                 ? null
                 : copy(resume.lastBusinessResponse());
         Map<String, Object> stepResults = new LinkedHashMap<>();
-        String lastBusinessStepId = lastSuccessfulBusinessStepId(snapshot);
+        String lastBusinessStepId = lastSuccessfulBusinessStepId(
+                snapshot,
+                plan
+        );
         if (lastBusinessStepId != null && lastBusinessResponse != null) {
             stepResults.put(lastBusinessStepId, lastBusinessResponse);
         }
-        String retryStepId = retryStepId(snapshot);
         return new RoutingExecutionContext(
                 originalRequest,
-                snapshot.processId(),
-                resume == null ? null : resume.correlationId(),
+                snapshot.execution().processId(),
+                processCorrelationId,
                 resume == null ? null : copy(resume.transactionData()),
                 lastBusinessResponse,
-                retryStepId,
+                retryStepId(snapshot),
                 resume == null ? null : copy(resume.retryRequest()),
                 stepResults
         );
     }
 
-    public TaskWorkflowStoredResponse storeResponse(Message response) {
-        return new TaskWorkflowStoredResponse(
+    public TaskWorkflowExecutionSnapshot.StoredResponse storeResponse(
+            Message response
+    ) {
+        return new TaskWorkflowExecutionSnapshot.StoredResponse(
                 response.getStatus(),
-                sanitize(response.getPayload()),
-                response.getExecutionOutcome()
+                sanitize(response.getPayload())
         );
     }
 
-    public Message restoreResponse(TaskWorkflowStoredResponse response) {
+    public Message restoreResponse(
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingPlan plan
+    ) {
+        TaskWorkflowExecutionSnapshot.StoredResponse response =
+                snapshot.terminal() == null
+                        ? null
+                        : snapshot.terminal().response();
         if (response == null) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "Completed execution snapshot has no stored response"
             );
         }
+        JsonNode payload = response.payload() == null
+                ? objectMapper.nullNode()
+                : response.payload().deepCopy();
+        enrichStartExecutionId(payload, snapshot, plan);
         return Message.builder()
                 .status(response.status())
-                .payload(response.payload() == null
-                        ? objectMapper.nullNode()
-                        : response.payload().deepCopy())
-                .executionOutcome(response.executionOutcome())
+                .payload(payload)
+                .executionOutcome(executionOutcome(
+                        snapshot,
+                        plan,
+                        responseReasonCode(snapshot)
+                ))
                 .build();
     }
 
     public RoutingFailureDetails restoreFailure(
-            TaskWorkflowStoredFailure failure
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingPlan plan
     ) {
+        TaskWorkflowExecutionSnapshot.StoredFailure failure =
+                snapshot.terminal() == null
+                        ? null
+                        : snapshot.terminal().failure();
         if (failure == null) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "Failed execution snapshot has no stored failure"
             );
         }
+        int stepIndex = failure.stepIndex() == null
+                ? -1
+                : failure.stepIndex();
+        if (stepIndex < 0 || stepIndex >= plan.steps().size()) {
+            throw new InvalidTaskWorkflowExecutionStateException(
+                    "Stored failure stepIndex does not match the current plan"
+            );
+        }
+        RoutingStepPlan step = plan.steps().get(stepIndex);
         return new RoutingFailureDetails(
-                new RoutingPlanIdentity(
-                        failure.serviceCode(),
-                        failure.inboundAction(),
-                        failure.actionPlanName(),
-                        failure.definitionId(),
-                        failure.planFingerprint()
-                ),
-                failure.planId(),
-                failure.stepId(),
-                failure.stepIndex(),
-                failure.operationName(),
+                plan.identity(),
+                plan.planId(),
+                step.stepId(),
+                stepIndex,
+                step.serviceOperation().getOperationName(),
                 RoutingDecision.FAIL,
                 failure.messageStatus(),
                 failure.reasonCode(),
                 failure.reasonMessage(),
                 failure.normalizedOutcome()
+        );
+    }
+
+    public ExecutionOutcome executionOutcome(
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingPlan plan,
+            String reasonCode
+    ) {
+        TaskWorkflowExecutionDecision decision = snapshot.status().decision();
+        String executionId = snapshot.execution().processId() == null
+                ? null
+                : snapshot.execution().executionId();
+        return new ExecutionOutcome(
+                executionId,
+                snapshot.plan().serviceCode(),
+                snapshot.plan().inboundAction(),
+                snapshot.plan().actionPlanName(),
+                snapshot.execution().gatewayServiceVersion(),
+                plan.routingStrategy().name(),
+                decision == null ? null : decision.name(),
+                decision == TaskWorkflowExecutionDecision.RETRY_LATER,
+                reasonCode
         );
     }
 
@@ -392,29 +417,32 @@ public class TaskWorkflowSnapshotMapper {
         return value.deepCopy();
     }
 
-    private TaskWorkflowResumeData resumeData(
-            RoutingExecutionContext context,
-            TaskWorkflowResumeData current,
-            RoutingStepPlan step,
-            RoutingStepExecutionResult result,
-            String providerIdempotencyKey
+    public TaskWorkflowExecutionSnapshot.StoredFailure storeFailure(
+            RoutingFailureDetails failure
     ) {
-        return resumeData(
-                context,
-                current,
-                step,
-                result,
-                providerIdempotencyKey,
-                null
+        return new TaskWorkflowExecutionSnapshot.StoredFailure(
+                failure.stepIndex(),
+                failure.messageStatus(),
+                failure.reasonCode(),
+                failure.reasonMessage(),
+                failure.normalizedOutcome()
         );
     }
 
-    private TaskWorkflowResumeData resumeData(
+    private TaskWorkflowExecutionSnapshot.ResumeData resumeData(
             RoutingExecutionContext context,
-            TaskWorkflowResumeData current,
+            TaskWorkflowExecutionSnapshot.ResumeData current,
+            RoutingStepPlan step,
+            RoutingStepExecutionResult result
+    ) {
+        return resumeData(context, current, step, result, null);
+    }
+
+    private TaskWorkflowExecutionSnapshot.ResumeData resumeData(
+            RoutingExecutionContext context,
+            TaskWorkflowExecutionSnapshot.ResumeData current,
             RoutingStepPlan step,
             RoutingStepExecutionResult result,
-            String providerIdempotencyKey,
             Object retryRequest
     ) {
         JsonNode transactionData = sanitize(toNullableJsonNode(
@@ -438,13 +466,15 @@ public class TaskWorkflowSnapshotMapper {
                 != TaskWorkflowStepType.BUSINESS_OPERATION) {
             storedRetryRequest = sanitize(toNullableJsonNode(retryRequest));
         }
-        return new TaskWorkflowResumeData(
-                context.processId(),
-                context.correlationId(),
+        if (transactionData == null
+                && storedRetryRequest == null
+                && lastBusinessResponse == null) {
+            return null;
+        }
+        return new TaskWorkflowExecutionSnapshot.ResumeData(
                 transactionData,
                 storedRetryRequest,
-                lastBusinessResponse,
-                providerIdempotencyKey
+                lastBusinessResponse
         );
     }
 
@@ -457,23 +487,25 @@ public class TaskWorkflowSnapshotMapper {
             RoutingExecutionContext context
     ) {
         return context.processId() == null
-                ? snapshot.processId()
+                ? snapshot.execution().processId()
                 : context.processId();
     }
 
-    private List<TaskWorkflowStepSnapshot> replace(
+    private List<TaskWorkflowExecutionSnapshot.StepState> replace(
             TaskWorkflowExecutionSnapshot snapshot,
             RoutingStepPlan step,
-            java.util.function.UnaryOperator<TaskWorkflowStepSnapshot> replacement
+            java.util.function.UnaryOperator<
+                    TaskWorkflowExecutionSnapshot.StepState> replacement
     ) {
         if (step.stepIndex() >= snapshot.steps().size()) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "Snapshot does not contain stepIndex=" + step.stepIndex()
             );
         }
-        List<TaskWorkflowStepSnapshot> copy =
+        List<TaskWorkflowExecutionSnapshot.StepState> copy =
                 new ArrayList<>(snapshot.steps());
-        TaskWorkflowStepSnapshot current = copy.get(step.stepIndex());
+        TaskWorkflowExecutionSnapshot.StepState current =
+                copy.get(step.stepIndex());
         if (!step.stepId().equals(current.stepId())
                 || step.stepIndex() != current.stepIndex()) {
             throw new InvalidTaskWorkflowExecutionStateException(
@@ -487,61 +519,39 @@ public class TaskWorkflowSnapshotMapper {
 
     private TaskWorkflowExecutionSnapshot copy(
             TaskWorkflowExecutionSnapshot source,
-            TaskWorkflowExecutionState state,
-            TaskWorkflowExecutionDecision decision,
             Long processId,
-            List<TaskWorkflowStepSnapshot> steps,
-            TaskWorkflowResumeData resumeData,
-            TaskWorkflowStoredResponse response,
-            TaskWorkflowStoredFailure failure,
-            String activeAttemptId,
-            String activeStepId,
-            Integer activeStepIndex,
+            TaskWorkflowExecutionSnapshot.ExecutionStatus status,
+            List<TaskWorkflowExecutionSnapshot.StepState> steps,
+            TaskWorkflowExecutionSnapshot.ResumeData resume,
+            TaskWorkflowExecutionSnapshot.TerminalOutcome terminal,
             Instant updatedAt
     ) {
         return new TaskWorkflowExecutionSnapshot(
                 source.schemaVersion(),
-                source.executionId(),
-                source.serviceCode(),
-                source.inboundAction(),
-                source.actionPlanName(),
-                source.gatewayServiceVersion(),
-                source.definitionId(),
-                source.planFingerprint(),
-                source.routingStrategy(),
-                state,
-                decision,
-                processId,
+                new TaskWorkflowExecutionSnapshot.ExecutionIdentity(
+                        source.execution().executionId(),
+                        processId,
+                        source.execution().gatewayServiceVersion()
+                ),
+                source.plan(),
+                status,
                 steps,
-                resumeData,
-                response,
-                failure,
-                activeAttemptId,
-                activeStepId,
-                activeStepIndex,
+                resume,
+                terminal,
                 source.createdAt(),
                 updatedAt
         );
     }
 
-    public TaskWorkflowStoredFailure storeFailure(
-            RoutingFailureDetails failure
+    private TaskWorkflowExecutionSnapshot.ExecutionStatus runningStatus(
+            String activeAttemptId,
+            Integer activeStepIndex
     ) {
-        RoutingPlanIdentity identity = failure.planIdentity();
-        return new TaskWorkflowStoredFailure(
-                identity.serviceCode(),
-                identity.inboundAction(),
-                identity.actionPlanName(),
-                identity.definitionId(),
-                identity.planFingerprint(),
-                failure.planId(),
-                failure.stepId(),
-                failure.stepIndex(),
-                failure.operationName(),
-                failure.messageStatus(),
-                failure.reasonCode(),
-                failure.reasonMessage(),
-                failure.normalizedOutcome()
+        return new TaskWorkflowExecutionSnapshot.ExecutionStatus(
+                TaskWorkflowExecutionState.RUNNING,
+                null,
+                activeAttemptId,
+                activeStepIndex
         );
     }
 
@@ -554,14 +564,19 @@ public class TaskWorkflowSnapshotMapper {
     }
 
     private String lastSuccessfulBusinessStepId(
-            TaskWorkflowExecutionSnapshot snapshot
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingPlan plan
     ) {
         String selected = null;
-        for (TaskWorkflowStepSnapshot step : snapshot.steps()) {
-            if (step.stepType() == TaskWorkflowStepType.BUSINESS_OPERATION
-                    && step.decision()
+        for (int index = 0; index < snapshot.steps().size(); index++) {
+            TaskWorkflowExecutionSnapshot.StepState state =
+                    snapshot.steps().get(index);
+            RoutingStepPlan step = plan.steps().get(index);
+            if (step.observationContext().taskWorkflowStepType()
+                    == TaskWorkflowStepType.BUSINESS_OPERATION
+                    && state.decision()
                     == TaskWorkflowExecutionDecision.SUCCESS) {
-                selected = step.stepId();
+                selected = state.stepId();
             }
         }
         return selected;
@@ -571,9 +586,25 @@ public class TaskWorkflowSnapshotMapper {
         return snapshot.steps().stream()
                 .filter(step -> step.decision()
                         == TaskWorkflowExecutionDecision.RETRY_LATER)
-                .map(TaskWorkflowStepSnapshot::stepId)
+                .map(TaskWorkflowExecutionSnapshot.StepState::stepId)
                 .findFirst()
                 .orElse(null);
+    }
+
+    private String responseReasonCode(
+            TaskWorkflowExecutionSnapshot snapshot
+    ) {
+        Integer activeStep = snapshot.status().activeStepIndex();
+        if (activeStep != null && activeStep < snapshot.steps().size()) {
+            return snapshot.steps().get(activeStep).reasonCode();
+        }
+        for (int index = snapshot.steps().size() - 1; index >= 0; index--) {
+            String reasonCode = snapshot.steps().get(index).reasonCode();
+            if (reasonCode != null) {
+                return reasonCode;
+            }
+        }
+        return null;
     }
 
     private RoutingPlanIdentity requiredIdentity(RoutingPlan plan) {
@@ -583,6 +614,26 @@ public class TaskWorkflowSnapshotMapper {
             );
         }
         return plan.identity();
+    }
+
+    private void enrichStartExecutionId(
+            JsonNode payload,
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingPlan plan
+    ) {
+        if (!(payload instanceof ObjectNode objectPayload)
+                || snapshot.execution().processId() == null
+                || plan.steps().size() != 1
+                || plan.steps().getFirst()
+                .observationContext()
+                .taskWorkflowStepType()
+                != TaskWorkflowStepType.START_PROCESS) {
+            return;
+        }
+        objectPayload.put(
+                "executionId",
+                snapshot.execution().executionId()
+        );
     }
 
     private Object copy(JsonNode value) {

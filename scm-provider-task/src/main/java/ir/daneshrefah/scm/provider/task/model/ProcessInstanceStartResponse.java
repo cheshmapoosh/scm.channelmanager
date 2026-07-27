@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class ProcessInstanceStartResponse {
     private Long id;
+    private String executionId;
     private String accountNo;
     private ProcessStatusEnum status;
     private String statusName;

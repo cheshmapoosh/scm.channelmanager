@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.provider.task.workflow;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 
@@ -9,13 +11,18 @@ import java.util.OptionalLong;
  */
 public interface TaskWorkflowRecoveryStore {
 
-    /**
-     * Resolves a process only when its persisted correlation value exactly
-     * equals {@code correlationId}.
-     */
-    OptionalLong findProcessIdByCorrelationId(String correlationId);
+    OptionalLong findProcessIdByClientCorrelation(
+            String serviceCode,
+            String scmClientCorrelationId
+    );
 
     OptionalLong findProcessIdByTaskId(long taskId);
+
+    Optional<String> findProcessCorrelationId(long processId);
+
+    Map<Long, String> findExecutionIdsByProcessIds(
+            Collection<Long> processIds
+    );
 
     Optional<TaskWorkflowExecutionSnapshot> loadForUpdate(long processId);
 

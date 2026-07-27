@@ -17,7 +17,6 @@ import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionDecision;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionSnapshot;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionState;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRecoveryStore;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowSnapshotTooLargeException;
 import org.apache.camel.Exchange;
 
 import java.time.Instant;
@@ -33,18 +32,17 @@ final class TaskWorkflowExecutionLifecycle
 
     private final TaskWorkflowRecoveryStore store;
     private final TaskWorkflowCommandPlan commandPlan;
-    private final String gatewayServiceVersion;
     private final TaskWorkflowPayloadMapper payloadMapper;
     private final TaskWorkflowSnapshotMapper snapshotMapper;
     private final TaskWorkflowTransactionCoordinator transactionCoordinator;
 
     private TaskWorkflowExecutionSnapshot snapshot;
     private Message response;
+    private boolean attemptPersisted;
 
     TaskWorkflowExecutionLifecycle(
             TaskWorkflowRecoveryStore store,
             TaskWorkflowCommandPlan commandPlan,
-            String gatewayServiceVersion,
             TaskWorkflowExecutionSnapshot snapshot,
             TaskWorkflowPayloadMapper payloadMapper,
             TaskWorkflowSnapshotMapper snapshotMapper,
@@ -52,7 +50,6 @@ final class TaskWorkflowExecutionLifecycle
     ) {
         this.store = store;
         this.commandPlan = commandPlan;
-        this.gatewayServiceVersion = gatewayServiceVersion;
         this.snapshot = snapshot;
         this.payloadMapper = payloadMapper;
         this.snapshotMapper = snapshotMapper;
@@ -72,7 +69,7 @@ final class TaskWorkflowExecutionLifecycle
     ) {
         String attemptId = UUID.randomUUID().toString();
         String providerIdempotencyKey =
-                snapshot.executionId() + ":" + step.stepId();
+                snapshot.execution().executionId() + ":" + step.stepId();
         exchange.setProperty(
                 TaskWorkflowExchangeProperties.PROVIDER_IDEMPOTENCY_KEY,
                 providerIdempotencyKey
@@ -82,19 +79,21 @@ final class TaskWorkflowExecutionLifecycle
                 step,
                 context,
                 attemptId,
-                providerIdempotencyKey,
                 Instant.now()
         );
-        if (attempted.processId() != null) {
+        if (attempted.execution().processId() != null) {
             try {
                 attempted = store.registerAttempt(
-                        attempted.processId(),
+                        attempted.execution().processId(),
                         attempted,
-                        snapshot.activeAttemptId()
+                        snapshot.status().activeAttemptId()
                 );
             } catch (RuntimeException failure) {
                 throw persistenceFailure("register an attempt", failure);
             }
+            attemptPersisted = true;
+        } else {
+            attemptPersisted = false;
         }
         snapshot = attempted;
         transactionCoordinator.beforeStep(exchange, step);
@@ -133,20 +132,15 @@ final class TaskWorkflowExecutionLifecycle
                 context,
                 state,
                 failed ? RoutingDecision.FAIL : null,
-                null,
                 failureDetails == null
                         ? null
                         : snapshotMapper.storeFailure(failureDetails),
                 exchange.getProperty(
                         TaskWorkflowExchangeProperties.CURRENT_STEP_REQUEST
                 ),
-                exchange.getProperty(
-                        TaskWorkflowExchangeProperties
-                                .PROVIDER_IDEMPOTENCY_KEY,
-                        String.class
-                ),
                 Instant.now()
         );
+        updated = registerAttemptWhenProcessBecomesVisible(updated);
         if (failed) {
             persistFailed(updated);
         } else if (result.decision() == RoutingDecision.SUCCESS
@@ -155,6 +149,28 @@ final class TaskWorkflowExecutionLifecycle
         }
         snapshot = updated;
         transactionCoordinator.afterStep(exchange, step, result);
+    }
+
+    private TaskWorkflowExecutionSnapshot registerAttemptWhenProcessBecomesVisible(
+            TaskWorkflowExecutionSnapshot updated
+    ) {
+        if (attemptPersisted || updated.execution().processId() == null) {
+            return updated;
+        }
+        try {
+            TaskWorkflowExecutionSnapshot registered = store.registerAttempt(
+                    updated.execution().processId(),
+                    updated,
+                    null
+            );
+            attemptPersisted = true;
+            return registered;
+        } catch (RuntimeException failure) {
+            throw persistenceFailure(
+                    "register an attempt for the newly created process",
+                    failure
+            );
+        }
     }
 
     @Override
@@ -219,9 +235,9 @@ final class TaskWorkflowExecutionLifecycle
                 details,
                 Instant.now()
         );
-        if (failed.processId() != null) {
+        if (failed.execution().processId() != null) {
             try {
-                store.saveFailed(failed.processId(), failed);
+                store.saveFailed(failed.execution().processId(), failed);
             } catch (RuntimeException persistenceFailure) {
                 throw persistenceFailure(
                         "save a failed execution",
@@ -243,11 +259,13 @@ final class TaskWorkflowExecutionLifecycle
                 ? MessageStatus.SC_PROCESSING
                 : MessageStatus.SC_SUCCESS;
         ExecutionOutcome outcome = new ExecutionOutcome(
-                exchange.getProperty(Message.EXECUTION_ID, String.class),
-                commandPlan.routingPlan().identity().serviceCode(),
-                commandPlan.inboundAction(),
-                commandPlan.actionPlanName(),
-                gatewayServiceVersion,
+                result.context().processId() == null
+                        ? null
+                        : snapshot.execution().executionId(),
+                snapshot.plan().serviceCode(),
+                snapshot.plan().inboundAction(),
+                snapshot.plan().actionPlanName(),
+                snapshot.execution().gatewayServiceVersion(),
                 commandPlan.routingPlan().routingStrategy().name(),
                 decision.name(),
                 decision == RoutingDecision.RETRY_LATER,
@@ -265,7 +283,7 @@ final class TaskWorkflowExecutionLifecycle
     }
 
     private void persistProgress(TaskWorkflowExecutionSnapshot progress) {
-        Long processId = progress.processId();
+        Long processId = progress.execution().processId();
         if (processId == null) {
             return;
         }
@@ -277,7 +295,7 @@ final class TaskWorkflowExecutionLifecycle
     }
 
     private void persistFailed(TaskWorkflowExecutionSnapshot failed) {
-        Long processId = failed.processId();
+        Long processId = failed.execution().processId();
         if (processId == null) {
             return;
         }
@@ -289,9 +307,9 @@ final class TaskWorkflowExecutionLifecycle
     }
 
     private void persistTerminal(TaskWorkflowExecutionSnapshot terminal) {
-        Long processId = terminal.processId();
+        Long processId = terminal.execution().processId();
         if (processId == null) {
-            if (terminal.decision()
+            if (terminal.status().decision()
                     == TaskWorkflowExecutionDecision.RETRY_LATER) {
                 throw new TaskWorkflowPersistenceException(
                         "Cannot return RETRY_LATER without a workflow "
@@ -301,7 +319,7 @@ final class TaskWorkflowExecutionLifecycle
             return;
         }
         try {
-            if (terminal.decision()
+            if (terminal.status().decision()
                     == TaskWorkflowExecutionDecision.RETRY_LATER) {
                 store.saveRetryLater(processId, terminal);
             } else {
@@ -357,14 +375,9 @@ final class TaskWorkflowExecutionLifecycle
                     "provider-attempt"
             );
         }
-        String capacityDetail =
-                failure instanceof TaskWorkflowSnapshotTooLargeException
-                        ? ": " + failure.getMessage()
-                        : "";
         return new TaskWorkflowPersistenceException(
                 "Failed to " + action
-                        + " TASK_WORKFLOW durable execution state"
-                        + capacityDetail,
+                        + " TASK_WORKFLOW durable execution state",
                 failure
         );
     }

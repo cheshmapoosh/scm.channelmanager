@@ -29,6 +29,7 @@ import ir.daneshrefah.scm.provider.task.model.*;
 import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceRepository;
 import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceSpecs;
 import ir.daneshrefah.scm.provider.task.utils.PageableUtils;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRecoveryStore;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.string.ArchiveUtils;
 import ir.daneshrefah.scm.utils.string.StringUtils;
@@ -57,6 +58,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
     private final ResourceBundleService bundle;
     private final PersonService personService;
     private final TaskAssetService taskAssetService;
+    private final TaskWorkflowRecoveryStore taskWorkflowRecoveryStore;
 
 
     private static boolean allowCancelProcess(ProcessInstanceEntity processInstance, Integer loggedInUserId) {
@@ -68,25 +70,66 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         String executionId = org.apache.commons.lang3.StringUtils.trimToNull(
                 exchange.getProperty(Message.EXECUTION_ID, String.class)
         );
-        if (executionId != null) {
+        String clientCorrelationId =
+                org.apache.commons.lang3.StringUtils.trimToNull(
+                        exchange.getProperty(
+                                Message.CLIENT_CORRELATION_ID,
+                                String.class
+                        )
+                );
+        String processCorrelationId = clientCorrelationId == null
+                ? executionId
+                : clientCorrelationId;
+        if (processCorrelationId != null) {
             Optional<ProcessInstanceEntity> existing =
-                    processInstanceRepository.findByCorrelationId(executionId);
+                    processInstanceRepository.findByCorrelationId(
+                            processCorrelationId
+                    );
             if (existing.isPresent()) {
-                return processInstanceMapper.toProcessInstanceStartResponse(
-                        existing.get());
+                validateCorrelatedStart(existing.get(), request);
+                return startResponse(existing.get(), executionId);
             }
         }
         processTaskDefinitionService.validateProcessBeforeStart(exchange,request);
         ProcessInstanceEntity processInstanceEntity =
-                createProcessInstanceEntity(request, executionId);
+                createProcessInstanceEntity(request, processCorrelationId);
         ProcessInstanceEntity processInstance =
                 processInstanceRepository.save(processInstanceEntity);
-        return processInstanceMapper.toProcessInstanceStartResponse(processInstance);
+        return startResponse(processInstance, executionId);
+    }
+
+    private ProcessInstanceStartResponse startResponse(
+            ProcessInstanceEntity process,
+            String executionId
+    ) {
+        ProcessInstanceStartResponse response =
+                processInstanceMapper.toProcessInstanceStartResponse(process);
+        response.setExecutionId(executionId);
+        return response;
+    }
+
+    private void validateCorrelatedStart(
+            ProcessInstanceEntity process,
+            ProcessInstanceStartRequest request
+    ) {
+        boolean sameStart = Objects.equals(
+                process.getProcessCode(),
+                request.getProcessCode()
+        )
+                && Objects.equals(process.getAccountNo(), request.getAccountNo())
+                && Objects.equals(process.getAmount(), request.getAmount())
+                && Objects.equals(
+                process.getDestination(),
+                request.getDestination()
+        );
+        if (!sameStart) {
+            throw new InvalidInputException("scmClientCorrelationId");
+        }
     }
 
     private ProcessInstanceEntity createProcessInstanceEntity(
             ProcessInstanceStartRequest request,
-            String executionId
+            String processCorrelationId
     ) {
         UserModel confirmUserModel = request.getConfirmUser();
         GeneralPerson generalPerson = null;
@@ -96,7 +139,7 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         processInstanceEntity.setAmount(request.getAmount());
         processInstanceEntity.setDescription(request.getDescription());
         processInstanceEntity.setDestination(request.getDestination());
-        processInstanceEntity.setCorrelationId(executionId);
+        processInstanceEntity.setCorrelationId(processCorrelationId);
         if (Objects.nonNull(request.getConfirmUser()) && StringUtils.isNotBlank(request.getConfirmUser().getNationalId())) {
             generalPerson = findUserByPersonTypeAndNationalCodeAndSubOrg(confirmUserModel);
             processInstanceEntity.setConfirmUserId(generalPerson.getId());
@@ -152,9 +195,15 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         return taskEntities;
     }
 
-    private ProcessInstanceResponse mapToProcessInstanceResponse(ProcessInstanceEntity processInstance) {
+    private ProcessInstanceResponse mapToProcessInstanceResponse(
+            ProcessInstanceEntity processInstance,
+            Map<Long, String> executionIds
+    ) {
         ProcessInstanceResponse processInstanceResponse = new ProcessInstanceResponse();
         processInstanceResponse.setId(processInstance.getId());
+        processInstanceResponse.setExecutionId(
+                executionIds.get(processInstance.getId())
+        );
         processInstanceResponse.setAccountNo(processInstance.getAccountNo());
         processInstanceResponse.setProcessStatus(processInstance.getProcessStatus());
         processInstanceResponse.setDescription(processInstance.getDescription());
@@ -195,7 +244,24 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         Sort sort = Sort.by(Sort.Direction.DESC, "id");
         Pageable pageable = PageableUtils.getPageable(request, sort);
         Page<ProcessInstanceEntity> entities = processInstanceRepository.findAll(ProcessInstanceSpecs.toSpecification(request), pageable);
-        return new PagedResponseData<>(request.getPageNo(), request.getPageSize(), entities.getTotalElements(), entities.stream().map(this::mapToProcessInstanceResponse).toList());
+        List<ProcessInstanceEntity> content = entities.getContent();
+        Map<Long, String> executionIds =
+                taskWorkflowRecoveryStore.findExecutionIdsByProcessIds(
+                        content.stream()
+                                .map(ProcessInstanceEntity::getId)
+                                .toList()
+                );
+        return new PagedResponseData<>(
+                request.getPageNo(),
+                request.getPageSize(),
+                entities.getTotalElements(),
+                content.stream()
+                        .map(process -> mapToProcessInstanceResponse(
+                                process,
+                                executionIds
+                        ))
+                        .toList()
+        );
     }
 
     private GeneralPerson findUserByPersonTypeAndNationalCodeAndSubOrg(UserModel confirmUserModel) {
@@ -246,6 +312,9 @@ public class ProcessManagementServiceImpl implements ProcessManagementService {
         taskEntity.setTaskStatus(TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         processInstance.setProcessStatus(ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE);
         ProcessInstanceApproveResponse response = createResponseWithConfirmUser(processInstance);
+        response.setExecutionId(
+                exchange.getProperty(Message.EXECUTION_ID, String.class)
+        );
         List<UserModel> users = getTaskUsers(processInstance);
         response.setUsers(users);
 

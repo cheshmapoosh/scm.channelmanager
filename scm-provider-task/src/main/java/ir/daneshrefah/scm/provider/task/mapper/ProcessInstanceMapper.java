@@ -31,6 +31,7 @@ public abstract class ProcessInstanceMapper {
     private ObjectMapper objectMapper;
 
     @Mapping(target = "tasks", ignore = true)
+    @Mapping(target = "executionId", ignore = true)
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "mapCreateAt")
     @Mapping(source = "processStatus", target = "statusName", qualifiedByName = "mapProcessStatusName")
     @Mapping(source = "watcherEntities", target = "attribute", qualifiedByName = "mapToAttribute")
@@ -38,10 +39,12 @@ public abstract class ProcessInstanceMapper {
     public abstract ProcessInstanceResponse toProcessInstanceResponse(ProcessInstanceEntity processInstance);
 
     @Mapping(target = "tasks", ignore = true)
+    @Mapping(target = "executionId", ignore = true)
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "mapCreateAt")
     @Mapping(source = "processStatus", target = "statusName", qualifiedByName = "mapProcessStatusName")
     public abstract ProcessInstanceApproveResponse toProcessInstanceApproveResponse(ProcessInstanceEntity processInstance);
 
+    @Mapping(target = "executionId", ignore = true)
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "mapCreateAt")
     @Mapping(source = "processStatus", target = "statusName", qualifiedByName = "mapProcessStatusName")
     public abstract ProcessInstanceStartResponse toProcessInstanceStartResponse(ProcessInstanceEntity processInstance);

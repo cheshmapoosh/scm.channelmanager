@@ -38,9 +38,9 @@ public class FirstRoutingRecoveryPolicy implements RoutingRecoveryPolicy {
     private void requireRetryLater(
             TaskWorkflowExecutionSnapshot snapshot
     ) {
-        if (snapshot.decision()
+        if (snapshot.status().decision()
                 != TaskWorkflowExecutionDecision.RETRY_LATER
-                || snapshot.executionState()
+                || snapshot.status().state()
                 != TaskWorkflowExecutionState.RETRY_PENDING) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "Recovery is allowed only for a RETRY_LATER snapshot");

@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 public class ProcessInstanceApproveResponse {
     private Long id;
+    private String executionId;
     private String accountNo;
     private ProcessStatusEnum processStatus;
     private String statusName;

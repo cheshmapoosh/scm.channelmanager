@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -23,6 +25,19 @@ public interface ProcessInstanceWatcherRepository extends JpaRepository<ProcessI
             """)
     Optional<ProcessInstanceWatcherEntity> findForWorkflowMutation(
             @Param("processId") Long processId,
+            @Param("type") ProcessWatcherEnum type,
+            @Param("rowNo") Integer rowNo
+    );
+
+    @Query("""
+            select watcher
+              from ProcessInstanceWatcherEntity watcher
+             where watcher.processInstance.id in :processIds
+               and watcher.type = :type
+               and watcher.rowNo = :rowNo
+            """)
+    List<ProcessInstanceWatcherEntity> findCurrentByProcessIds(
+            @Param("processIds") Collection<Long> processIds,
             @Param("type") ProcessWatcherEnum type,
             @Param("rowNo") Integer rowNo
     );

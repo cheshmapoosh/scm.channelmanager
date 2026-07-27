@@ -6,22 +6,32 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingExecutionContext;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderRequestContext;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderRequestFactory;
 import org.apache.camel.Exchange;
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.ObjectProvider;
 
-import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID;
+import java.util.List;
 
-@Component
+/**
+ * Adapts normalized SCM input and core routing state. Task-provider-specific
+ * request shapes are delegated to the optional provider-owned factory.
+ */
 public class TaskWorkflowPayloadMapper {
     private final ObjectMapper objectMapper;
     private final TaskWorkflowInputResolver inputResolver;
+    private final ObjectProvider<TaskWorkflowProviderRequestFactory>
+            providerRequestFactories;
 
     public TaskWorkflowPayloadMapper(
             ObjectMapper objectMapper,
-            TaskWorkflowInputResolver inputResolver
+            TaskWorkflowInputResolver inputResolver,
+            ObjectProvider<TaskWorkflowProviderRequestFactory>
+                    providerRequestFactories
     ) {
         this.objectMapper = objectMapper;
         this.inputResolver = inputResolver;
+        this.providerRequestFactories = providerRequestFactories;
     }
 
     public Object toRequest(
@@ -34,15 +44,79 @@ public class TaskWorkflowPayloadMapper {
                 && context.retryRequest() != null) {
             return toJsonNode(context.retryRequest());
         }
-        return switch (stepType) {
-            case APPROVE_PROCESS -> toApproveRequest(exchange);
-            case BUSINESS_OPERATION -> toBusinessRequest(exchange, context);
-            case COMPLETE_PROCESS -> toCompleteProcessRequest(exchange, context);
-            default -> toSimpleRequest(exchange, stepType);
-        };
+        if (stepType == TaskWorkflowStepType.BUSINESS_OPERATION) {
+            return toBusinessRequest(exchange, context);
+        }
+        return providerFactory(stepType).create(
+                stepType,
+                providerContext(exchange, stepType, context)
+        );
     }
 
-    private ObjectNode toBusinessRequest(Exchange exchange, RoutingExecutionContext context) {
+    public void requireProviderRequestFactory(
+            String serviceCode,
+            TaskWorkflowStepType stepType
+    ) {
+        List<TaskWorkflowProviderRequestFactory> matching =
+                matchingFactories(stepType);
+        if (matching.size() != 1) {
+            throw new IllegalStateException(
+                    "Active TASK_WORKFLOW serviceCode=" + serviceCode
+                            + " requires exactly one "
+                            + "TaskWorkflowProviderRequestFactory for "
+                            + "stepType=" + stepType + "; found "
+                            + matching.size()
+            );
+        }
+    }
+
+    private TaskWorkflowProviderRequestContext providerContext(
+            Exchange exchange,
+            TaskWorkflowStepType stepType,
+            RoutingExecutionContext context
+    ) {
+        Long processId = switch (stepType) {
+            case APPROVE_PROCESS, COMPLETE_PROCESS, CANCEL_PROCESS,
+                 FIND_TASK_BY_PROCESS_ID, UPDATE_PROCESS_DESCRIPTION ->
+                    requireProcessId(exchange, stepType, context);
+            default -> resolveProcessId(exchange, stepType, context);
+        };
+        Long taskId = stepType == TaskWorkflowStepType.COMPLETE_TASK
+                ? inputResolver.requireTaskId(exchange, stepType)
+                : null;
+        if (processId != null) {
+            context.processId(processId);
+            exchange.setProperty(
+                    TaskWorkflowExchangeProperties.PROCESS_ID,
+                    processId
+            );
+        }
+        if (taskId != null) {
+            exchange.setProperty(
+                    TaskWorkflowExchangeProperties.TASK_ID,
+                    taskId
+            );
+        }
+        String processCorrelationId = context.correlationId();
+        if (processCorrelationId == null) {
+            processCorrelationId = exchange.getProperty(
+                    TaskWorkflowExchangeProperties.CORRELATION_ID,
+                    String.class
+            );
+            context.correlationId(processCorrelationId);
+        }
+        return new TaskWorkflowProviderRequestContext(
+                inboundPayload(exchange),
+                processId,
+                taskId,
+                processCorrelationId
+        );
+    }
+
+    private ObjectNode toBusinessRequest(
+            Exchange exchange,
+            RoutingExecutionContext context
+    ) {
         Long processId = resolveProcessId(
                 exchange,
                 TaskWorkflowStepType.BUSINESS_OPERATION,
@@ -50,15 +124,17 @@ public class TaskWorkflowPayloadMapper {
         );
         context.processId(processId);
         if (processId != null) {
-            exchange.setProperty(TaskWorkflowExchangeProperties.PROCESS_ID, processId);
+            exchange.setProperty(
+                    TaskWorkflowExchangeProperties.PROCESS_ID,
+                    processId
+            );
         }
         String correlationId = context.correlationId();
-        if (correlationId == null) {
-            correlationId = correlationId(exchange);
-        }
-        context.correlationId(correlationId);
         if (correlationId != null) {
-            exchange.setProperty(TaskWorkflowExchangeProperties.CORRELATION_ID, correlationId);
+            exchange.setProperty(
+                    TaskWorkflowExchangeProperties.CORRELATION_ID,
+                    correlationId
+            );
         }
         Object stableTransactionData = context.transactionData();
         if (stableTransactionData == null) {
@@ -66,10 +142,17 @@ public class TaskWorkflowPayloadMapper {
         }
         context.transactionData(stableTransactionData);
         ObjectNode request = objectMapper.createObjectNode();
-        if (processId != null) request.put("processId", processId);
-        if (correlationId != null) request.put("correlationId", correlationId);
+        if (processId != null) {
+            request.put("processId", processId);
+        }
+        if (correlationId != null) {
+            request.put("correlationId", correlationId);
+        }
         request.set("transactionData", toJsonNode(stableTransactionData));
-        request.set("stepResults", objectMapper.valueToTree(context.stepResults()));
+        request.set(
+                "stepResults",
+                objectMapper.valueToTree(context.stepResults())
+        );
         return request;
     }
 
@@ -124,90 +207,42 @@ public class TaskWorkflowPayloadMapper {
         }
     }
 
-    public JsonNode toSimpleRequest(Exchange exchange, TaskWorkflowStepType stepType) {
-        ObjectNode request = objectRequest(exchange, stepType);
-        return switch (stepType) {
-            case START_PROCESS, FIND_ALL_PROCESS, FIND_ALL_TASK -> request;
-            case COMPLETE_TASK -> withTaskId(exchange, request, stepType);
-            case CANCEL_PROCESS, UPDATE_PROCESS_DESCRIPTION ->
-                    withProcessId(exchange, request, stepType);
-            case FIND_TASK_BY_PROCESS_ID -> findTasksByProcessId(exchange, request, stepType);
-            case APPROVE_PROCESS, BUSINESS_OPERATION, COMPLETE_PROCESS ->
-                    throw new IllegalStateException("stepType " + stepType
-                    + " requires the coordinated APPROVE_AND_EXECUTE flow");
-        };
+    private TaskWorkflowProviderRequestFactory providerFactory(
+            TaskWorkflowStepType stepType
+    ) {
+        List<TaskWorkflowProviderRequestFactory> matching =
+                matchingFactories(stepType);
+        if (matching.size() != 1) {
+            throw new IllegalStateException(
+                    "Expected exactly one TaskWorkflowProviderRequestFactory "
+                            + "for stepType=" + stepType + "; found "
+                            + matching.size()
+            );
+        }
+        return matching.getFirst();
     }
 
-    public ObjectNode toApproveRequest(Exchange exchange) {
-        TaskWorkflowStepType stepType = TaskWorkflowStepType.APPROVE_PROCESS;
-        ObjectNode request = objectRequest(exchange, stepType);
-        Long processId = inputResolver.requireProcessId(exchange, stepType);
-        request.put("id", processId);
-        exchange.setProperty(TaskWorkflowExchangeProperties.PROCESS_ID, processId);
-
-        String correlationId = textValue(request.get("correlationId"));
-        if (correlationId == null) {
-            correlationId = correlationId(exchange);
-            if (correlationId != null) {
-                request.put("correlationId", correlationId);
-            }
-        }
-        if (correlationId != null) {
-            exchange.setProperty(TaskWorkflowExchangeProperties.CORRELATION_ID, correlationId);
-        }
-        return request;
+    private List<TaskWorkflowProviderRequestFactory> matchingFactories(
+            TaskWorkflowStepType stepType
+    ) {
+        return providerRequestFactories.orderedStream()
+                .filter(factory -> factory.supports(stepType))
+                .toList();
     }
 
-    private ObjectNode toCompleteProcessRequest(
+    private Long requireProcessId(
             Exchange exchange,
+            TaskWorkflowStepType stepType,
             RoutingExecutionContext context
     ) {
-        TaskWorkflowStepType stepType = TaskWorkflowStepType.COMPLETE_PROCESS;
         Long processId = resolveProcessId(exchange, stepType, context);
         if (processId == null) {
-            throw new IllegalStateException("TASK_WORKFLOW stepType=" + stepType
-                    + " requires processId");
+            throw new IllegalStateException(
+                    "TASK_WORKFLOW stepType=" + stepType
+                            + " requires processId"
+            );
         }
-
-        ObjectNode request = objectMapper.createObjectNode();
-        request.put("id", processId);
-        request.put("status", "COMPLETE");
-        ObjectNode attribute = request.putObject("attribute");
-        attribute.put("businessResult", "SUCCESS");
-        return request;
-    }
-
-    private ObjectNode withTaskId(
-            Exchange exchange,
-            ObjectNode request,
-            TaskWorkflowStepType stepType
-    ) {
-        Long taskId = inputResolver.requireTaskId(exchange, stepType);
-        request.put("taskId", taskId);
-        exchange.setProperty(TaskWorkflowExchangeProperties.TASK_ID, taskId);
-        return request;
-    }
-
-    private ObjectNode withProcessId(
-            Exchange exchange,
-            ObjectNode request,
-            TaskWorkflowStepType stepType
-    ) {
-        Long processId = inputResolver.requireProcessId(exchange, stepType);
-        request.put("id", processId);
-        exchange.setProperty(TaskWorkflowExchangeProperties.PROCESS_ID, processId);
-        return request;
-    }
-
-    private ObjectNode findTasksByProcessId(
-            Exchange exchange,
-            ObjectNode request,
-            TaskWorkflowStepType stepType
-    ) {
-        Long processId = inputResolver.requireProcessId(exchange, stepType);
-        request.put("processId", processId);
-        exchange.setProperty(TaskWorkflowExchangeProperties.PROCESS_ID, processId);
-        return request;
+        return processId;
     }
 
     private Long resolveProcessId(
@@ -220,44 +255,36 @@ public class TaskWorkflowPayloadMapper {
                 TaskWorkflowExchangeProperties.PROCESS_ID,
                 Long.class
         );
-        if (contextProcessId != null && storedProcessId != null
+        if (contextProcessId != null
+                && storedProcessId != null
                 && !contextProcessId.equals(storedProcessId)) {
-            throw new IllegalStateException("Conflicting TASK_WORKFLOW processId values were "
-                    + "supplied by workflow execution context and prior workflow state");
+            throw new IllegalStateException(
+                    "Conflicting TASK_WORKFLOW processId values were "
+                            + "supplied by workflow execution context and "
+                            + "prior workflow state"
+            );
         }
-        Long workflowProcessId = contextProcessId != null ? contextProcessId : storedProcessId;
-        if (workflowProcessId != null) {
-            return workflowProcessId;
-        }
-        return inputResolver.resolveProcessId(exchange, stepType);
+        Long workflowProcessId = contextProcessId != null
+                ? contextProcessId
+                : storedProcessId;
+        return workflowProcessId != null
+                ? workflowProcessId
+                : inputResolver.resolveProcessId(exchange, stepType);
     }
 
-    private ObjectNode objectRequest(Exchange exchange, TaskWorkflowStepType stepType) {
-        JsonNode body = toJsonNode(inboundBody(exchange));
-        if (body.isNull() || body.isMissingNode()) {
-            return objectMapper.createObjectNode();
-        }
-        if (!body.isObject()) {
-            throw new IllegalStateException("TASK_WORKFLOW stepType=" + stepType
-                    + " requires a JSON object payload");
-        }
-        return ((ObjectNode) body).deepCopy();
-    }
-
-    private Object inboundBody(Exchange exchange) {
+    private JsonNode inboundPayload(Exchange exchange) {
         Message normalizedMessage = exchange.getProperty(
                 Message.INTERNAL_MESSAGE,
                 Message.class
         );
         if (normalizedMessage != null) {
-            return normalizedMessage.getPayload();
+            return toJsonNode(normalizedMessage.getPayload());
         }
         Object originalBody = exchange.getProperty(Message.ORIGINAL_BODY);
-        Object body = originalBody != null ? originalBody : exchange.getMessage().getBody();
-        if (body instanceof Message message) {
-            return message.getPayload();
-        }
-        return body;
+        Object body = originalBody != null
+                ? originalBody
+                : exchange.getMessage().getBody();
+        return toJsonNode(body);
     }
 
     private JsonNode toJsonNode(Object value) {
@@ -269,7 +296,9 @@ public class TaskWorkflowPayloadMapper {
         if (value instanceof JsonNode jsonNode) {
             return jsonNode.deepCopy();
         }
-        return value == null ? objectMapper.nullNode() : objectMapper.valueToTree(value);
+        return value == null
+                ? objectMapper.nullNode()
+                : objectMapper.valueToTree(value);
     }
 
     private Long longValue(JsonNode value) {
@@ -282,7 +311,10 @@ public class TaskWorkflowPayloadMapper {
         try {
             return Long.valueOf(value.asText());
         } catch (NumberFormatException exception) {
-            throw new IllegalStateException("TASK_WORKFLOW identifier must be a number", exception);
+            throw new IllegalStateException(
+                    "TASK_WORKFLOW identifier must be a number",
+                    exception
+            );
         }
     }
 
@@ -302,21 +334,5 @@ public class TaskWorkflowPayloadMapper {
         }
         String text = value.asText();
         return text == null || text.isBlank() ? null : text;
-    }
-
-    private String correlationId(Exchange exchange) {
-        String executionId = exchange.getProperty(
-                Message.EXECUTION_ID, String.class);
-        if (executionId != null && !executionId.isBlank()) {
-            return executionId;
-        }
-        String correlationId = exchange.getProperty(Message.CORRELATION_ID, String.class);
-        if (correlationId != null && !correlationId.isBlank()) {
-            return correlationId;
-        }
-        return exchange.getMessage().getHeader(
-                SCM_PARAMETER_CLIENT_CORRELATION_ID,
-                String.class
-        );
     }
 }

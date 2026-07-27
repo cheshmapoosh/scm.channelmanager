@@ -5,13 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.message.Header;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowExecutionIdentityResolver;
 import org.apache.commons.lang3.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
+
+import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID;
 
 @Component("jsonScmRequestDecoder")
 @RequiredArgsConstructor
@@ -30,6 +31,7 @@ public class JsonScmRequestDecoder implements RequestContractDecoder {
                 .payload(payload)
                 .build());
         normalizeExecutionId(exchange, payload);
+        normalizeClientCorrelationId(exchange);
     }
 
     protected JsonNode toJsonNode(Object body) {
@@ -62,21 +64,44 @@ public class JsonScmRequestDecoder implements RequestContractDecoder {
                         "executionId must not be blank");
             }
         }
-        String headerValue = StringUtils.trimToNull(
-                exchange.getMessage().getHeader(
-                        TaskWorkflowExecutionIdentityResolver.EXECUTION_ID_HEADER,
+        String decodedValue = StringUtils.trimToNull(
+                exchange.getProperty(Message.EXECUTION_ID, String.class)
+        );
+        if (payloadValue != null && decodedValue != null
+                && !payloadValue.equals(decodedValue)) {
+            throw new IllegalArgumentException(
+                    "Conflicting executionId values in normalized input"
+            );
+        }
+        String resolved = payloadValue == null ? decodedValue : payloadValue;
+        if (resolved != null) {
+            exchange.setProperty(Message.EXECUTION_ID, resolved);
+        }
+    }
+
+    private void normalizeClientCorrelationId(Exchange exchange) {
+        String existing = StringUtils.trimToNull(
+                exchange.getProperty(
+                        Message.CLIENT_CORRELATION_ID,
                         String.class
                 )
         );
-        if (payloadValue != null && headerValue != null
-                && !payloadValue.equals(headerValue)) {
+        String inbound = StringUtils.trimToNull(
+                exchange.getMessage().getHeader(
+                        SCM_PARAMETER_CLIENT_CORRELATION_ID,
+                        String.class
+                )
+        );
+        if (existing != null && inbound != null
+                && !existing.equals(inbound)) {
             throw new IllegalArgumentException(
-                    "Conflicting executionId values in payload and "
-                            + TaskWorkflowExecutionIdentityResolver.EXECUTION_ID_HEADER);
+                    "Conflicting scmClientCorrelationId values in normalized "
+                            + "input"
+            );
         }
-        String resolved = payloadValue == null ? headerValue : payloadValue;
+        String resolved = existing == null ? inbound : existing;
         if (resolved != null) {
-            exchange.setProperty(Message.EXECUTION_ID, resolved);
+            exchange.setProperty(Message.CLIENT_CORRELATION_ID, resolved);
         }
     }
 }

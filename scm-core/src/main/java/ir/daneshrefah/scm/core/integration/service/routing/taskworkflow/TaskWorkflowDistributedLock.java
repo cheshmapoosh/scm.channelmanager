@@ -47,13 +47,14 @@ public class TaskWorkflowDistributedLock {
 
     public <T> T withStartLock(
             String serviceCode,
-            String executionId,
+            String scmClientCorrelationId,
             Callable<T> action
     ) {
         String normalizedServiceCode = serviceCode.trim()
                 .toUpperCase(Locale.ROOT);
         String lockName = PREFIX + "start:"
-                + normalizedServiceCode + ":" + sha256(executionId.trim());
+                + normalizedServiceCode + ":"
+                + sha256(scmClientCorrelationId.trim());
         return execute(serviceCode, lockName, action);
     }
 

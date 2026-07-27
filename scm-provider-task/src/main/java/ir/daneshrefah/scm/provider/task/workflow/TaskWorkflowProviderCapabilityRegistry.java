@@ -1,10 +1,12 @@
-package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
+package ir.daneshrefah.scm.provider.task.workflow;
 
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderCapability;
 
 import java.util.List;
 
+/**
+ * Provider-owned registry for task-workflow capability declarations.
+ */
 public class TaskWorkflowProviderCapabilityRegistry {
     private final List<TaskWorkflowProviderCapability> capabilities;
 
@@ -27,12 +29,14 @@ public class TaskWorkflowProviderCapabilityRegistry {
                     "Expected exactly one TASK_WORKFLOW provider capability "
                             + "for serviceCode=" + serviceCode
                             + ", providerUri=" + providerUri
-                            + "; found " + matching.size());
+                            + "; found " + matching.size()
+            );
         }
         if (!matching.getFirst().supports(providerUri, stepType)) {
             throw new IllegalStateException(
                     "Task provider does not support stepType=" + stepType
-                            + " for providerUri=" + providerUri);
+                            + " for providerUri=" + providerUri
+            );
         }
     }
 }

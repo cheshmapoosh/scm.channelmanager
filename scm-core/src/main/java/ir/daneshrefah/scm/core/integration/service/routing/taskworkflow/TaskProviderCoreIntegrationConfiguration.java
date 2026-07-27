@@ -8,7 +8,8 @@ import ir.daneshrefah.scm.core.integration.service.routing.RoutingEngineRegistry
 import ir.daneshrefah.scm.core.integration.service.routing.RoutingOperationMetadataResolver;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationEndpointResolver;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationSelector;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderCapability;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderCapabilityRegistry;
+import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderRequestFactory;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRecoveryStore;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -44,16 +45,6 @@ public class TaskProviderCoreIntegrationConfiguration {
     }
 
     @Bean
-    TaskWorkflowProviderCapabilityRegistry
-    taskWorkflowProviderCapabilityRegistry(
-            ObjectProvider<TaskWorkflowProviderCapability> capabilities
-    ) {
-        return new TaskWorkflowProviderCapabilityRegistry(
-                capabilities.orderedStream().toList()
-        );
-    }
-
-    @Bean
     TaskWorkflowDistributedLock taskWorkflowDistributedLock(
             ObjectProvider<LockUtility> lockProvider,
             ObjectProvider<CacheClientProperties> propertiesProvider
@@ -61,6 +52,20 @@ public class TaskProviderCoreIntegrationConfiguration {
         return new TaskWorkflowDistributedLock(
                 lockProvider,
                 propertiesProvider
+        );
+    }
+
+    @Bean
+    TaskWorkflowPayloadMapper taskWorkflowPayloadMapper(
+            ObjectMapper objectMapper,
+            TaskWorkflowInputResolver inputResolver,
+            ObjectProvider<TaskWorkflowProviderRequestFactory>
+                    requestFactories
+    ) {
+        return new TaskWorkflowPayloadMapper(
+                objectMapper,
+                inputResolver,
+                requestFactories
         );
     }
 
@@ -74,7 +79,8 @@ public class TaskProviderCoreIntegrationConfiguration {
             TaskWorkflowPayloadMapper payloadMapper,
             RoutingOperationMetadataResolver operationMetadataResolver,
             TaskWorkflowPlanFingerprint fingerprint,
-            TaskWorkflowProviderCapabilityRegistry providerCapabilities
+            ObjectProvider<TaskWorkflowProviderCapabilityRegistry>
+                    providerCapabilities
     ) {
         return new TaskWorkflowRoutePlanFactory(
                 operationSelector,

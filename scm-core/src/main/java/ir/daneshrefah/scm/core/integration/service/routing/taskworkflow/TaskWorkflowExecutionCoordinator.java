@@ -16,25 +16,26 @@ import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionDecision;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionSnapshot;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowExecutionState;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowRecoveryStore;
-import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowSnapshotTooLargeException;
 import org.apache.camel.Exchange;
 import org.springframework.beans.factory.ObjectProvider;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.UUID;
 
 /**
- * Coordinates durable task-workflow execution while routing engines remain
- * responsible only for ordered step execution.
+ * Selects durable workflow identity, coordinates distributed aggregate locks,
+ * and delegates ordered execution to routing engines.
  */
 public class TaskWorkflowExecutionCoordinator {
 
     private final ObjectProvider<TaskWorkflowRecoveryStore> storeProvider;
     private final RoutingEngineRegistry engineRegistry;
     private final RoutingRecoveryPolicyRegistry recoveryPolicyRegistry;
-    private final TaskWorkflowExecutionIdentityResolver executionIdentityResolver;
+    private final TaskWorkflowExecutionIdentityResolver identityResolver;
     private final TaskWorkflowInputResolver inputResolver;
     private final TaskWorkflowPayloadMapper payloadMapper;
     private final TaskWorkflowSnapshotMapper snapshotMapper;
@@ -45,7 +46,7 @@ public class TaskWorkflowExecutionCoordinator {
             ObjectProvider<TaskWorkflowRecoveryStore> storeProvider,
             RoutingEngineRegistry engineRegistry,
             RoutingRecoveryPolicyRegistry recoveryPolicyRegistry,
-            TaskWorkflowExecutionIdentityResolver executionIdentityResolver,
+            TaskWorkflowExecutionIdentityResolver identityResolver,
             TaskWorkflowInputResolver inputResolver,
             TaskWorkflowPayloadMapper payloadMapper,
             TaskWorkflowSnapshotMapper snapshotMapper,
@@ -55,7 +56,7 @@ public class TaskWorkflowExecutionCoordinator {
         this.storeProvider = storeProvider;
         this.engineRegistry = engineRegistry;
         this.recoveryPolicyRegistry = recoveryPolicyRegistry;
-        this.executionIdentityResolver = executionIdentityResolver;
+        this.identityResolver = identityResolver;
         this.inputResolver = inputResolver;
         this.payloadMapper = payloadMapper;
         this.snapshotMapper = snapshotMapper;
@@ -76,137 +77,437 @@ public class TaskWorkflowExecutionCoordinator {
         String serviceCode = plan.identity().serviceCode();
         TaskWorkflowRecoveryStore store = requiredStore(serviceCode);
         String gatewayServiceVersion = requireGatewayServiceVersion(exchange);
-        TaskWorkflowExecutionIdentityResolver.ResolvedExecutionIdentity execution =
-                executionIdentityResolver.resolve(
-                        exchange,
-                        commandPlan.command()
-                );
-        Long requestedProcessId = initialProcessId(exchange, plan, store);
+        TaskWorkflowExecutionIdentityResolver.ResolvedRequestIdentity request =
+                identityResolver.resolve(exchange);
+        if (request.scmClientCorrelationId() != null) {
+            exchange.setProperty(
+                    Message.CLIENT_CORRELATION_ID,
+                    request.scmClientCorrelationId()
+            );
+        }
 
         if (commandPlan.command() == TaskWorkflowCommand.START) {
-            return distributedLock.withStartLock(
-                    serviceCode,
-                    execution.executionId(),
-                    () -> executeUnderLock(
-                            exchange,
-                            commandPlan,
-                            execution,
-                            requestedProcessId,
-                            gatewayServiceVersion,
-                            store
-                    )
+            return executeStart(
+                    exchange,
+                    commandPlan,
+                    request,
+                    gatewayServiceVersion,
+                    store
             );
         }
-        if (requestedProcessId != null) {
+
+        Long processId = initialProcessId(exchange, plan, store);
+        if (processId != null) {
+            long selectedProcessId = processId;
             return distributedLock.withProcessLock(
                     serviceCode,
-                    requestedProcessId,
-                    () -> executeUnderLock(
-                            exchange,
-                            commandPlan,
-                            execution,
-                            requestedProcessId,
-                            gatewayServiceVersion,
-                            store
-                    )
+                    selectedProcessId,
+                    () -> {
+                        Long rechecked = initialProcessId(
+                                exchange,
+                                plan,
+                                store
+                        );
+                        if (!Objects.equals(selectedProcessId, rechecked)) {
+                            throw snapshotUnavailable(
+                                    request.suppliedExecutionId(),
+                                    selectedProcessId,
+                                    commandPlan,
+                                    "process identity changed while acquiring "
+                                            + "the process lock"
+                            );
+                        }
+                        return executeProcessCommand(
+                                exchange,
+                                commandPlan,
+                                request,
+                                selectedProcessId,
+                                gatewayServiceVersion,
+                                store
+                        );
+                    }
             );
         }
-        if (execution.explicitlySupplied()) {
+
+        if (request.suppliedExecutionId() != null) {
             throw unavailable(
-                    execution.executionId(),
+                    request.suppliedExecutionId(),
                     commandPlan,
                     gatewayServiceVersion,
-                    "retry requires processId or a taskId that resolves to a process"
+                    "executionId cannot select an execution without processId "
+                            + "or a taskId that resolves to a process"
             );
         }
-        return executeUnderLock(
+        String invocationId = UUID.randomUUID().toString();
+        return executeFresh(
                 exchange,
                 commandPlan,
-                execution,
+                invocationId,
+                null,
                 null,
                 gatewayServiceVersion,
                 store
         );
     }
 
-    private RoutingExecutionResult executeUnderLock(
+    private RoutingExecutionResult executeStart(
             Exchange exchange,
             TaskWorkflowCommandPlan commandPlan,
-            TaskWorkflowExecutionIdentityResolver.ResolvedExecutionIdentity execution,
-            Long requestedProcessId,
+            TaskWorkflowExecutionIdentityResolver.ResolvedRequestIdentity request,
+            String gatewayServiceVersion,
+            TaskWorkflowRecoveryStore store
+    ) {
+        String clientCorrelation = request.scmClientCorrelationId();
+        if (clientCorrelation == null) {
+            rejectClientExecutionIdForNewStart(
+                    request.suppliedExecutionId()
+            );
+            String executionId = UUID.randomUUID().toString();
+            return executeFresh(
+                    exchange,
+                    commandPlan,
+                    executionId,
+                    null,
+                    executionId,
+                    gatewayServiceVersion,
+                    store
+            );
+        }
+
+        String serviceCode =
+                commandPlan.routingPlan().identity().serviceCode();
+        OptionalLong optimistic = findCorrelatedProcess(
+                store,
+                serviceCode,
+                clientCorrelation
+        );
+        if (optimistic.isPresent()) {
+            return executeExistingStartWithProcessLock(
+                    exchange,
+                    commandPlan,
+                    request,
+                    optimistic.getAsLong(),
+                    gatewayServiceVersion,
+                    store
+            );
+        }
+
+        StartResolution resolution = distributedLock.withStartLock(
+                serviceCode,
+                clientCorrelation,
+                () -> {
+                    OptionalLong rechecked = findCorrelatedProcess(
+                            store,
+                            serviceCode,
+                            clientCorrelation
+                    );
+                    if (rechecked.isPresent()) {
+                        return new StartResolution.ExistingProcess(
+                                rechecked.getAsLong()
+                        );
+                    }
+                    rejectClientExecutionIdForNewStart(
+                            request.suppliedExecutionId()
+                    );
+                    String executionId = UUID.randomUUID().toString();
+                    return new StartResolution.Completed(executeFresh(
+                            exchange,
+                            commandPlan,
+                            executionId,
+                            null,
+                            clientCorrelation,
+                            gatewayServiceVersion,
+                            store
+                    ));
+                }
+        );
+        if (resolution instanceof StartResolution.Completed completed) {
+            return completed.result();
+        }
+        long processId = ((StartResolution.ExistingProcess) resolution)
+                .processId();
+        return executeExistingStartWithProcessLock(
+                exchange,
+                commandPlan,
+                request,
+                processId,
+                gatewayServiceVersion,
+                store
+        );
+    }
+
+    private RoutingExecutionResult executeExistingStartWithProcessLock(
+            Exchange exchange,
+            TaskWorkflowCommandPlan commandPlan,
+            TaskWorkflowExecutionIdentityResolver.ResolvedRequestIdentity request,
+            long selectedProcessId,
+            String gatewayServiceVersion,
+            TaskWorkflowRecoveryStore store
+    ) {
+        String serviceCode =
+                commandPlan.routingPlan().identity().serviceCode();
+        String clientCorrelation = request.scmClientCorrelationId();
+        return distributedLock.withProcessLock(
+                serviceCode,
+                selectedProcessId,
+                () -> {
+                    OptionalLong rechecked = findCorrelatedProcess(
+                            store,
+                            serviceCode,
+                            clientCorrelation
+                    );
+                    if (rechecked.isEmpty()
+                            || rechecked.getAsLong() != selectedProcessId) {
+                        throw snapshotUnavailable(
+                                request.suppliedExecutionId(),
+                                selectedProcessId,
+                                commandPlan,
+                                "service-scoped client correlation changed "
+                                        + "while acquiring the process lock"
+                        );
+                    }
+                    String persistedCorrelation =
+                            requireExactProcessCorrelation(
+                                    store,
+                                    selectedProcessId,
+                                    clientCorrelation,
+                                    commandPlan
+                            );
+                    Optional<TaskWorkflowExecutionSnapshot> loaded =
+                            load(store, selectedProcessId);
+                    if (loaded.isEmpty()) {
+                        if (request.suppliedExecutionId() != null) {
+                            throw snapshotUnavailable(
+                                    request.suppliedExecutionId(),
+                                    selectedProcessId,
+                                    commandPlan,
+                                    "workflow watcher is missing, so the "
+                                            + "supplied executionId cannot be "
+                                            + "validated"
+                            );
+                        }
+                        requireReconstructableStart(
+                                commandPlan,
+                                selectedProcessId
+                        );
+                        String executionId = UUID.randomUUID().toString();
+                        return executeFresh(
+                                exchange,
+                                commandPlan,
+                                executionId,
+                                selectedProcessId,
+                                persistedCorrelation,
+                                gatewayServiceVersion,
+                                store
+                        );
+                    }
+                    return executeExistingStart(
+                            exchange,
+                            commandPlan,
+                            request.suppliedExecutionId(),
+                            persistedCorrelation,
+                            gatewayServiceVersion,
+                            store,
+                            loaded.get()
+                    );
+                }
+        );
+    }
+
+    private RoutingExecutionResult executeExistingStart(
+            Exchange exchange,
+            TaskWorkflowCommandPlan commandPlan,
+            String suppliedExecutionId,
+            String processCorrelation,
+            String gatewayServiceVersion,
+            TaskWorkflowRecoveryStore store,
+            TaskWorkflowExecutionSnapshot snapshot
+    ) {
+        validateSuppliedExecutionId(snapshot, suppliedExecutionId);
+        validateSnapshotService(snapshot, commandPlan);
+        if (!sameAction(snapshot, commandPlan.inboundAction())) {
+            if (!isTerminal(snapshot)) {
+                throw new TaskWorkflowExecutionAlreadyInProgressException(
+                        "process:" + snapshot.execution().processId()
+                );
+            }
+            throw snapshotUnavailable(
+                    snapshot.execution().executionId(),
+                    snapshot.execution().processId(),
+                    commandPlan,
+                    "the current workflow watcher belongs to a later inbound "
+                            + "action, so the original START response cannot "
+                            + "be replayed safely"
+            );
+        }
+        validateSnapshot(
+                snapshot,
+                commandPlan.routingPlan(),
+                gatewayServiceVersion
+        );
+        return executeExistingSnapshot(
+                exchange,
+                commandPlan,
+                processCorrelation,
+                store,
+                snapshot
+        );
+    }
+
+    private RoutingExecutionResult executeProcessCommand(
+            Exchange exchange,
+            TaskWorkflowCommandPlan commandPlan,
+            TaskWorkflowExecutionIdentityResolver.ResolvedRequestIdentity request,
+            long processId,
+            String gatewayServiceVersion,
+            TaskWorkflowRecoveryStore store
+    ) {
+        TaskWorkflowExecutionSnapshot snapshot = load(store, processId)
+                .orElseThrow(() -> snapshotUnavailable(
+                        request.suppliedExecutionId(),
+                        processId,
+                        commandPlan,
+                        "workflow watcher is missing; process-backed commands "
+                                + "must not restart or guess completed steps"
+                ));
+        validateSuppliedExecutionId(
+                snapshot,
+                request.suppliedExecutionId()
+        );
+        validateSnapshotService(snapshot, commandPlan);
+        String processCorrelation = findProcessCorrelation(store, processId)
+                .orElse(null);
+
+        if (sameAction(snapshot, commandPlan.inboundAction())) {
+            validateSnapshot(
+                    snapshot,
+                    commandPlan.routingPlan(),
+                    gatewayServiceVersion
+            );
+            return executeExistingSnapshot(
+                    exchange,
+                    commandPlan,
+                    processCorrelation,
+                    store,
+                    snapshot
+            );
+        }
+        if (!isTerminal(snapshot)) {
+            throw new TaskWorkflowExecutionAlreadyInProgressException(
+                    "process:" + processId
+            );
+        }
+        return executeFresh(
+                exchange,
+                commandPlan,
+                snapshot.execution().executionId(),
+                processId,
+                processCorrelation,
+                gatewayServiceVersion,
+                store
+        );
+    }
+
+    private RoutingExecutionResult executeExistingSnapshot(
+            Exchange exchange,
+            TaskWorkflowCommandPlan commandPlan,
+            String processCorrelation,
+            TaskWorkflowRecoveryStore store,
+            TaskWorkflowExecutionSnapshot snapshot
+    ) {
+        RoutingPlan plan = commandPlan.routingPlan();
+        Object originalRequest = exchange.getMessage().getBody();
+        applyExecutionProperties(
+                exchange,
+                snapshot.execution().executionId(),
+                snapshot.execution().processId(),
+                processCorrelation
+        );
+        RoutingExecutionResult terminal = terminalResult(
+                originalRequest,
+                snapshot,
+                plan,
+                processCorrelation
+        );
+        if (terminal != null) {
+            return terminal;
+        }
+        RoutingExecutionContext context = snapshotMapper.restoreContext(
+                originalRequest,
+                snapshot,
+                plan,
+                processCorrelation
+        );
+        RoutingCursor cursor = recoveryPolicyRegistry
+                .getRequired(plan.routingStrategy())
+                .resolveRetryCursor(plan, snapshot);
+        return run(
+                exchange,
+                commandPlan,
+                store,
+                snapshot,
+                context,
+                cursor
+        );
+    }
+
+    private RoutingExecutionResult executeFresh(
+            Exchange exchange,
+            TaskWorkflowCommandPlan commandPlan,
+            String executionId,
+            Long processId,
+            String processCorrelation,
             String gatewayServiceVersion,
             TaskWorkflowRecoveryStore store
     ) {
         RoutingPlan plan = commandPlan.routingPlan();
         Object originalRequest = exchange.getMessage().getBody();
-        ExistingExecution existing = resolveExistingExecution(
-                store,
-                commandPlan,
-                execution,
-                requestedProcessId,
-                gatewayServiceVersion
+        RoutingExecutionContext context =
+                new RoutingExecutionContext(originalRequest);
+        context.processId(processId);
+        context.correlationId(processCorrelation);
+        TaskWorkflowExecutionSnapshot snapshot = snapshotMapper.initial(
+                executionId,
+                plan,
+                gatewayServiceVersion,
+                processId,
+                context,
+                Instant.now()
         );
-        if (existing.state() == ExistingExecutionState.EXISTING_SNAPSHOT) {
-            validateSnapshot(
-                    existing.snapshot(),
-                    execution.executionId(),
-                    plan,
-                    gatewayServiceVersion
-            );
-            RoutingExecutionResult terminal = terminalResult(
-                    originalRequest,
-                    existing.snapshot()
-            );
-            if (terminal != null) {
-                return terminal;
-            }
-        }
+        applyExecutionProperties(
+                exchange,
+                executionId,
+                processId,
+                processCorrelation
+        );
+        return run(
+                exchange,
+                commandPlan,
+                store,
+                snapshot,
+                context,
+                RoutingCursor.start(plan)
+        );
+    }
 
-        RoutingExecutionContext context;
-        TaskWorkflowExecutionSnapshot snapshot;
-        RoutingCursor cursor;
-        if (existing.state() != ExistingExecutionState.EXISTING_SNAPSHOT) {
-            context = new RoutingExecutionContext(originalRequest);
-            context.processId(existing.processId());
-            context.correlationId(execution.executionId());
-            snapshot = snapshotMapper.initial(
-                    execution.executionId(),
-                    plan,
-                    gatewayServiceVersion,
-                    existing.processId(),
-                    context,
-                    Instant.now()
-            );
-            cursor = RoutingCursor.start(plan);
-        } else {
-            snapshot = existing.snapshot();
-            context = snapshotMapper.restoreContext(
-                    originalRequest,
-                    snapshot
-            );
-            cursor = recoveryPolicyRegistry
-                    .getRequired(plan.routingStrategy())
-                    .resolveRetryCursor(plan, snapshot);
-        }
-
-        exchange.setProperty(Message.EXECUTION_ID, execution.executionId());
-        if (context.processId() != null) {
-            exchange.setProperty(
-                    TaskWorkflowExchangeProperties.PROCESS_ID,
-                    context.processId()
-            );
-        }
+    private RoutingExecutionResult run(
+            Exchange exchange,
+            TaskWorkflowCommandPlan commandPlan,
+            TaskWorkflowRecoveryStore store,
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingExecutionContext context,
+            RoutingCursor cursor
+    ) {
+        RoutingPlan plan = commandPlan.routingPlan();
         TaskWorkflowExecutionLifecycle lifecycle =
                 new TaskWorkflowExecutionLifecycle(
-                store,
-                commandPlan,
-                gatewayServiceVersion,
-                snapshot,
-                payloadMapper,
-                snapshotMapper,
-                transactionCoordinator
-        );
-
+                        store,
+                        commandPlan,
+                        snapshot,
+                        payloadMapper,
+                        snapshotMapper,
+                        transactionCoordinator
+                );
         RoutingExecutionResult engineResult = engineRegistry
                 .getRequired(plan.routingStrategy())
                 .execute(exchange, plan, context, cursor, lifecycle);
@@ -225,220 +526,71 @@ public class TaskWorkflowExecutionCoordinator {
         );
     }
 
-    private ExistingExecution resolveExistingExecution(
-            TaskWorkflowRecoveryStore store,
-            TaskWorkflowCommandPlan commandPlan,
-            TaskWorkflowExecutionIdentityResolver.ResolvedExecutionIdentity execution,
-            Long requestedProcessId,
-            String gatewayServiceVersion
-    ) {
-        if (commandPlan.command() == TaskWorkflowCommand.START) {
-            if (!execution.explicitlySupplied()) {
-                throw unavailable(
-                        execution.executionId(),
-                        commandPlan,
-                        gatewayServiceVersion,
-                        "START reconstruction requires an explicitly supplied "
-                                + "canonical executionId"
-                );
-            }
-            OptionalLong process = findCorrelatedProcess(
-                    store,
-                    execution.executionId()
-            );
-            if (process.isEmpty()) {
-                return ExistingExecution.newExecution(null);
-            }
-            long processId = process.getAsLong();
-            Optional<TaskWorkflowExecutionSnapshot> loaded =
-                    load(store, processId);
-            if (loaded.isEmpty()) {
-                requireReconstructableStart(
-                        commandPlan,
-                        execution,
-                        processId
-                );
-                return ExistingExecution.reconstructableStart(processId);
-            }
-            TaskWorkflowExecutionSnapshot snapshot = loaded.get();
-            if (sameExecutionAction(
-                    snapshot,
-                    execution.executionId(),
-                    commandPlan.inboundAction()
-            )) {
-                return ExistingExecution.existingSnapshot(
-                        processId,
-                        snapshot
-                );
-            }
-            if (snapshot.executionState()
-                    == TaskWorkflowExecutionState.RUNNING
-                    || snapshot.executionState()
-                    == TaskWorkflowExecutionState.RETRY_PENDING) {
-                throw new TaskWorkflowExecutionAlreadyInProgressException(
-                        "process:" + processId
-                );
-            }
-            throw snapshotUnavailable(
-                    execution.executionId(),
-                    processId,
-                    commandPlan,
-                    "workflow watcher belongs to a different execution or "
-                            + "inbound action; non-durable START replay is "
-                            + "forbidden"
-            );
-        }
-
-        if (requestedProcessId == null) {
-            if (execution.explicitlySupplied()) {
-                throw unavailable(
-                        execution.executionId(),
-                        commandPlan,
-                        gatewayServiceVersion,
-                        "process identity is unavailable"
-                );
-            }
-            return ExistingExecution.newExecution(null);
-        }
-        Optional<TaskWorkflowExecutionSnapshot> loaded =
-                load(store, requestedProcessId);
-        if (loaded.isEmpty()) {
-            throw snapshotUnavailable(
-                    execution.executionId(),
-                    requestedProcessId,
-                    commandPlan,
-                    commandPlan.routingPlan().steps().stream()
-                            .anyMatch(step -> step.observationContext()
-                                    .taskWorkflowStepType()
-                                    == TaskWorkflowStepType.BUSINESS_OPERATION)
-                            ? "workflow watcher is missing; a "
-                            + "business-operation chain must not be replayed "
-                            + "blindly"
-                            : "workflow watcher is missing; execution must "
-                            + "not be restarted blindly"
-            );
-        }
-        TaskWorkflowExecutionSnapshot snapshot = loaded.get();
-        if (execution.explicitlySupplied()) {
-            return ExistingExecution.existingSnapshot(
-                    requestedProcessId,
-                    snapshot
-            );
-        }
-        if (isTerminal(snapshot)) {
-            return ExistingExecution.newExecution(requestedProcessId);
-        }
-        throw new TaskWorkflowExecutionAlreadyInProgressException(
-                "process:" + requestedProcessId
-        );
-    }
-
-    private Optional<TaskWorkflowExecutionSnapshot> load(
-            TaskWorkflowRecoveryStore store,
-            long processId
-    ) {
-        try {
-            return store.loadForUpdate(processId);
-        } catch (RuntimeException failure) {
-            throw persistenceFailure("load execution state", failure);
-        }
-    }
-
-    private OptionalLong findCorrelatedProcess(
-            TaskWorkflowRecoveryStore store,
-            String executionId
-    ) {
-        try {
-            return store.findProcessIdByCorrelationId(executionId);
-        } catch (RuntimeException failure) {
-            throw persistenceFailure(
-                    "resolve the exactly correlated process",
-                    failure
-            );
-        }
-    }
-
-    private boolean sameExecutionAction(
-            TaskWorkflowExecutionSnapshot snapshot,
+    private void applyExecutionProperties(
+            Exchange exchange,
             String executionId,
-            String inboundAction
+            Long processId,
+            String processCorrelation
     ) {
-        return executionId.equals(snapshot.executionId())
-                && inboundAction.equalsIgnoreCase(snapshot.inboundAction());
-    }
-
-    private boolean isTerminal(TaskWorkflowExecutionSnapshot snapshot) {
-        boolean completed = snapshot.executionState()
-                == TaskWorkflowExecutionState.COMPLETED
-                && snapshot.decision()
-                == TaskWorkflowExecutionDecision.SUCCESS;
-        boolean failed = snapshot.executionState()
-                == TaskWorkflowExecutionState.FAILED
-                && snapshot.decision()
-                == TaskWorkflowExecutionDecision.FAIL;
-        return completed || failed;
-    }
-
-    private void requireReconstructableStart(
-            TaskWorkflowCommandPlan commandPlan,
-            TaskWorkflowExecutionIdentityResolver.ResolvedExecutionIdentity execution,
-            long processId
-    ) {
-        RoutingPlan plan = commandPlan.routingPlan();
-        boolean reconstructable = commandPlan.command()
-                == TaskWorkflowCommand.START
-                && execution.explicitlySupplied()
-                && plan.routingStrategy() == RoutingStrategy.FIRST
-                && plan.steps().size() == 1
-                && plan.steps().getFirst().observationContext()
-                .taskWorkflowStepType()
-                == TaskWorkflowStepType.START_PROCESS;
-        if (!reconstructable) {
-            throw snapshotUnavailable(
-                    execution.executionId(),
-                    processId,
-                    commandPlan,
-                    "workflow watcher is missing and the action plan is not "
-                            + "a one-step FIRST/START_PROCESS plan"
+        exchange.setProperty(Message.EXECUTION_ID, executionId);
+        if (processId != null) {
+            exchange.setProperty(
+                    TaskWorkflowExchangeProperties.PROCESS_ID,
+                    processId
+            );
+        }
+        if (processCorrelation != null) {
+            exchange.setProperty(
+                    TaskWorkflowExchangeProperties.CORRELATION_ID,
+                    processCorrelation
             );
         }
     }
 
     private RoutingExecutionResult terminalResult(
             Object originalRequest,
-            TaskWorkflowExecutionSnapshot snapshot
+            TaskWorkflowExecutionSnapshot snapshot,
+            RoutingPlan plan,
+            String processCorrelation
     ) {
-        if (snapshot.decision()
+        if (snapshot.status().decision()
                 == TaskWorkflowExecutionDecision.SUCCESS) {
-            if (snapshot.executionState()
+            if (snapshot.status().state()
                     != TaskWorkflowExecutionState.COMPLETED) {
                 throw new InvalidTaskWorkflowExecutionStateException(
                         "SUCCESS snapshot is not in COMPLETED state"
                 );
             }
             return new RoutingExecutionResult(
-                    snapshotMapper.restoreResponse(snapshot.storedResponse()),
-                    snapshotMapper.restoreContext(originalRequest, snapshot),
+                    snapshotMapper.restoreResponse(snapshot, plan),
+                    snapshotMapper.restoreContext(
+                            originalRequest,
+                            snapshot,
+                            plan,
+                            processCorrelation
+                    ),
                     RoutingDecision.SUCCESS,
                     null
             );
         }
-        if (snapshot.decision() == TaskWorkflowExecutionDecision.FAIL) {
-            if (snapshot.executionState()
+        if (snapshot.status().decision()
+                == TaskWorkflowExecutionDecision.FAIL) {
+            if (snapshot.status().state()
                     != TaskWorkflowExecutionState.FAILED
-                    || snapshot.storedFailure() == null) {
+                    || snapshot.terminal() == null
+                    || snapshot.terminal().failure() == null) {
                 throw new InvalidTaskWorkflowExecutionStateException(
                         "FAIL snapshot has no stored typed failure"
                 );
             }
             throw new RoutingFailureException(
-                    snapshotMapper.restoreFailure(snapshot.storedFailure()),
+                    snapshotMapper.restoreFailure(snapshot, plan),
                     null
             );
         }
-        if (snapshot.decision()
+        if (snapshot.status().decision()
                 == TaskWorkflowExecutionDecision.RETRY_LATER) {
-            if (snapshot.executionState()
+            if (snapshot.status().state()
                     != TaskWorkflowExecutionState.RETRY_PENDING) {
                 throw new InvalidTaskWorkflowExecutionStateException(
                         "RETRY_LATER snapshot is not in RETRY_PENDING state"
@@ -447,13 +599,12 @@ public class TaskWorkflowExecutionCoordinator {
             return null;
         }
         throw new TaskWorkflowExecutionAlreadyInProgressException(
-                "process:" + snapshot.processId()
+                "process:" + snapshot.execution().processId()
         );
     }
 
     private void validateSnapshot(
             TaskWorkflowExecutionSnapshot snapshot,
-            String executionId,
             RoutingPlan plan,
             String gatewayServiceVersion
     ) {
@@ -464,36 +615,30 @@ public class TaskWorkflowExecutionCoordinator {
                             + snapshot.schemaVersion()
             );
         }
-        if (!executionId.equals(snapshot.executionId())) {
-            throw new InvalidTaskWorkflowExecutionStateException(
-                    "TASK_WORKFLOW executionId does not match the persisted snapshot"
-            );
-        }
         if (!gatewayServiceVersion.equals(
-                snapshot.gatewayServiceVersion())) {
+                snapshot.execution().gatewayServiceVersion())) {
             throw new InvalidTaskWorkflowExecutionStateException(
                     "TASK_WORKFLOW retry gateway service version does not "
                             + "match the persisted request contract"
             );
         }
         RoutingPlanIdentity identity = plan.identity();
-        boolean samePlan = identity.serviceCode().equals(snapshot.serviceCode())
+        TaskWorkflowExecutionSnapshot.PlanIdentity stored = snapshot.plan();
+        boolean samePlan = identity.serviceCode().equals(
+                stored.serviceCode())
                 && identity.inboundAction().equalsIgnoreCase(
-                snapshot.inboundAction())
-                && identity.actionPlanName().equals(snapshot.actionPlanName())
-                && identity.definitionId().equals(snapshot.definitionId())
-                && identity.planFingerprint().equals(
-                snapshot.planFingerprint())
-                && plan.routingStrategy().name().equals(
-                snapshot.routingStrategy());
+                stored.inboundAction())
+                && identity.actionPlanName().equals(stored.actionPlanName())
+                && identity.definitionId().equals(stored.definitionId())
+                && identity.planFingerprint().equals(stored.fingerprint());
         if (!samePlan) {
             throw new TaskWorkflowPlanChangedException(
                     "TASK_WORKFLOW plan changed during retry; persisted="
-                            + snapshot.serviceCode() + ":"
-                            + snapshot.inboundAction() + ":"
-                            + snapshot.actionPlanName() + ":"
-                            + snapshot.definitionId() + ":"
-                            + snapshot.planFingerprint()
+                            + stored.serviceCode() + ":"
+                            + stored.inboundAction() + ":"
+                            + stored.actionPlanName() + ":"
+                            + stored.definitionId() + ":"
+                            + stored.fingerprint()
                             + ", current=" + plan.identity()
             );
         }
@@ -513,20 +658,169 @@ public class TaskWorkflowExecutionCoordinator {
         for (int index = 0; index < plan.steps().size(); index++) {
             var expected = plan.steps().get(index);
             var stored = snapshot.steps().get(index);
-            boolean matches = stored != null
-                    && stored.stepIndex() == expected.stepIndex()
-                    && expected.stepId().equals(stored.stepId())
-                    && expected.observationContext().taskWorkflowStepType()
-                    == stored.stepType()
-                    && expected.serviceOperation().getOperationName()
-                    .equals(stored.operationName());
-            if (!matches) {
+            if (stored == null
+                    || stored.stepIndex() != expected.stepIndex()
+                    || !expected.stepId().equals(stored.stepId())) {
                 throw new InvalidTaskWorkflowExecutionStateException(
                         "TASK_WORKFLOW snapshot step identity does not "
                                 + "match the current plan at stepIndex="
                                 + index
                 );
             }
+        }
+    }
+
+    private void validateSuppliedExecutionId(
+            TaskWorkflowExecutionSnapshot snapshot,
+            String suppliedExecutionId
+    ) {
+        if (suppliedExecutionId != null
+                && !suppliedExecutionId.equals(
+                snapshot.execution().executionId())) {
+            throw new InvalidTaskWorkflowExecutionStateException(
+                    "TASK_WORKFLOW supplied executionId does not match the "
+                            + "persisted server executionId"
+            );
+        }
+    }
+
+    private void validateSnapshotService(
+            TaskWorkflowExecutionSnapshot snapshot,
+            TaskWorkflowCommandPlan commandPlan
+    ) {
+        String requestedService =
+                commandPlan.routingPlan().identity().serviceCode();
+        if (!requestedService.equals(snapshot.plan().serviceCode())) {
+            throw snapshotUnavailable(
+                    snapshot.execution().executionId(),
+                    snapshot.execution().processId(),
+                    commandPlan,
+                    "process workflow snapshot belongs to serviceCode="
+                            + snapshot.plan().serviceCode()
+            );
+        }
+    }
+
+    private void rejectClientExecutionIdForNewStart(
+            String suppliedExecutionId
+    ) {
+        if (suppliedExecutionId != null) {
+            throw new InvalidTaskWorkflowExecutionStateException(
+                    "A new TASK_WORKFLOW START must not supply executionId; "
+                            + "SCM generates the authoritative executionId"
+            );
+        }
+    }
+
+    private boolean sameAction(
+            TaskWorkflowExecutionSnapshot snapshot,
+            String inboundAction
+    ) {
+        return inboundAction.equalsIgnoreCase(
+                snapshot.plan().inboundAction()
+        );
+    }
+
+    private boolean isTerminal(TaskWorkflowExecutionSnapshot snapshot) {
+        return snapshot.status().state()
+                == TaskWorkflowExecutionState.COMPLETED
+                && snapshot.status().decision()
+                == TaskWorkflowExecutionDecision.SUCCESS
+                || snapshot.status().state()
+                == TaskWorkflowExecutionState.FAILED
+                && snapshot.status().decision()
+                == TaskWorkflowExecutionDecision.FAIL;
+    }
+
+    private void requireReconstructableStart(
+            TaskWorkflowCommandPlan commandPlan,
+            long processId
+    ) {
+        RoutingPlan plan = commandPlan.routingPlan();
+        boolean reconstructable = commandPlan.command()
+                == TaskWorkflowCommand.START
+                && plan.routingStrategy() == RoutingStrategy.FIRST
+                && plan.steps().size() == 1
+                && plan.steps().getFirst().observationContext()
+                .taskWorkflowStepType()
+                == TaskWorkflowStepType.START_PROCESS;
+        if (!reconstructable) {
+            throw snapshotUnavailable(
+                    null,
+                    processId,
+                    commandPlan,
+                    "workflow watcher is missing and the action plan is not "
+                            + "a one-step FIRST/START_PROCESS plan"
+            );
+        }
+    }
+
+    private String requireExactProcessCorrelation(
+            TaskWorkflowRecoveryStore store,
+            long processId,
+            String expected,
+            TaskWorkflowCommandPlan commandPlan
+    ) {
+        String actual = findProcessCorrelation(store, processId)
+                .orElseThrow(() -> snapshotUnavailable(
+                        null,
+                        processId,
+                        commandPlan,
+                        "correlated START process has no persisted "
+                                + "correlationId"
+                ));
+        if (!actual.equals(expected)) {
+            throw snapshotUnavailable(
+                    null,
+                    processId,
+                    commandPlan,
+                    "persisted process correlationId does not exactly match "
+                            + "scmClientCorrelationId"
+            );
+        }
+        return actual;
+    }
+
+    private Optional<TaskWorkflowExecutionSnapshot> load(
+            TaskWorkflowRecoveryStore store,
+            long processId
+    ) {
+        try {
+            return store.loadForUpdate(processId);
+        } catch (RuntimeException failure) {
+            throw persistenceFailure("load execution state", failure);
+        }
+    }
+
+    private OptionalLong findCorrelatedProcess(
+            TaskWorkflowRecoveryStore store,
+            String serviceCode,
+            String clientCorrelation
+    ) {
+        try {
+            return store.findProcessIdByClientCorrelation(
+                    serviceCode,
+                    clientCorrelation
+            );
+        } catch (RuntimeException failure) {
+            throw persistenceFailure(
+                    "resolve the service-scoped correlated process",
+                    failure
+            );
+        }
+    }
+
+    private Optional<String> findProcessCorrelation(
+            TaskWorkflowRecoveryStore store,
+            long processId
+    ) {
+        try {
+            return store.findProcessCorrelationId(processId);
+        } catch (RuntimeException failure) {
+            throw persistenceFailure(
+                    "resolve process correlation",
+                    failure
+            );
         }
     }
 
@@ -636,78 +930,20 @@ public class TaskWorkflowExecutionCoordinator {
                     "provider-attempt"
             );
         }
-        String capacityDetail =
-                failure instanceof TaskWorkflowSnapshotTooLargeException
-                        ? ": " + failure.getMessage()
-                        : "";
         return new TaskWorkflowPersistenceException(
                 "Failed to " + action
-                        + " TASK_WORKFLOW durable execution state"
-                        + capacityDetail,
+                        + " TASK_WORKFLOW durable execution state",
                 failure
         );
     }
 
-    private enum ExistingExecutionState {
-        NEW_EXECUTION,
-        EXISTING_SNAPSHOT,
-        RECONSTRUCTABLE_START
-    }
-
-    private record ExistingExecution(
-            ExistingExecutionState state,
-            Long processId,
-            TaskWorkflowExecutionSnapshot snapshot
-    ) {
-        private ExistingExecution {
-            if (state == ExistingExecutionState.EXISTING_SNAPSHOT
-                    && snapshot == null) {
-                throw new IllegalArgumentException(
-                        "EXISTING_SNAPSHOT requires a snapshot"
-                );
-            }
-            if (state != ExistingExecutionState.EXISTING_SNAPSHOT
-                    && snapshot != null) {
-                throw new IllegalArgumentException(
-                        state + " must not contain a snapshot"
-                );
-            }
-            if (state == ExistingExecutionState.RECONSTRUCTABLE_START
-                    && processId == null) {
-                throw new IllegalArgumentException(
-                        "RECONSTRUCTABLE_START requires processId"
-                );
-            }
+    private sealed interface StartResolution {
+        record Completed(RoutingExecutionResult result)
+                implements StartResolution {
         }
 
-        private static ExistingExecution newExecution(Long processId) {
-            return new ExistingExecution(
-                    ExistingExecutionState.NEW_EXECUTION,
-                    processId,
-                    null
-            );
-        }
-
-        private static ExistingExecution existingSnapshot(
-                Long processId,
-                TaskWorkflowExecutionSnapshot snapshot
-        ) {
-            return new ExistingExecution(
-                    ExistingExecutionState.EXISTING_SNAPSHOT,
-                    processId,
-                    snapshot
-            );
-        }
-
-        private static ExistingExecution reconstructableStart(
-                long processId
-        ) {
-            return new ExistingExecution(
-                    ExistingExecutionState.RECONSTRUCTABLE_START,
-                    processId,
-                    null
-            );
+        record ExistingProcess(long processId)
+                implements StartResolution {
         }
     }
-
 }

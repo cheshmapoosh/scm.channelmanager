@@ -8,67 +8,76 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 
-import static ir.daneshrefah.scm.utils.constant.Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID;
-
+/**
+ * Reads protocol-neutral, already normalized request identities. Authoritative
+ * server execution IDs are selected by the execution coordinator only after
+ * START/new-versus-existing resolution.
+ */
 @Component
 public class TaskWorkflowExecutionIdentityResolver {
-    public static final String EXECUTION_ID_HEADER = "X-SCM-Execution-ID";
     private static final int MAX_EXECUTION_ID_LENGTH = 100;
 
-    public ResolvedExecutionIdentity resolve(
-            Exchange exchange,
-            TaskWorkflowCommand command
-    ) {
-        Map<String, String> supplied = new LinkedHashMap<>();
-        add(supplied, "request decoder",
-                exchange.getProperty(Message.EXECUTION_ID, String.class), false);
-        add(supplied, "normalized payload", payloadExecutionId(exchange), true);
-        add(supplied, "inbound parameters", parameterExecutionId(exchange), true);
-        add(supplied, EXECUTION_ID_HEADER,
-                exchange.getMessage().getHeader(
-                        EXECUTION_ID_HEADER, String.class), false);
+    public ResolvedRequestIdentity resolve(Exchange exchange) {
+        Map<String, String> executionIds = new LinkedHashMap<>();
+        addExecutionId(
+                executionIds,
+                "request decoder",
+                exchange.getProperty(Message.EXECUTION_ID, String.class),
+                false
+        );
+        addExecutionId(
+                executionIds,
+                "normalized payload",
+                payloadExecutionId(exchange),
+                true
+        );
+        addExecutionId(
+                executionIds,
+                "inbound parameters",
+                parameterValue(exchange, "executionId"),
+                true
+        );
 
-        String executionId = null;
-        String source = null;
-        for (Map.Entry<String, String> candidate : supplied.entrySet()) {
-            if (executionId != null
-                    && !executionId.equals(candidate.getValue())) {
-                throw new InvalidTaskWorkflowExecutionStateException(
-                        "Conflicting TASK_WORKFLOW executionId values from "
-                                + source + " and " + candidate.getKey());
-            }
-            executionId = candidate.getValue();
-            source = candidate.getKey();
-        }
-
-        boolean explicitlySupplied = executionId != null;
-        if (executionId == null && command == TaskWorkflowCommand.START) {
-            executionId = normalize(
-                    exchange.getMessage().getHeader(
-                            SCM_PARAMETER_CLIENT_CORRELATION_ID,
-                            String.class
-                    ),
-                    SCM_PARAMETER_CLIENT_CORRELATION_ID,
-                    false
-            );
-            explicitlySupplied = executionId != null;
-        }
-        if (executionId == null && command == TaskWorkflowCommand.START) {
-            throw new InvalidTaskWorkflowExecutionStateException(
-                    "TASK_WORKFLOW start requires a canonical client executionId");
-        }
-        if (executionId == null) {
-            executionId = UUID.randomUUID().toString();
-        }
-        exchange.setProperty(Message.EXECUTION_ID, executionId);
-        return new ResolvedExecutionIdentity(executionId, explicitlySupplied);
+        String suppliedExecutionId = oneValue(
+                executionIds,
+                "executionId"
+        );
+        Map<String, String> clientCorrelations = new LinkedHashMap<>();
+        addClientCorrelation(
+                clientCorrelations,
+                "request decoder",
+                exchange.getProperty(
+                        Message.CLIENT_CORRELATION_ID,
+                        String.class
+                ),
+                false
+        );
+        addClientCorrelation(
+                clientCorrelations,
+                "inbound parameters",
+                firstParameterValue(
+                        exchange,
+                        "scmClientCorrelationId",
+                        "clientCorrelationId"
+                ),
+                true
+        );
+        String clientCorrelation = oneValue(
+                clientCorrelations,
+                "scmClientCorrelationId"
+        );
+        return new ResolvedRequestIdentity(
+                suppliedExecutionId,
+                clientCorrelation
+        );
     }
 
     private String payloadExecutionId(Exchange exchange) {
         Message normalized = exchange.getProperty(
-                Message.INTERNAL_MESSAGE, Message.class);
+                Message.INTERNAL_MESSAGE,
+                Message.class
+        );
         JsonNode payload = normalized == null ? null : normalized.getPayload();
         if (payload == null || !payload.isObject()
                 || !payload.has("executionId")
@@ -78,51 +87,92 @@ public class TaskWorkflowExecutionIdentityResolver {
         JsonNode value = payload.get("executionId");
         if (!value.isTextual()) {
             throw new InvalidTaskWorkflowExecutionStateException(
-                    "TASK_WORKFLOW payload executionId must be a string");
+                    "TASK_WORKFLOW payload executionId must be a string"
+            );
         }
-        return normalize(value.textValue(), "normalized payload", true);
+        return value.textValue();
     }
 
-    private String parameterExecutionId(Exchange exchange) {
-        Object value = exchange.getProperty(Message.INBOUND_PARAMETERS);
-        if (value == null) {
-            return null;
-        }
-        if (!(value instanceof Map<?, ?> parameters)) {
-            throw new InvalidTaskWorkflowExecutionStateException(
-                    "TASK_WORKFLOW inbound parameters must be a map");
-        }
+    private String firstParameterValue(
+            Exchange exchange,
+            String... names
+    ) {
         String resolved = null;
-        for (Map.Entry<?, ?> entry : parameters.entrySet()) {
-            if (!(entry.getKey() instanceof String key)
-                    || !key.equalsIgnoreCase("executionId")) {
+        for (String name : names) {
+            String candidate = parameterValue(exchange, name);
+            if (candidate == null) {
                 continue;
             }
-            String candidate = normalize(
-                    entry.getValue() == null
-                            ? null
-                            : String.valueOf(entry.getValue()),
-                    "inbound parameters",
-                    true
-            );
             if (resolved != null && !resolved.equals(candidate)) {
                 throw new InvalidTaskWorkflowExecutionStateException(
-                        "Conflicting TASK_WORKFLOW executionId values in inbound parameters");
+                        "Conflicting TASK_WORKFLOW client-correlation values "
+                                + "in inbound parameters"
+                );
             }
             resolved = candidate;
         }
         return resolved;
     }
 
-    private void add(
-            Map<String, String> supplied,
+    private String parameterValue(Exchange exchange, String requestedName) {
+        Object value = exchange.getProperty(Message.INBOUND_PARAMETERS);
+        if (value == null) {
+            return null;
+        }
+        if (!(value instanceof Map<?, ?> parameters)) {
+            throw new InvalidTaskWorkflowExecutionStateException(
+                    "TASK_WORKFLOW inbound parameters must be a map"
+            );
+        }
+        String resolved = null;
+        for (Map.Entry<?, ?> entry : parameters.entrySet()) {
+            if (!(entry.getKey() instanceof String key)
+                    || !key.equalsIgnoreCase(requestedName)) {
+                continue;
+            }
+            String candidate = entry.getValue() == null
+                    ? null
+                    : String.valueOf(entry.getValue());
+            if (resolved != null && !resolved.equals(candidate)) {
+                throw new InvalidTaskWorkflowExecutionStateException(
+                        "Conflicting TASK_WORKFLOW " + requestedName
+                                + " values in inbound parameters"
+                );
+            }
+            resolved = candidate;
+        }
+        return resolved;
+    }
+
+    private void addExecutionId(
+            Map<String, String> values,
+            String source,
+            String value,
+            boolean rejectBlank
+    ) {
+        String normalized = normalize(value, source, rejectBlank);
+        if (normalized == null) {
+            return;
+        }
+        if (normalized.length() > MAX_EXECUTION_ID_LENGTH) {
+            throw new InvalidTaskWorkflowExecutionStateException(
+                    "TASK_WORKFLOW executionId from " + source
+                            + " exceeds " + MAX_EXECUTION_ID_LENGTH
+                            + " characters"
+            );
+        }
+        values.put(source, normalized);
+    }
+
+    private void addClientCorrelation(
+            Map<String, String> values,
             String source,
             String value,
             boolean rejectBlank
     ) {
         String normalized = normalize(value, source, rejectBlank);
         if (normalized != null) {
-            supplied.put(source, normalized);
+            values.put(source, normalized);
         }
     }
 
@@ -132,25 +182,38 @@ public class TaskWorkflowExecutionIdentityResolver {
             boolean rejectBlank
     ) {
         String normalized = StringUtils.trimToNull(value);
-        if (normalized == null) {
-            if (rejectBlank && value != null) {
-                throw new InvalidTaskWorkflowExecutionStateException(
-                        "TASK_WORKFLOW executionId from " + source
-                                + " must not be blank");
-            }
-            return null;
-        }
-        if (normalized.length() > MAX_EXECUTION_ID_LENGTH) {
+        if (normalized == null && rejectBlank && value != null) {
             throw new InvalidTaskWorkflowExecutionStateException(
-                    "TASK_WORKFLOW executionId from " + source
-                            + " exceeds " + MAX_EXECUTION_ID_LENGTH + " characters");
+                    "TASK_WORKFLOW identity from " + source
+                            + " must not be blank"
+            );
         }
         return normalized;
     }
 
-    public record ResolvedExecutionIdentity(
-            String executionId,
-            boolean explicitlySupplied
+    private String oneValue(
+            Map<String, String> values,
+            String identityName
+    ) {
+        String resolved = null;
+        String source = null;
+        for (Map.Entry<String, String> candidate : values.entrySet()) {
+            if (resolved != null && !resolved.equals(candidate.getValue())) {
+                throw new InvalidTaskWorkflowExecutionStateException(
+                        "Conflicting TASK_WORKFLOW " + identityName
+                                + " values from " + source + " and "
+                                + candidate.getKey()
+                );
+            }
+            resolved = candidate.getValue();
+            source = candidate.getKey();
+        }
+        return resolved;
+    }
+
+    public record ResolvedRequestIdentity(
+            String suppliedExecutionId,
+            String scmClientCorrelationId
     ) {
     }
 }

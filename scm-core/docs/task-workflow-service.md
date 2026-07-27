@@ -95,11 +95,28 @@ scm-provider-task
 ```
 
 `scm-provider-task` owns `TaskWorkflowRecoveryStore`,
-`TaskWorkflowProviderCapability`, the watcher snapshot DTOs, and their
+`TaskWorkflowProviderCapability`, `TaskWorkflowProviderCapabilityRegistry`,
+`TaskWorkflowProviderRequestFactory`, the watcher snapshot DTOs, and their
 implementations. `ScmTaskProviderAutoConfiguration` publishes those beans when
-`scm.provider.task.enabled=true`. `scm-core` maps its routing state to those
-provider-owned DTOs and registers the coordinator through a
-`@ConditionalOnClass` integration configuration.
+`scm.provider.task.enabled=true`. `scm-core` maps routing state to those
+provider-owned DTOs and conditionally registers the coordinator.
+
+Only the capability registry moved to the provider module. Core still owns
+ActionPlan parsing, route-plan construction, routing engines, execution
+coordination, `TaskWorkflowPayloadMapper`, and snapshot mapping. Request
+mapping is split at a narrow boundary:
+
+```text
+core TaskWorkflowPayloadMapper
+    -> normalized Exchange input, identifiers, retry restoration,
+       BUSINESS_OPERATION and routing context
+
+provider TaskWorkflowProviderRequestFactory
+    -> task-provider request shapes
+```
+
+The provider factory uses provider-owned context and common/JDK types; it does
+not expose Camel or `scm-core` types.
 
 This gives the following startup behavior:
 
@@ -477,51 +494,94 @@ domain outcomes; otherwise they defer to the safe default. The internal task
 engine explicitly recognizes its own non-null, normally completed results.
 Custom task engines default to no such recognition.
 
-## Execution identity, process correlation, and compatibility
+## Execution identity, client correlation, and process identity
 
-`Message.EXECUTION_ID` is the canonical TASK_WORKFLOW execution identity.
-`JsonScmRequestDecoder` can normalize it from the JSON payload or
-`X-SCM-Execution-ID`. The task-workflow resolver also accepts normalized
-inbound parameters and checks all supplied values for conflicts.
+TASK_WORKFLOW has three distinct identities:
 
-The `start` action requires a client-supplied execution identity. When no
-explicit execution ID is present, the existing client-correlation header is a
-fallback. The value is stored in the unchanged
-`ProcessInstance.correlationId` field when the process is created.
+| Identity | Purpose |
+| --- | --- |
+| `executionId` | Server-generated durable workflow identity, returned to clients and stored in the snapshot |
+| `scmClientCorrelationId` | Optional caller-supplied START idempotency key |
+| `processId` | Durable process aggregate, retry lookup identity, and process-lock identity |
 
-Approve behavior is backward compatible:
+For REST, `scmClientCorrelationId` originates from
+`X-SCM-Client-Correlation-ID`. `JsonScmRequestDecoder` normalizes it to
+`Message.CLIENT_CORRELATION_ID`. Other protocol adapters must normalize the
+same logical value before service orchestration; the coordinator never parses
+HTTP headers.
+
+SCM generates a new execution ID with a server-side UUID only after START has
+been classified as genuinely new. A new START must not supply an execution
+ID. For an existing process, a supplied execution ID is optional validation
+input and must equal the snapshot value; it never selects or replaces identity.
+
+START persists process correlation as follows:
+
+```text
+scmClientCorrelationId present
+    -> ProcessInstance.correlationId = scmClientCorrelationId
+
+scmClientCorrelationId absent
+    -> ProcessInstance.correlationId = server executionId
+```
+
+Process correlation therefore must not be exposed as execution ID. START and
+process detail/list responses obtain `executionId` from the workflow snapshot.
+Legacy or non-workflow processes return `null`.
+
+Approve remains backward compatible:
 
 ```text
 process already has correlationId
-    -> preserve it
-    -> do not overwrite it from the approve request
+    -> preserve it; never overwrite it
 
 process correlationId is null or blank
     -> require approve request correlationId
-    -> store it through the existing field
+    -> persist that legacy request value
 ```
 
-The first path preserves the stable workflow execution correlation established
-during start. The second path preserves legacy/non-workflow behavior for
-processes created without a correlation. An approve request correlation is not
-automatically a workflow execution ID.
+### START and process locks
 
-There is no database uniqueness constraint on process correlation. Concurrent
-workflow starts are coordinated by the existing distributed lock
-infrastructure. Under the start lock, SCM rechecks the process by correlation;
-an existing process is returned idempotently, otherwise creation commits before
-the lock is released.
-
-The start lock key is:
+With a client correlation, the START lock is:
 
 ```text
-scm:task-workflow:start:<TRIMMED_UPPER_SERVICE_CODE>:<SHA-256(TRIMMED_EXECUTION_ID)>
+scm:task-workflow:start:
+    <TRIMMED_UPPER_SERVICE_CODE>:
+    <SHA-256(TRIMMED_CASE_SENSITIVE_CLIENT_CORRELATION)>
 ```
 
-The raw execution ID is never included in the lock name. Start idempotency is
-cluster-safe only while every writer uses this distributed path and the lock
-infrastructure remains available; there is still no database uniqueness
-constraint.
+The raw client correlation is never included in the lock name. Lookup uses
+`serviceCode + scmClientCorrelationId` and is rechecked under the selected
+lock:
+
+```text
+optimistic lookup finds processId
+    -> acquire scm:task-workflow:process:<processId>
+    -> recheck exact service and correlation
+    -> handle the existing snapshot
+
+optimistic lookup finds no process
+    -> acquire START lock
+    -> recheck service + client correlation
+    -> still absent: generate executionId and run new START
+    -> now present: release START lock, then acquire process lock
+```
+
+The two locks are not nested, and an existing START never executes under only
+the START lock.
+
+Without `scmClientCorrelationId`, SCM acquires no START lock. Each request is
+a distinct new START with a different server execution ID; duplicate detection
+for the initial request is intentionally not guaranteed in this mode.
+
+Existing process commands use:
+
+```text
+scm:task-workflow:process:<processId>
+```
+
+The remote Hazelcast CP lock is acquired atomically and fail-fast. Contention
+produces a retryable `TaskWorkflowExecutionAlreadyInProgressException`.
 
 ## Durable snapshots and recovery
 
@@ -536,33 +596,52 @@ TBL_PRC_PROCESS_INSTANCE_WATCHER
     DATA       = versioned snapshot JSON
 ```
 
-The snapshot records execution identity, external action, internal ActionPlan
-name, gateway contract version, definition ID, deterministic fingerprint,
-strategy, state, decision, process ID, stable step identities, retry cursor
-state, attempts, and timestamps.
+The current write format is grouped snapshot schema version 2:
 
-Only typed minimal recovery data is retained:
+```text
+execution
+    -> executionId, processId, gatewayServiceVersion
+plan
+    -> serviceCode, inboundAction, actionPlanName, definitionId, fingerprint
+status
+    -> state, decision, activeAttemptId, activeStepIndex
+steps[]
+    -> stepId, stepIndex, decision, attemptCount,
+       normalizedOutcome, reasonCode, messageStatus, attemptedAt
+resume
+    -> transactionData, retryRequest, lastBusinessResponse
+terminal
+    -> stored response or stored failure
+createdAt / updatedAt
+```
 
-- stable process and correlation IDs;
-- sanitized transaction data required by a later business step;
-- `executionId + ":" + stepId` as the provider idempotency key;
-- a sanitized retry request only when deterministic reconstruction is not
-  possible;
-- the last business result needed by chain response selection;
-- one canonical terminal/retry response for replay, or typed safe failure
-  metadata.
+The provider recovery store can read the legacy flat schema version 1 and
+normalizes it into version 2 in memory. It writes only version 2; no database
+migration is used.
 
-The snapshot does not contain all step responses, the original request, a
-Camel `Exchange`, arbitrary headers/maps, authentication material, tokens,
-cookies, Java exception objects, stack traces, or unfiltered provider
-responses.
+The grouped model removes duplicated plan and runtime values:
 
-The unchanged watcher `DATA` mapping declares no expanded length, so the
-recovery store enforces the JPA default capacity of exactly 255 serialized
-characters before every write. It serializes the final snapshot, checks the
-actual character count, and throws
-`TaskWorkflowSnapshotTooLargeException` with execution ID, process ID, actual
-size, and limit. It never truncates or silently drops required state.
+- `stepType` and `operationName` come from the fingerprint-validated plan;
+- process ID appears only in execution identity;
+- process/client correlation comes from the process aggregate;
+- only the active step index is persisted; the step ID is derived from it;
+- provider idempotency is rebuilt as `executionId + ":" + stepId`;
+- stored response contains only status and sanitized payload;
+- stored failure contains only step index and safe failure metadata;
+- `ExecutionOutcome` is reconstructed by core rather than persisted.
+
+Only minimal transaction data, a sanitized non-business retry request when
+deterministic reconstruction is impossible, and the last business response
+needed by the chain are retained. The snapshot does not contain all step
+responses, the original request, a Camel `Exchange`, arbitrary headers/maps,
+credentials, tokens, cookies, Java exceptions, stack traces, or unfiltered
+provider responses.
+
+There is no hard-coded universal 255-character limit. The unchanged JPA
+mapping does not prove the physical production `DATA` capacity. The recovery
+store never truncates data and never continues with persistence disabled;
+operators must verify the deployed column capacity for realistic version-2
+snapshots.
 
 The plan fingerprint is SHA-256 over an explicitly ordered representation of:
 
@@ -603,11 +682,15 @@ Recovery is allowed only when the persisted top-level decision is
 `RETRY_LATER` and state is `RETRY_PENDING`:
 
 ```text
-no explicit executionId
-    -> new execution
+processId
+    -> load the process snapshot
+    -> use its persisted server executionId
 
-explicit executionId + process identity
-    -> load the process snapshot and validate executionId
+request also supplies executionId
+    -> require equality with the snapshot
+
+request omits executionId
+    -> continue with the snapshot executionId
 
 snapshot SUCCESS
     -> return stored successful response idempotently
@@ -627,6 +710,11 @@ snapshot corrupt or plan changed
     -> fail safely; never restart blindly
 ```
 
+An execution ID without a valid process ID or task ID never triggers a global
+watcher scan. Non-process reads such as `FIND_ALL_PROCESS` and `FIND_ALL_TASK`
+may use a transient invocation identifier for tracing, but do not persist or
+expose it as a durable workflow execution ID.
+
 For `FIRST`, a retry starts at step zero. For `CHAIN_ON_APPROVE`, every earlier
 step must be persisted as `SUCCESS`, and the selected step must be the first
 `RETRY_LATER` step with matching `stepId` and `stepIndex`.
@@ -640,31 +728,36 @@ process creation committed
     -> pod stopped before the WORKFLOW_EXECUTION watcher was persisted
 ```
 
+For a genuinely new START, no process row exists when `beforeStep` runs.
+After the provider returns the created process, the lifecycle registers the
+attempted snapshot before terminal persistence. The window above is the gap
+between those two events.
+
 SCM reconstructs durable state only when all of these checks pass under the
-same distributed start lock:
+distributed process lock:
 
 ```text
-command                    = START
-canonical executionId      = explicitly supplied
-correlated process         = found by that exact executionId
-process correlationId      = exactly equal to executionId
-routingStrategy            = FIRST
-step count                 = 1
-steps[0].stepType          = START_PROCESS
-workflow watcher           = absent
+command                 = START
+correlated process      = found by serviceCode + scmClientCorrelationId
+process correlationId   = exact scmClientCorrelationId
+routingStrategy         = FIRST
+step count              = 1
+steps[0].stepType       = START_PROCESS
+workflow watcher        = absent
 ```
 
-The coordinator creates an initial snapshot with the existing process ID and
-current plan identity. Normal attempt registration then creates the missing
-`WORKFLOW_EXECUTION` watcher before invoking the operation route. The
-`START_PROCESS` provider operation is still called; SCM does not synthesize
-success from the process row. The task provider validates and returns the
-already-correlated process idempotently, allowing the normal lifecycle to
-rebuild the canonical response and persist `COMPLETED`/`SUCCESS`.
+Because no durable snapshot identity existed, SCM generates a new server
+execution ID under the process lock. The coordinator creates an initial
+snapshot with the existing process ID and current plan identity. Normal
+attempt registration creates the missing `WORKFLOW_EXECUTION` watcher before
+invoking the operation route. The `START_PROCESS` provider operation is still
+called; SCM never synthesizes success from the process row. The provider
+validates and returns the correlated process idempotently, allowing the normal
+lifecycle to rebuild the response and persist `COMPLETED`/`SUCCESS`.
 
 The persisted terminal snapshot contains the canonical response and clears
-`activeAttemptId`, `activeStepId`, and `activeStepIndex`. There is no
-non-durable or best-effort workflow execution mode.
+the active attempt ID and active step index.
+There is no non-durable or best-effort workflow execution mode.
 
 This exception is deliberately limited to one-step
 `FIRST`/`START_PROCESS`. A missing watcher for a non-START action, a multi-step
@@ -700,6 +793,17 @@ remote Hazelcast CP `FencedLock` through the injected lock utility and
 retryable “execution already in progress” fault. Missing, local-only, or
 unavailable distributed-lock infrastructure prevents an active TASK_WORKFLOW
 route from starting safely.
+
+### Process response enrichment
+
+`ProcessInstanceStartResponse` and process detail/list responses expose a
+nullable `executionId`. Workflow processes obtain it from
+`WORKFLOW_EXECUTION.execution.executionId`; legacy and non-workflow processes
+return `null`. Process correlation is never copied into this field.
+
+For process and task lists, the provider collects process IDs and batch-loads
+only their current `WORKFLOW_EXECUTION` watcher rows. It does not scan every
+watcher and does not issue one watcher lookup per result.
 
 ## Persistence relationships
 
@@ -782,7 +886,7 @@ Shared request:
 
 ```text
 POST /task-workflow/PAYMASTER_MANAGEMENT/start
-X-SCM-Execution-ID: paymaster-start-20260726-0001
+X-SCM-Client-Correlation-ID: paymaster-start-request-0001
 ```
 
 ActionPlan definition:
@@ -817,12 +921,14 @@ serviceCode     = PAYMASTER_MANAGEMENT
 inboundAction   = start
 ActionPlan.name = paymaster-start-default
 serviceVersion  = gateway route version
-executionId     = paymaster-start-20260726-0001
+executionId     = server-generated UUID
 ```
 
-On success, the process is created, its correlation is initialized from the
-execution ID, the snapshot is completed after a process ID is available, and
-the start-step output is returned through the normal response encoder.
+On success, the process correlation is the optional client correlation, while
+the independent server execution ID is returned in the start response and
+stored in snapshot schema version 2. If the optional header is omitted, SCM
+does not acquire a START idempotency lock and stores the generated execution
+ID as process correlation.
 
 ### Complete task
 
@@ -870,7 +976,6 @@ Request:
 
 ```text
 POST /task-workflow/PAYMASTER_MANAGEMENT/approve_and_execute
-X-SCM-Execution-ID: paymaster-start-20260726-0001
 ```
 
 Payload:
@@ -946,9 +1051,10 @@ approve SUCCESS
     -> return NAB step result as a normal retryable response
 ```
 
-On a later request with the same execution ID, recovery validates the same
-gateway version and ActionPlan fingerprint, verifies the successful approve
-step, and resumes at `register-in-nab`.
+On a later request, `processId` locates the snapshot. A supplied execution ID
+is optional validation input; if omitted, SCM uses the snapshot value. Recovery
+validates the gateway version and ActionPlan fingerprint, verifies the
+successful approve step, and resumes at `register-in-nab`.
 
 ## Developer setup checklist
 
@@ -966,14 +1072,15 @@ step, and resumes at `register-in-nab`.
 12. Configure one shared inbound category with the two route variables.
 13. Confirm the gateway category and ActionPlan use separate definitions.
 14. Enable `scm-provider-task` and confirm exactly one provider capability and
-    durable recovery store are active.
+    provider request factory, plus one durable recovery store, are active.
 15. Configure the lock utility so task-workflow lock names resolve to the
     remote backend.
 16. Start the application and resolve every route-construction validation error.
 17. Verify safe observation fields for service, action, strategy, execution, step, and decision.
 18. Verify provider idempotency/inquiry behavior before enabling retries.
-19. Confirm the minimal serialized snapshot fits the existing 255-character
-    watcher `DATA` capacity in the target deployment.
+19. Verify the deployed watcher `DATA` column can hold realistic grouped
+    schema-version-2 snapshots; the Java mapping declares no authoritative
+    physical capacity.
 
 ## Troubleshooting
 
@@ -992,10 +1099,11 @@ step, and resumes at `register-in-nab`.
 | Retry rejected | Snapshot is not `RETRY_LATER`, execution ID differs, or attempt is active | Watcher state and safe execution metadata |
 | Retry cannot locate state | Request has neither `processId` nor a `taskId` that resolves to one | Normalize a process identity; execution ID alone is never scanned globally |
 | Plan changed during retry | Definition ID or fingerprint differs | Finish/reconcile old execution; do not replay against new plan |
-| Snapshot missing or corrupt | Watcher absent/invalid | Only an exact-correlation, one-step `FIRST`/`START_PROCESS` request can reconstruct a missing watcher; every other path fails closed |
-| Snapshot too large | Final serialized snapshot exceeds 255 characters | Reduce the required safe resume/response data; the implementation does not truncate or alter the schema |
+| Snapshot missing or corrupt | Watcher absent/invalid | Only a service-scoped client-correlation, one-step `FIRST`/`START_PROCESS` request can reconstruct a missing watcher; every other path fails closed |
+| Snapshot persistence fails | Deployed `DATA` capacity or database JSON mapping cannot store the grouped snapshot | Inspect the deployed schema; SCM does not assume 255, truncate, or bypass persistence |
 | Recovery store missing | Provider module disabled or multiple stores registered | Task-provider auto-configuration |
 | Provider capability missing | Provider module disabled or zero/multiple matching capabilities | Task-provider auto-configuration and provider URI |
+| Provider request factory missing | Provider module disabled or zero/multiple factories support the task step | Task-provider auto-configuration and step type |
 | Distributed lock unavailable | Lock backend is local, Hazelcast is unavailable, or lock bean count is invalid | Configure one remote lock utility; do not bypass the guard |
 | Concurrent attempt rejected | Another pod owns the process lock or active attempt marker | Retry later or reconcile; do not force replay |
 | Provider outcome unknown after crash | Remote call completed without saved result | Provider inquiry/idempotency; never blind replay |
@@ -1009,15 +1117,16 @@ step, and resumes at `register-in-nab`.
   this architecture.
 - `Definition.type` now maps the existing `DEFINITION_TYPE` column. Legacy
   null values remain unspecified and are not ActionPlans.
-- The unchanged watcher `DATA` mapping has a 255-character default capacity.
-  Because a versioned execution snapshot can exceed that small limit, deployers
-  must verify that required minimal snapshots fit. Oversized snapshots fail
-  safely; no truncation, chunking, CLOB change, or migration is included.
+- The unchanged watcher `DATA` mapping does not establish the physical
+  production capacity. Deployers must verify realistic grouped snapshots
+  against their deployed schema. No truncation, chunking, CLOB change, or
+  migration is included.
 - Action-plan uniqueness is enforced in memory during route construction, not
   by a database constraint.
-- Start idempotency depends on the shared remote distributed lock because the
-  process correlation column has no uniqueness constraint. Lock-infrastructure
-  failure is fail-closed.
+- START idempotency is available only when the caller supplies
+  `scmClientCorrelationId`; it depends on the shared remote distributed lock
+  because the process correlation column has no uniqueness constraint. A START
+  without client correlation is intentionally a distinct request.
 - Remote exactly-once behavior depends on provider idempotency or inquiry.
 - The technical ActionPlan-owning `ServiceOperation` must currently be
   provisioned outside the removed save API.

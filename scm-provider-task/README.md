@@ -56,17 +56,23 @@ This module owns:
 
 ```text
 TaskWorkflowProviderCapability
+TaskWorkflowProviderCapabilityRegistry
+TaskWorkflowProviderRequestFactory
 TaskWorkflowRecoveryStore
 TaskWorkflowExecutionSnapshot and persistence DTOs
 ProviderTaskWorkflowCapability
+ProviderTaskWorkflowRequestFactory
 ProviderTaskWorkflowRecoveryStore
 ```
 
-`ScmTaskProviderAutoConfiguration` publishes one capability and one durable
-store when the provider is enabled. These capability and persistence contracts
-use provider-owned DTOs, JDK types, and stable common models; they do not expose
-`scm-core` routing plans, cursors, execution contexts, failures, or Camel
-exchanges.
+`ScmTaskProviderAutoConfiguration` publishes the available capabilities, their
+provider-owned registry, the task-provider request factory, and one durable
+store when the provider is enabled. The request factory formats provider
+requests for task/process steps. Core retains exchange normalization, business
+operation mapping, routing context, and retry reconstruction. These provider
+contracts use provider-owned DTOs, JDK types, and stable common models; they do
+not expose `scm-core` routing plans, cursors, execution contexts, failures, or
+Camel exchanges.
 
 The dependency direction is:
 
@@ -218,38 +224,74 @@ processId
 For task-based requests, `taskId` is resolved to `processId` first. The store
 never scans all watcher JSON for an execution ID.
 
+The provider writes grouped snapshot schema version 2:
+
+```text
+execution
+    -> executionId, processId, gatewayServiceVersion
+plan
+    -> serviceCode, inboundAction, actionPlanName, definitionId, fingerprint
+status
+    -> state, decision, activeAttemptId, activeStepIndex
+steps[]
+    -> stepId, stepIndex, decision, attemptCount,
+       normalizedOutcome, reasonCode, messageStatus, attemptedAt
+resume
+    -> transactionData, retryRequest, lastBusinessResponse
+terminal
+    -> stored response or stored failure
+createdAt / updatedAt
+```
+
+The store can read a legacy flat version-1 snapshot and normalizes it to the
+grouped model before returning it. New writes always use version 2; no database
+migration is required.
+
 The snapshot contains stable execution/plan/step identities, attempt metadata,
 minimal sanitized resume data, and one safe terminal/retry response or typed
-failure. It does not persist all step responses, the original request, Camel
-exchanges, arbitrary headers, authentication material, tokens, stack traces,
-or unfiltered provider responses.
+failure. It does not persist repeated plan fields, a provider idempotency key,
+all step responses, the original request, Camel exchanges, arbitrary headers,
+authentication material, tokens, stack traces, or unfiltered provider
+responses.
 
-The unchanged watcher `DATA` field declares no expanded length. The
-implementation therefore enforces the JPA default limit of 255 serialized
-characters before every write. Oversized state raises
-`TaskWorkflowSnapshotTooLargeException`; it is never truncated.
+The unchanged watcher mapping does not establish the physical capacity of
+`DATA`, so the implementation does not impose an invented universal
+255-character limit. It never truncates a snapshot or continues without
+persistence. Operators must verify that the deployed column can hold realistic
+grouped snapshots.
 
-Attempt coordination uses short transactions. One transaction locks the
-process and records the attempt; the remote provider call occurs without a
-database lock; a second transaction locks and verifies the same attempt before
-persisting its outcome. Attempt registration may create the watcher only when
-the process exists, the watcher is absent, and no prior attempt ID is expected.
-A missing watcher with a non-null expected attempt ID is conflicting durable
-state and fails. Persisted terminal and retry outcomes clear the active
-attempt/step markers after validating the recorded attempt.
+Attempt coordination uses short transactions. For an existing process, one
+transaction locks the process and records the attempt; the remote provider call
+occurs without a database lock; a second transaction locks and verifies the
+same attempt before persisting its outcome. A genuinely new START has no
+process row before its provider call, so the lifecycle registers the attempt as
+soon as the provider returns the newly visible process and before terminal
+persistence. Attempt registration may create the watcher only when the process
+exists, the watcher is absent, and no prior attempt ID is expected. A missing
+watcher with a non-null expected attempt ID—or during outcome persistence—is
+conflicting durable state and fails. Persisted terminal and retry outcomes
+clear the active attempt and step index after validating the recorded attempt.
 
 The only missing-watcher reconstruction is the crash window where a
 correlation-idempotent `START_PROCESS` committed its process before the watcher
-was saved. Core rechecks the exact process correlation and the one-step
-`FIRST` plan under the distributed start lock, then normal attempt registration
-creates the watcher before the provider operation is invoked again. Other
-missing-watcher actions fail closed; the provider has no persistence-disabled
-execution mode.
+was saved. Core finds it by service and client correlation, acquires the
+process lock, then rechecks the exact process, correlation, absent watcher, and
+one-step `FIRST` plan. Normal attempt registration creates the watcher before
+the provider operation is invoked again. Other missing-watcher actions fail
+closed; the provider has no persistence-disabled execution mode.
 
 Process correlation remains backward compatible. A workflow start initializes
-the existing process correlation from `Message.EXECUTION_ID`. Approve preserves
-that value. For a legacy process whose stored correlation is null or blank,
+it from the optional normalized client correlation when supplied; otherwise it
+uses the SCM-generated execution ID. These are distinct identities, and the
+user-visible workflow execution ID is read from the workflow snapshot rather
+than copied from process correlation. Approve preserves an existing
+correlation. For a legacy process whose stored correlation is null or blank,
 approve still requires and stores the request `correlationId`.
+
+Process detail and list responses are enriched with the nullable workflow
+execution ID from current `WORKFLOW_EXECUTION` snapshots. Lists batch-load the
+watchers for their process IDs instead of issuing one query per process.
+Legacy and non-workflow processes return a null execution ID.
 
 The logical provider idempotency identity is:
 

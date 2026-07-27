@@ -1,34 +1,36 @@
 package ir.daneshrefah.scm.provider.task.workflow;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
-import ir.daneshrefah.scm.provider.task.constant.ProcessStatusEnum;
+import ir.daneshrefah.scm.common.model.message.MessageStatus;
 import ir.daneshrefah.scm.provider.task.constant.ProcessWatcherEnum;
-import ir.daneshrefah.scm.provider.task.constant.TaskStatusEnum;
 import ir.daneshrefah.scm.provider.task.entity.ProcessInstanceEntity;
 import ir.daneshrefah.scm.provider.task.entity.ProcessInstanceWatcherEntity;
 import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceRepository;
 import ir.daneshrefah.scm.provider.task.repository.ProcessInstanceWatcherRepository;
 import ir.daneshrefah.scm.provider.task.repository.TaskRepository;
 import ir.daneshrefah.scm.provider.task.service.ProcessInstanceWatcherService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
- * Persists workflow recovery state in the existing process-watcher row.
- *
- * <p>The DATA mapping does not declare an expanded length, so the standard
- * JPA column capacity (255 characters) is enforced before each write. This
- * guard prevents database-specific truncation.</p>
+ * Persists versioned workflow recovery state in the existing current
+ * process-watcher row. No storage size is inferred from the JPA default.
  */
 public class ProviderTaskWorkflowRecoveryStore
         implements TaskWorkflowRecoveryStore {
+    private static final int LEGACY_SCHEMA_VERSION = 1;
     private static final int WORKFLOW_EXECUTION_ROW = 0;
     private static final String TRANSACTION_MANAGER =
             "scmTaskProviderTransactionManager";
@@ -59,19 +61,54 @@ public class ProviderTaskWorkflowRecoveryStore
             propagation = Propagation.REQUIRES_NEW,
             readOnly = true
     )
-    public OptionalLong findProcessIdByCorrelationId(String correlationId) {
+    public OptionalLong findProcessIdByClientCorrelation(
+            String serviceCode,
+            String scmClientCorrelationId
+    ) {
+        String requiredServiceCode = StringUtils.trimToNull(serviceCode);
+        String requiredCorrelation = StringUtils.trimToNull(
+                scmClientCorrelationId
+        );
+        if (requiredServiceCode == null || requiredCorrelation == null) {
+            throw invalid(
+                    "Service code and client correlation are required for "
+                            + "correlated workflow lookup"
+            );
+        }
         Optional<ProcessInstanceEntity> process =
-                processRepository.findByCorrelationId(correlationId);
+                processRepository.findByCorrelationId(requiredCorrelation);
         if (process.isEmpty()) {
             return OptionalLong.empty();
         }
         ProcessInstanceEntity existing = process.get();
-        if (!Objects.equals(correlationId, existing.getCorrelationId())) {
-            throw new TaskWorkflowRecoveryException(
+        if (!Objects.equals(
+                requiredCorrelation,
+                existing.getCorrelationId()
+        )) {
+            throw invalid(
                     "Correlated workflow process does not have an exact "
                             + "correlation match processId=" + existing.getId()
             );
         }
+        currentWatcher(existing.getId()).ifPresent(watcher -> {
+            TaskWorkflowExecutionSnapshot snapshot = read(watcher);
+            if (!requiredServiceCode.equalsIgnoreCase(
+                    snapshot.plan().serviceCode()
+            )) {
+                throw invalid(
+                        "Client correlation resolves to another workflow "
+                                + "service processId=" + existing.getId()
+                                + ", requestedServiceCode="
+                                + requiredServiceCode
+                );
+            }
+        });
+        /*
+         * A missing workflow watcher is intentionally returned to core. Core
+         * permits it only for the tightly constrained, idempotent START
+         * reconstruction path and revalidates the start request under the
+         * process lock.
+         */
         return OptionalLong.of(existing.getId());
     }
 
@@ -91,6 +128,59 @@ public class ProviderTaskWorkflowRecoveryStore
     @Override
     @Transactional(
             transactionManager = TRANSACTION_MANAGER,
+            propagation = Propagation.REQUIRES_NEW,
+            readOnly = true
+    )
+    public Optional<String> findProcessCorrelationId(long processId) {
+        return processRepository.findById(processId)
+                .map(ProcessInstanceEntity::getCorrelationId)
+                .map(StringUtils::trimToNull);
+    }
+
+    @Override
+    @Transactional(
+            transactionManager = TRANSACTION_MANAGER,
+            propagation = Propagation.REQUIRES_NEW,
+            readOnly = true
+    )
+    public Map<Long, String> findExecutionIdsByProcessIds(
+            Collection<Long> processIds
+    ) {
+        if (processIds == null || processIds.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = processIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, String> result = new LinkedHashMap<>();
+        for (ProcessInstanceWatcherEntity watcher :
+                watcherRepository.findCurrentByProcessIds(
+                        ids,
+                        ProcessWatcherEnum.WORKFLOW_EXECUTION,
+                        WORKFLOW_EXECUTION_ROW
+                )) {
+            long processId = watcher.getProcessInstance().getId();
+            String previous = result.putIfAbsent(
+                    processId,
+                    read(watcher).execution().executionId()
+            );
+            if (previous != null) {
+                throw invalid(
+                        "More than one current workflow watcher exists for "
+                                + "processId=" + processId
+                );
+            }
+        }
+        return Map.copyOf(result);
+    }
+
+    @Override
+    @Transactional(
+            transactionManager = TRANSACTION_MANAGER,
             propagation = Propagation.REQUIRES_NEW
     )
     public Optional<TaskWorkflowExecutionSnapshot> loadForUpdate(
@@ -100,7 +190,7 @@ public class ProviderTaskWorkflowRecoveryStore
         return watcher(processId)
                 .map(this::read)
                 .map(snapshot -> {
-                    validateProcessState(process, snapshot);
+                    validateSnapshotProcess(process, snapshot);
                     return snapshot;
                 });
     }
@@ -120,8 +210,12 @@ public class ProviderTaskWorkflowRecoveryStore
         validateSnapshotProcess(process, snapshot);
         if (existing.isPresent()) {
             TaskWorkflowExecutionSnapshot current = read(existing.get());
-            validateProcessState(process, current);
-            validateAttemptRegistration(current, snapshot, expectedAttemptId);
+            validateSnapshotProcess(process, current);
+            validateAttemptRegistration(
+                    current,
+                    snapshot,
+                    expectedAttemptId
+            );
             write(existing.get(), snapshot);
         } else {
             if (expectedAttemptId != null) {
@@ -156,14 +250,16 @@ public class ProviderTaskWorkflowRecoveryStore
             long processId,
             TaskWorkflowExecutionSnapshot snapshot
     ) {
-        if (snapshot.decision()
+        if (snapshot.status().decision()
                 != TaskWorkflowExecutionDecision.RETRY_LATER
-                || snapshot.executionState()
+                || snapshot.status().state()
                 != TaskWorkflowExecutionState.RETRY_PENDING) {
             throw invalid(
-                    "saveRetryLater requires a RETRY_PENDING/RETRY_LATER snapshot"
+                    "saveRetryLater requires a RETRY_PENDING/RETRY_LATER "
+                            + "snapshot"
             );
         }
+        requireResponseOnly(snapshot, "saveRetryLater");
         persistOutcome(processId, snapshot);
     }
 
@@ -176,15 +272,15 @@ public class ProviderTaskWorkflowRecoveryStore
             long processId,
             TaskWorkflowExecutionSnapshot snapshot
     ) {
-        if (snapshot.decision() != TaskWorkflowExecutionDecision.SUCCESS
-                || snapshot.executionState()
-                != TaskWorkflowExecutionState.COMPLETED
-                || snapshot.storedResponse() == null) {
+        if (snapshot.status().decision()
+                != TaskWorkflowExecutionDecision.SUCCESS
+                || snapshot.status().state()
+                != TaskWorkflowExecutionState.COMPLETED) {
             throw invalid(
-                    "saveCompleted requires a COMPLETED/SUCCESS snapshot "
-                            + "with a response"
+                    "saveCompleted requires a COMPLETED/SUCCESS snapshot"
             );
         }
+        requireResponseOnly(snapshot, "saveCompleted");
         persistTerminal(processId, snapshot);
     }
 
@@ -197,10 +293,13 @@ public class ProviderTaskWorkflowRecoveryStore
             long processId,
             TaskWorkflowExecutionSnapshot snapshot
     ) {
-        if (snapshot.decision() != TaskWorkflowExecutionDecision.FAIL
-                || snapshot.executionState()
+        if (snapshot.status().decision()
+                != TaskWorkflowExecutionDecision.FAIL
+                || snapshot.status().state()
                 != TaskWorkflowExecutionState.FAILED
-                || snapshot.storedFailure() == null) {
+                || snapshot.terminal() == null
+                || snapshot.terminal().failure() == null
+                || snapshot.terminal().response() != null) {
             throw invalid(
                     "saveFailed requires a FAILED/FAIL snapshot with typed "
                             + "failure metadata"
@@ -209,21 +308,30 @@ public class ProviderTaskWorkflowRecoveryStore
         persistTerminal(processId, snapshot);
     }
 
+    private void requireResponseOnly(
+            TaskWorkflowExecutionSnapshot snapshot,
+            String operation
+    ) {
+        if (snapshot.terminal() == null
+                || snapshot.terminal().response() == null
+                || snapshot.terminal().failure() != null) {
+            throw invalid(operation + " requires a stored response only");
+        }
+    }
+
     private void persistTerminal(
             long processId,
             TaskWorkflowExecutionSnapshot snapshot
     ) {
         ProcessInstanceEntity process = lockProcess(processId);
         validateSnapshotProcess(process, snapshot);
-        Optional<ProcessInstanceWatcherEntity> existing = watcher(processId);
-        if (existing.isEmpty()) {
-            watcherRepository.save(
-                    newWatcher(process, snapshot.withoutActiveAttempt())
-            );
-            return;
-        }
-        validateOutcomeSave(read(existing.get()), snapshot);
-        write(existing.get(), snapshot.withoutActiveAttempt());
+        ProcessInstanceWatcherEntity existing = watcher(processId)
+                .orElseThrow(() -> invalid(
+                        "Workflow execution watcher is unavailable for "
+                                + "terminal persistence processId=" + processId
+                ));
+        validateOutcomeSave(read(existing), snapshot);
+        write(existing, snapshot.withoutActiveAttempt());
     }
 
     private void persistExisting(
@@ -233,9 +341,9 @@ public class ProviderTaskWorkflowRecoveryStore
         ProcessInstanceEntity process = lockProcess(processId);
         validateSnapshotProcess(process, snapshot);
         ProcessInstanceWatcherEntity existing = watcher(processId)
-                .orElseThrow(() -> new TaskWorkflowRecoveryException(
-                        "Workflow execution watcher is unavailable for processId="
-                                + processId
+                .orElseThrow(() -> invalid(
+                        "Workflow execution watcher is unavailable for "
+                                + "processId=" + processId
                 ));
         validateOutcomeSave(read(existing), snapshot);
         write(existing, snapshot);
@@ -247,15 +355,13 @@ public class ProviderTaskWorkflowRecoveryStore
     ) {
         ProcessInstanceEntity process = lockProcess(processId);
         validateSnapshotProcess(process, snapshot);
-        Optional<ProcessInstanceWatcherEntity> existing = watcher(processId);
-        if (existing.isEmpty()) {
-            throw new TaskWorkflowRecoveryException(
-                    "Workflow execution watcher is unavailable for processId="
-                            + processId
-            );
-        }
-        validateOutcomeSave(read(existing.get()), snapshot);
-        write(existing.get(), snapshot.withoutActiveAttempt());
+        ProcessInstanceWatcherEntity existing = watcher(processId)
+                .orElseThrow(() -> invalid(
+                        "Workflow execution watcher is unavailable for "
+                                + "processId=" + processId
+                ));
+        validateOutcomeSave(read(existing), snapshot);
+        write(existing, snapshot.withoutActiveAttempt());
     }
 
     private void validateAttemptRegistration(
@@ -265,7 +371,7 @@ public class ProviderTaskWorkflowRecoveryStore
     ) {
         if (sameExecution(current, candidate)) {
             if (!Objects.equals(
-                    current.activeAttemptId(),
+                    current.status().activeAttemptId(),
                     expectedAttemptId
             )) {
                 throw attemptConflict(
@@ -273,8 +379,9 @@ public class ProviderTaskWorkflowRecoveryStore
                         "attempt marker changed before the remote operation"
                 );
             }
-            if (current.executionState() == TaskWorkflowExecutionState.FAILED
-                    || current.executionState()
+            if (current.status().state()
+                    == TaskWorkflowExecutionState.FAILED
+                    || current.status().state()
                     == TaskWorkflowExecutionState.COMPLETED) {
                 throw attemptConflict(
                         candidate,
@@ -284,9 +391,9 @@ public class ProviderTaskWorkflowRecoveryStore
             return;
         }
         if (expectedAttemptId != null
-                || current.executionState()
+                || current.status().state()
                 == TaskWorkflowExecutionState.RUNNING
-                || current.executionState()
+                || current.status().state()
                 == TaskWorkflowExecutionState.RETRY_PENDING) {
             throw attemptConflict(
                     candidate,
@@ -302,12 +409,13 @@ public class ProviderTaskWorkflowRecoveryStore
         if (!sameExecution(current, candidate)) {
             throw attemptConflict(
                     candidate,
-                    "workflow execution identity changed before outcome persistence"
+                    "workflow execution identity changed before outcome "
+                            + "persistence"
             );
         }
         if (!Objects.equals(
-                current.activeAttemptId(),
-                candidate.activeAttemptId()
+                current.status().activeAttemptId(),
+                candidate.status().activeAttemptId()
         )) {
             throw attemptConflict(
                     candidate,
@@ -320,15 +428,16 @@ public class ProviderTaskWorkflowRecoveryStore
             TaskWorkflowExecutionSnapshot first,
             TaskWorkflowExecutionSnapshot second
     ) {
-        return first.executionId().equals(second.executionId())
-                && first.serviceCode().equals(second.serviceCode())
-                && first.inboundAction().equals(second.inboundAction())
-                && first.actionPlanName().equals(second.actionPlanName())
-                && first.definitionId().equals(second.definitionId())
-                && first.planFingerprint().equals(second.planFingerprint())
-                && first.gatewayServiceVersion().equals(
-                second.gatewayServiceVersion())
-                && Objects.equals(first.processId(), second.processId());
+        return first.execution().executionId().equals(
+                second.execution().executionId()
+        )
+                && first.plan().equals(second.plan())
+                && first.execution().gatewayServiceVersion().equals(
+                second.execution().gatewayServiceVersion())
+                && Objects.equals(
+                first.execution().processId(),
+                second.execution().processId()
+        );
     }
 
     private void validateSnapshotProcess(
@@ -336,49 +445,20 @@ public class ProviderTaskWorkflowRecoveryStore
             TaskWorkflowExecutionSnapshot snapshot
     ) {
         if (process == null
-                || snapshot.processId() == null
-                || !snapshot.processId().equals(process.getId())) {
+                || snapshot.execution().processId() == null
+                || !snapshot.execution().processId().equals(process.getId())) {
             throw invalid(
-                    "Workflow snapshot processId does not match the locked process"
-            );
-        }
-    }
-
-    private void validateProcessState(
-            ProcessInstanceEntity process,
-            TaskWorkflowExecutionSnapshot snapshot
-    ) {
-        validateSnapshotProcess(process, snapshot);
-        if (snapshot.decision()
-                != TaskWorkflowExecutionDecision.RETRY_LATER) {
-            return;
-        }
-        boolean approvalSucceeded = snapshot.steps().stream()
-                .anyMatch(step -> step.stepType()
-                        == TaskWorkflowStepType.APPROVE_PROCESS
-                        && step.decision()
-                        == TaskWorkflowExecutionDecision.SUCCESS);
-        if (!approvalSucceeded) {
-            return;
-        }
-        boolean waitingTask = process.getTasks() != null
-                && process.getTasks().stream()
-                .anyMatch(task -> task.getTaskStatus()
-                        == TaskStatusEnum.WAITING_FOR_ACKNOWLEDGE);
-        if (process.getProcessStatus()
-                != ProcessStatusEnum.WAITING_FOR_ACKNOWLEDGE
-                || !waitingTask) {
-            throw invalid(
-                    "Workflow snapshot approval state conflicts with process/task "
-                            + "state for processId=" + process.getId()
+                    "Workflow snapshot processId does not match the locked "
+                            + "process"
             );
         }
     }
 
     private ProcessInstanceEntity lockProcess(long processId) {
         return processRepository.findByIdForWorkflowMutation(processId)
-                .orElseThrow(() -> new TaskWorkflowRecoveryException(
-                        "Workflow process is unavailable processId=" + processId
+                .orElseThrow(() -> invalid(
+                        "Workflow process is unavailable processId="
+                                + processId
                 ));
     }
 
@@ -390,19 +470,30 @@ public class ProviderTaskWorkflowRecoveryStore
         );
     }
 
+    private Optional<ProcessInstanceWatcherEntity> currentWatcher(
+            long processId
+    ) {
+        return watcherRepository.findCurrentByProcessIds(
+                        List.of(processId),
+                        ProcessWatcherEnum.WORKFLOW_EXECUTION,
+                        WORKFLOW_EXECUTION_ROW
+                )
+                .stream()
+                .findFirst();
+    }
+
     private ProcessInstanceWatcherEntity newWatcher(
             ProcessInstanceEntity process,
             TaskWorkflowExecutionSnapshot snapshot
     ) {
-        JsonNode serialized = serialize(snapshot);
         return watcherService.createProcessInstanceWatcherEntity(
                         process,
-                        serialized,
+                        serialize(snapshot),
                         ProcessWatcherEnum.WORKFLOW_EXECUTION
                 )
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new TaskWorkflowRecoveryException(
+                .orElseThrow(() -> invalid(
                         "Workflow watcher factory returned no row"
                 ));
     }
@@ -416,17 +507,23 @@ public class ProviderTaskWorkflowRecoveryStore
     }
 
     private JsonNode serialize(TaskWorkflowExecutionSnapshot snapshot) {
+        if (snapshot.schemaVersion()
+                != TaskWorkflowExecutionSnapshot.CURRENT_SCHEMA_VERSION) {
+            throw invalid(
+                    "Only task-workflow snapshot schemaVersion="
+                            + TaskWorkflowExecutionSnapshot
+                            .CURRENT_SCHEMA_VERSION + " may be written"
+            );
+        }
         try {
-            JsonNode value = objectMapper.valueToTree(snapshot);
-            String serialized = objectMapper.writeValueAsString(value);
-            return objectMapper.readTree(serialized);
-        } catch (TaskWorkflowRecoveryException exception) {
-            throw exception;
-        } catch (IllegalArgumentException | JsonProcessingException exception) {
+            return objectMapper.valueToTree(snapshot);
+        } catch (IllegalArgumentException exception) {
             throw new TaskWorkflowRecoveryException(
                     "Workflow execution snapshot could not be serialized "
-                            + "executionId=" + snapshot.executionId()
-                            + ", processId=" + snapshot.processId(),
+                            + "executionId="
+                            + snapshot.execution().executionId()
+                            + ", processId="
+                            + snapshot.execution().processId(),
                     exception
             );
         }
@@ -436,17 +533,154 @@ public class ProviderTaskWorkflowRecoveryStore
             ProcessInstanceWatcherEntity watcher
     ) {
         try {
-            return objectMapper.treeToValue(
-                    watcher.getData(),
-                    TaskWorkflowExecutionSnapshot.class
-            );
+            JsonNode data = watcher.getData();
+            if (data == null || !data.isObject()) {
+                throw invalid("Workflow execution snapshot is not an object");
+            }
+            int schemaVersion = data.path("schemaVersion").asInt(-1);
+            return switch (schemaVersion) {
+                case LEGACY_SCHEMA_VERSION -> migrateLegacy(data);
+                case TaskWorkflowExecutionSnapshot.CURRENT_SCHEMA_VERSION ->
+                        objectMapper.treeToValue(
+                                data,
+                                TaskWorkflowExecutionSnapshot.class
+                        );
+                default -> throw invalid(
+                        "Unsupported workflow execution snapshot "
+                                + "schemaVersion=" + schemaVersion
+                );
+            };
+        } catch (TaskWorkflowRecoveryException exception) {
+            throw exception;
         } catch (Exception exception) {
             throw new TaskWorkflowRecoveryException(
-                    "Workflow execution snapshot JSON is invalid for watcherId="
-                            + watcher.getId(),
+                    "Workflow execution snapshot JSON is invalid for "
+                            + "watcherId=" + watcher.getId(),
                     exception
             );
         }
+    }
+
+    private TaskWorkflowExecutionSnapshot migrateLegacy(JsonNode legacy) {
+        List<TaskWorkflowExecutionSnapshot.StepState> steps =
+                new ArrayList<>();
+        JsonNode legacySteps = legacy.path("steps");
+        if (!legacySteps.isArray()) {
+            throw invalid("Legacy workflow snapshot steps are invalid");
+        }
+        for (JsonNode step : legacySteps) {
+            steps.add(new TaskWorkflowExecutionSnapshot.StepState(
+                    requiredText(step, "stepId"),
+                    requiredInt(step, "stepIndex"),
+                    enumValue(
+                            step.get("decision"),
+                            TaskWorkflowExecutionDecision.class
+                    ),
+                    step.path("attemptCount").asInt(0),
+                    nullableText(step.get("normalizedOutcome")),
+                    nullableText(step.get("reasonCode")),
+                    enumValue(step.get("messageStatus"), MessageStatus.class),
+                    instant(step.get("attemptedAt"))
+            ));
+        }
+
+        TaskWorkflowExecutionState state = enumValue(
+                legacy.get("executionState"),
+                TaskWorkflowExecutionState.class
+        );
+        TaskWorkflowExecutionDecision decision = enumValue(
+                legacy.get("decision"),
+                TaskWorkflowExecutionDecision.class
+        );
+        JsonNode legacyResume = legacy.get("resumeData");
+        TaskWorkflowExecutionSnapshot.ResumeData resume =
+                legacyResume == null || legacyResume.isNull()
+                        ? null
+                        : new TaskWorkflowExecutionSnapshot.ResumeData(
+                                copy(legacyResume.get("transactionData")),
+                                copy(legacyResume.get("retryRequest")),
+                                copy(legacyResume.get("lastBusinessResponse"))
+                        );
+        TaskWorkflowExecutionSnapshot.TerminalOutcome terminal =
+                legacyTerminal(legacy, state, decision);
+        return new TaskWorkflowExecutionSnapshot(
+                TaskWorkflowExecutionSnapshot.CURRENT_SCHEMA_VERSION,
+                new TaskWorkflowExecutionSnapshot.ExecutionIdentity(
+                        requiredText(legacy, "executionId"),
+                        nullableLong(legacy.get("processId")),
+                        requiredText(legacy, "gatewayServiceVersion")
+                ),
+                new TaskWorkflowExecutionSnapshot.PlanIdentity(
+                        requiredText(legacy, "serviceCode"),
+                        requiredText(legacy, "inboundAction"),
+                        requiredText(legacy, "actionPlanName"),
+                        requiredText(legacy, "definitionId"),
+                        requiredText(legacy, "planFingerprint")
+                ),
+                new TaskWorkflowExecutionSnapshot.ExecutionStatus(
+                        state,
+                        decision,
+                        nullableText(legacy.get("activeAttemptId")),
+                        nullableInteger(legacy.get("activeStepIndex"))
+                ),
+                steps,
+                resume,
+                terminal,
+                requiredInstant(legacy, "createdAt"),
+                requiredInstant(legacy, "updatedAt")
+        );
+    }
+
+    private TaskWorkflowExecutionSnapshot.TerminalOutcome legacyTerminal(
+            JsonNode legacy,
+            TaskWorkflowExecutionState state,
+            TaskWorkflowExecutionDecision decision
+    ) {
+        if (state == TaskWorkflowExecutionState.RUNNING) {
+            return null;
+        }
+        if (decision == TaskWorkflowExecutionDecision.SUCCESS
+                || decision == TaskWorkflowExecutionDecision.RETRY_LATER) {
+            JsonNode response = legacy.get("storedResponse");
+            if (response == null || response.isNull()) {
+                throw invalid(
+                        "Legacy terminal workflow snapshot has no response"
+                );
+            }
+            return new TaskWorkflowExecutionSnapshot.TerminalOutcome(
+                    new TaskWorkflowExecutionSnapshot.StoredResponse(
+                            requiredEnum(
+                                    response,
+                                    "status",
+                                    MessageStatus.class
+                            ),
+                            copy(response.get("payload"))
+                    ),
+                    null
+            );
+        }
+        if (decision == TaskWorkflowExecutionDecision.FAIL) {
+            JsonNode failure = legacy.get("storedFailure");
+            if (failure == null || failure.isNull()) {
+                throw invalid(
+                        "Legacy failed workflow snapshot has no failure"
+                );
+            }
+            return new TaskWorkflowExecutionSnapshot.TerminalOutcome(
+                    null,
+                    new TaskWorkflowExecutionSnapshot.StoredFailure(
+                            nullableInteger(failure.get("stepIndex")),
+                            enumValue(
+                                    failure.get("messageStatus"),
+                                    MessageStatus.class
+                            ),
+                            nullableText(failure.get("reasonCode")),
+                            nullableText(failure.get("reasonMessage")),
+                            nullableText(failure.get("normalizedOutcome"))
+                    )
+            );
+        }
+        throw invalid("Legacy terminal workflow snapshot decision is invalid");
     }
 
     private TaskWorkflowAttemptConflictException attemptConflict(
@@ -455,8 +689,76 @@ public class ProviderTaskWorkflowRecoveryStore
     ) {
         return new TaskWorkflowAttemptConflictException(
                 "Concurrent TASK_WORKFLOW attempt rejected executionId="
-                        + snapshot.executionId() + ": " + reason
+                        + snapshot.execution().executionId() + ": " + reason
         );
+    }
+
+    private String requiredText(JsonNode parent, String field) {
+        String value = nullableText(parent.get(field));
+        if (value == null) {
+            throw invalid("Workflow snapshot field=" + field + " is required");
+        }
+        return value;
+    }
+
+    private int requiredInt(JsonNode parent, String field) {
+        JsonNode value = parent.get(field);
+        if (value == null || !value.canConvertToInt()) {
+            throw invalid("Workflow snapshot field=" + field + " is invalid");
+        }
+        return value.intValue();
+    }
+
+    private Instant requiredInstant(JsonNode parent, String field) {
+        Instant value = instant(parent.get(field));
+        if (value == null) {
+            throw invalid("Workflow snapshot field=" + field + " is required");
+        }
+        return value;
+    }
+
+    private <E extends Enum<E>> E requiredEnum(
+            JsonNode parent,
+            String field,
+            Class<E> enumType
+    ) {
+        E value = enumValue(parent.get(field), enumType);
+        if (value == null) {
+            throw invalid("Workflow snapshot field=" + field + " is required");
+        }
+        return value;
+    }
+
+    private <E extends Enum<E>> E enumValue(
+            JsonNode value,
+            Class<E> enumType
+    ) {
+        String text = nullableText(value);
+        return text == null ? null : Enum.valueOf(enumType, text);
+    }
+
+    private String nullableText(JsonNode value) {
+        if (value == null || value.isNull() || !value.isValueNode()) {
+            return null;
+        }
+        return StringUtils.trimToNull(value.asText());
+    }
+
+    private Long nullableLong(JsonNode value) {
+        return value == null || value.isNull() ? null : value.longValue();
+    }
+
+    private Integer nullableInteger(JsonNode value) {
+        return value == null || value.isNull() ? null : value.intValue();
+    }
+
+    private Instant instant(JsonNode value) {
+        String text = nullableText(value);
+        return text == null ? null : Instant.parse(text);
+    }
+
+    private JsonNode copy(JsonNode value) {
+        return value == null || value.isNull() ? null : value.deepCopy();
     }
 
     private TaskWorkflowRecoveryException invalid(String message) {
