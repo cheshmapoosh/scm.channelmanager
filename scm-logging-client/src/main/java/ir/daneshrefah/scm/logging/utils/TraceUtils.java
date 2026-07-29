@@ -186,6 +186,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.SERVICE_CODE.getAttributeName(), service != null ? service.getCode().trim() : "");
         span.setAttribute(LogAttribute.END_POINT.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_URI, String.class));
         span.setAttribute(LogAttribute.METHOD_TYPE.getAttributeName(), exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_METHOD, String.class));
+        span.setAttribute(LogAttribute.APP_VERSION.getAttributeName(), exchange.getMessage().getHeader(Constants.MOBILE_APP_VERSION, String.class));
         span.setAttribute(LogAttribute.CLIENT_IP_ADDRESS.getAttributeName(), legacyGatewayLogSpanEnricher.clientIpAddress(exchange));
         span.setAttribute(LogAttribute.DELEGATOR_USERNAME.getAttributeName(), exchange.getMessage().getHeader(Constants.SCM_PARAMETER_USERNAME, String.class));
         span.setAttribute(LogAttribute.USERNAME.getAttributeName(), AuthenticationUtils.getEffectiveUsername().orElse(""));

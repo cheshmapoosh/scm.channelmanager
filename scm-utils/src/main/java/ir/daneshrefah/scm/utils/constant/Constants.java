@@ -38,5 +38,6 @@ public class Constants {
 
     public static final String SCM_PERSON_USERNAME_UNKNOWN = "UNKU";
     public static final String LOGIN_SERVICE_TYPE ="login";
+    public static final String MOBILE_APP_VERSION ="appversion";
 
 }
