@@ -149,7 +149,7 @@ public class HttpStatusMapper {
         statusMappingMap.put(MessageStatus.CONTACT_NOT_FOUND, 404);
 
 
-        statusMappingMap.put(MessageStatus.UNABLE_TO_FIND_RECORD_IN_THE_FILE,500);
+        statusMappingMap.put(MessageStatus.UNABLE_TO_FIND_RECORD_IN_THE_FILE,400);
 
 
 

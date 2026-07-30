@@ -1,41 +1,42 @@
+name: scm
+
+x-scm-common: &scm-common
+  image: reg.daneshrefah.ir/modern-banking/scm-app:${SCM_IMAGE_TAG:-9.0.1-b0504T1448}
+  pull_policy: if_not_present
+  restart: unless-stopped
+  networks:
+    - scm
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
 services:
   scm-config:
-    image: reg.daneshrefah.ir/modern-banking/scm-config:${SCM_VERSION:-8.5.4}
+    <<: *scm-common
     container_name: scm-config-container
     volumes:
-      - /home/scm/docker/cache/scm-config-server-boot.jar:/app/scm-config-server-boot.jar
       - /home/scm/docker/config/config-repo-server:/home/scm/docker/config/config-repo-server
       - /home/scm/docker/config/config-repo:/home/scm/docker/config/config-repo
     ports:
-      - "8888:8888"
+      - "8888:8080"
       - "5088:5088"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    command:
-      - java
-      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5088"
-      - "-jar"
-      - "/home/app/scm-config-server-boot.jar"
+      VERSION: ${SCM_VERSION:-9.0.1}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
+      SPRING_APPLICATION_NAME: scm-config
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CLOUD_CONFIG_IMPORT_CHECK_ENABLED: "false"
+      JDWP_OPTS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5088
 
   scm-cache:
+    <<: *scm-common
+    container_name: scm-cache-container
     depends_on:
       scm-config:
-        condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-cache:${SCM_VERSION:-8.5.4}
-    container_name: scm-cache-container
-    volumes:
-      - /home/scm/docker/cache/scm-cache-boot.jar:/app/scm-cache-boot.jar
+        condition: service_started
     ports:
       - "8080:8080"
       - "5701:5701"
@@ -43,123 +44,87 @@ services:
       - "5703:5703"
       - "5080:5080"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    command:
-      - java
-      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5080"
-      - "-jar"
-      - "/home/app/scm-cache-boot.jar"
-
+      VERSION: ${SCM_VERSION:-9.0.1}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
+      SPRING_APPLICATION_NAME: scm-cache
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: "configserver:http://scm-config:8080/config"
+      SPRING_CLOUD_CONFIG_URI: "http://scm-config:8080/config"
+      SPRING_CLOUD_CONFIG_USERNAME: scm
+      SPRING_CLOUD_CONFIG_PASSWORD: scm
+      JDWP_OPTS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5080
 
   scm-uaa:
+    <<: *scm-common
+    container_name: scm-uaa-container
     depends_on:
       scm-config:
-        condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-uaa:${SCM_VERSION:-8.5.4}
-    container_name: scm-uaa-container
-    volumes:
-      - /home/scm/docker/uaa/scm-uaa-boot.jar:/app/scm-uaa-boot.jar
+        condition: service_started
     ports:
       - "8000:8000"
       - "5000:5000"
     environment:
-      - SPRING_PROFILES_ACTIVE=test
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    command:
-      - java
-      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5000"
-      - "-jar"
-      - "/home/app/scm-uaa-boot.jar"
-      - "--scm.swagger.target-host=10.10.4.125"
-
-
-  scm-web:
-    depends_on:
-      scm-config:
-        condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.4}
-    container_name: scm-web-container
-    volumes:
-      - /home/scm/docker/scm/scm-web.jar:/app/scm-web.jar
-    ports:
-      - "8083:8083"
-      - "8087:8087"
-      - "5083:5083"
-    environment:
-      - SPRING_PROFILES_ACTIVE=scm4test
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    command:
-      - java
-      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5083"
-      - "-jar"
-      - "/home/app/scm-web.jar"
-      - "--scm.swagger.target-host=10.10.4.125"
+      VERSION: ${SCM_VERSION:-9.0.1}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
+      SPRING_APPLICATION_NAME: scm-uaa
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: "configserver:http://scm-config:8080/config"
+      SPRING_CLOUD_CONFIG_URI: "http://scm-config:8080/config"
+      SPRING_CLOUD_CONFIG_USERNAME: scm
+      SPRING_CLOUD_CONFIG_PASSWORD: scm
+      JDWP_OPTS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5000
+      SCM_SWAGGER_TARGET_HOST: 10.10.4.125
 
 
   ib-web:
+    <<: *scm-common
+    container_name: scm-ib-container
     depends_on:
       scm-config:
-        condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.4}
-    container_name: scm-ib-container
-    volumes:
-      - /home/scm/docker/scm/scm-web.jar:/app/scm-web.jar
+        condition: service_started
     ports:
       - "8082:8082"
       - "8086:8086"
       - "5082:5082"
     environment:
-      - SPRING_PROFILES_ACTIVE=ib4test
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    command:
-      - java
-      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5082"
-      - "-jar"
-      - "/home/app/scm-web.jar"
-      - "--scm.swagger.target-host=10.10.4.125"
+      VERSION: ${SCM_VERSION:-9.0.1}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
+      SPRING_APPLICATION_NAME: scm-web
+      SPRING_PROFILES_ACTIVE: ib4dev
+      SPRING_CONFIG_IMPORT: "configserver:http://scm-config:8080/config"
+      SPRING_CLOUD_CONFIG_URI: "http://scm-config:8080/config"
+      SPRING_CLOUD_CONFIG_USERNAME: scm
+      SPRING_CLOUD_CONFIG_PASSWORD: scm
+      JDWP_OPTS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5082
+      SCM_SWAGGER_TARGET_HOST: 10.10.4.125
 
   mb-web:
+    <<: *scm-common
+    container_name: scm-mb-container
     depends_on:
       scm-config:
-        condition: service_healthy
-    image: reg.daneshrefah.ir/modern-banking/scm-web:${SCM_VERSION:-8.5.4}
-    container_name: scm-ib-container
-    volumes:
-      - /home/scm/docker/scm/scm-web.jar:/app/scm-web.jar
+        condition: service_started
     ports:
-      - "8082:8082"
-      - "8086:8086"
-      - "5082:5082"
+      - "8084:8082"
+      - "8088:8086"
+      - "5084:5082"
     environment:
-      - SPRING_PROFILES_ACTIVE=mb4test
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    command:
-      - java
-      - "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5082"
-      - "-jar"
-      - "/home/app/scm-web.jar"
-      - "--scm.swagger.target-host=10.10.4.125"
+      VERSION: ${SCM_VERSION:-9.0.1}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
+      SPRING_APPLICATION_NAME: scm-web
+      SPRING_PROFILES_ACTIVE: mb4dev
+      SPRING_CONFIG_IMPORT: "configserver:http://scm-config:8080/config"
+      SPRING_CLOUD_CONFIG_URI: "http://scm-config:8080/config"
+      SPRING_CLOUD_CONFIG_USERNAME: scm
+      SPRING_CLOUD_CONFIG_PASSWORD: scm
+      JDWP_OPTS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5082
+      SCM_SWAGGER_TARGET_HOST: 10.10.4.125
 
-
-
+networks:
+  scm:
+    name: scm
+    driver: bridge

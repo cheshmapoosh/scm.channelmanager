@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 def log = LoggerFactory.getLogger("tcp-card-inq-rs")
 def body = exchange.in.body
-println("tcp rs")
+
 
 if (!(body instanceof Map)) {
     return
@@ -24,7 +24,7 @@ if (!mti.toString().trim().equals(MTI.AUTHORIZATION_ADVICE_RESPONSE_COMMAND.getC
 }
 
 def fields = body.get("fields")
-println("tcp card inq rs fields : " + fields)
+log.trace("tcp card inq rs fields : {}", fields)
 if (fields == null) {
     throw new RuntimeException("tcp card inq rs : fields is null")
 }

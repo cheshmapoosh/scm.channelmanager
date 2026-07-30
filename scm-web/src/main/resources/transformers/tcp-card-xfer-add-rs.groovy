@@ -1,4 +1,6 @@
+import ir.daneshrefah.scm.common.data.dto.bank.BankDto
 import ir.daneshrefah.scm.common.exception.CardException
+import ir.daneshrefah.scm.common.model.message.Message
 import ir.daneshrefah.scm.provider.shetab.iso.util.ISOField
 import ir.daneshrefah.scm.provider.shetab.iso.util.MTI
 import ir.daneshrefah.scm.provider.shetab.iso.util.ResponseCode
@@ -7,7 +9,7 @@ import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-def log = LoggerFactory.getLogger("CardXferAddRsGroovyTransformer")
+def log = LoggerFactory.getLogger("tcp-card-xfer-add-rs")
 
 def safeLog = { msg ->
     try {
@@ -32,6 +34,7 @@ def unpadZero = { value ->
 }
 
 def body = exchange.in.body
+def originalBody = exchange.getProperty(Message.ORIGINAL_BODY)
 safeLog("card xfer add rs body : " + body)
 
 if (!(body instanceof Map)) {
@@ -131,18 +134,52 @@ def processingCode = getField(ISOField.PROCESSING_CODE)
 def rrn = getField(ISOField.RETRIEVAL_REFERENCE_NO)
 def authCode = getField(ISOField.AUTHORIZATION_ID_RESPONSE)
 def accountNo1 = getField(ISOField.ACCOUNT_NO_1)
+def cleanValue = { value ->
+    if (value == null) {
+        return null
+    }
 
+    String text = value.toString().trim()
+
+    if (text.length() >= 2 && text.startsWith('"') && text.endsWith('"')) {
+        text = text.substring(1, text.length() - 1).trim()
+    }
+
+    return text.isEmpty() ? null : text
+}
+
+
+String cardNo = cleanValue(
+        originalBody?.fundTransfer?.destinationCardNumber
+)
+
+String firstName = cleanValue(
+        originalBody?.fundTransfer?.personName?.firstName
+)
+
+String lastName = cleanValue(
+        originalBody?.fundTransfer?.personName?.lastName
+)
+
+def detection = exchange.context.registry.lookupByName("bankListLoader")
+def bankPrefix = cardNo?.length() >= 6
+        ? cardNo.substring(0, 6)
+        : null
+
+BankDto bank = bankPrefix == null || detection == null
+        ? null
+        : detection.getBank(bankPrefix)
 def result = [
         "fundTransfer"       : [
                 "sourceAccountNumber"  : accountNo1 == null ? null : accountNo1.toString(),
                 "sourceCardNumber"     : pan == null ? null : pan.toString(),
-                "destinationCardNumber": null,
+                "destinationCardNumber": cardNo,
                 "amount"               : amount,
                 "customerCount"        : 0,
                 "followupCode"         : authCode == null ? (rrn == null ? null : rrn.toString()) : authCode.toString(),
                 "personName"           : [
-                        "firstName": '',
-                        "lastName" : ''
+                        "firstName": firstName ,
+                        "lastName" : lastName
                 ],
                 "date"                 : date
         ],
@@ -152,7 +189,7 @@ def result = [
         ],
         "serverResponseCode" : actionCode == null ? null : actionCode.toString(),
         "processCode"        : processingCode == null ? null : processingCode.toString(),
-        "destinationBankName": null
+        "destinationBankName": bank?.name?.toString()
 ]
 
 safeLog("card xfer add rs final result : " + result)

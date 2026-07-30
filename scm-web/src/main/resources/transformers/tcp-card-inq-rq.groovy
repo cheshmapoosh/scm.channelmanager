@@ -83,7 +83,7 @@ security.put("expiryDate", cardExpirationYearMonth);
 security.put("cvv2", cvv2);
 security.put("pin", "9729");
 security.put("expiryRequired", false);
-security.put("cvv2Required", false);
+security.put("cvv2Required", true);
 security.put("pinRequired", true);
 security.put("macRequired", false);
 
