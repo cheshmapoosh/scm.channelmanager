@@ -60,10 +60,10 @@ scm:
     time-zone: ${SCM_METADATA_TIME_ZONE:}
 
   deployment:
-    service-version: ${SCM_SERVICE_VERSION:${VERSION:9.0.0}}
+    service-version: ${SCM_SERVICE_VERSION:${VERSION:9.1.0}}
 
   application:
-    version: ${SCM_APPLICATION_VERSION:${VERSION:9.0.0}}
+    version: ${SCM_APPLICATION_VERSION:${VERSION:9.1.0}}
     build: ${SCM_APPLICATION_BUILD:unknown}
 
   provider:
