@@ -13,7 +13,7 @@ import java.util.Map;
 @Setter
 public class ShetabProviderInstanceProperties {
     private String scheme;
-    private Boolean enabled = true;
+    private Boolean enabled = false;
     private String endpoint;
     private List<String> endpoints = new ArrayList<>();
     private String packagerClass;

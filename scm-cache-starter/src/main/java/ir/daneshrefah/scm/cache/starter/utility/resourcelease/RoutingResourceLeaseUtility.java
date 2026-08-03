@@ -125,6 +125,16 @@ public class RoutingResourceLeaseUtility implements ResourceLeaseUtility {
         }
 
         @Override
+        public boolean isValid() {
+            return delegate.isValid();
+        }
+
+        @Override
+        public void onInvalidated(Runnable listener) {
+            delegate.onInvalidated(listener);
+        }
+
+        @Override
         public void close() {
             long startedAt = System.nanoTime();
             try {

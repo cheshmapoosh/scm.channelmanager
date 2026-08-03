@@ -34,38 +34,36 @@ scm-shetab:hps-shetab7
 ## ۲. نمای سریع معماری
 
 ```text
-Camel operation
-    ↓
-Shetab producer
-    ↓
-ShetabTcpClientRegistry
-    ↓ one client per normalized provider code / JVM
-ShetabIsoChannelClient
-    ├── send queue
-    ├── sender thread
-    ├── receiver thread
-    ├── ShetabChannelSessionManager
-    │     ├── endpoint lease
-    │     ├── active ChannelSession
-    │     ├── generation
-    │     └── reconnect / re-lease policy
-    └── ShetabResponseRegistry
-          ├── exact STAN+RRN index
-          ├── STAN fallback index
-          ├── RRN fallback index
-          └── pending response lifecycle
+ساخت routeهای فعال
+    → ProviderRuntimeLifecycle.registerEffectiveUsage(...)
+    → یک runtime برای هر provider مؤثر
+    → snapshot اولیه DISCONNECTED / readiness DOWN
+
+ApplicationReadyEvent
+    → connection worker اختصاصی
+    → lease acquire/validate
+    → connect و publish اتمیک ChannelSession
+    → continuous recovery در پس‌زمینه
+
+درخواست Camel
+    → فقط session معتبر و از قبل publish‌شده
+    → fail-fast در نبود session
+    → send queue / sender
+    → receiver / correlation registry
 ```
 
-اصل معماری:
+مدل نهایی همواره این است و mode دیگری ندارد:
 
 ```text
-یک provider در یک JVM
-    → یک ShetabIsoChannelClient
-    → حداکثر یک ChannelSession فعال
-    → یک socket مشترک برای send و receive
+Asynchronous eager connection
++ Fail-fast request admission
++ Continuous background recovery
 ```
 
-در Kubernetes هر Pod یک JVM مستقل دارد. جلوگیری از رزرو هم‌زمان یک endpoint توسط چند Pod بر عهدهٔ endpoint lease توزیع‌شده است.
+شروع application منتظر شبکهٔ شتاب نمی‌ماند. runtime و snapshot پیش از
+`ApplicationReadyEvent` ثبت می‌شوند، اما اتصال TCP فقط پس از آن و روی worker اختصاصی انجام
+می‌شود. در Kubernetes هر Pod یک runtime مستقل دارد و endpoint lease از مالکیت هم‌زمان یک
+endpoint توسط چند Pod جلوگیری می‌کند.
 
 ---
 
@@ -73,24 +71,45 @@ ShetabIsoChannelClient
 
 تغییرات آینده نباید این قواعد را نقض کنند:
 
-1. `ShetabTcpClientRegistry` برای هر provider نرمال‌شده فقط یک client ایجاد می‌کند.
-2. در هر client فقط یک session فعال وجود دارد.
-3. sender و receiver از همان socket و همان generation استفاده می‌کنند.
-4. فقط sender مجاز به acquire lease، ساخت channel و connect/reconnect است.
-5. receiver هرگز connection ایجاد نمی‌کند و فقط منتظر session منتشرشده می‌ماند.
-6. lease متعلق به endpoint است؛ چند generation متوالی می‌توانند از همان lease استفاده کنند.
-7. موفقیت `connect()` به‌تنهایی endpoint را سالم اثبات نمی‌کند.
-8. `sameEndpointFailureCount` فقط بعد از دریافت و match شدن پاسخ معتبر صفر می‌شود.
+1. فقط provider فعال که حداقل یک Service مؤثر و فعال به آن ارجاع می‌دهد runtime می‌سازد.
+2. `ShetabTcpClientRegistry` برای هر provider مؤثر فقط یک client ایجاد می‌کند.
+3. در هر client فقط یک connection worker و حداکثر یک `activeSession` وجود دارد.
+4. فقط connection worker مجاز به acquire/release lease، `connect()`، `disconnect()` و publish session است.
+5. sender، receiver، timeout و request thread فقط generation خود را invalidate و recovery را signal می‌کنند.
+6. recovery با state سطحی `recoveryRequired` نگهداری می‌شود و به queue signal یا درخواست بعدی وابسته نیست.
+7. request بدون session معتبر فوراً با `SHETAB_CONNECTION_UNAVAILABLE` رد می‌شود و enqueue نمی‌شود.
+8. tracker `QUEUED` متعلق به generation خراب fail می‌شود و برای connection بعدی نگه داشته نمی‌شود.
 9. پس از ورود به `ISOChannel.send()`، request هرگز requeue یا resend نمی‌شود.
-10. retry ارسال پیام قابل تنظیم نیست و propertyای با نام `request-send-retry-attempts` نباید اضافه شود.
-11. requestهای ارسال‌شده روی generation خراب fail می‌شوند؛ requestهای واقعاً `QUEUED` می‌توانند پس از reconnect ادامه دهند.
-12. correlation دقیق `STAN + RRN` مرجع اصلی است و fallback مبهم مجاز نیست.
-13. تمام waitهای قابل‌کنترل از یک deadline یکنواخت استفاده می‌کنند.
-14. thread یا callback مربوط به generation قدیمی نباید session جدید را invalidate یا close کند.
+10. `activeSession` منبع حقیقت connection است؛ snapshot فقط view immutable برای support/readiness است.
+11. generation قدیمی هرگز session جدید را invalidate، close یا unhealthy نمی‌کند.
+12. پاسخ معتبر روی generation جاری `verified=true` می‌کند؛ `verified=false` به‌تنهایی connection منتشرشده را unhealthy نمی‌کند.
+13. correlation دقیق `STAN + RRN` مرجع اصلی است و fallback مبهم مجاز نیست.
+14. health/readiness فقط snapshot را می‌خواند و هیچ side effect شبکه‌ای یا lease ندارد.
 
 ---
 
 ## ۴. مدل اصلی پیکربندی
+
+### Provider مؤثر
+
+یک Shetab provider فقط وقتی مؤثر است که هر دو شرط برقرار باشند:
+
+```text
+provider.enabled = true
+و
+Active Service → active ServiceOperation → active Operation
+               → active OperationProvider با scheme برابر scm-shetab
+```
+
+| enabled | ارجاع Service فعال | رفتار |
+| --- | --- | --- |
+| false | ندارد | startup موفق؛ بدون runtime و بدون readiness contributor |
+| false | دارد | startup fail-fast با نام service، operation و provider |
+| true | ندارد | startup موفق؛ log با event=`SHETAB_PROVIDER_ENABLED_BUT_UNUSED`؛ بدون runtime |
+| true | دارد | runtime ساخته می‌شود و پس از آماده‌شدن application به‌صورت async متصل می‌شود |
+
+اعتبارسنجی provider غیرفعال در ساخت operation route و پیش از resolve شدن endpoint Camel
+انجام می‌شود. خطاهای binding تنظیمات همچنان startup را fail می‌کنند.
 
 Providerها در registry مشترک پیکربندی می‌شوند:
 
@@ -99,7 +118,7 @@ scm:
   providers:
     hps-shetab7:
       scheme: scm-shetab
-      enabled: true
+      enabled: false
 
       endpoints:
         - 10.10.10.11:9000
@@ -168,23 +187,26 @@ scm:
 
 | تنظیم | مسئولیت |
 | --- | --- |
-| `connect-timeout-ms` | سقف هر تلاش TCP connect؛ همیشه به زمان باقی‌ماندهٔ request محدود می‌شود |
+| `connect-timeout-ms` | سقف هر تلاش TCP connect روی connection worker مستقل از request |
 | `socket-timeout-ms` | timeout عملیات receive؛ مقدار پیش‌فرض `0` یعنی receiver تا زمان دریافت یا failure به‌صورت blocking باقی می‌ماند |
 | `keep-alive` | فعال‌سازی TCP keep-alive در channel؛ پیش‌فرض `true` است |
 | `response-timeout-ms` | deadline caller برای کل lifecycle درخواست |
-| `send-timeout-ms` | حداکثر انتظار برای ورود به send queue، محدود به deadline باقی‌مانده |
+| `send-timeout-ms` | حداکثر انتظار برای ورود به send queue پس از پذیرش روی یک session معتبر |
 | `reconnect-delay-ms` | فاصلهٔ reconnect؛ sleep نباید زیر session lock انجام شود |
 | `same-endpoint-reconnect-attempts` | تعداد failureهای متوالی قابل تحمل روی lease فعلی قبل از release و acquire مجدد |
 
 ### قواعد configuration
 
 - block عمومی `defaults` برای provider وجود ندارد؛ هر instance باید تنظیمات اصلی خود را صریح داشته باشد.
+- مقدار پیش‌فرض `enabled` برابر `false` است.
+- مقدار پیش‌فرض `socket-timeout-ms` برابر `0` است.
 - `scheme` برای این provider باید `scm-shetab` باشد.
 - `endpoints` مدل اصلی است؛ `endpoint` فقط alias تک-endpoint است.
 - `message-customizers` اختیاری است و customizer پیش‌فرضی فعال نمی‌شود.
 - PIN block، MAC، expiry و CVV2 فقط از طریق customizerها اعمال می‌شوند.
 - secretها باید از environment یا secret store وارد شوند؛ مقدار secret نباید داخل repository قرار گیرد.
 - تغییر runtime config برای providerای که client آن قبلاً ساخته شده است نباید silently نادیده گرفته شود؛ Registry باید config ناسازگار را fail-fast کند یا lifecycle صریح reload داشته باشد.
+- هیچ `startup-mode`، `EAGER` یا `LAZY` وجود ندارد؛ startup اتصال برای provider مؤثر همیشه asynchronous/eager است.
 
 ---
 
@@ -201,7 +223,11 @@ scm:
 ### `ShetabTcpClientRegistry`
 
 - کلید provider را با `trim + lowercase` نرمال می‌کند؛
-- با `computeIfAbsent` یک client برای هر provider در هر JVM می‌سازد؛
+- فقط usageهایی را می‌پذیرد که core از Serviceهای مؤثر گزارش کرده است؛
+- برای هر provider مؤثر client و snapshot اولیه را پیش از application-ready می‌سازد؛
+- در `ApplicationReadyEvent` workerها را بدون انتظار برای اتصال فعال می‌کند؛
+- provider فعال ولی بدون usage را با `SHETAB_PROVIDER_ENABLED_BUT_UNUSED` گزارش می‌کند؛
+- snapshotهای immutable providerهای مؤثر را از طریق `ProviderReadinessContributor` ارائه می‌کند؛
 - lifecycle clientها را در shutdown متوقف می‌کند؛
 - دریافت config متفاوت برای همان provider را باید به‌صورت صریح مدیریت کند، نه اینکه config جدید را بی‌صدا نادیده بگیرد.
 
@@ -210,6 +236,7 @@ scm:
 Orchestrator اصلی است و فقط این مسئولیت‌ها را نگه می‌دارد:
 
 - API هم‌زمان `request()`؛
+- admission فوری فقط روی session از قبل منتشرشده؛
 - send queue؛
 - sender loop؛
 - receiver loop؛
@@ -225,11 +252,12 @@ Orchestrator اصلی است و فقط این مسئولیت‌ها را نگه 
 - acquire/release endpoint lease؛
 - نگهداری تنها `ChannelSession` فعال؛
 - generation صعودی؛
-- connect/reconnect؛
+- connection worker اختصاصی و level-triggered recovery؛
+- connect/reconnect و publish اتمیک session؛
 - invalidate فقط برای generation مطابق؛
 - `sameEndpointFailureCount`؛
-- شمارندهٔ response timeoutهای متوالی؛
-- signal کردن receiver هنگام publish یا invalidate session.
+- snapshot immutable و transition متمرکز؛
+- signal کردن receiver و worker هنگام publish یا invalidate session.
 
 ### `ShetabResponseRegistry`
 
@@ -247,19 +275,25 @@ Orchestrator اصلی است و فقط این مسئولیت‌ها را نگه 
 
 ## ۶. مدل Thread و Connection
 
-Client دو thread daemon دارد:
+Client سه thread daemon دارد:
 
 ```text
+connection worker
+    تنها مالک lease، connect، disconnect و replacement session
+
 sender thread
-    مسئول dequeue، connect/reconnect و send
+    فقط dequeue و send روی session پذیرفته‌شده
 
 receiver thread
     مسئول wait session، receive و match response
 ```
 
-### چرا فقط sender connect می‌کند؟
+### چرا worker مستقل لازم است؟
 
-اگر sender و receiver هر دو connection بسازند، برای جلوگیری از دو socket هم‌زمان به single-flight و synchronization پیچیده نیاز است. مالکیت connection توسط sender این پیچیدگی را حذف و invariant تک‌سوکت را واضح می‌کند.
+اتصال نباید به ورود request یا ظرفیت send queue وابسته باشد. worker مستقل باعث می‌شود startup
+منتظر شبکه نماند، request در حالت قطع فوراً fail شود و recovery تا موفقیت یا shutdown ادامه پیدا
+کند. signalهای تکراری فقط `recoveryRequired=true` را تثبیت و worker را بیدار می‌کنند؛ signal
+گم‌شده در queue نمی‌تواند recovery را متوقف کند.
 
 ### قاعدهٔ lock
 
@@ -282,6 +316,9 @@ update lease reference
 update failure counters
 signal receiver
 ```
+
+Sender/receiver ممکن است generation خود را اتمیک detach کنند، metadata failure را ثبت کنند و
+worker را بیدار کنند؛ بستن channel یا reconnect مستقیم از این threadها ممنوع است.
 
 ---
 
@@ -322,28 +359,61 @@ acquire endpoint B
 
 Receiver یا sender قدیمی فقط زمانی مجاز به invalidate است که generation آن دقیقاً با `activeSession.generation` برابر باشد.
 
+برای هر provider مؤثر یک `ShetabConnectionSnapshot` immutable وجود دارد. stateهای آن عبارت‌اند از:
+
+```text
+DISCONNECTED
+CONNECTING
+CONNECTED
+RECONNECTING
+FAILED
+STOPPED
+```
+
+Snapshot شامل provider، endpoint، generation، وضعیت lease، worker، recovery، attemptها،
+timestampها و failure metadata پاک‌سازی‌شده است. `Throwable` یا stack trace در آن نگهداری
+نمی‌شود. timestamp نمایشی از wall clock و deadline/retry از `System.nanoTime()` استفاده می‌کند.
+تمام تغییرات از transition مرکزی عبور می‌کنند تا log و readiness از state جدا نشوند.
+
+هر generation با `verified=false` منتشر می‌شود و فقط match شدن یک response معتبر همان
+generation آن را `true` می‌کند. از آنجا که health probe پیام آزمایشی نمی‌فرستد،
+`verified=false` به‌تنهایی readiness یک session برقرار را `DOWN` نمی‌کند.
+
 ---
 
 ## ۸. lifecycle اتصال، reconnect و lease
 
-State منطقی:
+برای provider مؤثر، snapshot اولیه قبل از ready شدن application به شکل زیر است:
 
 ```text
-NO_LEASE
-    ↓ acquire
-LEASED_DISCONNECTED
-    ↓ connect
-CONNECTED(generation=N)
-    ↓ socket/connect/send/receive failure
-LEASED_DISCONNECTED
-    ↓ reconnect روی همان endpoint
-
-اگر failure count به limit برسد:
-    release lease
-    ↓
-NO_LEASE
-    ↓ acquire مجدد
+DISCONNECTED
+recoveryRequired = true
+connectionWorkerAlive = false
+readiness = DOWN
 ```
+
+پس از `ApplicationReadyEvent`، worker شروع می‌شود و این چرخه را تا موفقیت یا stop ادامه می‌دهد:
+
+```text
+acquire/confirm lease
+    → CONNECTING یا RECONNECTING
+    → TCP connect
+    → publish اتمیک activeSession(generation=N)
+    → CONNECTED
+
+failure/loss/timeout
+    → detach فقط generation جاری
+    → readiness DOWN
+    → recoveryRequired=true
+    → worker channel قدیمی را می‌بندد
+    → در صورت نیاز lease را release/reacquire می‌کند
+    → retry با reconnect-delay-ms
+```
+
+هیچ request جدیدی برای ادامهٔ recovery لازم نیست و در هر provider حداکثر یک connection
+attempt هم‌زمان وجود دارد. termination غیرمنتظرهٔ worker در snapshot و readiness به‌صورت
+`FAILED`/`connectionWorkerAlive=false` و با event=`SHETAB_CONNECTION_WORKER_TERMINATED`
+نمایان می‌شود.
 
 ### شمارندهٔ endpoint failure
 
@@ -352,14 +422,13 @@ NO_LEASE
 - TCP connect failure؛
 - send failure؛
 - receive failure؛
-- suspect شدن connection پس از response timeoutهای متوالی.
+- response timeout پس از شروع send.
 
 موفقیت `channel.connect()` شمارنده را صفر نمی‌کند. تنها دریافت و match شدن پاسخ معتبر روی generation فعال، موارد زیر را reset می‌کند:
 
 ```text
 sameEndpointFailureCount = 0
-consecutiveResponseTimeouts = 0
-lastConnectionFailure = null
+verified = true
 ```
 
 با مقدار زیر:
@@ -369,6 +438,8 @@ same-endpoint-reconnect-attempts: 3
 ```
 
 سه failure متوالی روی endpoint فعلی باعث release lease و acquire مجدد می‌شود.
+`RECEIVE_IDLE_TIMEOUT` و `LEASE_LOST` بدون انتظار برای این limit، lease فعلی را برای
+reacquire علامت‌گذاری می‌کنند.
 
 ---
 
@@ -380,10 +451,16 @@ Deadline تمام مراحل قابل‌کنترل را پوشش می‌دهد:
 
 ```text
 queue admission
-connection/reconnection
-reconnect delay
 validation immediately before send
 response wait
+```
+
+Connection/reconnection متعلق به worker مستقل است و داخل deadline درخواست اجرا نمی‌شود.
+اگر هنگام admission session معتبر وجود نداشته باشد، request بدون wait، بدون enqueue و بدون
+فراخوانی `connect()` با reason زیر fail می‌شود:
+
+```text
+SHETAB_CONNECTION_UNAVAILABLE
 ```
 
 پس از هر عملیات blocking باید این موارد دوباره بررسی شوند:
@@ -407,7 +484,10 @@ SENDING
 SENT
 ```
 
-تا پیش از ورود به `ISOChannel.send()`، request هنوز ارسال نشده است و می‌تواند برای session جدید منتظر بماند.
+تا پیش از ورود به `ISOChannel.send()`، delivery رخ نداده است. با این حال request پذیرفته‌شده
+به generation مشخص تعلق دارد؛ اگر آن generation پیش از send invalidate شود، tracker
+`QUEUED` با `SHETAB_CONNECTION_UNAVAILABLE` fail می‌شود و برای session جدید نگه داشته یا
+requeue نمی‌شود.
 
 از لحظهٔ ورود به `ISOChannel.send()`:
 
@@ -474,34 +554,46 @@ SENDING
 SENT
 ```
 
-هر tracker generationی را که send روی آن شروع شده است نگه می‌دارد.
+هر tracker از لحظهٔ admission به یک generation مشخص متصل است.
 
 هنگام invalidate شدن generation:
 
 - trackerهای `SENDING` یا `SENT` همان generation fail می‌شوند؛
-- trackerهای `QUEUED` همچنان می‌توانند بعد از reconnect پردازش شوند؛
+- trackerهای `QUEUED` همان generation به‌عنوان not-delivered fail می‌شوند؛
 - هیچ tracker ارسال‌شده‌ای requeue نمی‌شود.
 
 ---
 
-## ۱۲. Connection Suspect و Response Timeout
+## ۱۲. Request timeout و Receive idle timeout
 
-`SocketTimeoutException` در receiver یک connection failure محسوب می‌شود، generation فعال را invalidate می‌کند و reconnect عادی را آغاز می‌کند. با مقدار پیش‌فرض `socket-timeout-ms: 0` این exception در idle عادی رخ نمی‌دهد.
-
-اما چند request ارسال‌شدهٔ متوالی که روی generation فعال timeout شوند، connection را suspect می‌کنند.
-
-Policy فعلی:
+این دو timeout مستقل‌اند:
 
 ```text
-3 consecutive response timeouts
-    → invalidate active generation
-    → increment same-endpoint failure count
-    → reconnect با policy عادی
+response-timeout-ms
+    → deadline یک request مشخص
+
+socket-timeout-ms
+    → حداکثر سکوت receive روی کل TCP connection
 ```
 
-فقط timeout trackerهایی در این شمارنده اثر دارد که واقعاً روی generation فعلی ارسال شده‌اند. timeout requestهای queue‌شده یا generation قدیمی نباید session جدید را suspect کنند.
+رفتار `response-timeout-ms`:
 
-اولین پاسخ معتبر شمارندهٔ timeout را صفر می‌کند.
+- timeout در `QUEUED` connection را invalidate نمی‌کند؛
+- timeout در `SENDING` یا `SENT` برای generation جاری delivery مبهم دارد، readiness را
+  `DOWN` می‌کند و recovery را signal می‌کند؛
+- timeout مربوط به generation قدیمی روی session جدید اثر ندارد؛
+- timeout هرگز resend خودکار ایجاد نمی‌کند؛
+- reason فنی caller برابر `SHETAB_RESPONSE_TIMEOUT` باقی می‌ماند.
+
+رفتار `socket-timeout-ms`:
+
+- مقدار `0` receive-idle recovery را غیرفعال می‌کند و receiver می‌تواند نامحدود منتظر بماند؛
+- مقدار مثبت و وقوع `SocketTimeoutException` با `reasonCode=RECEIVE_IDLE_TIMEOUT` و
+  `phase=RECEIVE` ثبت می‌شود؛
+- receiver فقط generation خودش را detach و worker را بیدار می‌کند؛
+- worker channel را می‌بندد، lease فعال را release/reacquire و بعد از delay reconnect می‌کند؛
+- readiness تا publish شدن generation جدید `DOWN` می‌ماند؛
+- timeout دیررس generation قدیمی هیچ تغییری در generation جدید ایجاد نمی‌کند.
 
 ---
 
@@ -597,14 +689,55 @@ scm:
 shetab-endpoint-lease::<providerCode>::<endpoint>
 ```
 
-- اگر lease فعال و endpointها متعدد باشند، `ResourceLeaseUtility` توزیع‌شده الزامی است؛
-- نبود lease utility در این حالت باید startup/runtime را fail کند و نباید silently endpoint اول را انتخاب کند؛
+- اگر lease فعال باشد، `ResourceLeaseUtility` با وضعیت مالکیت قابل مشاهده الزامی است؛
+- نبود lease utility نباید silently endpoint اول را به‌عنوان lease معتبر انتخاب کند؛
 - اگر lease غیرفعال باشد، endpoint اول استفاده می‌شود؛
-- release lease فقط بعد از رسیدن failure count به limit، shutdown یا تصمیم lifecycle صریح انجام می‌شود.
+- object غیر-null دلیل مالکیت نیست؛ `isValid()` آخرین وضعیت معتبر/نامعتبر را گزارش می‌کند؛
+- refresh failure، ownership loss یا وضعیت unknown فوراً callback invalidation را فعال می‌کند؛
+- callback فقط generation را unavailable و worker را بیدار می‌کند؛ release/reacquire فقط روی worker است؛
+- release lease بعد از رسیدن failure count به limit، receive-idle timeout، lease loss، shutdown یا تصمیم lifecycle صریح انجام می‌شود؛
+- leasing غیرفعال در snapshot با `NOT_REQUIRED` و ownership معتبر با `VALID` نمایش داده می‌شود.
 
 ---
 
-## ۱۶. Rate Limit
+## ۱۶. Readiness و Liveness
+
+`scm-web` یک aggregate ثابت با نام `providerReadiness` دارد. فقط providerهای مؤثر در آن
+حضور دارند؛ disabled و enabled-but-unused حذف می‌شوند. health فقط immutable snapshot را
+می‌خواند و هرگز client، worker، lease، socket یا probe ISO ایجاد نمی‌کند.
+
+| state | readiness |
+| --- | --- |
+| `DISCONNECTED` | `DOWN` |
+| `CONNECTING` | `DOWN` |
+| `CONNECTED` + session منتشرشده + worker زنده + بدون recovery + lease `VALID`/`NOT_REQUIRED` | `UP` |
+| `RECONNECTING` | `DOWN` |
+| `FAILED` | `DOWN` |
+| `STOPPED` | `DOWN` |
+
+اگر provider مؤثری وجود نداشته باشد aggregate برابر `UP` است. جزئیات پاک‌سازی‌شده فقط
+طبق policy `when_authorized` نمایش داده می‌شوند. endpointهای Kubernetes عبارت‌اند از:
+
+```text
+/actuator/health/liveness
+/actuator/health/readiness
+```
+
+`liveness` فقط process-level است و به Shetab، worker، lease، cache یا شبکه وابسته نیست.
+دسترسی anonymous فقط برای همین دو مسیر probe مجاز است؛ سایر endpointهای Actuator احراز هویت
+می‌خواهند.
+
+Defaultهای source configuration:
+
+```text
+SCM_HPS_SHETAB7_ENABLED=false
+SCM_HPS_SHETAB7_SOCKET_TIMEOUT_MS=0
+SCM_MANAGEMENT_READINESS_SHOW_DETAILS=when_authorized
+```
+
+---
+
+## ۱۷. Rate Limit
 
 Rate limit توزیع‌شده از `RateLimiterUtility` در `scm-cache-starter` استفاده می‌کند.
 
@@ -619,7 +752,7 @@ rate-limit:
 
 ---
 
-## ۱۷. Observability و Logging
+## ۱۸. Observability و Logging
 
 هر تلاش واقعی transport برای request دقیقاً دو event مرتب در scope صریح
 `scm.observation.scope.operation` ایجاد می‌کند: `provider.request` هنگام شروع تلاش و
@@ -629,9 +762,9 @@ rate-limit:
 `provider.request` بدون `provider.response` متناظر باقی نماند.
 
 مطابق قرارداد no-resend، هر request حداکثر یک تلاش transport دارد و مقدار
-`provider.attempt` برای آن `1` است. reconnectهای قبل از ورود به `ISOChannel.send()` بخشی از
-همان تلاش هستند؛ پس از شروع send، failure تلاش را می‌بندد و request هرگز دوباره enqueue یا
-ارسال نمی‌شود. تلاش موفق تا دریافت response، اجرای customizerهای after-receive و تبدیل ISO
+`provider.attempt` برای آن `1` است. request در حالت disconnected اصلاً وارد transport attempt
+نمی‌شود. پس از شروع send، failure تلاش را می‌بندد و request هرگز دوباره enqueue یا ارسال
+نمی‌شود. تلاش موفق تا دریافت response، اجرای customizerهای after-receive و تبدیل ISO
 باز می‌ماند تا timeout، connection، validation و customizer failure همگی یک
 `provider.response` ناموفق تولید کنند. `provider.duration_ms` فقط روی `provider.response`
 ثبت می‌شود و با `System.nanoTime()` و مقدار nonnegative محاسبه می‌شود.
@@ -682,33 +815,42 @@ last sent/received time
 failure type
 ```
 
-### Packed ISO DEBUG log
+Eventهای lifecycle پایدار شامل این مواردند:
 
-این نسخه packed ISO را به‌صورت hex در سطح DEBUG ثبت می‌کند. این خروجی می‌تواند شامل PAN، PIN block، CVV2، expiry، MAC و سایر fieldهای حساس باشد.
+```text
+SHETAB_CONNECTION_WORKER_STARTED
+SHETAB_CONNECTION_STATE_CHANGED
+SHETAB_CONNECTION_ATTEMPT_STARTED
+SHETAB_CONNECTION_ATTEMPT_FAILED
+SHETAB_CONNECTION_RECOVERY_SCHEDULED
+SHETAB_CONNECTION_ESTABLISHED
+SHETAB_CONNECTION_INVALIDATED
+SHETAB_RECEIVE_IDLE_TIMEOUT
+SHETAB_ENDPOINT_LEASE_LOST
+SHETAB_CONNECTION_WORKER_STOPPED
+SHETAB_CONNECTION_WORKER_TERMINATED
+```
 
-بنابراین:
-
-- DEBUG این package در production نباید به‌صورت عمومی فعال باشد؛
-- دسترسی، retention و انتقال فایل‌های DEBUG باید محدود باشد؛
-- log نباید به محیط غیرقابل اعتماد یا سامانهٔ عمومی log ارسال شود؛
-- تغییر یا حذف این رفتار نیازمند تصمیم صریح عملیاتی است.
-
-Log ساختاری عادی باید همچنان از `SafeIsoLogFormatter` استفاده کند.
+Failure messageها sanitize و truncate می‌شوند. failure تکراری اول/تغییرکرده و خلاصه‌های دوره‌ای
+در `WARN` و موارد میانی یکسان در `DEBUG` ثبت می‌شوند. هیچ event اتصال شامل payload ISO،
+PAN، PIN، CVV2، MAC، token، credential، stack trace یا correlation ساختگی نیست. packed ISO
+به‌صورت hex log نمی‌شود و formatter موجود فقط metadata/نمای sanitize‌شده را به کار می‌برد.
 
 ---
 
-## ۱۸. Failure semantics
+## ۱۹. Failure semantics
 
 Failureهای مهم باید از هم قابل تشخیص باشند:
 
 | وضعیت | معنا | resend داخل provider |
 | --- | --- | --- |
+| no valid session | request enqueue نشده؛ `SHETAB_CONNECTION_UNAVAILABLE` | خیر |
 | queue full | request وارد صف نشده است | خیر؛ caller تصمیم می‌گیرد |
 | deadline before send | request ارسال نشده است | خیر؛ caller تصمیم می‌گیرد |
-| connect failure | request هنوز ارسال نشده است | reconnect تا deadline مجاز است |
-| failure داخل/بعد از `send()` | delivery نامشخص است | مطلقاً ممنوع |
-| connection lost after send | delivery یا response نامشخص است | مطلقاً ممنوع |
-| response timeout | ممکن است provider request را پردازش کرده باشد | مطلقاً ممنوع |
+| background connect failure | request جدید پذیرفته نمی‌شود؛ worker retry می‌کند | نامرتبط |
+| failure داخل/بعد از `send()` | `SHETAB_CONNECTION_LOST_AFTER_SEND`؛ delivery نامشخص است | مطلقاً ممنوع |
+| connection lost after send | `SHETAB_CONNECTION_LOST_AFTER_SEND`؛ delivery یا response نامشخص است | مطلقاً ممنوع |
+| response timeout | `SHETAB_RESPONSE_TIMEOUT`؛ ممکن است provider request را پردازش کرده باشد | مطلقاً ممنوع |
 | ambiguous correlation | پاسخ به tracker مشخصی قابل انتساب نیست | خیر |
 | duplicate exact correlation | request قبل از enqueue رد می‌شود | خیر |
 
@@ -716,14 +858,14 @@ Exceptionهای domain-specific باید تفاوت این حالت‌ها را 
 
 ---
 
-## ۱۹. Shutdown
+## ۲۰. Shutdown
 
 در shutdown:
 
 1. پذیرش request جدید متوقف می‌شود؛
-2. sender و receiver interrupt می‌شوند؛
-3. session فعال invalidate و channel بسته می‌شود؛
-4. lease آزاد می‌شود؛
+2. connection worker متوقف و session جاری detach می‌شود؛
+3. خود worker channel را می‌بندد و lease را آزاد می‌کند؛
+4. sender و receiver interrupt می‌شوند؛
 5. trackerهای pending fail می‌شوند؛
 6. send queue drain می‌شود؛
 7. threadها با timeout محدود join می‌شوند.
@@ -732,7 +874,7 @@ Shutdown نباید منتظر reconnect loop نامحدود یا lockی باش�
 
 ---
 
-## ۲۰. مسیر توسعه و تغییر امن
+## ۲۱. مسیر توسعه و تغییر امن
 
 ### افزودن packager جدید
 
@@ -771,11 +913,13 @@ Shutdown نباید منتظر reconnect loop نامحدود یا lockی باش�
 - connect موفق failure count را reset نمی‌کند؛
 - valid response شمارنده‌ها را reset می‌کند؛
 - request ارسال‌شده resend نمی‌شود؛
-- deadline request در reconnect loop رعایت می‌شود.
+- reconnect فقط توسط worker انجام می‌شود؛
+- recovery به signal queue یا request بعدی وابسته نیست؛
+- request disconnected بدون wait fail می‌شود.
 
 ---
 
-## ۲۱. راهنمای عیب‌یابی
+## ۲۲. راهنمای عیب‌یابی
 
 ### Queue full
 
@@ -806,6 +950,23 @@ endpoint accepts TCP but closes immediately
 
 اگر TCP connect موفق ولی response معتبر دریافت نمی‌شود، failure count نباید صرفاً با connect صفر شود.
 
+### Readiness همیشه `DOWN`
+
+جزئیات authorized مسیر readiness را بررسی کنید:
+
+```text
+connectionState
+connectionWorkerAlive
+recoveryRequired
+leaseState
+lastFailureCode
+lastFailureType
+```
+
+`LEASE_ACQUIRE_FAILED` معمولاً به نبود cache/lease backend، endpointهای اشغال یا تنظیمات
+lease مربوط است. `TCP_CONNECT_FAILED` نشان‌دهندهٔ failure شبکه/host است. health endpoint هیچ
+تلاشی برای ترمیم انجام نمی‌دهد؛ worker باید مستقل در حال retry باشد.
+
 ### Unmatched response
 
 بررسی کنید:
@@ -829,18 +990,24 @@ request timeout and tracker cleanup
 
 ---
 
-## ۲۲. چک‌لیست Code Review
+## ۲۳. چک‌لیست Code Review
 
 - آیا برای هر provider در Registry فقط یک client ساخته می‌شود؟
+- آیا فقط providerهای مؤثر runtime و readiness دارند؟
 - آیا provider key نرمال شده است؟
-- آیا فقط sender connection ایجاد می‌کند؟
+- آیا فقط connection worker lease و connection را مدیریت می‌کند؟
 - آیا `activeSession` تنها منبع truth اتصال است؟
+- آیا snapshot فقط immutable view است و health side effect ندارد؟
 - آیا generation در تمام send/receive/invalidate pathها بررسی می‌شود؟
 - آیا connect، disconnect و sleep خارج lock هستند؟
 - آیا deadline قبل و بعد از عملیات blocking بررسی می‌شود؟
+- آیا request disconnected بدون wait و enqueue fail می‌شود؟
 - آیا هیچ مسیر resend بعد از شروع `send()` وجود ندارد؟
 - آیا `sameEndpointFailureCount` فقط با response معتبر reset می‌شود؟
-- آیا response timeoutهای متوالی فقط برای generation فعال شمرده می‌شوند؟
+- آیا response timeout ارسال‌شده فقط generation فعال را invalidate می‌کند؟
+- آیا tracker `QUEUED` generation خراب fail می‌شود و برای generation بعدی حفظ نمی‌شود؟
+- آیا receive idle timeout صفر غیرفعال و مقدار مثبت recovery کامل ایجاد می‌کند؟
+- آیا lease `UNKNOWN` یا lost readiness را `DOWN` می‌کند؟
 - آیا exact correlation قبل از fallback بررسی می‌شود؟
 - آیا fallback مبهم unmatched می‌ماند؟
 - آیا trackerهای generation خراب fail و از تمام indexها حذف می‌شوند؟

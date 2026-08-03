@@ -6,8 +6,13 @@ import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
+import ir.daneshrefah.scm.common.model.operation.OperationProvider;
+import ir.daneshrefah.scm.common.model.operation.OperationType;
 import ir.daneshrefah.scm.common.model.plugin.PluginDetail;
 import ir.daneshrefah.scm.common.model.plugin.PluginPhase;
+import ir.daneshrefah.scm.common.provider.config.ProviderRegistryProperties;
+import ir.daneshrefah.scm.common.provider.runtime.ProviderRuntimeLifecycle;
+import ir.daneshrefah.scm.common.provider.runtime.ProviderRuntimeLifecycle.EffectiveProviderUsage;
 import ir.daneshrefah.scm.common.service.GatewayService;
 import ir.daneshrefah.scm.core.integration.error.GlobalErrorHandler;
 import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
@@ -43,6 +48,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -67,6 +73,8 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     private final ScmExchangeMdc exchangeMdc;
     private final ObjectProvider<ScmObservation> observationProvider;
     private final ObjectProvider<ObservationContext> observationContextProvider;
+    private final ProviderRegistryProperties providerRegistryProperties;
+    private final List<ProviderRuntimeLifecycle> providerRuntimeLifecycles;
 
     @Override
     public void configure() {
@@ -75,13 +83,15 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 RouteLogEvents.OPERATION_ROUTE_CONSTRUCTION_STARTED,
                 runtimeTargets.size());
 
-        Set<String> requiredOperationNames = resolveRequiredOperationNames(runtimeTargets);
+        Map<String, Set<String>> requiredOperationServices = resolveRequiredOperationServices(runtimeTargets);
+        Set<String> requiredOperationNames = requiredOperationServices.keySet();
         log.info("event={} layer=operation requiredOperationCount={} runtimeTargetCount={} outcome=success",
                 RouteLogEvents.OPERATION_ROUTE_PLAN_RESOLVED,
                 requiredOperationNames.size(),
                 runtimeTargets.size());
 
         if (requiredOperationNames.isEmpty()) {
+            completeProviderRuntimeRegistration();
             log.warn("event={} layer=operation requiredOperationCount=0 runtimeTargetCount={} outcome=skipped reason=no-required-operations",
                     RouteLogEvents.OPERATION_ROUTE_SKIPPED,
                     runtimeTargets.size());
@@ -93,6 +103,8 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         List<Operation> operations = operationService.findActiveOperationsByNames(requiredOperationNames);
         Map<String, Operation> activeOperationsByName = activeOperationsByRequiredName(requiredOperationNames, operations);
         logMissingOperations(requiredOperationNames, activeOperationsByName.keySet());
+        registerEffectiveProviderRuntimes(requiredOperationServices, activeOperationsByName);
+        completeProviderRuntimeRegistration();
 
         int builtRouteCount = 0;
         for (Operation operation : activeOperationsByName.values()) {
@@ -106,22 +118,22 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 builtRouteCount);
     }
 
-    private Set<String> resolveRequiredOperationNames(List<RuntimeTargetProperties> runtimeTargets) {
-        Set<String> requiredOperationNames = new LinkedHashSet<>();
+    private Map<String, Set<String>> resolveRequiredOperationServices(List<RuntimeTargetProperties> runtimeTargets) {
+        Map<String, Set<String>> requiredOperationServices = new LinkedHashMap<>();
         for (RuntimeTargetProperties runtimeTarget : runtimeTargets) {
             if (runtimeTarget == null || !runtimeTarget.enabled()) {
                 continue;
             }
             for (String gatewayName : runtimeTarget.gatewayNames()) {
-                resolveRequiredOperationNames(runtimeTarget, gatewayName, requiredOperationNames);
+                resolveRequiredOperationServices(runtimeTarget, gatewayName, requiredOperationServices);
             }
         }
-        return requiredOperationNames;
+        return requiredOperationServices;
     }
 
-    private void resolveRequiredOperationNames(RuntimeTargetProperties runtimeTarget,
-                                               String gatewayName,
-                                               Set<String> requiredOperationNames) {
+    private void resolveRequiredOperationServices(RuntimeTargetProperties runtimeTarget,
+                                                   String gatewayName,
+                                                   Map<String, Set<String>> requiredOperationServices) {
         GatewayChannel gatewayChannel = gatewayService.findGatewayChannelByName(gatewayName);
         if (gatewayChannel == null) {
             log.warn("event={} layer=operation gatewayName={} reason=gateway-channel-not-found outcome=skipped",
@@ -146,17 +158,128 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         }
 
         RuntimeRoutePlan routePlan = runtimeRoutePlanProvider.provide(gatewayChannel);
-        routePlan.servicePlans()
-                .stream()
-                .flatMap(this::serviceOperations)
-                .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
-                .filter(serviceOperation ->
-                        !ServiceOperationDefinitionClassifier.isActionPlan(
-                                serviceOperation))
-                .map(ServiceOperation::getOperationName)
-                .map(StringUtils::trimToNull)
-                .filter(Objects::nonNull)
-                .forEach(requiredOperationNames::add);
+        routePlan.servicePlans().forEach(servicePlan -> {
+            String serviceCode = servicePlan != null && servicePlan.service() != null
+                    ? StringUtils.trimToNull(servicePlan.service().getCode())
+                    : null;
+            serviceOperations(servicePlan)
+                    .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
+                    .filter(serviceOperation -> !ServiceOperationDefinitionClassifier.isActionPlan(serviceOperation))
+                    .map(ServiceOperation::getOperationName)
+                    .map(StringUtils::trimToNull)
+                    .filter(Objects::nonNull)
+                    .forEach(operationName -> requiredOperationServices
+                            .computeIfAbsent(operationName, ignored -> new LinkedHashSet<>())
+                            .add(serviceCode == null ? "<unknown>" : serviceCode));
+        });
+    }
+
+    private void registerEffectiveProviderRuntimes(
+            Map<String, Set<String>> requiredOperationServices,
+            Map<String, Operation> activeOperationsByName
+    ) {
+        for (Map.Entry<String, Operation> entry : activeOperationsByName.entrySet()) {
+            Operation operation = entry.getValue();
+            if (operation == null || operation.getType() != OperationType.PROVIDER) {
+                continue;
+            }
+
+            OperationProvider provider = operation.getProvider();
+            Collection<String> serviceCodes = requiredOperationServices
+                    .getOrDefault(entry.getKey(), Set.of("<unknown>"));
+            validateEffectiveProvider(operation, provider, serviceCodes);
+
+            ProviderReference reference = providerReference(provider, operation.getName());
+            List<ProviderRuntimeLifecycle> supportingLifecycles = providerRuntimeLifecycles.stream()
+                    .filter(lifecycle -> lifecycle.supports(reference.scheme()))
+                    .toList();
+            if (supportingLifecycles.size() > 1) {
+                throw new IllegalStateException("Multiple provider runtime lifecycles support scheme='"
+                        + reference.scheme() + "' provider='" + reference.providerCode() + "'");
+            }
+            if (supportingLifecycles.isEmpty()) {
+                continue;
+            }
+
+            ProviderRuntimeLifecycle lifecycle = supportingLifecycles.getFirst();
+            for (String serviceCode : serviceCodes) {
+                lifecycle.registerEffectiveUsage(new EffectiveProviderUsage(
+                        serviceCode,
+                        operation.getName(),
+                        reference.providerCode(),
+                        reference.providerUri(),
+                        reference.scheme()
+                ));
+            }
+        }
+    }
+
+    private void validateEffectiveProvider(
+            Operation operation,
+            OperationProvider provider,
+            Collection<String> serviceCodes
+    ) {
+        String serviceCode = serviceCodes.stream().findFirst().orElse("<unknown>");
+        if (provider == null) {
+            throw new IllegalStateException("Active provider operation has no provider: service='"
+                    + serviceCode + "' operation='" + operation.getName() + "'");
+        }
+        if (!Boolean.TRUE.equals(provider.getActive())) {
+            throw new IllegalStateException("Active service references an inactive provider: service='"
+                    + serviceCode + "' operation='" + operation.getName()
+                    + "' provider='" + provider.getName() + "'");
+        }
+
+        ProviderReference reference = providerReference(provider, operation.getName());
+        Map<String, Object> configuredProvider = configuredProvider(reference.providerCode());
+        if (configuredProvider != null && explicitlyDisabled(configuredProvider.get("enabled"))) {
+            throw new IllegalStateException("Active service references a disabled provider: service='"
+                    + serviceCode + "' operation='" + operation.getName()
+                    + "' provider='" + reference.providerCode() + "'");
+        }
+    }
+
+    private ProviderReference providerReference(OperationProvider provider, String operationName) {
+        String uri = StringUtils.trimToNull(provider.getUri());
+        if (uri == null || !uri.contains(":")) {
+            throw new IllegalStateException("Provider URI must contain a scheme: operation='"
+                    + operationName + "' provider='" + provider.getName() + "'");
+        }
+        int separator = uri.indexOf(':');
+        String scheme = StringUtils.trimToNull(uri.substring(0, separator));
+        String uriProviderCode = StringUtils.trimToNull(uri.substring(separator + 1));
+        String providerCode = uriProviderCode != null
+                ? uriProviderCode
+                : StringUtils.trimToNull(provider.getName());
+        if (scheme == null || providerCode == null) {
+            throw new IllegalStateException("Invalid provider URI for operation='"
+                    + operationName + "' providerUri='" + uri + "'");
+        }
+        return new ProviderReference(scheme, providerCode, uri);
+    }
+
+    private Map<String, Object> configuredProvider(String providerCode) {
+        Map<String, Object> exact = providerRegistryProperties.provider(providerCode);
+        if (exact != null) {
+            return exact;
+        }
+        return providerRegistryProperties.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getKey().equalsIgnoreCase(providerCode))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean explicitlyDisabled(Object enabled) {
+        return Boolean.FALSE.equals(enabled)
+                || enabled instanceof String value && "false".equalsIgnoreCase(value.trim());
+    }
+
+    private void completeProviderRuntimeRegistration() {
+        providerRuntimeLifecycles.forEach(ProviderRuntimeLifecycle::registrationComplete);
+    }
+
+    private record ProviderReference(String scheme, String providerCode, String providerUri) {
     }
 
     private java.util.stream.Stream<ServiceOperation> serviceOperations(RuntimeServicePlan servicePlan) {

@@ -83,26 +83,18 @@ final class ShetabResponseRegistry {
         }
     }
 
-    boolean markSending(ResponseTracker tracker, long generation) {
+    boolean beginSend(ResponseTracker tracker, long generation) {
         synchronized (lock) {
             if (!trackers.contains(tracker) || tracker.future().isDone()) {
                 return false;
             }
 
-            tracker.markSending(generation);
-            return true;
+            return tracker.tryBeginSend(generation);
         }
     }
 
     boolean markSent(ResponseTracker tracker) {
-        synchronized (lock) {
-            if (!trackers.contains(tracker) || tracker.future().isDone()) {
-                return false;
-            }
-
-            tracker.markSent();
-            return true;
-        }
+        return tracker != null && tracker.markSent();
     }
 
     MatchResult match(ShetabCorrelationKey responseKey, long generation) {
@@ -116,6 +108,10 @@ final class ShetabResponseRegistry {
                     return MatchResult.unmatched(responseKey);
                 }
 
+                if (!tracker.claimResponse()) {
+                    removeLocked(tracker);
+                    return MatchResult.unmatched(responseKey);
+                }
                 removeLocked(tracker);
                 return MatchResult.matched(responseKey, tracker);
             }
@@ -143,16 +139,48 @@ final class ShetabResponseRegistry {
     }
 
     boolean failIfActive(ResponseTracker tracker, Throwable error) {
-        boolean removed = remove(tracker);
-        return removed && tracker.future().completeExceptionally(error);
+        if (!completeFailure(tracker, error)) {
+            return false;
+        }
+        remove(tracker);
+        return true;
     }
 
-    List<ResponseTracker> removeDeliveredByGeneration(long generation) {
+    boolean completeFailure(ResponseTracker tracker, Throwable error) {
+        if (tracker == null || !tracker.claimFailure()) {
+            return false;
+        }
+        tracker.failActiveAttempt(error);
+        return tracker.future().completeExceptionally(error);
+    }
+
+    TimeoutClaim timeout(ResponseTracker tracker, Throwable error) {
+        if (tracker == null) {
+            return TimeoutClaim.notClaimed();
+        }
+
+        ResponseTracker.TimeoutTransition transition = tracker.claimTimeout();
+        if (!transition.claimed()) {
+            return TimeoutClaim.notClaimed();
+        }
+
+        remove(tracker);
+        tracker.failActiveAttempt(error);
+        tracker.future().completeExceptionally(error);
+        return new TimeoutClaim(
+                true,
+                transition.deliveryStarted(),
+                transition.phase(),
+                transition.generation()
+        );
+    }
+
+    List<ResponseTracker> removeByGeneration(long generation) {
         List<ResponseTracker> failed = new ArrayList<>();
 
         synchronized (lock) {
             for (ResponseTracker tracker : new ArrayList<>(trackers)) {
-                if (tracker.wasDeliveredOn(generation)) {
+                if (tracker.belongsToGeneration(generation)) {
                     removeLocked(tracker);
                     failed.add(tracker);
                 }
@@ -160,21 +188,6 @@ final class ShetabResponseRegistry {
         }
 
         return failed;
-    }
-
-    List<ResponseTracker> removeExpired() {
-        List<ResponseTracker> expired = new ArrayList<>();
-
-        synchronized (lock) {
-            for (ResponseTracker tracker : new ArrayList<>(trackers)) {
-                if (tracker.deadline().isExpired()) {
-                    removeLocked(tracker);
-                    expired.add(tracker);
-                }
-            }
-        }
-
-        return expired;
     }
 
     List<ResponseTracker> removeAll() {
@@ -189,12 +202,6 @@ final class ShetabResponseRegistry {
         }
 
         return all;
-    }
-
-    int pendingCount() {
-        synchronized (lock) {
-            return trackers.size();
-        }
     }
 
     private MatchResult matchFallbackLocked(
@@ -223,6 +230,10 @@ final class ShetabResponseRegistry {
         }
 
         ResponseTracker tracker = candidates.getFirst();
+        if (!tracker.claimResponse()) {
+            removeLocked(tracker);
+            return MatchResult.unmatched(responseKey);
+        }
         removeLocked(tracker);
         return MatchResult.matched(responseKey, tracker);
     }
@@ -247,7 +258,7 @@ final class ShetabResponseRegistry {
         return tracker != null
                 && trackers.contains(tracker)
                 && !tracker.future().isDone()
-                && tracker.wasDeliveredOn(generation);
+                && tracker.canCompleteResponseOn(generation);
     }
 
     private boolean removeLocked(ResponseTracker tracker) {
@@ -322,6 +333,17 @@ final class ShetabResponseRegistry {
             return ambiguity != null;
         }
     }
+
+    record TimeoutClaim(
+            boolean claimed,
+            boolean deliveryStarted,
+            DeliveryPhase phase,
+            long generation
+    ) {
+        static TimeoutClaim notClaimed() {
+            return new TimeoutClaim(false, false, null, -1L);
+        }
+    }
 }
 
 final class ResponseTracker {
@@ -333,6 +355,7 @@ final class ResponseTracker {
     private ShetabProviderTraceLifecycle.Attempt activeAttempt;
     private volatile DeliveryPhase deliveryPhase = DeliveryPhase.QUEUED;
     private volatile long connectionGeneration = -1L;
+    private boolean terminal;
 
     ResponseTracker(
             ShetabCorrelationKey correlationKey,
@@ -362,25 +385,41 @@ final class ResponseTracker {
         return future;
     }
 
-    DeliveryPhase deliveryPhase() {
+    synchronized DeliveryPhase deliveryPhase() {
         return deliveryPhase;
     }
 
-    long connectionGeneration() {
+    synchronized long connectionGeneration() {
         return connectionGeneration;
     }
 
-    void markSending(long generation) {
+    synchronized boolean tryBeginSend(long generation) {
+        if (future.isDone() || terminal || deliveryPhase != DeliveryPhase.QUEUED) {
+            return false;
+        }
         connectionGeneration = generation;
         deliveryPhase = DeliveryPhase.SENDING;
+        return true;
     }
 
-    void markSent() {
+    synchronized void markAdmitted(long generation) {
+        if (terminal) {
+            return;
+        }
+        connectionGeneration = generation;
+        deliveryPhase = DeliveryPhase.QUEUED;
+    }
+
+    synchronized boolean markSent() {
+        if (terminal || deliveryPhase != DeliveryPhase.SENDING) {
+            return false;
+        }
         deliveryPhase = DeliveryPhase.SENT;
+        return true;
     }
 
     synchronized void startAttempt(String endpoint) {
-        if (traceLifecycle != null && activeAttempt == null && !future.isDone()) {
+        if (traceLifecycle != null && activeAttempt == null && !terminal && !future.isDone()) {
             activeAttempt = traceLifecycle.startAttempt(1, endpoint);
         }
     }
@@ -404,14 +443,70 @@ final class ResponseTracker {
         return attempt;
     }
 
-    boolean wasDeliveredOn(long generation) {
+    synchronized boolean canCompleteResponseOn(long generation) {
+        return !terminal && wasDeliveredOn(generation);
+    }
+
+    synchronized boolean wasDeliveredOn(long generation) {
         return connectionGeneration == generation
                 && (deliveryPhase == DeliveryPhase.SENDING || deliveryPhase == DeliveryPhase.SENT);
+    }
+
+    synchronized boolean belongsToGeneration(long generation) {
+        return connectionGeneration == generation;
+    }
+
+    synchronized boolean deliveryStarted() {
+        return deliveryPhase == DeliveryPhase.SENDING || deliveryPhase == DeliveryPhase.SENT;
+    }
+
+    synchronized boolean claimResponse() {
+        if (terminal || !wasDeliveredOn(connectionGeneration)) {
+            return false;
+        }
+        terminal = true;
+        return true;
+    }
+
+    synchronized boolean claimFailure() {
+        if (terminal) {
+            return false;
+        }
+        terminal = true;
+        return true;
+    }
+
+    synchronized TimeoutTransition claimTimeout() {
+        if (terminal) {
+            return TimeoutTransition.notClaimed();
+        }
+
+        DeliveryPhase currentPhase = deliveryPhase;
+        long currentGeneration = connectionGeneration;
+        boolean deliveryStarted = currentPhase == DeliveryPhase.SENDING || currentPhase == DeliveryPhase.SENT;
+        terminal = true;
+        if (!deliveryStarted) {
+            deliveryPhase = DeliveryPhase.TIMED_OUT_BEFORE_SEND;
+        }
+
+        return new TimeoutTransition(true, deliveryStarted, currentPhase, currentGeneration);
+    }
+
+    record TimeoutTransition(
+            boolean claimed,
+            boolean deliveryStarted,
+            DeliveryPhase phase,
+            long generation
+    ) {
+        static TimeoutTransition notClaimed() {
+            return new TimeoutTransition(false, false, null, -1L);
+        }
     }
 }
 
 enum DeliveryPhase {
     QUEUED,
+    TIMED_OUT_BEFORE_SEND,
     SENDING,
     SENT
 }
@@ -562,6 +657,12 @@ class ShetabRequestDeadlineExceededException extends IllegalStateException {
 class ShetabConnectionLostAfterSendException extends IllegalStateException {
     ShetabConnectionLostAfterSendException(String message, Throwable cause) {
         super(message, cause);
+    }
+}
+
+class ShetabConnectionUnavailableException extends IllegalStateException {
+    ShetabConnectionUnavailableException(String message) {
+        super(message);
     }
 }
 

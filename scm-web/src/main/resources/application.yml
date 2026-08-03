@@ -29,6 +29,12 @@ management:
       show-details: ${SCM_MANAGEMENT_HEALTH_SHOW_DETAILS:never}
       probes:
         enabled: ${SCM_MANAGEMENT_HEALTH_PROBES_ENABLED:true}
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,providerReadiness
+          show-details: ${SCM_MANAGEMENT_READINESS_SHOW_DETAILS:when_authorized}
 
 server:
   servlet:
@@ -133,6 +139,11 @@ scm:
       enabled: ${SCM_RESOURCE_SERVER_ENABLED:true}
       issuer-uri: ${SCM_UAA_BASE_URL}
       jwk-set-uri: ${SCM_UAA_BASE_URL}/oauth2/jwks
+      public-paths:
+        - /actuator/health/liveness
+        - /actuator/health/readiness
+        - /v3/api-docs/**
+        - /swagger-ui/**
       method-security-enabled: ${SCM_RESOURCE_SERVER_METHOD_SECURITY_ENABLED:true}
       observation:
         enabled: ${SCM_RESOURCE_SERVER_OBSERVATION_ENABLED:true}
@@ -216,11 +227,11 @@ scm:
 
     hps-shetab7:
       scheme: ${SCM_HPS_SHETAB7_SCHEME:scm-shetab}
-      enabled: ${SCM_HPS_SHETAB7_ENABLED:true}
+      enabled: ${SCM_HPS_SHETAB7_ENABLED:false}
       endpoints: ${SCM_HPS_SHETAB7_ENDPOINTS}
       packager-class: ${SCM_HPS_SHETAB7_PACKAGER_CLASS:Shetab7AsciiXAPackager}
       connect-timeout-ms: ${SCM_HPS_SHETAB7_CONNECT_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS:3000}}
-      socket-timeout-ms: ${SCM_HPS_SHETAB7_SOCKET_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_SOCKET_TIMEOUT_MS:1000}}
+      socket-timeout-ms: ${SCM_HPS_SHETAB7_SOCKET_TIMEOUT_MS:0}
       response-timeout-ms: ${SCM_HPS_SHETAB7_RESPONSE_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_RESPONSE_TIMEOUT_MS:8000}}
       send-timeout-ms: ${SCM_HPS_SHETAB7_SEND_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_SEND_TIMEOUT_MS:1000}}
       reconnect-delay-ms: ${SCM_HPS_SHETAB7_RECONNECT_DELAY_MS:1000}

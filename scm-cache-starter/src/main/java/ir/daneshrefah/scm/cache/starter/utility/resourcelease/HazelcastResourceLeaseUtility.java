@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class HazelcastResourceLeaseUtility implements ResourceLeaseUtility {
@@ -43,12 +44,15 @@ public class HazelcastResourceLeaseUtility implements ResourceLeaseUtility {
 
         for (String candidate : normalizedCandidates) {
             String leaseKey = leaseKey(normalizedPoolName, candidate);
+            String leaseOwnerId = ownerId + ":" + UUID.randomUUID();
             try {
-                String existingOwner = leaseMap.putIfAbsent(leaseKey, ownerId, ttlMs, TimeUnit.MILLISECONDS);
+                String existingOwner = leaseMap.putIfAbsent(
+                        leaseKey, leaseOwnerId, ttlMs, TimeUnit.MILLISECONDS);
                 if (existingOwner == null) {
                     log.info("Acquired remote resource lease: pool='{}', resource='{}', owner='{}'",
                             normalizedPoolName, candidate, ownerId);
-                    return new HazelcastLease(normalizedPoolName, candidate, leaseKey, ttlMs);
+                    return new HazelcastLease(
+                            normalizedPoolName, candidate, leaseKey, leaseOwnerId, ttlMs);
                 }
             } catch (Exception exception) {
                 throw new ResourceLeaseAcquireException(
@@ -105,14 +109,24 @@ public class HazelcastResourceLeaseUtility implements ResourceLeaseUtility {
         private final String poolName;
         private final String resourceName;
         private final String leaseKey;
+        private final String leaseOwnerId;
         private final long ttlMs;
         private final ScheduledExecutorService refresher;
         private final AtomicBoolean closed = new AtomicBoolean(false);
+        private final AtomicBoolean valid = new AtomicBoolean(true);
+        private final List<Runnable> invalidationListeners = new CopyOnWriteArrayList<>();
 
-        private HazelcastLease(String poolName, String resourceName, String leaseKey, long ttlMs) {
+        private HazelcastLease(
+                String poolName,
+                String resourceName,
+                String leaseKey,
+                String leaseOwnerId,
+                long ttlMs
+        ) {
             this.poolName = poolName;
             this.resourceName = resourceName;
             this.leaseKey = leaseKey;
+            this.leaseOwnerId = leaseOwnerId;
             this.ttlMs = ttlMs;
             this.refresher = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread thread = new Thread(r, "remote-resource-lease-" + resourceName);
@@ -135,18 +149,38 @@ public class HazelcastResourceLeaseUtility implements ResourceLeaseUtility {
         }
 
         @Override
+        public boolean isValid() {
+            return valid.get() && !closed.get();
+        }
+
+        @Override
+        public void onInvalidated(Runnable listener) {
+            if (listener == null) {
+                return;
+            }
+            invalidationListeners.add(listener);
+            if (!isValid()) {
+                notifyListener(listener);
+            }
+        }
+
+        @Override
         public void close() {
             if (!closed.compareAndSet(false, true)) {
                 return;
             }
+            valid.set(false);
             refresher.shutdownNow();
             try {
-                String currentOwner = leaseMap.get(leaseKey);
-                if (ownerId.equals(currentOwner)) {
-                    leaseMap.remove(leaseKey);
+                boolean released = leaseMap.remove(leaseKey, leaseOwnerId);
+                if (released) {
+                    log.info("Released remote resource lease: pool='{}', resource='{}', owner='{}'",
+                            poolName, resourceName, ownerId);
+                } else {
+                    log.warn("Remote resource lease was not released because ownership was absent: "
+                                    + "pool='{}', resource='{}', owner='{}'",
+                            poolName, resourceName, ownerId);
                 }
-                log.info("Released remote resource lease: pool='{}', resource='{}', owner='{}'",
-                        poolName, resourceName, ownerId);
             } catch (Exception exception) {
                 log.warn("Could not release remote resource lease: pool='{}', resource='{}', owner='{}'",
                         poolName, resourceName, ownerId, exception);
@@ -155,17 +189,34 @@ public class HazelcastResourceLeaseUtility implements ResourceLeaseUtility {
 
         private void refresh() {
             try {
-                String currentOwner = leaseMap.get(leaseKey);
-                if (ownerId.equals(currentOwner)) {
-                    leaseMap.set(leaseKey, ownerId, ttlMs, TimeUnit.MILLISECONDS);
+                boolean renewed = leaseMap.replace(leaseKey, leaseOwnerId, leaseOwnerId);
+                if (renewed) {
                     return;
                 }
                 log.warn("Remote resource lease was lost before refresh: pool='{}', resource='{}', owner='{}'",
                         poolName, resourceName, ownerId);
-                close();
+                invalidate();
             } catch (Exception exception) {
                 log.warn("Could not refresh remote resource lease: pool='{}', resource='{}', owner='{}'",
                         poolName, resourceName, ownerId, exception);
+                invalidate();
+            }
+        }
+
+        private void invalidate() {
+            if (!valid.compareAndSet(true, false)) {
+                return;
+            }
+            refresher.shutdownNow();
+            invalidationListeners.forEach(this::notifyListener);
+        }
+
+        private void notifyListener(Runnable listener) {
+            try {
+                listener.run();
+            } catch (RuntimeException exception) {
+                log.warn("Resource lease invalidation listener failed: pool='{}', resource='{}'",
+                        poolName, resourceName, exception);
             }
         }
     }

@@ -59,10 +59,20 @@ public class ShetabConfigResolver {
                 .toList();
     }
 
+    public List<ConfiguredShetabProvider> configuredProviders() {
+        return providerRegistryProperties.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && isShetabProvider(entry.getValue()))
+                .map(entry -> new ConfiguredShetabProvider(
+                        entry.getKey(),
+                        Boolean.TRUE.equals(bind(entry.getKey(), entry.getValue()).getEnabled())))
+                .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
+                        left.providerCode(), right.providerCode()))
+                .toList();
+    }
+
     private ShetabResolvedConfig resolveBase(ProviderReference reference) {
         RegistryEntry entry = findProvider(reference.providerCode(), reference.scheme());
-        ShetabProviderInstanceProperties instance = ProviderConfigurationBinder.bind(
-                entry.properties(), ShetabProviderInstanceProperties.class, "Shetab provider " + entry.providerCode());
+        ShetabProviderInstanceProperties instance = bind(entry.providerCode(), entry.properties());
         validate(entry.providerCode(), reference.scheme(), reference.providerUri(), instance);
         ProviderMessageCustomizerContext customizerContext = new ProviderMessageCustomizerContext(
                 entry.providerCode(), COMPONENT_SCHEME, providerUri(COMPONENT_SCHEME, entry.providerCode()),
@@ -109,7 +119,7 @@ public class ShetabConfigResolver {
                     + "', URI scheme is '" + uriScheme
                     + "' but configured scheme is '" + configuredScheme + "'.");
         }
-        if (Boolean.FALSE.equals(instance.getEnabled())) {
+        if (!Boolean.TRUE.equals(instance.getEnabled())) {
             throw new IllegalArgumentException("Shetab provider " + providerName + " is disabled");
         }
         if (mergedEndpoints(instance.getEndpoints(), instance.getEndpoint()).isEmpty()) {
@@ -133,6 +143,14 @@ public class ShetabConfigResolver {
                 .orElseThrow(() -> new IllegalArgumentException("Provider '" + providerName
                         + "' with scheme '" + scheme + "' is not configured. Available providers for scheme '" + scheme + "': "
                         + availableProviderCodes()));
+    }
+
+    private ShetabProviderInstanceProperties bind(String providerCode, Map<String, Object> properties) {
+        return ProviderConfigurationBinder.bind(
+                properties,
+                ShetabProviderInstanceProperties.class,
+                "Shetab provider " + providerCode
+        );
     }
 
     private ProviderReference normalizeProviderReference(String provider) {
@@ -235,5 +253,8 @@ public class ShetabConfigResolver {
     }
 
     private record ProviderReference(String providerCode, String scheme, String providerUri) {
+    }
+
+    public record ConfiguredShetabProvider(String providerCode, boolean enabled) {
     }
 }
