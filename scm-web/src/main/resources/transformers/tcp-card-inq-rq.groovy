@@ -8,16 +8,19 @@ import ir.daneshrefah.scm.utils.string.StringUtils
 import javax.swing.GroupLayout
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import org.slf4j.LoggerFactory
 
+
+def log = LoggerFactory.getLogger("tcp-card-inq-rq")
 def body = exchange.in.body
 def fundTransfer = body.fundTransfer
 def trk2EquivData = body.trk2EquivData
 
 def pin = trk2EquivData == null ? null : trk2EquivData.pin
-//println("tcp rq:" + body)
+//log.trace("tcp rq:" + body)
 
 //def fundTransfer = body.fundTransfer
-//println("fundTransfer:" + fundTransfer)
+//log.trace("fundTransfer:" + fundTransfer)
 //def amount = fundTransfer.amount
 //def date = fundTransfer.date
 def srcCard = fundTransfer.sourceCardNumber
@@ -34,13 +37,13 @@ def padZeroLeft = { str, length ->
     }
 }
 def field48 = "DST" + padZeroLeft(destCard.length() + "", 3) + destCard
-println("field48" + field48)
+log.trace("field48: {}", field48)
 
 //def srcAcc = fundTransfer.sourceAccountNumber
 
 //def trk2EquivData = body.trk2EquivData
-//def cvv2 = trk2EquivData.cvv2
-//def cardExpirationYearMonth = trk2EquivData.cardExpirationYearMonth
+def cvv2 = trk2EquivData.cvv2
+def cardExpirationYearMonth = trk2EquivData.cardExpirationYearMonth
 //def pin = trk2EquivData.pin
 
 def transmissionDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"))
@@ -53,7 +56,7 @@ def field = [:]
 def security = [:]
 
 req.put("mti", MTI.AUTHORIZATION_ADVICE_REQUEST_COMMAND.getCode());
-println("mti card inq rq : " + MTI.AUTHORIZATION_ADVICE_REQUEST_COMMAND.getCode())
+log.trace("mti card inq rq : {}", MTI.AUTHORIZATION_ADVICE_REQUEST_COMMAND.getCode())
 
 field.put(ISOField.PAN.getPosition(), srcCard);
 field.put(ISOField.PROCESSING_CODE.getPosition(), ProcessCode.AUTHORIZATION_ADVICE.getCode());
@@ -76,17 +79,17 @@ field.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT
 //field.put(ISOField.PIN_DATA.getPosition(), pin != null ? CardSystemSecurityUtil.encryptPin(pin, srcCard) : null)
 req.put("fields", field)
 
-security.put("expiryDate", "");
-security.put("cvv2", "");
+security.put("expiryDate", cardExpirationYearMonth);
+security.put("cvv2", cvv2);
 security.put("pin", "9729");
 security.put("expiryRequired", false);
-security.put("cvv2Required", false);
+security.put("cvv2Required", true);
 security.put("pinRequired", true);
 security.put("macRequired", false);
 
 req.put("security", security)
 
-println("tcp card inq rq: " + req)
-println("tcp card inq rq json: " + JsonOutput.toJson(req))
+log.trace("tcp card inq rq: {}", req)
+log.trace("tcp card inq rq json: {}", JsonOutput.toJson(req))
 
 return JsonOutput.toJson(req)

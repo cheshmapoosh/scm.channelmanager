@@ -102,7 +102,7 @@ metadata:
     app.kubernetes.io/version: "8.5.4"
     app.kubernetes.io/managed-by: Helm
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: scm-cache

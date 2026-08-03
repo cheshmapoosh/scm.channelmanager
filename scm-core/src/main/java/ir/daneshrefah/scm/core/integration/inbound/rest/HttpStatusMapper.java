@@ -130,8 +130,8 @@ public class HttpStatusMapper {
         statusMappingMap.put(MessageStatus.SERVER_PROCESSING_ERROR, 500);
         statusMappingMap.put(MessageStatus.TRANSACTION_PROCESSING_ERROR, 500);
         statusMappingMap.put(MessageStatus.SYSTEM_DEFECT, 500);
-        statusMappingMap.put(MessageStatus.CRYPTOGRAPHIC_ERROR, 500);
-        statusMappingMap.put(MessageStatus.ERROR_VERIFYING_SIGNATORIES, 500);
+        statusMappingMap.put(MessageStatus.CRYPTOGRAPHIC_ERROR, 403);
+        statusMappingMap.put(MessageStatus.ERROR_VERIFYING_SIGNATORIES, 403);
         statusMappingMap.put(MessageStatus.CREATE_KARPARDAZ_FAILED, 500);
         statusMappingMap.put(MessageStatus.DELETE_KARPARDAZ_DELETE, 500);
         statusMappingMap.put(MessageStatus.FAILED_CREATE_KARPARDAZ, 500);
@@ -146,6 +146,15 @@ public class HttpStatusMapper {
         statusMappingMap.put(MessageStatus.FORMAT_ERROR, 500);
         statusMappingMap.put(MessageStatus.MANA_VALIDATION_ERROR, 500);
         statusMappingMap.put(MessageStatus.ETC, 500);
+        statusMappingMap.put(MessageStatus.CONTACT_NOT_FOUND, 404);
+
+
+        statusMappingMap.put(MessageStatus.UNABLE_TO_FIND_RECORD_IN_THE_FILE,400);
+
+
+
+
+
     }
 
     public static Integer toHttpStatus(MessageStatus status) {

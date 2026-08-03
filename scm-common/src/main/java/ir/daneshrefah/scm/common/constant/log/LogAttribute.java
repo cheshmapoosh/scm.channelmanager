@@ -31,6 +31,7 @@ public enum LogAttribute {
     ERRORS("errors"),
     EXCEPTION_CLASS_NAME("exceptionClassName"),
     VERSION("version"),
+    APP_VERSION("appVersion"),
     END_POINT("endpoint"),
     METHOD_TYPE("methodType"),
     START_TIME("startTime"),

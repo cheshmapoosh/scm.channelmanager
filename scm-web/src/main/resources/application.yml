@@ -64,7 +64,7 @@ scm:
 
   application:
     version: ${SCM_APPLICATION_VERSION:${VERSION:9.1.0}}
-    build: ${SCM_APPLICATION_BUILD:unknown}
+    build: ${SCM_APPLICATION_BUILD:0803T1050}
 
   provider:
     task:
