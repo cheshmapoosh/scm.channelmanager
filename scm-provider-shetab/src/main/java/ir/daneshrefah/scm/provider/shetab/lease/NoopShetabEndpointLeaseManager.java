@@ -11,9 +11,9 @@ public class NoopShetabEndpointLeaseManager implements ShetabEndpointLeaseManage
         if (endpoints == null || endpoints.isEmpty()) {
             return ShetabEndpointLease.none();
         }
-        if (config.endpointLease() != null && config.endpointLease().enabled() && endpoints.size() > 1) {
+        if (config.endpointLease() != null && config.endpointLease().enabled()) {
             throw new IllegalStateException("Shetab provider " + config.provider()
-                    + " defines multiple endpoints and endpoint-lease.enabled=true, but no distributed ResourceLeaseUtility is configured");
+                    + " has endpoint-lease.enabled=true, but no ResourceLeaseUtility is configured");
         }
         EndpointParts endpointParts = parseEndpoint(endpoints.get(0), config.provider());
         return new SimpleShetabEndpointLease(endpointParts.rawEndpoint(), endpointParts.host(), endpointParts.port());
@@ -36,6 +36,16 @@ public class NoopShetabEndpointLeaseManager implements ShetabEndpointLeaseManage
     }
 
     private record SimpleShetabEndpointLease(String endpoint, String remoteHost, int remotePort) implements ShetabEndpointLease {
+        @Override
+        public boolean leasingRequired() {
+            return false;
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
         @Override
         public void close() {
         }

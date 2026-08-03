@@ -113,6 +113,21 @@ public class CacheClientShetabEndpointLeaseManager implements ShetabEndpointLeas
         }
 
         @Override
+        public boolean leasingRequired() {
+            return true;
+        }
+
+        @Override
+        public boolean isValid() {
+            return delegate.isValid();
+        }
+
+        @Override
+        public void onInvalidated(Runnable listener) {
+            delegate.onInvalidated(listener);
+        }
+
+        @Override
         public void close() {
             delegate.close();
             log.info("Released Shetab HPS endpoint lease via cache-client utility: provider={}, endpoint={}",
@@ -144,6 +159,16 @@ public class CacheClientShetabEndpointLeaseManager implements ShetabEndpointLeas
         @Override
         public int remotePort() {
             return remotePort;
+        }
+
+        @Override
+        public boolean leasingRequired() {
+            return false;
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
         }
 
         @Override

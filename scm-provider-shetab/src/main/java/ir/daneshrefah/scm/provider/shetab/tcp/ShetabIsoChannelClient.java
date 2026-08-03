@@ -5,7 +5,6 @@ import ir.daneshrefah.scm.provider.shetab.iso.ShetabPackagerFactory;
 import ir.daneshrefah.scm.provider.shetab.iso.log.SafeIsoLogFormatter;
 import ir.daneshrefah.scm.provider.shetab.lease.ShetabEndpointLeaseManager;
 import ir.daneshrefah.scm.provider.shetab.metrics.ShetabProviderMetrics;
-import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderAttemptResult;
 import ir.daneshrefah.scm.provider.shetab.trace.ShetabProviderTraceLifecycle;
 import lombok.extern.slf4j.Slf4j;
 import org.jpos.iso.ISOMsg;
@@ -23,20 +22,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class ShetabIsoChannelClient {
-
     private final ShetabResolvedConfig config;
     private final ShetabProviderMetrics.CounterSet metrics;
     private final ArrayBlockingQueue<PendingRequest> sendQueue;
-    private final ArrayBlockingQueue<ReconnectCommand> reconnectQueue = new ArrayBlockingQueue<>(1);
     private final ShetabChannelSessionManager sessionManager;
     private final ShetabResponseRegistry responseRegistry;
-
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final AtomicBoolean reconnectQueued = new AtomicBoolean(false);
     private final Object sendLock = new Object();
-
-    private volatile long lastReceivedAtMillis;
-    private volatile long lastSentAtMillis;
 
     private Thread senderThread;
     private Thread receiverThread;
@@ -51,10 +43,9 @@ public class ShetabIsoChannelClient {
         Objects.requireNonNull(packagerFactory, "packagerFactory");
         Objects.requireNonNull(endpointLeaseManager, "endpointLeaseManager");
         this.metrics = Objects.requireNonNull(metrics, "metrics").provider(config.provider());
-
-        int capacity = Math.max(1, config.queueCapacity());
-        this.sendQueue = new ArrayBlockingQueue<>(capacity);
+        this.sendQueue = new ArrayBlockingQueue<>(Math.max(1, config.queueCapacity()));
         this.sessionManager = new ShetabChannelSessionManager(config, packagerFactory, endpointLeaseManager);
+        this.sessionManager.setInvalidationListener(this::handleSessionInvalidation);
         this.responseRegistry = new ShetabResponseRegistry(config.provider());
     }
 
@@ -65,14 +56,9 @@ public class ShetabIsoChannelClient {
 
         senderThread = daemonThread("scm-shetab-sender-" + config.provider(), this::senderLoop);
         receiverThread = daemonThread("scm-shetab-receiver-" + config.provider(), this::receiverLoop);
-
+        sessionManager.startWorker();
         senderThread.start();
         receiverThread.start();
-
-        log.trace("Started Shetab ISOChannel client provider={} endpointCount={} queueCapacity={}",
-                config.provider(),
-                config.endpoints() != null ? config.endpoints().size() : 0,
-                config.queueCapacity());
     }
 
     public void stop() {
@@ -80,23 +66,20 @@ public class ShetabIsoChannelClient {
             return;
         }
 
-        log.trace("Stopping Shetab ISOChannel client provider={}", config.provider());
-
+        sessionManager.stopWorker();
         interruptQuietly(senderThread);
         interruptQuietly(receiverThread);
 
-        IllegalStateException error = new IllegalStateException("Shetab client stopped provider=" + config.provider());
-        failAllPending(error);
-        drainSendQueue(error);
-
+        IllegalStateException stopped = new IllegalStateException(
+                "reasonCode=SHETAB_CONNECTION_UNAVAILABLE Shetab client stopped provider=" + config.provider());
+        failAllPending(stopped);
+        drainSendQueue(stopped);
         joinQuietly(senderThread);
         joinQuietly(receiverThread);
-
-        log.trace("Stopped Shetab ISOChannel client provider={}", config.provider());
     }
 
     public ShetabTransportResponse request(
-            ISOMsg msg,
+            ISOMsg message,
             int timeoutMs,
             ShetabProviderTraceLifecycle traceLifecycle
     ) {
@@ -104,195 +87,140 @@ public class ShetabIsoChannelClient {
         metrics.submitted();
 
         if (!running.get()) {
-            throw new IllegalStateException("Shetab client is stopped provider=" + config.provider());
+            metrics.failed();
+            throw connectionUnavailable("client is not active");
         }
 
-        ShetabCorrelationKey correlationKey = ShetabCorrelationKey.from(msg);
+        ChannelSession admittedSession = sessionManager.admitCurrentSession();
+        if (admittedSession == null) {
+            sessionManager.signalRecovery("SESSION_INVALIDATED");
+            metrics.failed();
+            throw connectionUnavailable("no published valid session");
+        }
+
+        ShetabCorrelationKey correlationKey = ShetabCorrelationKey.from(message);
         Deadline deadline = Deadline.afterMillis(Math.max(1, timeoutMs));
         ResponseTracker tracker = null;
         boolean queued = false;
 
         try {
             tracker = responseRegistry.register(correlationKey, deadline, traceLifecycle);
-            PendingRequest pendingRequest = new PendingRequest(tracker, msg);
+            tracker.markAdmitted(admittedSession.generation());
+            if (!sessionManager.isActive(admittedSession)) {
+                throw connectionUnavailable("session changed during request admission");
+            }
 
+            PendingRequest pendingRequest = new PendingRequest(tracker, message, admittedSession);
             long queueWaitMs = Math.min(
                     Math.max(1L, config.sendTimeoutMs()),
                     Math.max(1L, deadline.remainingMillisCeiling())
             );
-
             queued = sendQueue.offer(pendingRequest, queueWaitMs, TimeUnit.MILLISECONDS);
-
             if (!queued) {
                 if (deadline.isExpired()) {
-                    throw deadlineExceeded(tracker, msg, null);
+                    throw deadlineExceeded(tracker, message, null);
                 }
-
                 RejectedExecutionException error = new RejectedExecutionException(
-                        "Shetab send queue is full provider=" + config.provider()
-                );
+                        "Shetab send queue is full provider=" + config.provider());
                 responseRegistry.failIfActive(tracker, error);
                 metrics.queueRejected();
                 throw error;
             }
 
             if (!tracker.future().isDone()) {
-                verifyPending(tracker, "after queue wait");
+                verifyPending(tracker, "after queue admission");
             }
-
-            return awaitResponse(msg, tracker);
-
-        } catch (ShetabRequestDeadlineExceededException e) {
-            handleRequestDeadline(tracker, msg, e);
-            throw e;
-
-        } catch (InterruptedException e) {
+            return awaitResponse(message, tracker);
+        } catch (ShetabRequestDeadlineExceededException exception) {
+            handleRequestDeadline(tracker, message, exception);
+            throw exception;
+        } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-
-            IllegalStateException error = new IllegalStateException(
+            IllegalStateException interrupted = new IllegalStateException(
                     "Interrupted while waiting Shetab response provider=" + config.provider()
                             + " key=" + displayKey(tracker, correlationKey),
-                    e
-            );
-
+                    exception);
             if (tracker != null) {
-                tracker.failActiveAttempt(error);
-                responseRegistry.failIfActive(tracker, error);
+                responseRegistry.failIfActive(tracker, interrupted);
             }
-
-            throw error;
-
-        } catch (TimeoutException e) {
-            ShetabRequestDeadlineExceededException error = deadlineExceeded(tracker, msg, e);
-            handleRequestDeadline(tracker, msg, error);
-            throw error;
-
-        } catch (ExecutionException e) {
-            return handleRequestExecutionFailure(tracker, msg, e);
-
-        } catch (RuntimeException e) {
+            throw interrupted;
+        } catch (TimeoutException exception) {
+            ShetabRequestDeadlineExceededException timeout = deadlineExceeded(tracker, message, exception);
+            handleRequestDeadline(tracker, message, timeout);
+            throw timeout;
+        } catch (ExecutionException exception) {
+            return handleRequestExecutionFailure(tracker, message, exception);
+        } catch (RuntimeException exception) {
             if (tracker != null) {
-                tracker.failActiveAttempt(e);
-                responseRegistry.remove(tracker);
+                responseRegistry.failIfActive(tracker, exception);
             }
-
             if (!queued) {
                 metrics.failed();
             }
-
-            throw e;
+            throw exception;
         }
     }
 
+    public ShetabConnectionSnapshot snapshot() {
+        return sessionManager.snapshot();
+    }
+
     private void senderLoop() {
-        try {
-            while (running.get()) {
-                SenderCommand command = null;
-
-                try {
-                    PendingRequest queuedRequest = sendQueue.poll();
-                    if (queuedRequest != null) {
-                        command = new SendRequestCommand(queuedRequest);
-                    } else {
-                        ReconnectCommand queuedReconnect = reconnectQueue.poll();
-                        if (queuedReconnect != null) {
-                            command = queuedReconnect;
-                        } else {
-                            queuedRequest = sendQueue.poll(100L, TimeUnit.MILLISECONDS);
-                            if (queuedRequest == null) {
-                                continue;
-                            }
-                            command = new SendRequestCommand(queuedRequest);
-                        }
-                    }
-
-                    if (command instanceof ReconnectCommand(long failedGeneration)) {
-                        try {
-                            sessionManager.reconnect(failedGeneration, running::get);
-                        } finally {
-                            reconnectQueued.set(false);
-                            long pendingGeneration = sessionManager.reconnectGenerationIfNeeded();
-                            if (pendingGeneration >= 0L) {
-                                requestReconnect(pendingGeneration);
-                            }
-                        }
-                    } else if (command instanceof SendRequestCommand(PendingRequest pending)) {
-                        sendPending(pending);
-                    }
-
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-
-                } catch (ShetabRequestNoLongerPendingException e) {
-                    log.debug("Shetab sender ignored inactive request provider={} reason={}",
-                            config.provider(), e.getMessage());
-
-                } catch (ShetabRequestDeadlineExceededException e) {
-                    PendingRequest pending = pendingRequest(command);
-                    if (pending != null) {
-                        responseRegistry.failIfActive(pending.tracker(), e);
-                    }
-
-                } catch (Exception e) {
-                    if (!running.get()) {
-                        return;
-                    }
-
-                    PendingRequest pending = pendingRequest(command);
-                    log.error("Shetab sender error provider={} pendingKey={} pendingMsg={}",
-                            config.provider(),
-                            pending != null ? pending.key() : null,
-                            pending != null ? SafeIsoLogFormatter.format(pending.msg()) : null,
-                            e);
-
-                    if (pending != null) {
-                        responseRegistry.failIfActive(pending.tracker(), e);
-                    }
+        while (running.get()) {
+            PendingRequest pending = null;
+            try {
+                pending = sendQueue.poll(100L, TimeUnit.MILLISECONDS);
+                if (pending != null) {
+                    sendPending(pending);
                 }
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                return;
+            } catch (ShetabRequestNoLongerPendingException | ShetabRequestDeadlineExceededException exception) {
+                if (pending != null) {
+                    responseRegistry.failIfActive(pending.tracker(), exception);
+                }
+                log.debug("Shetab sender ignored inactive request provider={} reason={}",
+                        config.provider(), safeExceptionMessage(exception));
+            } catch (Exception exception) {
+                if (!running.get()) {
+                    return;
+                }
+                if (pending != null) {
+                    responseRegistry.failIfActive(pending.tracker(), exception);
+                }
+                log.warn("Shetab sender failed provider={} pendingKey={} causeType={} causeMessage={}",
+                        config.provider(), pending != null ? pending.key() : null,
+                        exception.getClass().getName(), safeExceptionMessage(exception));
             }
-        } finally {
-            sessionManager.close();
         }
     }
 
     private void receiverLoop() {
         while (running.get()) {
             ChannelSession session = null;
-
             try {
-                session = sessionManager.waitForActiveSession(() -> running.get());
-
+                session = sessionManager.waitForActiveSession(running::get);
                 if (session == null) {
                     continue;
                 }
 
                 ISOMsg response = session.channel().receive();
-                lastReceivedAtMillis = System.currentTimeMillis();
-
                 ShetabCorrelationKey responseKey = ShetabCorrelationKey.from(response);
                 ShetabResponseRegistry.MatchResult match = responseRegistry.match(responseKey, session.generation());
 
                 if (match.ambiguous()) {
                     logWireDebug("received", response);
                     metrics.failed();
-                    log.warn("Shetab receive ambiguous provider={} keys={} mti={} stan={} rrn={}",
-                            config.provider(),
-                            responseKey.displayKeys(),
-                            safeMti(response),
-                            safeField(response, 11),
-                            safeField(response, 37),
-                            match.ambiguity());
+                    log.warn("Shetab receive ambiguous provider={} keys={} mti={} stan={} rrn={} causeType={}",
+                            config.provider(), responseKey.displayKeys(), safeMti(response), safeField(response, 11),
+                            safeField(response, 37), match.ambiguity().getClass().getName());
                     continue;
                 }
-
                 if (!match.matched()) {
                     logWireDebug("received", response);
                     log.trace("Shetab receive unmatched provider={} keys={} mti={} stan={} rrn={}",
-                            config.provider(),
-                            responseKey.displayKeys(),
-                            safeMti(response),
-                            safeField(response, 11),
+                            config.provider(), responseKey.displayKeys(), safeMti(response), safeField(response, 11),
                             safeField(response, 37));
                     continue;
                 }
@@ -300,368 +228,202 @@ public class ShetabIsoChannelClient {
                 ResponseTracker tracker = match.tracker();
                 long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - tracker.startedNanos());
                 boolean completed = tracker.future().complete(response);
-
                 metrics.received();
                 metrics.addLatency(elapsedMs);
                 sessionManager.markValidated(session);
                 logWireDebug("received", response, elapsedMs);
-
                 log.debug("event=SHETAB_RESPONSE_MATCHED provider={} endpoint={} generation={} "
                                 + "mti={} stan={} rrn={} responseCode={} elapsedMs={} completed={}",
-                        config.provider(),
-                        session.endpoint(),
-                        session.generation(),
-                        safeMti(response),
-                        safeField(response, 11),
-                        safeField(response, 37),
-                        safeField(response, 39),
-                        elapsedMs,
-                        completed);
-
-            } catch (InterruptedException e) {
+                        config.provider(), session.endpoint(), session.generation(), safeMti(response),
+                        safeField(response, 11), safeField(response, 37), safeField(response, 39), elapsedMs, completed);
+            } catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
                 return;
-
-            } catch (SocketTimeoutException e) {
-                log.debug("Shetab receiver socket timeout provider={}", config.provider());
-                handleReceiverFailure(session, e);
-
-            } catch (IOException e) {
-                handleReceiverFailure(session, e);
-
-            } catch (Exception e) {
-                handleReceiverFailure(session, e);
+            } catch (SocketTimeoutException exception) {
+                String reasonCode = config.socketTimeoutMs() > 0 ? "RECEIVE_IDLE_TIMEOUT" : "RECEIVE_FAILED";
+                if (config.socketTimeoutMs() > 0) {
+                    log.warn("event=SHETAB_RECEIVE_IDLE_TIMEOUT provider={} reasonCode=RECEIVE_IDLE_TIMEOUT "
+                                    + "phase=RECEIVE endpoint={} generation={} socketTimeoutMs={} threadName={}",
+                            config.provider(), session != null ? session.endpoint() : null,
+                            session != null ? session.generation() : -1L, config.socketTimeoutMs(),
+                            Thread.currentThread().getName());
+                }
+                handleReceiverFailure(session, exception, reasonCode);
+            } catch (IOException exception) {
+                handleReceiverFailure(session, exception, "RECEIVE_FAILED");
+            } catch (Exception exception) {
+                handleReceiverFailure(session, exception, "RECEIVE_FAILED");
             }
         }
     }
 
-    private void sendPending(PendingRequest pending) throws Exception {
+    private void sendPending(PendingRequest pending) {
         ResponseTracker tracker = pending.tracker();
-
-        verifyPending(tracker, "before transport attempt");
-        tracker.startAttempt(sessionManager.activeEndpoint());
-
-        while (running.get()) {
-            verifyPending(tracker, "before connection");
-
-            ChannelSession session = sessionManager.ensureConnected(
-                    tracker.deadline(),
-                    () -> running.get(),
-                    step -> verifyPending(tracker, step)
-            );
-
-            if (session == null) {
-                return;
-            }
-
-            verifyPending(tracker, "after connection");
-
-            if (!sessionManager.isActive(session)) {
-                continue;
-            }
-
-            if (sendOnSession(pending, session)) {
-                return;
-            }
-        }
-    }
-
-    private boolean sendOnSession(PendingRequest pending, ChannelSession session) {
-        ResponseTracker tracker = pending.tracker();
-
-        verifyPending(tracker, "before send");
-
+        verifyPending(tracker, "before send attempt");
+        ChannelSession session = pending.session();
         if (!sessionManager.isActive(session)) {
-            return false;
+            ShetabConnectionUnavailableException unavailable = connectionUnavailable(
+                    "admitted generation is no longer active generation=" + session.generation());
+            responseRegistry.failIfActive(tracker, unavailable);
+            throw unavailable;
+        }
+        tracker.startAttempt(session.endpoint());
+        sendOnSession(pending, session);
+    }
+
+    private void sendOnSession(PendingRequest pending, ChannelSession session) {
+        ResponseTracker tracker = pending.tracker();
+        verifyPending(tracker, "before send");
+        if (!sessionManager.isActive(session)) {
+            throw connectionUnavailable("session invalid before send generation=" + session.generation());
         }
 
         logIsoRequestBeforeSend(pending.msg(), tracker.correlationKey().displayKeys());
-        logPackedIsoBeforeSend(pending.msg());
-
         synchronized (sendLock) {
             verifyPending(tracker, "immediately before send");
-
             if (!sessionManager.isActive(session)) {
-                return false;
+                throw connectionUnavailable("session invalid immediately before send generation=" + session.generation());
             }
-
-            if (!responseRegistry.markSending(tracker, session.generation())) {
+            boolean sendAdmitted = sessionManager.beginSendIfCurrent(
+                    session,
+                    () -> responseRegistry.beginSend(tracker, session.generation())
+            );
+            if (!sendAdmitted) {
+                if (!sessionManager.isActive(session)) {
+                    throw connectionUnavailable(
+                            "session invalid at send admission generation=" + session.generation());
+                }
                 throw new ShetabRequestNoLongerPendingException(
                         "Shetab request tracker inactive before send provider="
-                                + config.provider() + " key=" + tracker.correlationKey().display()
-                );
+                                + config.provider() + " key=" + tracker.correlationKey().display());
             }
 
             try {
                 session.channel().send(pending.msg());
-            } catch (Exception e) {
-                ShetabAmbiguousProviderDeliveryException deliveryError =
-                        new ShetabAmbiguousProviderDeliveryException(
-                                "Shetab delivery status is ambiguous after send started provider="
-                                        + config.provider()
-                                        + " key=" + tracker.correlationKey().display()
-                                        + " generation=" + session.generation(),
-                                e
-                        );
-
-                responseRegistry.failIfActive(tracker, deliveryError);
-                ShetabChannelSessionManager.InvalidationResult invalidation =
-                        sessionManager.invalidateIfCurrent(session, e, () ->
-                                log.error("event=SHETAB_SEND_FAILURE provider={} endpoint={} generation={} key={} "
-                                                + "mti={} stan={} rrn={} causeType={} causeMessage={}",
-                                        config.provider(),
-                                        session.endpoint(),
-                                        session.generation(),
-                                        tracker.correlationKey().display(),
-                                        safeMti(pending.msg()),
-                                        safeField(pending.msg(), 11),
-                                        safeField(pending.msg(), 37),
-                                        e.getClass().getName(),
-                                        safeExceptionMessage(e),
-                                        e));
-
-                if (invalidation.invalidated()) {
-                    ShetabConnectionLostAfterSendException connectionError =
-                            new ShetabConnectionLostAfterSendException(
-                                    "Shetab connection lost after send started provider="
-                                            + config.provider()
-                                            + " generation=" + session.generation(),
-                                    e
-                            );
-                    failDeliveredByGeneration(invalidation.generation(), connectionError);
-                    requestReconnect(invalidation.generation());
-
-                } else {
-                    log.debug("event=SHETAB_STALE_SEND_FAILURE_IGNORED provider={} endpoint={} generation={} "
-                                    + "causeType={} causeMessage={}",
-                            config.provider(), session.endpoint(), session.generation(),
-                            e.getClass().getName(), safeExceptionMessage(e));
+            } catch (Exception exception) {
+                ShetabConnectionLostAfterSendException deliveryFailure = connectionLostAfterSend(
+                        session.generation(), "send failed after ISOChannel.send() was entered", exception);
+                ShetabChannelSessionManager.InvalidationResult invalidation = sessionManager.invalidateIfCurrent(
+                        session, exception, "SEND", "SEND_FAILED");
+                if (!invalidation.invalidated()) {
+                    responseRegistry.failIfActive(tracker, deliveryFailure);
                 }
-
-                return true;
+                log.warn("event=SHETAB_SEND_FAILURE provider={} reasonCode=SEND_FAILED phase=SEND "
+                                + "endpoint={} generation={} key={} causeType={} causeMessage={}",
+                        config.provider(), session.endpoint(), session.generation(), tracker.correlationKey().display(),
+                        exception.getClass().getName(), safeExceptionMessage(exception));
+                return;
             }
         }
 
         responseRegistry.markSent(tracker);
-        lastSentAtMillis = System.currentTimeMillis();
-
         metrics.sent();
         logWireDebug("sent", pending.msg());
-
         if (!tracker.future().isDone() && responseRegistry.contains(tracker) && tracker.deadline().isExpired()) {
             throw deadlineExceeded(tracker, pending.msg(), null);
         }
-
-        return true;
     }
 
-    private ShetabTransportResponse awaitResponse(ISOMsg msg, ResponseTracker tracker)
+    private ShetabTransportResponse awaitResponse(ISOMsg message, ResponseTracker tracker)
             throws InterruptedException, ExecutionException, TimeoutException {
         long waitMs = tracker.deadline().remainingMillisCeiling();
-
         if (waitMs <= 0L) {
             throw new TimeoutException("Shetab request deadline expired before response wait");
         }
-
         ISOMsg response = tracker.future().get(waitMs, TimeUnit.MILLISECONDS);
-
         if (tracker.deadline().isExpired()) {
-            throw deadlineExceeded(tracker, msg, null);
+            throw deadlineExceeded(tracker, message, null);
         }
-
         return new ShetabTransportResponse(response, tracker.releaseActiveAttempt());
     }
 
     private ShetabTransportResponse handleRequestExecutionFailure(
             ResponseTracker tracker,
-            ISOMsg msg,
-            ExecutionException e
+            ISOMsg message,
+            ExecutionException exception
     ) {
-        if (tracker != null) {
-            responseRegistry.remove(tracker);
-        }
-
-        Throwable cause = e.getCause() != null ? e.getCause() : e;
-
-        if (tracker != null) {
-            tracker.failActiveAttempt(cause);
-        }
-
-        if (cause instanceof ShetabRequestDeadlineExceededException deadlineError) {
-            recordResponseTimeoutIfCurrent(tracker, deadlineError);
+        Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
+        if (cause instanceof ShetabRequestDeadlineExceededException timeout) {
+            recordResponseTimeoutIfCurrent(tracker, timeout);
             metrics.timedOut();
-            throw deadlineError;
+            throw timeout;
         }
-
         metrics.failed();
-
         if (cause instanceof RuntimeException runtimeException) {
             throw runtimeException;
         }
-
         throw new IllegalStateException(
                 "Shetab request failed provider=" + config.provider()
-                        + " key=" + displayKey(tracker, ShetabCorrelationKey.from(msg))
-                        + ", cause=" + rootMessage(cause),
-                cause
-        );
+                        + " key=" + displayKey(tracker, ShetabCorrelationKey.from(message)),
+                cause);
     }
 
     private void handleRequestDeadline(
             ResponseTracker tracker,
-            ISOMsg msg,
-            ShetabRequestDeadlineExceededException error
+            ISOMsg message,
+            ShetabRequestDeadlineExceededException failure
     ) {
         if (tracker != null) {
-            responseRegistry.remove(tracker);
-            boolean completedByDeadline = tracker.future().completeExceptionally(error);
-            tracker.failActiveAttempt(error);
-
-            if (completedByDeadline || tracker.future().isCompletedExceptionally()) {
-                recordResponseTimeoutIfCurrent(tracker, error);
+            ShetabResponseRegistry.TimeoutClaim claim = responseRegistry.timeout(tracker, failure);
+            if (claim.deliveryStarted()) {
+                recordResponseTimeoutIfCurrent(tracker, failure);
             }
         }
-
         metrics.timedOut();
-
-        log.debug("Shetab request deadline exceeded provider={} key={} mti={} stan={} rrn={}",
-                config.provider(),
-                displayKey(tracker, ShetabCorrelationKey.from(msg)),
-                safeMti(msg),
-                safeField(msg, 11),
-                safeField(msg, 37));
+        log.warn("Shetab request timeout provider={} reasonCode=SHETAB_RESPONSE_TIMEOUT key={} "
+                        + "mti={} stan={} rrn={} deliveryPhase={}",
+                config.provider(), displayKey(tracker, ShetabCorrelationKey.from(message)), safeMti(message),
+                safeField(message, 11), safeField(message, 37),
+                tracker != null ? tracker.deliveryPhase() : null);
     }
 
-    private void recordResponseTimeoutIfCurrent(ResponseTracker tracker, Throwable error) {
-        if (tracker == null || tracker.deliveryPhase() != DeliveryPhase.SENT) {
+    private void recordResponseTimeoutIfCurrent(ResponseTracker tracker, Throwable failure) {
+        if (tracker == null
+                || !tracker.deliveryStarted()
+                || tracker.connectionGeneration() < 0L) {
             return;
         }
-
-        long generation = tracker.connectionGeneration();
-
-        if (generation != sessionManager.activeGeneration()) {
-            return;
-        }
-
-        ShetabChannelSessionManager.InvalidationResult invalidation =
-                sessionManager.recordResponseTimeout(generation, error);
-
-        if (invalidation.invalidated()) {
-            failDeliveredByGeneration(
-                    invalidation.generation(),
-                    new ShetabConnectionLostAfterSendException(
-                            "Shetab connection marked suspect after response timeouts provider="
-                                    + config.provider()
-                                    + " generation=" + invalidation.generation(),
-                            error
-                    )
-            );
-            requestReconnect(invalidation.generation());
-        }
+        sessionManager.recordResponseTimeout(tracker.connectionGeneration(), failure);
     }
 
-    private void handleReceiverFailure(ChannelSession session, Exception e) {
-        if (!running.get()) {
+    private void handleReceiverFailure(ChannelSession session, Exception failure, String reasonCode) {
+        if (!running.get() || session == null) {
             return;
         }
-
-        if (session == null) {
-            return;
-        }
-
-        ShetabChannelSessionManager.InvalidationResult invalidation =
-                sessionManager.invalidateIfCurrent(session, e, () ->
-                        log.warn("event=SHETAB_RECEIVER_FAILURE provider={} endpoint={} generation={} "
-                                        + "causeType={} causeMessage={} lastSentAt={} lastReceivedAt={}",
-                                config.provider(),
-                                session.endpoint(),
-                                session.generation(),
-                                e.getClass().getName(),
-                                safeExceptionMessage(e),
-                                lastSentAtMillis,
-                                lastReceivedAtMillis,
-                                e));
-
+        ShetabChannelSessionManager.InvalidationResult invalidation = sessionManager.invalidateIfCurrent(
+                session, failure, "RECEIVE", reasonCode);
         if (!invalidation.invalidated()) {
             log.debug("event=SHETAB_STALE_RECEIVER_FAILURE_IGNORED provider={} endpoint={} generation={} "
-                            + "causeType={} causeMessage={}",
-                    config.provider(), session.endpoint(), session.generation(),
-                    e.getClass().getName(), safeExceptionMessage(e));
-            if (log.isTraceEnabled()) {
-                log.trace("Stale Shetab receiver failure stack provider={} endpoint={} generation={}",
-                        config.provider(), session.endpoint(), session.generation(), e);
-            }
-            return;
+                            + "reasonCode={} causeType={} causeMessage={}",
+                    config.provider(), session.endpoint(), session.generation(), reasonCode,
+                    failure.getClass().getName(), safeExceptionMessage(failure));
         }
-
-        ShetabConnectionLostAfterSendException connectionError = new ShetabConnectionLostAfterSendException(
-                "Shetab connection lost while receiving provider="
-                        + config.provider()
-                        + " generation=" + session.generation(),
-                e
-        );
-        failDeliveredByGeneration(invalidation.generation(), connectionError);
-        requestReconnect(invalidation.generation());
     }
 
-    private void requestReconnect(long failedGeneration) {
-        if (!running.get()) {
-            return;
-        }
-        if (!reconnectQueued.compareAndSet(false, true)) {
-            log.debug("event=SHETAB_RECONNECT_ALREADY_QUEUED provider={} failedGeneration={} queueSize={}",
-                    config.provider(), failedGeneration, reconnectQueue.size());
-            return;
-        }
-        if (!reconnectQueue.offer(new ReconnectCommand(failedGeneration))) {
-            reconnectQueued.set(false);
-            log.warn("event=SHETAB_RECONNECT_QUEUE_REJECTED provider={} failedGeneration={} queueSize={}",
-                    config.provider(), failedGeneration, reconnectQueue.size());
-            return;
-        }
-        log.info("event=SHETAB_RECONNECT_SCHEDULED provider={} failedGeneration={} queueSize={}",
-                config.provider(), failedGeneration, reconnectQueue.size());
-    }
-
-    private PendingRequest pendingRequest(SenderCommand command) {
-        return command instanceof SendRequestCommand send ? send.pending() : null;
-    }
-
-    private void failDeliveredByGeneration(long generation, Throwable error) {
-        List<ResponseTracker> trackers = responseRegistry.removeDeliveredByGeneration(generation);
-
+    private void handleSessionInvalidation(ShetabChannelSessionManager.SessionInvalidation invalidation) {
+        List<ResponseTracker> trackers = responseRegistry.removeByGeneration(invalidation.generation());
         for (ResponseTracker tracker : trackers) {
-            tracker.failActiveAttempt(error);
-            tracker.future().completeExceptionally(error);
-        }
-    }
-
-    private void completeExpiredTrackers() {
-        List<ResponseTracker> expiredTrackers = responseRegistry.removeExpired();
-
-        for (ResponseTracker tracker : expiredTrackers) {
-            ShetabRequestDeadlineExceededException error = deadlineExceeded(tracker, null, null);
-            tracker.failActiveAttempt(error);
-            tracker.future().completeExceptionally(error);
+            RuntimeException failure = !tracker.deliveryStarted()
+                    ? connectionUnavailable("queued request invalidated before delivery generation="
+                    + invalidation.generation())
+                    : connectionLostAfterSend(
+                    invalidation.generation(),
+                    "connection invalidated reasonCode=" + invalidation.reasonCode(),
+                    invalidation.failure());
+            responseRegistry.completeFailure(tracker, failure);
         }
     }
 
     private void verifyPending(ResponseTracker tracker, String step) {
         if (!running.get()) {
             throw new ShetabRequestNoLongerPendingException(
-                    "Shetab client stopped provider=" + config.provider() + " step=" + step
-            );
+                    "Shetab client stopped provider=" + config.provider() + " step=" + step);
         }
-
         if (tracker.future().isDone() || !responseRegistry.contains(tracker)) {
             throw new ShetabRequestNoLongerPendingException(
-                    "Shetab request no longer pending provider="
-                            + config.provider()
-                            + " key=" + tracker.correlationKey().display()
-                            + " step=" + step
-            );
+                    "Shetab request no longer pending provider=" + config.provider()
+                            + " key=" + tracker.correlationKey().display() + " step=" + step);
         }
-
         if (tracker.deadline().isExpired()) {
             throw deadlineExceeded(tracker, null, null);
         }
@@ -669,88 +431,61 @@ public class ShetabIsoChannelClient {
 
     private ShetabRequestDeadlineExceededException deadlineExceeded(
             ResponseTracker tracker,
-            ISOMsg msg,
+            ISOMsg message,
             Throwable cause
     ) {
-        String message = "Shetab request deadline exceeded provider=" + config.provider()
-                + " key=" + displayKey(tracker, ShetabCorrelationKey.from(msg))
-                + " mti=" + safeMti(msg)
-                + " stan=" + safeField(msg, 11)
-                + " rrn=" + safeField(msg, 37);
-
-        if (cause == null) {
-            return new ShetabRequestDeadlineExceededException(message);
-        }
-
-        return new ShetabRequestDeadlineExceededException(message, cause);
+        String text = "reasonCode=SHETAB_RESPONSE_TIMEOUT Shetab response deadline exceeded provider="
+                + config.provider() + " key=" + displayKey(tracker, ShetabCorrelationKey.from(message));
+        return cause == null
+                ? new ShetabRequestDeadlineExceededException(text)
+                : new ShetabRequestDeadlineExceededException(text, cause);
     }
 
-    private void failAllPending(Throwable error) {
-        List<ResponseTracker> trackers = responseRegistry.removeAll();
+    private ShetabConnectionUnavailableException connectionUnavailable(String detail) {
+        return new ShetabConnectionUnavailableException(
+                "reasonCode=SHETAB_CONNECTION_UNAVAILABLE provider=" + config.provider() + " detail=" + detail);
+    }
 
-        for (ResponseTracker tracker : trackers) {
-            tracker.failActiveAttempt(error);
-            tracker.future().completeExceptionally(error);
+    private ShetabConnectionLostAfterSendException connectionLostAfterSend(
+            long generation,
+            String detail,
+            Throwable cause
+    ) {
+        return new ShetabConnectionLostAfterSendException(
+                "reasonCode=SHETAB_CONNECTION_LOST_AFTER_SEND provider=" + config.provider()
+                        + " generation=" + generation + " detail=" + detail,
+                cause);
+    }
+
+    private void failAllPending(Throwable failure) {
+        for (ResponseTracker tracker : responseRegistry.removeAll()) {
+            responseRegistry.completeFailure(tracker, failure);
         }
     }
 
-    private void drainSendQueue(Throwable error) {
+    private void drainSendQueue(Throwable failure) {
         PendingRequest pending;
-
         while ((pending = sendQueue.poll()) != null) {
-            pending.tracker().failActiveAttempt(error);
-            responseRegistry.failIfActive(pending.tracker(), error);
+            responseRegistry.failIfActive(pending.tracker(), failure);
         }
-    }
-
-    public boolean isHealthy() {
-        return running.get() && sessionManager.isHealthy();
-    }
-
-    public Throwable lastConnectionFailure() {
-        return sessionManager.lastConnectionFailure();
-    }
-
-    public int pendingResponseCount() {
-        return responseRegistry.pendingCount();
-    }
-
-    public int queuedRequestCount() {
-        return sendQueue.size();
-    }
-
-    public long lastConnectedAtMillis() {
-        return sessionManager.lastConnectedAtMillis();
-    }
-
-    public long lastSentAtMillis() {
-        return lastSentAtMillis;
-    }
-
-    public long lastReceivedAtMillis() {
-        return lastReceivedAtMillis;
     }
 
     private String displayKey(ResponseTracker tracker, ShetabCorrelationKey fallback) {
-        if (tracker != null) {
-            return tracker.correlationKey().display();
-        }
-
-        return fallback == null ? "" : fallback.display();
+        return tracker != null ? tracker.correlationKey().display() : fallback == null ? "" : fallback.display();
     }
 
-    private String safeField(ISOMsg msg, int field) {
+    private String safeField(ISOMsg message, int field) {
         try {
-            return msg != null ? msg.getString(field) : null;
-        } catch (Exception e) {
+            return message != null ? message.getString(field) : null;
+        } catch (Exception ignored) {
             return null;
         }
     }
 
-    private String safeMti(ISOMsg msg) {
+    private String safeMti(ISOMsg message) {
         try {
-            return msg != null && msg.hasMTI() ? msg.getMTI() : null;
-        } catch (Exception e) {
+            return message != null && message.hasMTI() ? message.getMTI() : null;
+        } catch (Exception ignored) {
             return null;
         }
     }
@@ -758,11 +493,10 @@ public class ShetabIsoChannelClient {
     private Thread daemonThread(String name, Runnable runnable) {
         Thread thread = new Thread(runnable, name);
         thread.setDaemon(true);
-
-        thread.setUncaughtExceptionHandler((t, e) ->
-                log.error("Uncaught exception in Shetab thread provider={} thread={}",
-                        config.provider(), t.getName(), e));
-
+        thread.setUncaughtExceptionHandler((failedThread, failure) ->
+                log.error("Uncaught exception in Shetab thread provider={} thread={} causeType={} causeMessage={}",
+                        config.provider(), failedThread.getName(), failure.getClass().getName(),
+                        safeExceptionMessage(failure)));
         return thread;
     }
 
@@ -776,118 +510,50 @@ public class ShetabIsoChannelClient {
         if (thread == null || thread == Thread.currentThread()) {
             return;
         }
-
         try {
-            long timeout = Math.max(1_000L, config.connectTimeoutMs() + config.socketTimeoutMs() + 500L);
-            thread.join(timeout);
-        } catch (InterruptedException e) {
+            thread.join(Math.max(1_000L, config.connectTimeoutMs() + 1_000L));
+        } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
         }
     }
 
-    private void logWireDebug(String direction, ISOMsg msg) {
-        logWireDebug(direction, msg, -1L);
+    private void logWireDebug(String direction, ISOMsg message) {
+        logWireDebug(direction, message, -1L);
     }
 
-    private void logWireDebug(String direction, ISOMsg msg, long elapsedMs) {
-        if (!log.isDebugEnabled()) {
-            return;
+    private void logWireDebug(String direction, ISOMsg message, long elapsedMs) {
+        if (log.isDebugEnabled()) {
+            log.debug("Shetab {} provider={} message={}", direction, config.provider(),
+                    SafeIsoLogFormatter.format(SafeIsoLogFormatter.sanitize(message), elapsedMs));
         }
-
-        log.debug("Shetab {} provider={} message={}",
-                direction,
-                config.provider(),
-                SafeIsoLogFormatter.format(SafeIsoLogFormatter.sanitize(msg), elapsedMs));
     }
 
-    private void logIsoRequestBeforeSend(ISOMsg msg, List<String> requestKeys) {
-        if (!log.isInfoEnabled()) {
+    private void logIsoRequestBeforeSend(ISOMsg message, List<String> requestKeys) {
+        if (!log.isTraceEnabled()) {
             return;
         }
-
-        ISOMsg safe = SafeIsoLogFormatter.sanitize(msg);
+        ISOMsg safe = SafeIsoLogFormatter.sanitize(message);
         log.trace("Shetab ISO request before send provider={} keys={} mti={} stan={} rrn={}",
-                config.provider(),
-                requestKeys,
-                safeMti(safe),
-                safeField(safe, 11),
-                safeField(safe, 37));
+                config.provider(), requestKeys, safeMti(safe), safeField(safe, 11), safeField(safe, 37));
     }
 
-    private void logPackedIsoBeforeSend(ISOMsg msg) {
-        if (!log.isDebugEnabled()) {
-            return;
-        }
-
-        try {
-            byte[] packed = SafeIsoLogFormatter.sanitize(msg).pack();
-
-            log.debug("Shetab ISO packed provider={} totalLength={} hex={}",
-                    config.provider(),
-                    packed.length,
-                    toHex(packed));
-
-        } catch (Exception e) {
-            log.trace("Could not pack Shetab ISO message for debug provider={}", config.provider(), e);
-        }
-    }
-
-    private String toHex(byte[] bytes) {
-        if (bytes == null) {
+    private String safeExceptionMessage(Throwable failure) {
+        if (failure == null) {
             return null;
         }
-
-        char[] hexArray = "0123456789ABCDEF".toCharArray();
-        char[] hexChars = new char[bytes.length * 2];
-
-        for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-
-        return new String(hexChars);
-    }
-
-    private String rootMessage(Throwable e) {
-        if (e == null) {
-            return "unknown";
-        }
-
-        Throwable t = e;
-        while (t.getCause() != null) {
-            t = t.getCause();
-        }
-
-        String message = t.getMessage();
-        return t.getClass().getSimpleName() + (message != null ? ": " + message : "");
-    }
-
-    private String safeExceptionMessage(Throwable error) {
-        if (error == null) {
-            return null;
-        }
-        String message = error.getMessage();
-        String safe = message == null || message.isBlank() ? error.getClass().getSimpleName() : message;
+        String message = failure.getMessage();
+        String safe = message == null || message.isBlank() ? failure.getClass().getSimpleName() : message;
         safe = safe.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
-        return safe.length() <= 500 ? safe : safe.substring(0, 500) + "...[truncated]";
+        return safe.length() <= 300 ? safe : safe.substring(0, 300) + "...[truncated]";
     }
 
     private record PendingRequest(
             ResponseTracker tracker,
-            ISOMsg msg
+            ISOMsg msg,
+            ChannelSession session
     ) {
         String key() {
             return tracker.correlationKey().display();
         }
-    }
-
-    private sealed interface SenderCommand permits SendRequestCommand, ReconnectCommand {
-    }
-
-    private record SendRequestCommand(PendingRequest pending) implements SenderCommand {
-    }
-
-    private record ReconnectCommand(long failedGeneration) implements SenderCommand {
     }
 }

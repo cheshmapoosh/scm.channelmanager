@@ -7,6 +7,13 @@ public interface ShetabEndpointLease extends AutoCloseable {
 
     int remotePort();
 
+    boolean leasingRequired();
+
+    boolean isValid();
+
+    default void onInvalidated(Runnable listener) {
+    }
+
     @Override
     void close();
 
@@ -25,6 +32,16 @@ public interface ShetabEndpointLease extends AutoCloseable {
             @Override
             public int remotePort() {
                 return 0;
+            }
+
+            @Override
+            public boolean leasingRequired() {
+                return false;
+            }
+
+            @Override
+            public boolean isValid() {
+                return false;
             }
 
             @Override

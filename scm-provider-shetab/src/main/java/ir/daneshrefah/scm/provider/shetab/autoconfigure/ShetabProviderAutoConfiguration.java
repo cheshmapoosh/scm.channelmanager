@@ -58,7 +58,8 @@ public class ShetabProviderAutoConfiguration {
     public ShetabEndpointLeaseManager shetabEndpointLeaseManager(ObjectProvider<ResourceLeaseUtility> resourceLeaseUtility) {
         ResourceLeaseUtility utility = resourceLeaseUtility.getIfAvailable();
         if (utility == null) {
-            log.warn("ResourceLeaseUtility not found; Shetab endpoint lease supports only single-endpoint providers. Multi-endpoint providers with endpoint-lease.enabled=true will fail until scm-cache-starter resource-lease is enabled.");
+            log.warn("ResourceLeaseUtility not found; effective Shetab providers with endpoint-lease.enabled=true "
+                    + "will remain disconnected until scm-cache-starter resource-lease is enabled.");
             return new NoopShetabEndpointLeaseManager();
         }
         return new CacheClientShetabEndpointLeaseManager(utility);

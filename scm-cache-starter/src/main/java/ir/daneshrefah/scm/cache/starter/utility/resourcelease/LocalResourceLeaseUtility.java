@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class LocalResourceLeaseUtility implements ResourceLeaseUtility {
@@ -32,10 +33,11 @@ public class LocalResourceLeaseUtility implements ResourceLeaseUtility {
 
         for (String candidate : normalizedCandidates) {
             String leaseKey = leaseKey(normalizedPoolName, candidate);
-            if (tryAcquire(leaseKey, ttlMs)) {
+            String leaseOwnerId = ownerId + ":" + UUID.randomUUID();
+            if (tryAcquire(leaseKey, leaseOwnerId, ttlMs)) {
                 log.info("Acquired local resource lease: pool='{}', resource='{}', owner='{}'",
                         normalizedPoolName, candidate, ownerId);
-                return new LocalLease(normalizedPoolName, candidate, leaseKey, ttlMs);
+                return new LocalLease(normalizedPoolName, candidate, leaseKey, leaseOwnerId, ttlMs);
             }
         }
 
@@ -43,22 +45,22 @@ public class LocalResourceLeaseUtility implements ResourceLeaseUtility {
                 "No available local resource in pool='" + normalizedPoolName + "' for candidates=" + normalizedCandidates);
     }
 
-    private boolean tryAcquire(String leaseKey, long ttlMs) {
+    private boolean tryAcquire(String leaseKey, String leaseOwnerId, long ttlMs) {
         synchronized (leaseStates) {
             long now = System.currentTimeMillis();
             LeaseState current = leaseStates.get(leaseKey);
             if (current == null || current.expiresAtMs <= now) {
-                leaseStates.put(leaseKey, new LeaseState(ownerId, now + ttlMs));
+                leaseStates.put(leaseKey, new LeaseState(leaseOwnerId, now + ttlMs));
                 return true;
             }
             return false;
         }
     }
 
-    private boolean refreshIfOwned(String leaseKey, long ttlMs) {
+    private boolean refreshIfOwned(String leaseKey, String leaseOwnerId, long ttlMs) {
         synchronized (leaseStates) {
             LeaseState current = leaseStates.get(leaseKey);
-            if (current == null || !ownerId.equals(current.ownerId)) {
+            if (current == null || !leaseOwnerId.equals(current.ownerId)) {
                 return false;
             }
             current.expiresAtMs = System.currentTimeMillis() + ttlMs;
@@ -66,10 +68,10 @@ public class LocalResourceLeaseUtility implements ResourceLeaseUtility {
         }
     }
 
-    private void releaseIfOwned(String leaseKey) {
+    private void releaseIfOwned(String leaseKey, String leaseOwnerId) {
         synchronized (leaseStates) {
             LeaseState current = leaseStates.get(leaseKey);
-            if (current != null && ownerId.equals(current.ownerId)) {
+            if (current != null && leaseOwnerId.equals(current.ownerId)) {
                 leaseStates.remove(leaseKey);
             }
         }
@@ -124,14 +126,24 @@ public class LocalResourceLeaseUtility implements ResourceLeaseUtility {
         private final String poolName;
         private final String resourceName;
         private final String leaseKey;
+        private final String leaseOwnerId;
         private final long ttlMs;
         private final ScheduledExecutorService refresher;
         private final AtomicBoolean closed = new AtomicBoolean(false);
+        private final AtomicBoolean valid = new AtomicBoolean(true);
+        private final List<Runnable> invalidationListeners = new CopyOnWriteArrayList<>();
 
-        private LocalLease(String poolName, String resourceName, String leaseKey, long ttlMs) {
+        private LocalLease(
+                String poolName,
+                String resourceName,
+                String leaseKey,
+                String leaseOwnerId,
+                long ttlMs
+        ) {
             this.poolName = poolName;
             this.resourceName = resourceName;
             this.leaseKey = leaseKey;
+            this.leaseOwnerId = leaseOwnerId;
             this.ttlMs = ttlMs;
             this.refresher = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread thread = new Thread(r, "local-resource-lease-" + resourceName);
@@ -154,27 +166,62 @@ public class LocalResourceLeaseUtility implements ResourceLeaseUtility {
         }
 
         @Override
+        public boolean isValid() {
+            return valid.get() && !closed.get();
+        }
+
+        @Override
+        public void onInvalidated(Runnable listener) {
+            if (listener == null) {
+                return;
+            }
+            invalidationListeners.add(listener);
+            if (!isValid()) {
+                notifyListener(listener);
+            }
+        }
+
+        @Override
         public void close() {
             if (!closed.compareAndSet(false, true)) {
                 return;
             }
+            valid.set(false);
             refresher.shutdownNow();
-            releaseIfOwned(leaseKey);
+            releaseIfOwned(leaseKey, leaseOwnerId);
             log.info("Released local resource lease: pool='{}', resource='{}', owner='{}'",
                     poolName, resourceName, ownerId);
         }
 
         private void refresh() {
             try {
-                boolean refreshed = refreshIfOwned(leaseKey, ttlMs);
+                boolean refreshed = refreshIfOwned(leaseKey, leaseOwnerId, ttlMs);
                 if (!refreshed) {
                     log.warn("Local resource lease was lost before refresh: pool='{}', resource='{}', owner='{}'",
                             poolName, resourceName, ownerId);
-                    close();
+                    invalidate();
                 }
             } catch (Exception exception) {
                 log.warn("Could not refresh local resource lease: pool='{}', resource='{}', owner='{}'",
                         poolName, resourceName, ownerId, exception);
+                invalidate();
+            }
+        }
+
+        private void invalidate() {
+            if (!valid.compareAndSet(true, false)) {
+                return;
+            }
+            refresher.shutdownNow();
+            invalidationListeners.forEach(this::notifyListener);
+        }
+
+        private void notifyListener(Runnable listener) {
+            try {
+                listener.run();
+            } catch (RuntimeException exception) {
+                log.warn("Resource lease invalidation listener failed: pool='{}', resource='{}'",
+                        poolName, resourceName, exception);
             }
         }
     }
