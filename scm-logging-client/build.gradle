@@ -12,6 +12,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     compileOnly 'org.springframework.boot:spring-boot-starter-web'
     implementation'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.security:spring-security-core'
+    implementation 'org.springframework.security:spring-security-oauth2-jose'
     compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     api 'io.opentelemetry:opentelemetry-api'
     api 'io.opentelemetry:opentelemetry-sdk'
