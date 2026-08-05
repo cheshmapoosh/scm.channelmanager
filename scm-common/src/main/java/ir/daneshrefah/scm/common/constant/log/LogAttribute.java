@@ -60,7 +60,8 @@ public enum LogAttribute {
     MESSAGE_RESPONSE("messageResponse"),
     TRANSACTION_TYPE("transactionType"),
     TRANSACTION_TYPE_REQUEST("transactionTypeRequest"),
-    TRANSACTION_TYPE_RESPONSE("transactionTypeResponse");
+    TRANSACTION_TYPE_RESPONSE("transactionTypeResponse"),
+    ACCESS_PARAMETERS ("accessParameter") ;
     private final String attributeName;
 }
 

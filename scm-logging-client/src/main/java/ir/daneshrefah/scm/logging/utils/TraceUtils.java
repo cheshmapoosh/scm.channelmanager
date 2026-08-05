@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
+import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.annotation.PostConstruct;
@@ -20,12 +21,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -108,10 +108,43 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? maskSensitiveRequestValues(exchange.getIn().getBody(String.class)) : "");
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
+        span.setAttribute(
+                LogAttribute.ACCESS_PARAMETERS.getAttributeName(),
+                getAccessParameter()
+        );
         legacyGatewayLogSpanEnricher.enrichGatewayRequest(exchange, service, span, messageId);
         putTraceMdc(span);
     }
+    private String getAccessParameter() {
+        Authentication authentication = AuthenticationUtils.getAuthentication();
 
+        if (authentication == null) {
+            return "";
+        }
+
+        Object principal = authentication.getPrincipal();
+        Object accessParameters;
+
+        if (principal instanceof User user) {
+            accessParameters = user.getAccessParameters();
+        } else if (principal instanceof Jwt jwt) {
+            accessParameters = jwt.getClaims().get("acp");
+        } else {
+            return "";
+        }
+
+        if (accessParameters instanceof Collection<?> collection) {
+            return collection.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::valueOf)
+                    .findFirst()
+                    .orElse("");
+        }
+
+        return accessParameters != null
+                ? String.valueOf(accessParameters)
+                : "";
+    }
     public void traceScmResponse(Exchange exchange,Service service) {
         Span localSpan = legacyGatewayLogSpanEnricher.gatewaySpan(exchange);
         apply(exchange, localSpan, (span) -> {
