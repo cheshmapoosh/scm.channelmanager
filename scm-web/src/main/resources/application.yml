@@ -59,6 +59,20 @@ logging:
 scm:
   app-name: ${SCM_GATEWAY_NAME}
   channels: ${SCM_CHANNELS:${SCM_CHANNEL_CODE}}
+  plugins:
+    destination-card-bin-block:
+      enabled: ${SCM_PLUGINS_DESTINATION_CARD_BIN_BLOCK_ENABLED:true}
+      blocked-bank-bins:
+        - "502229"
+        - "504172"
+        - "505416"
+      error:
+        code: ${SCM_PLUGINS_DESTINATION_CARD_BIN_BLOCK_ERROR:DESTINATION_CARD_BANK_NOT_ALLOWED}
+    destination-iban-bank-block:
+      enabled: ${SCM_PLUGINS_DESTINATION_IBAN_BANK_BLOCK_ENABLED:true}
+      blocked-bank-codes: []
+      error:
+        code: ${SCM_PLUGINS_DESTINATION_IBAN_BANK_BLOCK_ERROR:DESTINATION_IBAN_BANK_NOT_ALLOWED}
 
   metadata:
     namespace: ${SCM_METADATA_NAMESPACE:}
