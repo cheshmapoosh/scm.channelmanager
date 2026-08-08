@@ -10,6 +10,7 @@ import ir.daneshrefah.scm.common.constant.log.LogAttribute;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
+import ir.daneshrefah.scm.uaa.common.model.authentication.UserAuthentication;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import ir.daneshrefah.scm.utils.constant.Constants;
@@ -27,6 +28,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
+
+
 @Component
 @RequiredArgsConstructor
 public class TraceUtils {
@@ -41,6 +44,7 @@ public class TraceUtils {
     private static final String SECURITY = "security";
     private static final String TRK2_EQUIV_DATA = "trk2EquivData";
     private static final String CARD_EXPIRATION_YEAR_MONTH = "cardExpirationYearMonth";
+    private static final String CLAIM_KEY_TERMINAL ="trm";
 
     @Getter
     private static TraceUtils instance;
@@ -152,6 +156,7 @@ public class TraceUtils {
             trace(exchange, service, span);
             legacyGatewayLogSpanEnricher.enrichGatewayResponse(exchange, service, span);
         },true);
+
     }
 
 
@@ -226,7 +231,11 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.NICKNAME.getAttributeName(), AuthenticationUtils.getEffectiveNickname().orElse(""));
         span.setAttribute(LogAttribute.DELEGATOR_NICKNAME.getAttributeName(), AuthenticationUtils.getDelegatorNickname().orElse(""));
         span.setAttribute(LogAttribute.DELEGATOR_USERNAME.getAttributeName(), AuthenticationUtils.getDelegatorUsername().orElse(""));
+        span.setAttribute(LogAttribute.INTER_BANK.getAttributeName(), exchange.getMessage().getHeader(Constants.INTER_BANK, String.class) );
         span.setAttribute(LogAttribute.VERSION.getAttributeName(), version);
+        span.setAttribute(LogAttribute.CSP_CHANNEL_CODE.getAttributeName(),getCspChannelCode(exchange));
+        span.setAttribute(LogAttribute.CSP_USERNAME.getAttributeName(),getCspChannelCode(exchange));
+        span.setAttribute(LogAttribute.CLIENT_CODE.getAttributeName(),getClientId());
     }
 
     private void trace(Exchange exchange, Operation operation, Span span) {
@@ -304,5 +313,33 @@ public class TraceUtils {
             return "****";
         }
         return value.substring(0, 3) + "****" + value.substring(value.length() - 3);
+    }
+
+
+    private String getClientId(){
+        if(AuthenticationUtils.getAuthentication() instanceof  UserAuthentication ua) {
+            String client_id = ua.getDetails().getClientId();
+        }
+     return  "";
+    }
+
+    private String getMobileNo(){
+        return "";
+    }
+
+    private String getCspUserName(Exchange exchange){
+        return Optional.ofNullable(exchange)
+                .map(Exchange::getMessage)
+                .map(message -> message.getHeader("jwt", Jwt.class))
+                .map(jwt -> jwt.getClaimAsString("sub"))
+                .orElse("");
+    }
+
+    private String getCspChannelCode(Exchange exchange){
+        return Optional.ofNullable(exchange)
+                .map(Exchange::getMessage)
+                .map(message -> message.getHeader("jwt", Jwt.class))
+                .map(jwt -> jwt.getClaimAsString("trm"))
+                .orElse("");
     }
 }
