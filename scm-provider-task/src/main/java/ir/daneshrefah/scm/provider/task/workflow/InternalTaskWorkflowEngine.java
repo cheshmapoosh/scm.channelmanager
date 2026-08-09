@@ -28,12 +28,12 @@ public class InternalTaskWorkflowEngine implements TaskWorkflowEngine {
             TaskWorkflowStepType.START_PROCESS,
             TaskWorkflowStepType.APPROVE_PROCESS,
             TaskWorkflowStepType.COMPLETE_PROCESS,
-            TaskWorkflowStepType.CANCEL_PROCESS,
-            TaskWorkflowStepType.COMPLETE_TASK,
-            TaskWorkflowStepType.FIND_ALL_TASK,
-            TaskWorkflowStepType.FIND_ALL_PROCESS,
-            TaskWorkflowStepType.FIND_TASK_BY_PROCESS_ID,
-            TaskWorkflowStepType.UPDATE_PROCESS_DESCRIPTION
+            TaskWorkflowStepType.REJECT_PROCESS,
+            TaskWorkflowStepType.TASK_COMPLETE,
+            TaskWorkflowStepType.GET_ALL_TASK,
+            TaskWorkflowStepType.GET_ALL_PROCESS,
+            TaskWorkflowStepType.GET_TASK,
+            TaskWorkflowStepType.UPDATE_DESCRIPTION
     );
 
     private final ObjectMapper objectMapper;
@@ -83,27 +83,31 @@ public class InternalTaskWorkflowEngine implements TaskWorkflowEngine {
                     request(exchange, ProcessInstanceApproveRequest.class)
             );
             case COMPLETE_PROCESS -> completeProcess(exchange, stepType);
-            case CANCEL_PROCESS -> cancelProcess(exchange, stepType);
-            case COMPLETE_TASK -> taskInstanceService.completeTask(
+            case REJECT_PROCESS -> cancelProcess(exchange, stepType);
+            case TASK_COMPLETE -> taskInstanceService.completeTask(
                     exchange,
                     request(exchange, TaskRequest.class)
             );
-            case FIND_ALL_TASK -> taskInstanceService.findAllTask(
+            case GET_ALL_TASK -> taskInstanceService.findAllTask(
                     exchange,
                     request(exchange, TaskFilterRequest.class)
             );
-            case FIND_ALL_PROCESS -> processInstanceService.findAll(
+            case GET_ALL_PROCESS -> processInstanceService.findAll(
                     exchange,
                     request(exchange, ProcessInstanceFilterRequest.class)
             );
-            case FIND_TASK_BY_PROCESS_ID ->
+            case GET_TASK ->
                     taskInstanceService.findAllTasksByProcessId(exchange, processId(exchange));
-            case UPDATE_PROCESS_DESCRIPTION ->
+            case UPDATE_DESCRIPTION ->
                     processInstanceService.updateDescription(
                             exchange,
                             request(exchange, ProcessInstanceUpdateRequest.class)
                     );
-            case BUSINESS_OPERATION -> throw unsupported(stepType);
+            case BUSINESS_OPERATION
+//                 FIND_PROCUREMENT_BY_ACCOUNT,
+//                 FIND_PROCUREMENT_BY_NATIONAL,
+//                 PROCUREMENT_STATEMENT_INQUIRY
+                    -> throw unsupported(stepType);
         };
     }
 

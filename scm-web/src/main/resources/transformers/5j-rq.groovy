@@ -3,10 +3,18 @@ package transformers
 import ir.daneshrefah.scm.utils.date.DateUtils
 import org.slf4j.LoggerFactory
 
-def b = exchange.in.body;
+def bodyRaw = exchange.message.body;
+println("5j body : "+ bodyRaw)
+def b = bodyRaw['transactionData']
+println("5j transactionData : "+ b)
 
-def log = LoggerFactory.getLogger("5jRqGroovyTransformer")
-log.info("5j rq body {}", b)
+if (b == null && bodyRaw != null) {
+    b = bodyRaw;
+}
+
+//def log = LoggerFactory.getLogger("5jRqGroovyTransformer")
+//log.info("5j rq body {}", b)
+println("5j rq body :"+ b)
 
 
 def f = { value, len -> value = value?.toString() ?: ''; value.length() > len ? value[0..<len] : value.padRight(len, ' ') };
@@ -116,5 +124,6 @@ def nabRequest = [
         ]
 ]
 
-log.info("5j transformed nab request : {}", nabRequest)
+println("5j transformed nab request : {}"+ nabRequest)
+//log.info("5j transformed nab request : {}", nabRequest)
 return nabRequest

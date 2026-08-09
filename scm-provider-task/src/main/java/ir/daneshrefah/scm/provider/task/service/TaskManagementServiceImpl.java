@@ -220,4 +220,8 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         }
         throw new AccessDeniedException("processID", ERROR_CODE_ACCESS_DENIED, "User does not have access to tasks.");
     }
+
+    public List<TaskEntity> findByProcessInstanceId(Long processId) {
+        return taskRepository.findByProcessInstance_IdAndSignerAndTaskStatus(processId, true, COMPLETE);
+    }
 }

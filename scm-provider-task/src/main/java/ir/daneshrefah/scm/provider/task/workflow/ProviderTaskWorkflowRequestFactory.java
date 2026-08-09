@@ -19,12 +19,12 @@ public class ProviderTaskWorkflowRequestFactory
                     TaskWorkflowStepType.START_PROCESS,
                     TaskWorkflowStepType.APPROVE_PROCESS,
                     TaskWorkflowStepType.COMPLETE_PROCESS,
-                    TaskWorkflowStepType.CANCEL_PROCESS,
-                    TaskWorkflowStepType.COMPLETE_TASK,
-                    TaskWorkflowStepType.FIND_ALL_PROCESS,
-                    TaskWorkflowStepType.FIND_ALL_TASK,
-                    TaskWorkflowStepType.FIND_TASK_BY_PROCESS_ID,
-                    TaskWorkflowStepType.UPDATE_PROCESS_DESCRIPTION
+                    TaskWorkflowStepType.REJECT_PROCESS,
+                    TaskWorkflowStepType.TASK_COMPLETE,
+                    TaskWorkflowStepType.GET_ALL_PROCESS,
+                    TaskWorkflowStepType.GET_ALL_TASK,
+                    TaskWorkflowStepType.GET_TASK,
+                    TaskWorkflowStepType.UPDATE_DESCRIPTION
             );
 
     private final ObjectMapper objectMapper;
@@ -51,20 +51,24 @@ public class ProviderTaskWorkflowRequestFactory
         }
         ObjectNode request = objectPayload(context.inputPayload(), stepType);
         return switch (stepType) {
-            case START_PROCESS, FIND_ALL_PROCESS, FIND_ALL_TASK -> request;
-            case COMPLETE_TASK -> withRequired(
+            case START_PROCESS, GET_ALL_PROCESS , GET_ALL_TASK
+//                 FIND_PROCUREMENT_BY_ACCOUNT,
+//                 FIND_PROCUREMENT_BY_NATIONAL,
+//                 PROCUREMENT_STATEMENT_INQUIRY
+                    -> request;
+            case TASK_COMPLETE -> withRequired(
                     request,
                     "taskId",
                     context.taskId(),
                     stepType
             );
-            case CANCEL_PROCESS, UPDATE_PROCESS_DESCRIPTION -> withRequired(
+            case REJECT_PROCESS, UPDATE_DESCRIPTION -> withRequired(
                     request,
                     "id",
                     context.processId(),
                     stepType
             );
-            case FIND_TASK_BY_PROCESS_ID -> withRequired(
+            case GET_TASK -> withRequired(
                     request,
                     "processId",
                     context.processId(),

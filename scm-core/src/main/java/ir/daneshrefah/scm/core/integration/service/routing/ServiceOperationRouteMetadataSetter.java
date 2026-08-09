@@ -16,8 +16,12 @@ public class ServiceOperationRouteMetadataSetter {
         route.setProperty(Message.OPERATION_NAME, constant(operation.getOperationName()));
     }
 
-    public void apply(Exchange exchange, ServiceOperation operation) {
-        exchange.setProperty(Message.SERVICE_OPERATION, operation);
-        exchange.setProperty(Message.OPERATION_NAME, operation.getOperationName());
+    public void apply(Exchange exchange, RoutingStepPlan step) {
+        exchange.setProperty(Message.SERVICE_OPERATION, step.serviceOperation());
+        exchange.setProperty(Message.OPERATION_NAME, getOperationName(step));
+    }
+
+    private String getOperationName(RoutingStepPlan step) {
+        return step.endpointUri().replace("direct:op.", "");
     }
 }

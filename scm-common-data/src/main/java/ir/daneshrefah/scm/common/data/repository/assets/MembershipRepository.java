@@ -5,6 +5,7 @@ import ir.daneshrefah.scm.common.data.entity.asset.MembershipEntity;
 import ir.daneshrefah.scm.common.model.membership.MembershipType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,6 +31,11 @@ public interface MembershipRepository extends JpaRepository<MembershipEntity, Lo
     @Query("SELECT O FROM MembershipEntity O WHERE O.id = :membershipId")
     Optional<MembershipEntity> findMembershipById(@Param("membershipId") Long membershipId);
 
+    @EntityGraph(attributePaths = {
+            "person",
+            "customerAccount",
+            "customerAccount.customer"
+    })
     @Query("SELECT O FROM MembershipEntity O WHERE O.person.id = :userId")
     List<MembershipEntity> findMembershipListByUserId(@Param("userId") Integer userId);
 

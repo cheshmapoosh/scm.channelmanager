@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +65,9 @@ public class RoutingResultClassifier {
         }
         if (response instanceof CharSequence text) {
             return classifyText(text.toString(), Result.TEMPORARY_OR_UNKNOWN);
+        }
+        if(response instanceof List<?> list && list.size() > 0) {
+            return Result.SUCCESS;
         }
         return Result.TEMPORARY_OR_UNKNOWN;
     }

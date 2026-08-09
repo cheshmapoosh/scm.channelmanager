@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
 
+import static ir.daneshrefah.scm.provider.task.constant.ExecutionMethodTypeEnum.COMPLETE_TASK;
+
 /**
  * Selects durable workflow identity, coordinates distributed aggregate locks,
  * and delegates ordered execution to routing engines.
@@ -86,7 +88,7 @@ public class TaskWorkflowExecutionCoordinator {
             );
         }
 
-        if (commandPlan.command() == TaskWorkflowCommand.START) {
+        if (commandPlan.command() == TaskWorkflowCommand.START_PROCESS) {
             return executeStart(
                     exchange,
                     commandPlan,
@@ -738,7 +740,7 @@ public class TaskWorkflowExecutionCoordinator {
     ) {
         RoutingPlan plan = commandPlan.routingPlan();
         boolean reconstructable = commandPlan.command()
-                == TaskWorkflowCommand.START
+                == TaskWorkflowCommand.START_PROCESS
                 && plan.routingStrategy() == RoutingStrategy.FIRST
                 && plan.steps().size() == 1
                 && plan.steps().getFirst().observationContext()
@@ -832,11 +834,11 @@ public class TaskWorkflowExecutionCoordinator {
         TaskWorkflowStepType stepType = plan.steps().getFirst()
                 .observationContext().taskWorkflowStepType();
         return switch (stepType) {
-            case APPROVE_PROCESS, CANCEL_PROCESS,
-                 FIND_TASK_BY_PROCESS_ID, UPDATE_PROCESS_DESCRIPTION,
+            case APPROVE_PROCESS, REJECT_PROCESS,
+                 GET_TASK, UPDATE_DESCRIPTION ,
                  COMPLETE_PROCESS ->
                     inputResolver.resolveProcessId(exchange, stepType);
-            case COMPLETE_TASK -> {
+            case TASK_COMPLETE -> {
                 Long suppliedProcessId =
                         inputResolver.resolveProcessId(exchange, stepType);
                 long taskId = inputResolver.requireTaskId(exchange, stepType);

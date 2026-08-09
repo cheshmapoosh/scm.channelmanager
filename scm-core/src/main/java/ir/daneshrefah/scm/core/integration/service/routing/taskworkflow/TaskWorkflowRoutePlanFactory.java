@@ -1,28 +1,20 @@
 package ir.daneshrefah.scm.core.integration.service.routing.taskworkflow;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.definition.Definition;
 import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
+import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
-import ir.daneshrefah.scm.core.integration.service.routing.DefaultRoutingDecisionPolicy;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionPolicy;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionPolicyRegistry;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingOperationMetadataResolver;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlan;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingPlanIdentity;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepObservationContext;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingStepPlan;
-import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationDefinitionClassifier;
-import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationEndpointResolver;
-import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationSelector;
+import ir.daneshrefah.scm.core.integration.service.routing.*;
 import ir.daneshrefah.scm.provider.task.workflow.TaskWorkflowProviderCapabilityRegistry;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectProvider;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 @RequiredArgsConstructor
 public class TaskWorkflowRoutePlanFactory {
@@ -106,15 +98,16 @@ public class TaskWorkflowRoutePlanFactory {
                     step.stepType(), step.operationName(),
                     missingOperationReason(service, config, step));
         }
-        validateProviderCapability(service, config, step, operation);
-        String spanKind = resolveSpanKind(service, config, step, operation);
+        validateProviderCapability(service, config, step);
+        String spanKind = resolveSpanKind(service, config, step);
         RoutingDecisionPolicy decisionPolicy =
                 resolvePolicy(service, config, step);
         return new RoutingStepPlan(
                 step.stepId(),
                 step.stepIndex(),
                 operation,
-                endpointResolver.resolve(operation.getOperationName()),
+                endpointResolver.resolve(step.operationName()),
+//                endpointResolver.resolve(operation.getOperationName()),
                 new TaskWorkflowStepRequestFactory(
                         step.stepId(),
                         step.stepType(),
@@ -135,11 +128,11 @@ public class TaskWorkflowRoutePlanFactory {
     private void validateProviderCapability(
             Service service,
             TaskWorkflowActionPlanConfig config,
-            TaskWorkflowActionPlanStepConfig step,
-            ServiceOperation operation
+            TaskWorkflowActionPlanStepConfig step
+//            ServiceOperation operation
     ) {
-        boolean taskProvider = operationMetadataResolver.targetsTaskProvider(
-                operation.getOperationName());
+        boolean taskProvider = operationMetadataResolver.targetsTaskProvider(step.operationName());
+//                operation.getOperationName());
         if (step.stepType() == TaskWorkflowStepType.BUSINESS_OPERATION
                 && taskProvider) {
             throw invalid(service, config, step.stepIndex(), step.stepId(),
@@ -155,8 +148,8 @@ public class TaskWorkflowRoutePlanFactory {
         if (taskProvider) {
             providerCapabilityRegistry(code(service)).requireSupported(
                     code(service),
-                    operationMetadataResolver.providerUri(
-                            operation.getOperationName()),
+                    operationMetadataResolver.providerUri(step.operationName()),
+//                            operation.getOperationName()),
                     step.stepType()
             );
             payloadMapper.requireProviderRequestFactory(
@@ -185,12 +178,12 @@ public class TaskWorkflowRoutePlanFactory {
     private String resolveSpanKind(
             Service service,
             TaskWorkflowActionPlanConfig config,
-            TaskWorkflowActionPlanStepConfig step,
-            ServiceOperation operation
+            TaskWorkflowActionPlanStepConfig step
+//            ServiceOperation operation
     ) {
         try {
-            return operationMetadataResolver.spanKind(
-                    operation.getOperationName());
+            return operationMetadataResolver.spanKind(step.operationName());
+//                    operation.getOperationName());
         } catch (RuntimeException exception) {
             throw new IllegalStateException(
                     invalid(service, config, step.stepIndex(), step.stepId(),
@@ -224,23 +217,57 @@ public class TaskWorkflowRoutePlanFactory {
 
     private Map<String, ServiceOperation> operationsByName(Service service) {
         Map<String, ServiceOperation> operations = new LinkedHashMap<>();
-        for (ServiceOperation operation : operationSelector.active(service)) {
-            if (StringUtils.isBlank(operation.getOperationName())) {
+        for (ServiceOperation serviceOperation : operationSelector.activeActionPlans(service)) {
+            if (StringUtils.isBlank(serviceOperation.getOperationName())) {
                 throw new IllegalStateException("Invalid TASK_WORKFLOW operation "
                         + "for serviceCode=" + code(service)
                         + ", operationName=<blank>: operationName is required");
             }
-            ServiceOperation old = operations.putIfAbsent(
-                    normalize(operation.getOperationName()),
-                    operation
-            );
-            if (old != null) {
-                throw new IllegalStateException("Duplicate active operationName="
-                        + operation.getOperationName()
-                        + " for serviceCode=" + code(service));
+
+            TaskWorkflowActionPlanConfig actionPlanConfig = actionPlanParser.parse(service, serviceOperation);
+            String inboundAction = normalizeAction(actionPlanConfig.inboundAction());
+            if (inboundAction.equals(TaskWorkflowCommand.APPROVE_AND_EXECUTE.name())) {
+                actionPlanConfig.steps()
+                        .forEach(step -> addOperation(
+                                operations,
+                                step.operationName(),
+                                serviceOperation,
+                                service
+                        ));
+            } else {
+                addOperation(
+                        operations,
+                        serviceOperation.getOperationName(),
+                        serviceOperation,
+                        service
+                );
             }
+
         }
         return Map.copyOf(operations);
+    }
+
+    private void addOperation(Map<String, ServiceOperation> operations,String operationName,ServiceOperation serviceOperation,Service service) {
+        String normalizedName = normalize(operationName);
+
+        ServiceOperation old = operations.putIfAbsent(
+                normalizedName,
+                serviceOperation );
+
+        if (old != null) {
+            throw new IllegalStateException(
+                    "Duplicate active operationName="
+                            + operationName
+                            + " for serviceCode="
+                            + code(service)
+            );
+        }
+    }
+
+    private String normalizeAction(String action) {
+        return action.toUpperCase(Locale.ROOT)
+                .replace('-', '_')
+                .replace(' ', '_');
     }
 
     private String missingOperationReason(

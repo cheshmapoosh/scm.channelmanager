@@ -300,7 +300,7 @@ scm:
     api-repo:
       scheme: ${SCM_API_REPO_SCHEME:${SCM_API_REPO_SCHEMA:scm-rest}}
       enabled: ${SCM_API_REPO_ENABLED:true}
-      base-url: ${SCM_API_REPO_BASE_URL:${SCM_HPS_BASE_URL}}
+      base-url: ${SCM_API_REPO_BASE_URL:http://10.15.29.80/Service/SCMREAD.GETACCOUNTWITHDRAWTABLE}
       connect-timeout-ms: ${SCM_API_REPO_CONNECT_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_CONNECT_TIMEOUT_MS:3000}}
       response-timeout-ms: ${SCM_API_REPO_RESPONSE_TIMEOUT_MS:${SCM_PROVIDER_DEFAULT_RESPONSE_TIMEOUT_MS:8000}}
       virtual-threads-enabled: ${SCM_API_REPO_VIRTUAL_THREADS_ENABLED:true}

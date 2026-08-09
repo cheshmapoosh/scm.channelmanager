@@ -28,26 +28,36 @@ public class TaskWorkflowCommandPlanValidator {
                         service, config, i, "middle stepTypes must be BUSINESS_OPERATION");
             }
         } else {
-            require(config.routingStrategy() == RoutingStrategy.FIRST,
-                    service, config, 0, "direct actions require FIRST");
-            TaskWorkflowStepType requiredStepType = requiredDirectStepType(config.command());
-            require(steps.size() == 1 && steps.getFirst().stepType() == requiredStepType,
-                    service, config, 0, config.inboundAction()
-                            + " requires stepType " + requiredStepType);
+            if(config.routingStrategy() == RoutingStrategy.FIRST){
+                require(config.routingStrategy() == RoutingStrategy.FIRST,
+                        service, config, 0, "direct actions require FIRST");
+                TaskWorkflowStepType requiredStepType = requiredDirectStepType(config.command());
+                require(steps.size() == 1 && steps.getFirst().stepType() == requiredStepType,
+                        service, config, 0, config.inboundAction()
+                                + " requires stepType " + requiredStepType);
+            }else if(config.routingStrategy() == RoutingStrategy.CHAIN_ON_APPROVE){
+                for (int i = 1; i < steps.size() - 1; i++) {
+                    require(steps.get(i).stepType() == TaskWorkflowStepType.BUSINESS_OPERATION,
+                            service, config, i, "middle stepTypes must be BUSINESS_OPERATION");
+                }
+            }
         }
     }
 
     private TaskWorkflowStepType requiredDirectStepType(TaskWorkflowCommand command) {
         return switch (command) {
-            case START -> TaskWorkflowStepType.START_PROCESS;
-            case COMPLETE_TASK -> TaskWorkflowStepType.COMPLETE_TASK;
-            case CANCEL_PROCESS -> TaskWorkflowStepType.CANCEL_PROCESS;
-            case FIND_PROCESSES -> TaskWorkflowStepType.FIND_ALL_PROCESS;
-            case FIND_TASKS -> TaskWorkflowStepType.FIND_ALL_TASK;
-            case FIND_TASKS_BY_PROCESS_ID -> TaskWorkflowStepType.FIND_TASK_BY_PROCESS_ID;
-            case UPDATE_PROCESS_DESCRIPTION ->
-                    TaskWorkflowStepType.UPDATE_PROCESS_DESCRIPTION;
-            case APPROVE_AND_EXECUTE -> throw new IllegalArgumentException(
+            case START_PROCESS -> TaskWorkflowStepType.START_PROCESS;
+            case TASK_COMPLETE -> TaskWorkflowStepType.TASK_COMPLETE;
+            case REJECT_PROCESS -> TaskWorkflowStepType.REJECT_PROCESS;
+            case GET_ALL_PROCESS -> TaskWorkflowStepType.GET_ALL_PROCESS;
+            case GET_ALL_TASK -> TaskWorkflowStepType.GET_ALL_TASK;
+            case GET_TASK -> TaskWorkflowStepType.GET_TASK;
+            case FIND_PROCUREMENT_BY_ACCOUNT -> TaskWorkflowStepType.BUSINESS_OPERATION;//FIND_PROCUREMENT_BY_ACCOUNT;
+            case FIND_PROCUREMENT_BY_NATIONAL -> TaskWorkflowStepType.BUSINESS_OPERATION;//FIND_PROCUREMENT_BY_NATIONAL;
+            case PROCUREMENT_STATEMENT_INQUIRY -> TaskWorkflowStepType.BUSINESS_OPERATION;//PROCUREMENT_STATEMENT_INQUIRY;
+            case UPDATE_DESCRIPTION ->
+                    TaskWorkflowStepType.UPDATE_DESCRIPTION;
+            case APPROVE_AND_EXECUTE,DELETE_PROCUREMENT -> throw new IllegalArgumentException(
                     "APPROVE_AND_EXECUTE is not a direct action");
         };
     }

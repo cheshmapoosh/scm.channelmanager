@@ -55,7 +55,7 @@ public class RoutingStepExecutor {
         );
         try {
             Object request = step.requestFactory().create(exchange, context);
-            metadataSetter.apply(exchange, step.serviceOperation());
+            metadataSetter.apply(exchange, step);
             if (observationContext.taskWorkflowStepType() != null) {
                 exchange.setProperty(
                         Message.TASK_WORKFLOW_STEP_TYPE,

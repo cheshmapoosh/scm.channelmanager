@@ -27,14 +27,18 @@ public class TaskWorkflowCommandResolver {
                 .replace('-', '_')
                 .replace(' ', '_');
         return switch (normalized) {
-            case "START" -> TaskWorkflowCommand.START;
-            case "TASK_COMPLETE", "COMPLETE_TASK" -> TaskWorkflowCommand.COMPLETE_TASK;
+            case "START_PROCESS" -> TaskWorkflowCommand.START_PROCESS;
+            case "TASK_COMPLETE", "COMPLETE_TASK" -> TaskWorkflowCommand.TASK_COMPLETE;
             case "APPROVE_AND_EXECUTE" -> TaskWorkflowCommand.APPROVE_AND_EXECUTE;
-            case "CANCEL_PROCESS" -> TaskWorkflowCommand.CANCEL_PROCESS;
-            case "FIND_PROCESSES" -> TaskWorkflowCommand.FIND_PROCESSES;
-            case "FIND_TASKS" -> TaskWorkflowCommand.FIND_TASKS;
-            case "FIND_TASKS_BY_PROCESS_ID" -> TaskWorkflowCommand.FIND_TASKS_BY_PROCESS_ID;
-            case "UPDATE_PROCESS_DESCRIPTION" -> TaskWorkflowCommand.UPDATE_PROCESS_DESCRIPTION;
+            case "REJECT_PROCESS" -> TaskWorkflowCommand.REJECT_PROCESS;
+            case "GET_ALL_PROCESS" -> TaskWorkflowCommand.GET_ALL_PROCESS;
+            case "GET_ALL_TASK" -> TaskWorkflowCommand.GET_ALL_TASK;
+            case "GET_TASK" -> TaskWorkflowCommand.GET_TASK;
+            case "UPDATE_DESCRIPTION" -> TaskWorkflowCommand.UPDATE_DESCRIPTION;
+            case "DELETE_PROCUREMENT" -> TaskWorkflowCommand.DELETE_PROCUREMENT;
+            case "FIND_PROCUREMENT_BY_ACCOUNT" -> TaskWorkflowCommand.FIND_PROCUREMENT_BY_ACCOUNT;
+            case "FIND_PROCUREMENT_BY_NATIONAL" -> TaskWorkflowCommand.FIND_PROCUREMENT_BY_NATIONAL;
+            case "PROCUREMENT_STATEMENT_INQUIRY" -> TaskWorkflowCommand.PROCUREMENT_STATEMENT_INQUIRY;
             default -> throw new IllegalStateException(
                     "Unsupported TASK_WORKFLOW inboundAction=" + inboundAction);
         };

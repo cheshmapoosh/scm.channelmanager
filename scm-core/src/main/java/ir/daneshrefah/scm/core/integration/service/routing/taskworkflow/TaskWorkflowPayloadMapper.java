@@ -76,12 +76,12 @@ public class TaskWorkflowPayloadMapper {
             RoutingExecutionContext context
     ) {
         Long processId = switch (stepType) {
-            case APPROVE_PROCESS, COMPLETE_PROCESS, CANCEL_PROCESS,
-                 FIND_TASK_BY_PROCESS_ID, UPDATE_PROCESS_DESCRIPTION ->
+            case APPROVE_PROCESS, COMPLETE_PROCESS, REJECT_PROCESS ,
+                 GET_TASK , UPDATE_DESCRIPTION ->
                     requireProcessId(exchange, stepType, context);
             default -> resolveProcessId(exchange, stepType, context);
         };
-        Long taskId = stepType == TaskWorkflowStepType.COMPLETE_TASK
+        Long taskId = stepType == TaskWorkflowStepType.TASK_COMPLETE
                 ? inputResolver.requireTaskId(exchange, stepType)
                 : null;
         if (processId != null) {
@@ -136,9 +136,14 @@ public class TaskWorkflowPayloadMapper {
                     correlationId
             );
         }
-        Object stableTransactionData = context.transactionData();
+        Object stableTransactionData = null;
+        try {
+            Object body = exchange.getMessage().getBody();
+            stableTransactionData = toJsonNode(body).get("transactionData");
+        } catch (Exception e) {
+        }
         if (stableTransactionData == null) {
-            stableTransactionData = objectMapper.createObjectNode();
+            stableTransactionData = context.transactionData();
         }
         context.transactionData(stableTransactionData);
         ObjectNode request = objectMapper.createObjectNode();
@@ -153,6 +158,12 @@ public class TaskWorkflowPayloadMapper {
                 "stepResults",
                 objectMapper.valueToTree(context.stepResults())
         );
+
+        if (stableTransactionData == null) {
+            request = (ObjectNode) inboundPayload(exchange);
+//            stableTransactionData = objectMapper.createObjectNode();
+        }
+
         return request;
     }
 

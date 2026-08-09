@@ -2,7 +2,9 @@ package ir.daneshrefah.scm.core.integration.operation;
 
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
+import ir.daneshrefah.scm.common.model.definition.DefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
+import ir.daneshrefah.scm.common.model.gateway.Service;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
@@ -28,9 +30,13 @@ import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
+import ir.daneshrefah.scm.core.integration.service.metrics.ServicePluginMetrics;
 import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationDefinitionClassifier;
 import ir.daneshrefah.scm.common.service.operation.OperationService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
+import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowActionPlanConfig;
+import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowActionPlanParser;
+import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowCommand;
 import ir.daneshrefah.scm.observation.starter.ObservationContext;
 import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreMetricTags;
@@ -47,13 +53,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedHashSet;
-import java.util.Collection;
-import java.util.List;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -73,6 +73,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     private final ScmExchangeMdc exchangeMdc;
     private final ObjectProvider<ScmObservation> observationProvider;
     private final ObjectProvider<ObservationContext> observationContextProvider;
+    private final TaskWorkflowActionPlanParser actionPlanParser;
     private final ProviderRegistryProperties providerRegistryProperties;
     private final List<ProviderRuntimeLifecycle> providerRuntimeLifecycles;
 
@@ -280,6 +281,36 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     }
 
     private record ProviderReference(String scheme, String providerCode, String providerUri) {
+        routePlan.servicePlans()
+                .stream()
+                .forEach(runtimeServicePlan -> {
+                    runtimeServicePlan.service().getServiceOperations().stream()
+                            .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
+                            .map(ServiceOperation -> getOperationName(runtimeServicePlan.service(), ServiceOperation))
+                            .flatMap(Collection::stream)
+                            .map(StringUtils::trimToNull)
+                            .filter(Objects::nonNull)
+                            .forEach(requiredOperationNames::add);
+                });
+    }
+
+    private List<String> getOperationName(Service service, ServiceOperation serviceOperation) {
+        if (serviceOperation.getDefinition().getType() != DefinitionType.ACTION_PLAN) {
+            return List.of(serviceOperation.getOperationName());
+        }
+        TaskWorkflowActionPlanConfig actionPlanConfig = actionPlanParser.parse(service, serviceOperation);
+        String inboundAction = normalizeAction(actionPlanConfig.inboundAction());
+        if (inboundAction.equals(TaskWorkflowCommand.APPROVE_AND_EXECUTE.name())) {
+            return actionPlanConfig.steps().stream().map(step -> step.operationName()).toList();
+        } else {
+            return List.of(serviceOperation.getOperationName());
+        }
+    }
+
+    private String normalizeAction(String action) {
+        return action.toUpperCase(Locale.ROOT)
+                .replace('-', '_')
+                .replace(' ', '_');
     }
 
     private java.util.stream.Stream<ServiceOperation> serviceOperations(RuntimeServicePlan servicePlan) {

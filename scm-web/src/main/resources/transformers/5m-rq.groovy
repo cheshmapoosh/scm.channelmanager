@@ -6,16 +6,18 @@ import ir.daneshrefah.scm.common.model.person.GeneralRealPerson
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils
 import org.slf4j.LoggerFactory
 
-def log = LoggerFactory.getLogger("5mRqGroovyTransformer")
+//def log = LoggerFactory.getLogger("5mRqGroovyTransformer")
 def loggedInUser = AuthenticationUtils.getLoggedInUser();
 def person = Objects.requireNonNull(loggedInUser).getPerson()
 String nationalId = ""
 if (person instanceof GeneralRealPerson) {
     println("karpardaz : GeneralRealPerson")
     nationalId = ((GeneralRealPerson) person).getNationalCode()
-}
+}else if(person instanceof GeneralLegalPerson)
+    nationalId = ((GeneralLegalPerson) person).getNationalId()
 
-log.info("5m currentt user national code : {}", nationalId)
+//log.info("5m currentt user national code : {}", nationalId)
+println("5m currentt user national code : "+ nationalId)
 def nationalIdRaw = nationalId //"0047672064"
 if (!nationalIdRaw) {
     throw new IllegalArgumentException("nationalId not found")
@@ -66,5 +68,6 @@ def nabRequest = [
         ]
 ]
 
-log.info("5m transformed nab request : {}", nabRequest)
+//log.info("5m transformed nab request : {}", nabRequest)
+println("5m transformed nab request : "+ nabRequest)
 return nabRequest

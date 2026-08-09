@@ -169,6 +169,7 @@ public enum OperationCode {
     SVC_OPERATION_UPDATE(ServiceImplementationType.JAVA),
     SVC_OPERATION_PROVIDER_LIST(ServiceImplementationType.JAVA),
     SVC_GRANT_FUND_TRANSFER(ServiceImplementationType.JAVA),
+    SVC_ADD_SIGNERS(ServiceImplementationType.JAVA),
     //-----------------------------Service Operation----------------------
     SCV_SERVICE_OPERATION_LIST(ServiceImplementationType.JAVA),
     SCV_SERVICE_OPERATION_CREATE(ServiceImplementationType.JAVA),

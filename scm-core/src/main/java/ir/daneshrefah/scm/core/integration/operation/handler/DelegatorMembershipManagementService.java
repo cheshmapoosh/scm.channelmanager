@@ -70,7 +70,21 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
     @JavaService(operationCode = OperationCode.SVC_GRANT_FUND_TRANSFER)
     @Transactional
     public Long delegatoMembershipManagement(Exchange exchange) {
-        JsonNode body = (JsonNode) exchange.getProperty(Message.ORIGINAL_BODY);
+        JsonNode bodyRaw = ((JsonNode) exchange.getMessage().getBody());
+        if(Objects.isNull(bodyRaw)) {
+            bodyRaw = (JsonNode) exchange.getIn().getBody();
+            if(Objects.isNull(bodyRaw)) {
+                throw new NullPointerException("body is null");
+            }
+        }
+        JsonNode body = bodyRaw.get("transactionData");
+        if(Objects.isNull(body)){
+            body = bodyRaw;
+        }
+        if(Objects.isNull(body)){
+            throw new NullPointerException("body is null");
+        }
+//        JsonNode body = (JsonNode) exchange.getProperty(Message.ORIGINAL_BODY);
         log.info("Delegating to membership management service started!");
         String accountNo = getText(body, "accountNo");
         String customerNo = getFirstCustomer(body);

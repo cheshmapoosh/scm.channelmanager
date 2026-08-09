@@ -109,12 +109,20 @@ public abstract class TaskMapper {
     }
 
     private Map<Long, String> executionIds(List<TaskEntity> tasks) {
+        List<Long> ids = new ArrayList<>();
+        for (TaskEntity task : tasks) {
+            if(task.getProcessInstance()!=null) {
+                ids.add(task.getProcessInstance().getId());
+            }
+        }
+
+//        List<Long> list = tasks.stream()
+//                .map(TaskEntity::getProcessInstance)
+//                .map(ProcessInstanceEntity::getId)
+//                .distinct()
+//                .toList();
         return taskWorkflowRecoveryStore.findExecutionIdsByProcessIds(
-                tasks.stream()
-                        .map(TaskEntity::getProcessInstance)
-                        .map(ProcessInstanceEntity::getId)
-                        .distinct()
-                        .toList()
+                ids
         );
     }
 

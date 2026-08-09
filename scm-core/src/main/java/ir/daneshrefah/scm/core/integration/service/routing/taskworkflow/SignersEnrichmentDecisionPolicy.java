@@ -4,18 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ir.daneshrefah.scm.common.exception.NabError;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.message.MessageStatus;
-import ir.daneshrefah.scm.core.integration.service.routing.DefaultRoutingDecisionPolicy;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecision;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionContext;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionPolicy;
-import ir.daneshrefah.scm.core.integration.service.routing.RoutingDecisionResult;
+import ir.daneshrefah.scm.core.integration.service.routing.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class NabPaymasterRegistrationDecisionPolicy implements RoutingDecisionPolicy {
-    public static final String CODE = "NAB_PAYMASTER_REGISTRATION";
+public class SignersEnrichmentDecisionPolicy implements RoutingDecisionPolicy {
+    public static final String CODE = "SIGNERS_ENRICHMENT";
     public static final String SUCCESS_ALREADY_APPLIED = "SUCCESS_ALREADY_APPLIED";
     private final DefaultRoutingDecisionPolicy defaultPolicy;
 
@@ -28,8 +24,8 @@ public class NabPaymasterRegistrationDecisionPolicy implements RoutingDecisionPo
             return new RoutingDecisionResult(
                     RoutingDecision.FAIL,
                     MessageStatus.SC_ERROR_BUSINESS,
-                    "NAB_PAYMASTER_REGISTRATION_FAILED",
-                    "NAB rejected paymaster registration",
+                    "SIGNERS_ENRICHMENT_FAILED",
+                    "signers enricher failed",
                     null
             );
         }
@@ -37,7 +33,7 @@ public class NabPaymasterRegistrationDecisionPolicy implements RoutingDecisionPo
             return new RoutingDecisionResult(
                     RoutingDecision.SUCCESS,
                     MessageStatus.SC_SUCCESS,
-                    "NAB_PAYMASTER_REGISTRATION_ALREADY_APPLIED",
+                    "SIGNERS_ENRICHMENT_ALREADY_APPLIED",
                     null,
                     SUCCESS_ALREADY_APPLIED
             );
