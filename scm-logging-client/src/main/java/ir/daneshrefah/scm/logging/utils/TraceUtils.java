@@ -234,7 +234,7 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.INTER_BANK.getAttributeName(), exchange.getMessage().getHeader(Constants.INTER_BANK, String.class) );
         span.setAttribute(LogAttribute.VERSION.getAttributeName(), version);
         span.setAttribute(LogAttribute.CSP_CHANNEL_CODE.getAttributeName(),getCspChannelCode(exchange));
-        span.setAttribute(LogAttribute.CSP_USERNAME.getAttributeName(),getCspChannelCode(exchange));
+        span.setAttribute(LogAttribute.CSP_USERNAME.getAttributeName(),getCspUserName(exchange));
         span.setAttribute(LogAttribute.CLIENT_CODE.getAttributeName(),getClientId());
     }
 
@@ -318,7 +318,7 @@ public class TraceUtils {
 
     private String getClientId(){
         if(AuthenticationUtils.getAuthentication() instanceof  UserAuthentication ua) {
-            String client_id = ua.getDetails().getClientId();
+            return ua.getDetails().getClientId();
         }
      return  "";
     }
