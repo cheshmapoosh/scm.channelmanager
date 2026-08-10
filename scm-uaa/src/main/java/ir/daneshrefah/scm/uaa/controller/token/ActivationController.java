@@ -123,7 +123,7 @@ public class ActivationController {
                     cookie.setSecure(true);
                     cookie.setPath("/");
                     cookie.setMaxAge(Integer.MAX_VALUE);
-                    cookie.setAttribute("SameSite", "None");
+                    cookie.setAttribute("SameSite", "Lax");
                     return Collections.singletonList(cookie);
                 }).orElse(Collections.emptyList());
     }
