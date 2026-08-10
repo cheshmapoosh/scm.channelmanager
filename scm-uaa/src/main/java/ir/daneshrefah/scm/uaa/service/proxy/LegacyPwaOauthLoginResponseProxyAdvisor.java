@@ -119,7 +119,7 @@ public class LegacyPwaOauthLoginResponseProxyAdvisor implements ResponseProxyAdv
                 "; Secure" +
                 "; Path=/" +
                 "; Max-Age=" + maxAgeSeconds +
-                "; SameSite=Strict";
+                "; SameSite=None";
     }
 
     private PwaOauthMessage mapUaaOauthError(String error) {
