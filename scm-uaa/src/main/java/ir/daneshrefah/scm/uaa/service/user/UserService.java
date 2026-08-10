@@ -54,6 +54,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -167,6 +168,7 @@ public class UserService {
             }
         }
         userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(request.getNewPassword(), userEntity.getPerson().getUsername()));
+        userEntity.setLastDateOfFirstPasswordChange(LocalDate.now());
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
@@ -723,7 +725,10 @@ public class UserService {
     private void applyDynamicUpdateChanges(UserEntity userEntity, UserDataChangeRequest request) {
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getNickname(), userEntity::setNickname);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getOtpSerialNumber(), userEntity::setOtpSerialNumber);
-        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getLoginStaticPassword(), userEntity::setLoginStaticPassword);
+        DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getLoginStaticPassword(), password -> {
+            userEntity.setLoginStaticPassword(password);
+            userEntity.setLastDateOfFirstPasswordChange(LocalDate.now());
+        });
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getTransactionStaticPassword(), userEntity::setTransactionStaticPassword);
         DynamicUpdateUtils.applyChangesIfNotEmptySet(request.getAccessParameters(), accessParameters -> {
             userEntity.setAccessParameters(validateAccessParameter(accessParameters));
@@ -991,6 +996,7 @@ public class UserService {
             }
 
             userEntity.setLoginStaticPassword(passwordEncoder.encodePassword(generatedPassword, person.getUsername()));
+            userEntity.setLastDateOfFirstPasswordChange(LocalDate.now());
         } else {
             if (userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.OTP) || userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.PUBLIC_KEY)) {
                 throw new UnsupportedOperationException();
