@@ -3,6 +3,8 @@ package ir.daneshrefah.scm.uaa.controller.user;
 import ir.daneshrefah.scm.common.dto.spec.PagedResponseData;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import ir.daneshrefah.scm.uaa.controller.BaseController;
+import ir.daneshrefah.scm.uaa.service.password.PasswordAbortModificationResponse;
+import ir.daneshrefah.scm.uaa.service.password.PasswordModificationService;
 import ir.daneshrefah.scm.uaa.service.user.UserDeleteRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserFindRequest;
 import ir.daneshrefah.scm.uaa.service.user.UserService;
@@ -27,6 +29,12 @@ public class UserController extends BaseController {
 
     private final UserService userService;
 
+    private final PasswordModificationService passwordModificationService;
+
+    @GetMapping("/password/modification/abort")
+    public ResponseEntity<PasswordAbortModificationResponse> abortPasswordChangeWarning() {
+        return ResponseEntity.ok(passwordModificationService.abortPasswordChangeWarning());
+    }
 
     @PutMapping("/change-nickName")
     public ResponseEntity<User> changeUserName(@RequestBody UserNickNameModifyRequest request,HttpServletRequest servletRequest) {
