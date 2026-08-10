@@ -1,7 +1,7 @@
 FROM reg.daneshrefah.ir/modern-banking/openjdk:latest
 ENV SERVER_PORT=8888
 ENV SPRING_APPLICATION_NAME=scm-cache
-ARG VERSION='9.0.1'
+ARG VERSION=''
 
 ENV ARTIFACT=build/libs/$SPRING_APPLICATION_NAME-$VERSION.jar
 EXPOSE $SERVER_PORT

@@ -1,7 +1,7 @@
 name: scm
 
 x-scm-common: &scm-common
-  image: reg.daneshrefah.ir/modern-banking/scm-app:${SCM_IMAGE_TAG:-9.0.1-b0504T1448}
+  image: reg.daneshrefah.ir/modern-banking/scm-app:${SCM_IMAGE_TAG:--b0504T1448}
   pull_policy: if_not_present
   restart: unless-stopped
   networks:
@@ -23,7 +23,7 @@ services:
       - "8888:8080"
       - "5088:5088"
     environment:
-      VERSION: ${SCM_VERSION:-9.0.1}
+      VERSION: ${SCM_VERSION:-}
       JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
       SPRING_APPLICATION_NAME: scm-config
       SPRING_PROFILES_ACTIVE: dev
@@ -44,7 +44,7 @@ services:
       - "5703:5703"
       - "5080:5080"
     environment:
-      VERSION: ${SCM_VERSION:-9.0.1}
+      VERSION: ${SCM_VERSION:-}
       JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
       SPRING_APPLICATION_NAME: scm-cache
       SPRING_PROFILES_ACTIVE: dev
@@ -65,7 +65,7 @@ services:
       - "8000:8000"
       - "5000:5000"
     environment:
-      VERSION: ${SCM_VERSION:-9.0.1}
+      VERSION: ${SCM_VERSION:-}
       JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
       SPRING_APPLICATION_NAME: scm-uaa
       SPRING_PROFILES_ACTIVE: dev
@@ -89,7 +89,7 @@ services:
       - "8086:8086"
       - "5082:5082"
     environment:
-      VERSION: ${SCM_VERSION:-9.0.1}
+      VERSION: ${SCM_VERSION:-}
       JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
       SPRING_APPLICATION_NAME: scm-web
       SPRING_PROFILES_ACTIVE: ib4dev
@@ -112,7 +112,7 @@ services:
       - "8088:8086"
       - "5084:5082"
     environment:
-      VERSION: ${SCM_VERSION:-9.0.1}
+      VERSION: ${SCM_VERSION:-}
       JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g}
       SPRING_APPLICATION_NAME: scm-web
       SPRING_PROFILES_ACTIVE: mb4dev

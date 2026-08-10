@@ -12,5 +12,5 @@ scm:
           ttl: 60s
           maximum-size: 128
   application:
-    version: 9.0.1
+    version:
     build:  0521T1030
