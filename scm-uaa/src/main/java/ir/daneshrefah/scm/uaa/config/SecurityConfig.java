@@ -94,6 +94,8 @@ public class SecurityConfig {
     private final UserService userService;
     private final OtpUserService otpUserService;
     private final ShahkarOwnershipService shahkarOwnershipService;
+    @Value("${scm.security.oauth.config.pwa.login.password-encrypted:true}")
+    private boolean passwordEncryptionEnabled;
 
 
     @Qualifier("hazelcastClient")
@@ -124,7 +126,7 @@ public class SecurityConfig {
                                                                 new SecondPasswordGrantAuthenticationConverter(),
                                                                 new SmsOtpGrantAuthenticationConverter(),
                                                                 new ShahkarGrantAuthenticationConverter(otpUserService,shahkarOwnershipService,instance,sessionTTL),
-                                                                new DefaultGrantAuthenticationConverter()))
+                                                                new DefaultGrantAuthenticationConverter(passwordEncryptionEnabled)))
                                         )
                                         .authenticationProvider(oAuth2GeneralAuthenticationProvider)
                                         .authenticationProvider(oAuth2SmsOtpAuthenticationProvider)

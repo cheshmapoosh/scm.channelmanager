@@ -13,12 +13,15 @@ import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.Exchange;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
 import static ir.daneshrefah.scm.utils.constant.Constants.*;
 
@@ -26,11 +29,15 @@ import static ir.daneshrefah.scm.utils.constant.Constants.*;
 @RequiredArgsConstructor
 public class AuthenticationPluginHandler implements PluginHandler {
 
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String AUTHORIZATION_COOKIE = "Authorization";
+    private static final String COOKIE_HEADER = "Cookie";
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private final AuthenticationClientTemplate authenticationClientTemplate;
     private final HeaderContextResolver headerContextResolver;
     private final PersonProfileLoader profileLoader;
     private final JwtDecoder jwtDecoder;
-    private static final String AUTH_HEADER = "Authorization";
 
     @Override
     public PluginType getType() {
@@ -43,34 +50,82 @@ public class AuthenticationPluginHandler implements PluginHandler {
 
     @Override
     public void handle(Exchange exchange, PluginDetail pluginDetail) throws Exception {
-        String authValue = exchange.getIn().getHeader(AUTH_HEADER, String.class);
-        if (authValue == null || !authValue.startsWith("Bearer ")) {
+
+        String authorization = resolveAuthorization(exchange);
+
+        if (StringUtils.isBlank(authorization) || !StringUtils.startsWithIgnoreCase(authorization, BEARER_PREFIX)) {
             throw new AuthenticationRequiredException();
         }
-        String token = authValue.substring("Bearer ".length());
+
+
+        exchange.getIn().setHeader(AUTHORIZATION_HEADER, authorization);
+
+        String token = authorization.substring(BEARER_PREFIX.length()).trim();
+
+        if (StringUtils.isBlank(token)) {
+            throw new AuthenticationRequiredException();
+        }
+
         try {
             ClientAuthenticationRequest authenticationRequest = convertToClientAuthenticationRequest(exchange);
+
             UserAuthentication authentication = authenticationClientTemplate.authenticateUserByAuthenticationRequest(authenticationRequest);
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
+
             profileLoader.preparePersonProfile(authentication);
+
             exchange.getIn().setHeader("jwt", jwtDecoder.decode(token));
-        } catch (JwtException e) {
+        } catch (JwtException exception) {
             throw new AuthenticationRequiredException();
         }
     }
 
+    private String resolveAuthorization(Exchange exchange) {
+        String authorizationHeader = exchange.getIn().getHeader(AUTHORIZATION_HEADER, String.class);
+
+
+        if (StringUtils.startsWithIgnoreCase(authorizationHeader, BEARER_PREFIX)) {
+            return authorizationHeader;
+        }
+
+
+        return extractAuthorizationCookie(exchange).map(token -> BEARER_PREFIX + token).orElse(null);
+    }
+
+    private Optional<String> extractAuthorizationCookie(Exchange exchange) {
+
+        String cookieHeader = exchange.getIn().getHeader(COOKIE_HEADER, String.class);
+
+        if (StringUtils.isBlank(cookieHeader)) {
+            return Optional.empty();
+        }
+
+        return Arrays.stream(cookieHeader.split(";")).map(String::trim).map(this::parseCookie).filter(Optional::isPresent).map(Optional::get).findFirst();
+    }
+
+    private Optional<String> parseCookie(String cookiePart) {
+        int separatorIndex = cookiePart.indexOf('=');
+
+        if (separatorIndex <= 0) {
+            return Optional.empty();
+        }
+
+        String name = cookiePart.substring(0, separatorIndex).trim();
+
+        if (!AUTHORIZATION_COOKIE.equals(name)) {
+            return Optional.empty();
+        }
+
+        String value = cookiePart.substring(separatorIndex + 1).trim();
+
+        return StringUtils.isBlank(value) ? Optional.empty() : Optional.of(value);
+    }
 
     private ClientAuthenticationRequest convertToClientAuthenticationRequest(Exchange exchange) {
-        return ClientAuthenticationRequest.builder()
-                .username((String) headerContextResolver.resolve(SCM_PARAMETER_USERNAME, exchange))
-                .terminalCode((String) headerContextResolver.resolve(SCM_PARAMETER_TERMINAL, exchange))
-                .clientId((String) headerContextResolver.resolve(SCM_PARAMETER_CLIENT_ID, exchange))
-                .tokenType(AuthenticationUtils.extractTokenType(
-                        (String) headerContextResolver.resolve(SCM_PARAMETER_AUTHORIZATION, exchange),
-                        (String) headerContextResolver.resolve(SCM_PARAMETER_USERNAME, exchange),
-                        (String) headerContextResolver.resolve(SCM_PARAMETER_CREDENTIAL, exchange)))
-                .authenticationValue(AuthenticationUtils.extractAuthenticationValue((String) headerContextResolver.resolve(SCM_PARAMETER_AUTHORIZATION, exchange)))
-                .accessParameter((String) headerContextResolver.resolve(SCM_PARAMETER_ACCESS_PARAMETER, exchange))
-                .build();
+
+        String authorization = (String) headerContextResolver.resolve(SCM_PARAMETER_AUTHORIZATION, exchange);
+
+        return ClientAuthenticationRequest.builder().username((String) headerContextResolver.resolve(SCM_PARAMETER_USERNAME, exchange)).terminalCode((String) headerContextResolver.resolve(SCM_PARAMETER_TERMINAL, exchange)).clientId((String) headerContextResolver.resolve(SCM_PARAMETER_CLIENT_ID, exchange)).tokenType(AuthenticationUtils.extractTokenType(authorization, (String) headerContextResolver.resolve(SCM_PARAMETER_USERNAME, exchange), (String) headerContextResolver.resolve(SCM_PARAMETER_CREDENTIAL, exchange))).authenticationValue(AuthenticationUtils.extractAuthenticationValue(authorization)).accessParameter((String) headerContextResolver.resolve(SCM_PARAMETER_ACCESS_PARAMETER, exchange)).build();
     }
 }

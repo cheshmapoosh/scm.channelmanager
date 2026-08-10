@@ -71,11 +71,8 @@
     <logger name="org.hibernate" level="${HIBERNATE_LEVEL}" />
 
     <root level="${ROOT_LEVEL}">
-        <appender-ref ref="ROLLING_FILE" />
-        <if condition='property("CONSOLE_ENABLED").equalsIgnoreCase("true")'>
-            <then>
+
                 <appender-ref ref="CONSOLE" />
-            </then>
-        </if>
+
     </root>
 </configuration>

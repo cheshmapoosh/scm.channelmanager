@@ -7,6 +7,7 @@ import ir.daneshrefah.scm.uaa.security.token.DefaultGrantPreAuthenticationToken;
 import ir.daneshrefah.scm.uaa.utils.RequestUtils;
 import ir.daneshrefah.scm.uaa.utils.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,7 +17,9 @@ import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
-
+import jakarta.servlet.http.Cookie;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.PRE_AUTHENTICATION_INSTANCE;
@@ -27,6 +30,11 @@ import static ir.daneshrefah.scm.uaa.common.utils.ErrorUtils.throwError;
  */
 public class DefaultGrantAuthenticationConverter implements AuthenticationConverter {
 
+    private final boolean passwordEncryptionEnabled;
+
+    public DefaultGrantAuthenticationConverter(boolean passwordEncryptionEnabled) {
+        this.passwordEncryptionEnabled = passwordEncryptionEnabled;
+    }
 
     @Override
     public Authentication convert(HttpServletRequest request) {
@@ -41,8 +49,11 @@ public class DefaultGrantAuthenticationConverter implements AuthenticationConver
             throwError(Constants.OAUTH2_ERROR_CODE_INVALID_USER, Constants.OAUTH2_PARAM_NAME_USER_USERNAME);
             return null;
         });
-        String password = parameters.getFirst(OAuth2ParameterNames.PASSWORD)
-                .map(SecurityUtils.getInstance()::decryptPassword)
+        String password = parameters
+                .getFirst(OAuth2ParameterNames.PASSWORD)
+                .map(value -> passwordEncryptionEnabled
+                        ? SecurityUtils.getInstance().decryptPassword(value)
+                        : value)
                 .orElse(null);
         request.getParameter(Constants.CORRELATION_ID_HEADER);
         request.getParameter(Constants.UUID_HEADER);
@@ -75,7 +86,8 @@ public class DefaultGrantAuthenticationConverter implements AuthenticationConver
         parameters.getFirst(Constants.ACCESS_PARAM_HEADER).ifPresent(defaultGrantPreAuthToken::setAccessParam);
         parameters.getFirst(Constants.HASHCODE_HEADER).ifPresent(defaultGrantPreAuthToken::setHashcode);
         parameters.getFirst(Constants.AGENT_HEADER).ifPresent(defaultGrantPreAuthToken::setAgent);
-        parameters.getFirst(Constants.REGISTRY_TOKEN_HEADER).ifPresent(defaultGrantPreAuthToken::setRegistryToken);
+        extractRegistryToken(request, parameters)
+                .ifPresent(defaultGrantPreAuthToken::setRegistryToken);
         parameters.getFirst(Constants.OPERATING_SYSTEM_VERSION_HEADER).ifPresent(defaultGrantPreAuthToken::setOperationSystemVersion);
         parameters.getFirst(Constants.DEVICE_MODEL_HEADER).ifPresent(defaultGrantPreAuthToken::setDeviceModel);
         parameters.getFirst(Constants.UUID_HEADER).ifPresent(defaultGrantPreAuthToken::setUuid);
@@ -89,7 +101,34 @@ public class DefaultGrantAuthenticationConverter implements AuthenticationConver
         request.setAttribute(PRE_AUTHENTICATION_INSTANCE,preAuthenticationToken);
         return preAuthenticationToken;
     }
+    private Optional<String> extractRegistryToken(
+            HttpServletRequest request,
+            ParameterSearch parameters) {
 
+        Optional<String> headerToken =
+                parameters.getFirst(Constants.REGISTRY_TOKEN_HEADER);
+
+        if (headerToken.filter(org.apache.commons.lang3.StringUtils::isNotBlank)
+                .isPresent()) {
+            return headerToken;
+        }
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return Optional.empty();
+        }
+
+        return Arrays.stream(cookies)
+                .filter(cookie ->
+                        Constants.REGISTRY_TOKEN_HEADER.equalsIgnoreCase(
+                                cookie.getName()))
+                .map(Cookie::getValue)
+                .filter(org.apache.commons.lang3.StringUtils::isNotBlank)
+                .map(value -> URLDecoder.decode(
+                        value,
+                        StandardCharsets.UTF_8))
+                .findFirst();
+    }
     private HashSet<String> geScopes(ParameterSearch parameters) {
         return parameters
                 .getFirst(OAuth2ParameterNames.SCOPE)
