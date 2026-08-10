@@ -5,7 +5,7 @@ kind: ServiceAccount
 metadata:
   name: scm-uaa
   labels:
-    helm.sh/chart: scm-uaa-8.5.4
+    helm.sh/chart: scm-uaa-9.0.1
     app.kubernetes.io/name: scm-uaa
     app.kubernetes.io/instance: scm-uaa
     app.kubernetes.io/version: ""
@@ -27,10 +27,10 @@ kind: Service
 metadata:
   name: scm-uaa
   labels:
-    helm.sh/chart: scm-uaa-8.5.4
+    helm.sh/chart: scm-uaa-9.0.1
     app.kubernetes.io/name: scm-uaa
     app.kubernetes.io/instance: scm-uaa
-    app.kubernetes.io/version: "8.5.4"
+    app.kubernetes.io/version: "9.0.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: LoadBalancer
@@ -51,10 +51,10 @@ kind: Deployment
 metadata:
   name: scm-uaa
   labels:
-    helm.sh/chart: scm-uaa-8.5.4
+    helm.sh/chart: scm-uaa-9.0.1
     app.kubernetes.io/name: scm-uaa
     app.kubernetes.io/instance: scm-uaa
-    app.kubernetes.io/version: "8.5.4"
+    app.kubernetes.io/version: "9.0.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -65,10 +65,10 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: scm-uaa-8.5.4
+        helm.sh/chart: scm-uaa-9.0.1
         app.kubernetes.io/name: scm-uaa
         app.kubernetes.io/instance: scm-uaa
-        app.kubernetes.io/version: "8.5.4"
+        app.kubernetes.io/version: "9.0.1"
         app.kubernetes.io/managed-by: Helm
     spec:
       imagePullSecrets:

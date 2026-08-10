@@ -248,7 +248,7 @@ scm:
     client-secret:
     distributed: true
     person-service: local
-    issuer-uri: http://localhost:8000
+    issuer-uri: https://localhost:8443
   cache:
     client:
       distributed: true

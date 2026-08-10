@@ -43,6 +43,7 @@ scm:
             rate-limit-count: 5
             rate-limit-blocked-time-minutes: 10
           login:
+            password-encrypted: false
             rate-limit-count: 5
             rate-limit-blocked-time-minutes: 10
             token-change-warn-period-days: 31
@@ -180,6 +181,7 @@ spring:
 
 
 
+
 #spring:
 #  datasource:
 #    url: jdbc:db2://10.15.27.82:446/DSNALOC
@@ -190,7 +192,14 @@ spring:
 #      maximum-pool-size: 10
 
 server:
-  port: 8000
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: file:/home/behzaman.m@drp.local/code/workspace/e/channelmanager/scm-uaa/config/keystore-local.p12
+    key-store-type: PKCS12
+    key-store-password: password
+    key-password: password
+    key-alias: uaa-local
 springdoc:
   swagger-ui:
     disable-swagger-default-url: true
