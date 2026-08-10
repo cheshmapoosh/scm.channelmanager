@@ -5,6 +5,20 @@ pod:
 scm:
   app-name: domain.card
   channels: MB4TEST
+  plugins:
+    destination-card-bin-block:
+      enabled: true
+      blocked-bank-bins:
+        - "502229"
+        - "504172"
+        - "505416"
+      error:
+        code: DESTINATION_CARD_BANK_NOT_ALLOWED
+    destination-iban-bank-block:
+      enabled: true
+      blocked-bank-codes: []
+      error:
+        code: DESTINATION_IBAN_BANK_NOT_ALLOWED
   runtime:
     target:
       kind: SERVICE_DOMAIN
