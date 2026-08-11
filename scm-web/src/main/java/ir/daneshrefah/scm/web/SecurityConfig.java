@@ -1,7 +1,9 @@
 package ir.daneshrefah.scm.web;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -18,15 +20,40 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
+    @Order(0)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/**")
+                .securityMatcher(SecurityConfig::isGatewayRequest)
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(h->h.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll()
                 );
         return http.build();
+    }
+
+    private static boolean isGatewayRequest(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        if (contextPath != null && !contextPath.isBlank() && path.startsWith(contextPath)) {
+            path = path.substring(contextPath.length());
+        }
+        return "/error".equals(path) || isApiPath(path);
+    }
+
+    private static boolean isApiPath(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        if ("/api".equals(path) || path.startsWith("/api/")) {
+            return true;
+        }
+        int secondSlash = path.indexOf('/', 1);
+        if (secondSlash < 0) {
+            return false;
+        }
+        String pathAfterChannel = path.substring(secondSlash);
+        return "/api".equals(pathAfterChannel) || pathAfterChannel.startsWith("/api/");
     }
 
     @Bean
