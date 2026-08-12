@@ -44,6 +44,12 @@ public final class CoreTraceAttributes {
             "scm.auth.login_method", "Authentication login method.");
     public static final ObservationAttributeKey<String> AUTH_TRANSACTION_METHOD = keyword(
             "scm.auth.transaction_method", "Authentication transaction method.");
+    public static final ObservationAttributeKey<Integer> SERVICE_ID = TraceAttribute.integerNumber(
+            "scm.service.id",
+            OWNER,
+            ObservationAttributePresence.EVENT_OPTIONAL,
+            "Internal SCM service identifier."
+    );
     public static final ObservationAttributeKey<String> SERVICE_CODE = keyword("scm.service.code", "Service code.");
     public static final ObservationAttributeKey<String> SERVICE_NAME = keyword("scm.service.name", "Service name.");
     public static final ObservationAttributeKey<String> SERVICE_VERSION = keyword("scm.service.version", "Service version.");
@@ -124,7 +130,7 @@ public final class CoreTraceAttributes {
                 AUTH_TYPE, AUTH_SCHEME, AUTH_CLIENT_ID, AUTH_CLIENT_ACCEPT_ADDRESS,
                 AUTH_SUBJECT_ID, AUTH_SUBJECT_USERNAME, AUTH_ISSUER, AUTH_AUDIENCE, AUTH_SCOPES,
                 AUTH_LOGIN_METHOD, AUTH_TRANSACTION_METHOD,
-                SERVICE_CODE, SERVICE_NAME, SERVICE_VERSION,
+                SERVICE_ID, SERVICE_CODE, SERVICE_NAME, SERVICE_VERSION,
                 SERVICE_AMOUNT, SERVICE_CURRENCY,
                 SERVICE_SOURCE_CARD, SERVICE_SOURCE_ACCOUNT,
                 SERVICE_DESTINATION_CARD, SERVICE_DESTINATION_ACCOUNT,

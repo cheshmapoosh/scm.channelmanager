@@ -52,6 +52,7 @@ public class Message implements Serializable {
     public static final String TRACE_ID = "scmTraceId";
     public static final String SPAN_ID = "scmSpanId";
     public static final String CORRELATION_ID = "scmCorrelationId";
+    public static final String OBSERVATION_SERVICE_DOCUMENT_NUMBER = "scm.observation.service.document.number";
     public static final String CLIENT_CORRELATION_ID =
             "scmClientCorrelationId";
     public static final String EXECUTION_ID = "scmExecutionId";

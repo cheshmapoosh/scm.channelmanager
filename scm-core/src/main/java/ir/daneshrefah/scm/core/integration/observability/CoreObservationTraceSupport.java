@@ -12,23 +12,22 @@ import ir.daneshrefah.scm.common.model.operation.OperationType;
 import ir.daneshrefah.scm.common.model.taskworkflow.TaskWorkflowStepType;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreTraceAttributes;
 import ir.daneshrefah.scm.core.integration.security.ExchangeAuthenticationContext;
+import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
 import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowExchangeProperties;
-import ir.daneshrefah.scm.observation.starter.CorrelationType;
-import ir.daneshrefah.scm.observation.starter.ObservationIds;
-import ir.daneshrefah.scm.observation.starter.ObservationScope;
-import ir.daneshrefah.scm.observation.starter.ScmObservation;
-import ir.daneshrefah.scm.observation.starter.TraceContext;
+import ir.daneshrefah.scm.observation.starter.*;
 import ir.daneshrefah.scm.observation.starter.attributes.trace.CommonTraceAttributes;
 import ir.daneshrefah.scm.observation.starter.gateway.GatewayObservationContext;
 import ir.daneshrefah.scm.observation.starter.provider.ProviderBusinessOutcome;
-import ir.daneshrefah.scm.core.integration.service.guard.IncomingChannelCodeResolver;
 import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
+import org.apache.camel.http.common.HttpMessage;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -123,8 +122,14 @@ public class CoreObservationTraceSupport {
                 .attribute(CoreTraceAttributes.CLIENT_USERNAME, header(exchange, Constants.SCM_PARAMETER_USERNAME))
                 .attribute(CoreTraceAttributes.CLIENT_ADDRESS, clientAddress(exchange, servletRequest))
                 .attribute(CoreTraceAttributes.CLIENT_CORRELATION_ID, header(exchange, Constants.SCM_PARAMETER_CLIENT_CORRELATION_ID))
-                .attribute(CoreTraceAttributes.SERVICE_CODE, service == null ? fields.get("serviceCode") : service.getCode())
-                .attribute(CoreTraceAttributes.SERVICE_NAME, service == null ? null : service.getName())
+                .attribute(CoreTraceAttributes.SERVICE_ID, serviceId(service))
+                .attribute(CoreTraceAttributes.SERVICE_CODE, firstText(
+                        service == null ? null : service.getCode(),
+                        fields.get("serviceCode")
+                ))
+                .attribute(CoreTraceAttributes.SERVICE_NAME, firstText(
+                        service == null ? null : service.getName()
+                ))
                 .attribute(CoreTraceAttributes.SERVICE_VERSION, fields.get("serviceVersion"))
                 .attribute("scm.observation.legacy.enabled", requestAttribute(
                         servletRequest, "scm.observation.legacy.enabled"))
@@ -181,6 +186,7 @@ public class CoreObservationTraceSupport {
         ObservationScope scope = removeScope(exchange, GATEWAY_SCOPE_PROPERTY, GATEWAY_CONTEXT_PROPERTY);
         try {
             if (scope != null) {
+                enrichGatewayMessageId(exchange, scope);
                 finishScope(scope, failed ? failure : null, failureDetails, 0L, null);
             }
         } finally {
@@ -210,8 +216,14 @@ public class CoreObservationTraceSupport {
                 .correlationType(requestedContext.correlationType())
                 .attribute(CommonTraceAttributes.SCM_GATEWAY_NAME, fields.get("gatewayName"))
                 .attribute(CommonTraceAttributes.SCM_CHANNEL_CODE, fields.get("channelCode"))
-                .attribute(CoreTraceAttributes.SERVICE_CODE, service != null ? service.getCode() : fields.get("serviceCode"))
-                .attribute(CoreTraceAttributes.SERVICE_NAME, service != null ? service.getName() : null)
+                .attribute(CoreTraceAttributes.SERVICE_ID, serviceId(service))
+                .attribute(CoreTraceAttributes.SERVICE_CODE, firstText(
+                        service == null ? null : service.getCode(),
+                        fields.get("serviceCode")
+                ))
+                .attribute(CoreTraceAttributes.SERVICE_NAME, firstText(
+                        service == null ? null : service.getName()
+                ))
                 .attribute(CoreTraceAttributes.SERVICE_VERSION, fields.get("serviceVersion"))
                 .attribute(CoreTraceAttributes.OPERATION_CODE, fields.get("operationName"))
                 .attribute(CoreTraceAttributes.OPERATION_NAME, fields.get("operationName"))
@@ -669,7 +681,24 @@ public class CoreObservationTraceSupport {
     }
 
     private HttpServletRequest servletRequest(Exchange exchange) {
-        return exchange.getMessage().getHeader(Exchange.HTTP_SERVLET_REQUEST, HttpServletRequest.class);
+        if (exchange == null || exchange.getMessage() == null) {
+            return null;
+        }
+
+        HttpServletRequest headerRequest = exchange.getMessage().getHeader(Exchange.HTTP_SERVLET_REQUEST, HttpServletRequest.class);
+        if (headerRequest != null) {
+            return headerRequest;
+        }
+
+        if (exchange.getMessage() instanceof HttpMessage httpMessage) {
+            return httpMessage.getRequest();
+        }
+
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+            return attributes.getRequest();
+        }
+
+        return null;
     }
 
     private String stringAttribute(HttpServletRequest request, String name) {
@@ -713,15 +742,7 @@ public class CoreObservationTraceSupport {
         if (request == null) {
             return null;
         }
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            int separator = forwardedFor.indexOf(',');
-            String first = separator < 0 ? forwardedFor : forwardedFor.substring(0, separator);
-            if (!first.isBlank()) {
-                return first.trim();
-            }
-        }
-        return firstText(request.getRemoteAddr());
+        return firstText(firstForwardedAddress(request.getHeader("X-Forwarded-For")), request.getHeader("X-Real-IP"), request.getRemoteAddr());
     }
 
     private String gatewayChannelCode(
@@ -762,7 +783,10 @@ public class CoreObservationTraceSupport {
     private String clientAddress(Exchange exchange, HttpServletRequest request) {
         return firstText(
                 stringAttribute(request, CoreTraceAttributes.CLIENT_ADDRESS.name()),
+                stringAttribute(request, CommonTraceAttributes.CLIENT_IP.name()),
                 clientIp(request),
+                firstForwardedAddress(exchange.getMessage().getHeader("X-Forwarded-For", String.class)),
+                exchange.getMessage().getHeader("X-Real-IP", String.class),
                 exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_REMOTE_ADDRESS, String.class)
         );
     }
@@ -919,4 +943,46 @@ public class CoreObservationTraceSupport {
                     : errorType.trim();
         }
     }
+
+    private void enrichGatewayMessageId(Exchange exchange, ObservationScope gatewayScope) {
+        if (exchange == null || gatewayScope == null) {
+            return;
+        }
+
+        Message internalMessage = exchange.getProperty(Message.INTERNAL_MESSAGE, Message.class);
+
+        if (internalMessage == null || internalMessage.getHeader() == null) {
+            return;
+        }
+
+        String messageId = internalMessage.getHeader().getMessageId();
+        if (messageId == null || messageId.isBlank()) {
+            return;
+        }
+
+        gatewayScope.attribute(CommonTraceAttributes.SCM_MESSAGE_ID, messageId);
+    }
+
+    private Integer serviceId(Service service) {
+        return service == null || service.getId() == null
+                ? null
+                : service.getId().intValue();
+    }
+
+    private String firstForwardedAddress(String forwardedFor) {
+        String value = firstText(forwardedFor);
+
+        if (value == null) {
+            return null;
+        }
+
+        int separator = value.indexOf(',');
+
+        return firstText(
+                separator < 0
+                        ? value
+                        : value.substring(0, separator)
+        );
+    }
+
 }
