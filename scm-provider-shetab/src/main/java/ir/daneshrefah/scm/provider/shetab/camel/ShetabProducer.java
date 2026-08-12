@@ -106,6 +106,7 @@ public class ShetabProducer extends DefaultProducer {
                 providerExchange.response(providerResponse);
                 executeCustomizers(providerExchange, customizerPipeline, false);
                 Map<String, Object> responseMap = isoMapConverter.toMap(response);
+                captureDocumentNumber(exchange, responseMap);
                 providerResponse.body(responseMap);
                 exchange.getMessage().setBody(responseMap);
                 outcome = traceSupport.providerOutcome(config, responseCode);
@@ -374,4 +375,33 @@ public class ShetabProducer extends DefaultProducer {
     private long elapsedMillis(long startedAtNanos) {
         return TimeUnit.NANOSECONDS.toMillis(Math.max(0L, System.nanoTime() - startedAtNanos));
     }
+
+    private void captureDocumentNumber(Exchange exchange, Map<String, Object> response) {
+        if (exchange == null || response == null) {
+            return;
+        }
+
+        Object fieldsValue = response.get("fields");
+        if (!(fieldsValue instanceof Map<?, ?> fields)) {
+            return;
+        }
+
+        Object documentNumber = fields.get("37");
+
+        if (documentNumber == null) {
+            documentNumber = fields.get(37);
+        }
+
+        if (documentNumber == null) {
+            return;
+        }
+
+        String value = String.valueOf(documentNumber).trim();
+        if (value.isEmpty()) {
+            return;
+        }
+
+        exchange.setProperty(Message.OBSERVATION_SERVICE_DOCUMENT_NUMBER, value);
+    }
+
 }
