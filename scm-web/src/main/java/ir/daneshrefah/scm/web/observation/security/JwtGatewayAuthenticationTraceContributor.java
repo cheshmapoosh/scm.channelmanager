@@ -62,6 +62,29 @@ public class JwtGatewayAuthenticationTraceContributor implements GatewayAuthenti
         return Map.copyOf(attributes);
     }
 
+    @Override
+    public Map<String, Object> authenticatedAttributes(Authentication authentication, Set<String> requestedNames) {
+        Jwt jwt = validatedJwt(authentication);
+        if (jwt == null || requestedNames == null || requestedNames.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        for (String name : requestedNames) {
+            if (name == null) {
+                continue;
+            }
+            try {
+                Object value = jwt.getClaim(name);
+                if (value != null) {
+                    attributes.put(name, value);
+                }
+            } catch (RuntimeException ignored) {
+                // A malformed claim must remain unresolved for the configured trace rule.
+            }
+        }
+        return attributes.isEmpty() ? Map.of() : Map.copyOf(attributes);
+    }
+
     private Jwt validatedJwt(Authentication authentication) {
         if (authentication == null
                 || !authentication.isAuthenticated()
