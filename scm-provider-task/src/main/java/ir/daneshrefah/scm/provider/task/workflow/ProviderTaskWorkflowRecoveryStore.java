@@ -381,8 +381,9 @@ public class ProviderTaskWorkflowRecoveryStore
             }
             if (current.status().state()
                     == TaskWorkflowExecutionState.FAILED
-                    || current.status().state()
-                    == TaskWorkflowExecutionState.COMPLETED) {
+//                    || current.status().state()
+//                    == TaskWorkflowExecutionState.COMPLETED
+            ) {
                 throw attemptConflict(
                         candidate,
                         "terminal execution cannot register another attempt"

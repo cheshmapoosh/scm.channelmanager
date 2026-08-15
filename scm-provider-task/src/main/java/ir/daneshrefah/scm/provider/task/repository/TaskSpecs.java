@@ -36,8 +36,11 @@ public class TaskSpecs {
                 }
             }
             if (Objects.nonNull(request.getTransactionType())) {
-                predicates.add(builder.equal(root.get(PROCESS_INSTANCE).get("transactionType"), request.getTransactionType()));
+                predicates.add(root.get(PROCESS_INSTANCE).get("processCode").in(request.getTransactionType()));
             }
+//            if (Objects.nonNull(request.getTransactionType())) {
+//                predicates.add(builder.equal(root.get(PROCESS_INSTANCE).get("processCode"), request.getTransactionType()));
+//            }
             if (Objects.nonNull(request.getFromDate())) {
                 predicates.add(builder.greaterThanOrEqualTo(root.get("createAt"), new Date(TimeUnit.SECONDS.toMillis(request.getFromDate()))));
             }

@@ -3,14 +3,16 @@ package transformers
 import ir.daneshrefah.scm.common.data.entity.asset.AccountTypeLoader
 import org.slf4j.LoggerFactory
 
-def log = LoggerFactory.getLogger("5kRsGroovyTransformer")
+//def log = LoggerFactory.getLogger("5kRsGroovyTransformer")
 def nabResponse = exchange.in.body
-log.info("5k nab response : {}", nabResponse)
+//log.info("5k nab response : {}", nabResponse)
+println("5k nab response : "+ nabResponse)
 
 def status = nabResponse.status
 def actionCode = status.code
 def success = status.success
-log.info("5k nab status code : {}", actionCode.asText())
+println("5k nab status code : "+ actionCode.asText())
+//log.info("5k nab status code : {}", actionCode.asText())
 if (!success) {
     throw new ir.daneshrefah.scm.common.exception.NabError(actionCode.asText(), "nab error!");
 }
@@ -18,7 +20,8 @@ if (!success) {
 def bodyRawList = nabResponse.records
 def responseList = []
 for (def body in bodyRawList) {
-    log.info("5k response body : {}", body);
+    println("5k response body : {}"+ body);
+//    log.info("5k response body : {}", body);
 
     def nationalId = body.nationalId
     def name = body.name
@@ -88,5 +91,6 @@ for (def body in bodyRawList) {
     responseList << item
 }
 
-log.info("5k transformed nab response list : {}", responseList)
+println("5k transformed nab response list : {}"+ responseList)
+//log.info("5k transformed nab response list : {}", responseList)
 return responseList

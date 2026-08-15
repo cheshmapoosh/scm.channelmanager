@@ -6,6 +6,8 @@ import ir.daneshrefah.scm.provider.task.constant.ProcessCodeEnum;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class TaskFilterRequest extends PagedRequestData {
@@ -15,5 +17,5 @@ public class TaskFilterRequest extends PagedRequestData {
     private Long fromDate;
     private Long toDate;
     private Integer userId;
-    private ProcessCodeEnum transactionType;
+    private List<ProcessCodeEnum> transactionType;
 }

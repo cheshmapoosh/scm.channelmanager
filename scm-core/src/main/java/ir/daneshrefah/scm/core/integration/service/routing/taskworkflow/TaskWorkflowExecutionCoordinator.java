@@ -380,7 +380,7 @@ public class TaskWorkflowExecutionCoordinator {
         String processCorrelation = findProcessCorrelation(store, processId)
                 .orElse(null);
 
-        if (sameAction(snapshot, commandPlan.inboundAction())) {
+        if (sameAction(snapshot, commandPlan.inboundAction()) && commandPlan.routingPlan().routingStrategy() != RoutingStrategy.FIRST) {
             validateSnapshot(
                     snapshot,
                     commandPlan.routingPlan(),

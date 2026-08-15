@@ -25,6 +25,7 @@ import java.util.Map;
 //@AllArgsConstructor
 @Slf4j
 public class KarpardazInquiryEnricherTransformerPlugin implements PluginHandler {
+    public static final String CHANNEL = "channel";
 
     private final ObjectMapper objectMapper;
     private Map<String, List<String>> channelMap = Map.of(
@@ -65,7 +66,7 @@ public class KarpardazInquiryEnricherTransformerPlugin implements PluginHandler 
             return;
         }
 
-        String channelCode = exchange.getProperty(Message.CHANNEL_CODE, String.class);
+        String channelCode = exchange.getIn().getHeader(CHANNEL, String.class);
 
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
 

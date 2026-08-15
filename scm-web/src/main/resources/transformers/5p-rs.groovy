@@ -4,13 +4,14 @@ import org.slf4j.LoggerFactory
 
 def nabResponse = exchange.in.body
 
-def log = LoggerFactory.getLogger("5pRsGroovyTransformer")
-log.info("5p nab response : {}", nabResponse)
+//def log = LoggerFactory.getLogger("5pRsGroovyTransformer")
+//log.info("5p nab response : {}", nabResponse)
+println("5p nab response : {}"+ nabResponse)
 
 def status = nabResponse.status
 def actionCode = status.code
 def success = status.success
-log.info("5p nab status code : {}", actionCode.asText())
+println("5p nab status code : {}"+ actionCode.asText())
 if (!success) {
     throw new ir.daneshrefah.scm.common.exception.NabError(actionCode.asText(), "nab error!");
 }
@@ -19,7 +20,7 @@ def bodyRawList = nabResponse.records
 
 def responseList = []
 for (def body in bodyRawList) {
-    log.info("5p response body : {}", body);
+    println("5p response body : {}"+ body);
     def sourceAccountNumber = body.sourceAccountNumber
     def transDate = DateAndTimeConverter.convertPersianDateToMs(body.transDate.asText())
     def docNumber = body.docNumber
@@ -78,5 +79,5 @@ for (def body in bodyRawList) {
     ]
     responseList << item
 }
-log.info("5p transformed response list : {}", responseList)
+println("5p transformed response list : {}"+ responseList)
 return responseList

@@ -160,7 +160,12 @@ public class TaskWorkflowPayloadMapper {
         );
 
         if (stableTransactionData == null) {
-            request = (ObjectNode) inboundPayload(exchange);
+            JsonNode node = inboundPayload(exchange);
+            if (node != null){
+                if (node instanceof JsonNode && (!node.asText().isEmpty() || node.size() > 0)) {
+                    request = (ObjectNode) node;
+                }
+            }
 //            stableTransactionData = objectMapper.createObjectNode();
         }
 

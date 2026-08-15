@@ -8,12 +8,13 @@ import ir.daneshrefah.scm.uaa.common.model.user.User
 import ir.daneshrefah.scm.uaa.common.utils.AuthenticationUtils
 import org.slf4j.LoggerFactory
 
-def log = LoggerFactory.getLogger("5pRqGroovyTransformer")
+//def log = LoggerFactory.getLogger("5pRqGroovyTransformer")
 
 def body = exchange.in.body;
 def header = exchange.in.headers
 
-log.info("5p rq body {}", body)
+println("5p rq body {}"+ body)
+//println("5p rq body {}", body)
 
 def f = { value, len -> value = value?.toString() ?: ''; value.length() > len ? value[0..<len] : value.padRight(len, ' ') };
 
@@ -185,6 +186,6 @@ def nabRequest = [
         ]
 ]
 
-log.info("5p transformed json : {}", nabRequest)
+println("5p transformed json : {}"+ nabRequest)
 
 return nabRequest

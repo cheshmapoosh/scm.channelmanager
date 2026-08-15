@@ -154,6 +154,16 @@ public class InternalTaskWorkflowEngine implements TaskWorkflowEngine {
         if (status != null) {
             response.put("status", status);
         }
+        if (status != "CANCEL") {
+            if (exchange != null) {
+                if (exchange.getProperty("transactionData") != null) {
+                    response.put("transactionData", exchange.getProperty("transactionData", JsonNode.class));
+                }
+                if (exchange.getProperty("users") != null) {
+                    response.put("users", exchange.getProperty("users", JsonNode.class));
+                }
+            }
+        }
         return Map.copyOf(response);
     }
 

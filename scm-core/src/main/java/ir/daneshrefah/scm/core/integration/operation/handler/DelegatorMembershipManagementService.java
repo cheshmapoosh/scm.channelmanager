@@ -103,6 +103,7 @@ public class DelegatorMembershipManagementService extends AbstractJavaService {
         }
         Long memId = createDelegator(person, customerNo, accountNo);
         removeXuserDetail(person.getId(), exchange);
+        exchange.setProperty("transactionData", body);
         return memId;
     }
 

@@ -5,8 +5,9 @@ import org.slf4j.LoggerFactory
 def body = exchange.in.body
 def accountId = body['accountNo']
 
-def log = LoggerFactory.getLogger("5kRqGroovyTransformer")
-log.info("5k rq body {}", body)
+//def log = LoggerFactory.getLogger("5kRqGroovyTransformer")
+//log.info("5k rq body {}", body)
+println("5k rq body {}"+ body)
 
 def nabRequest = [
         "command" : [
@@ -52,5 +53,6 @@ def nabRequest = [
         ]
 ]
 
-log.info("5k transformed nab request : {}", nabRequest)
+//log.info("5k transformed nab request : {}", nabRequest)
+println("5k transformed nab request : {}"+ nabRequest)
 return nabRequest

@@ -47,12 +47,12 @@ public class CartableSignerManagment  {
 
         List<TaskEntity> tasks = getTasksByProcessId(request);
         addCustomerCout(transactionData, tasks);
-        addCustomerList(transactionData, tasks);
+        addCustomerList(exchange, transactionData, tasks);
 
         exchange.getMessage().setBody(request);
     }
 
-    private void addCustomerList(ObjectNode transactionData, List<TaskEntity> tasks) {
+    private void addCustomerList(Exchange exchange, ObjectNode transactionData, List<TaskEntity> tasks) {
         ArrayNode customerIds = mapper.createArrayNode();
         for (TaskEntity task : tasks) {
             MembershipEntity membership = getMembership(task);
@@ -64,6 +64,7 @@ public class CartableSignerManagment  {
                 customerIds.add(customerNo);
             }
         }
+        exchange.setProperty("users", customerIds);
         transactionData.set("customers", customerIds);
     }
 
