@@ -9,6 +9,7 @@ import com.hazelcast.core.HazelcastInstance;
 import ir.daneshrefah.scm.uaa.common.core.SessionCache;
 import ir.daneshrefah.scm.uaa.common.security.authenticationDetails.TerminalAuthenticationDetailsSource;
 import ir.daneshrefah.scm.uaa.common.service.LogoutService;
+import ir.daneshrefah.scm.uaa.security.HeaderOrCookieBearerTokenResolver;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.security.authenticationProvider.*;
 import ir.daneshrefah.scm.uaa.security.converter.*;
@@ -94,6 +95,7 @@ public class SecurityConfig {
     private final UserService userService;
     private final OtpUserService otpUserService;
     private final ShahkarOwnershipService shahkarOwnershipService;
+    private final HeaderOrCookieBearerTokenResolver bearerTokenResolver;
     @Value("${scm.security.oauth.config.pwa.login.password-encrypted:true}")
     private boolean passwordEncryptionEnabled;
 
@@ -238,6 +240,7 @@ public class SecurityConfig {
 
     private BearerTokenAuthenticationFilter bearerAuthenticationFilter(HttpSecurity http) {
         BearerTokenAuthenticationFilter filter = new BearerTokenAuthenticationFilter((AuthenticationManagerResolver<HttpServletRequest>) context -> http.getSharedObject(AuthenticationManager.class));
+        filter.setBearerTokenResolver(bearerTokenResolver);
         filter.setAuthenticationDetailsSource(new TerminalAuthenticationDetailsSource());
         return filter;
     }
