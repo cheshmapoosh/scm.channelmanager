@@ -345,6 +345,13 @@ OBSERVATION
       "value": "IRR"
     },
     {
+      "attribute": "scm.service.source.account",
+      "from": "auth.claim",
+      "path": "accountNumber",
+      "type": "keyword",
+      "required": true
+    },
+    {
       "attribute": "scm.status.code",
       "from": "response.body",
       "path": "/result/code"
@@ -369,7 +376,7 @@ OBSERVATION
 | --- | --- | --- |
 | `attribute` | بله | نام attribute ثبت‌شده در TRACE registry |
 | `from` | بله | منبع استخراج |
-| `path` | برای همهٔ sourceها به‌جز constant | مسیر یا نام field |
+| `path` | برای همهٔ sourceها به‌جز constant | مسیر یا نام field؛ برای `auth.claim` الزامی و غیرخالی است |
 | `value` | فقط برای constant | مقدار ثابت |
 | `type` | خیر | assertion نوع؛ منبع اصلی type، registry است |
 | `required` | خیر؛ default=false | نبود مقدار در runtime warning تولید می‌کند |
@@ -386,6 +393,7 @@ request.path
 response.body
 response.header
 exchange.property
+auth.claim
 constant
 ```
 
@@ -398,6 +406,41 @@ constant
 ```
 
 برای header، query و path، مقدار `path` نام field است. برای `exchange.property` نام property بدون slash ابتدایی استفاده می‌شود.
+
+`auth.claim` فقط با همین spelling پذیرفته می‌شود. `path` در این source نام دقیق، case-sensitive و top-level یک attribute از هویت authenticated است. این مقدار opaque است: dot، slash، bracket و JSON Pointer تفسیر نمی‌شوند؛ برای نمونه `customer.id` فقط key سطح بالای literal با همین نام را می‌خواند و traversal به object داخلی انجام نمی‌شود. فقط scalarهای قابل تبدیل به type ثبت‌شده پشتیبانی می‌شوند؛ map، collection، array و valueهای ساخت‌یافته unresolved هستند.
+
+برای `auth.claim` نیز ترتیب ruleها، `required`، `default`، `type` و `overwrite` دقیقاً مانند sourceهای دیگر عمل می‌کنند. بنابراین نبود هویت authenticated، نبود claim یا value ساخت‌یافته، ابتدا `default` را بررسی می‌کند و در صورت `required=true` warning همان rule را تولید می‌کند؛ business request fail نمی‌شود.
+
+نمونهٔ کامل با fallback:
+
+```json
+{
+  "version": 1,
+  "trace": [
+    {
+      "attribute": "scm.service.reference.number",
+      "from": "auth.claim",
+      "path": "pid",
+      "type": "keyword",
+      "required": false,
+      "default": "unknown",
+      "overwrite": false
+    }
+  ]
+}
+```
+
+مرز امنیتی `auth.claim` این است که فقط attributeهای هویت already-validated خوانده می‌شوند. implementation فعلی JWT خام، header `Authorization` یا هیچ input کنترل‌شده توسط caller را decode یا parse نمی‌کند. هنگام authentication فقط نام‌های claim مورد نیاز definition compiled انتخاب و snapshot immutable آن‌ها روی Camel Exchange نگه‌داری می‌شود؛ JWT خام، Authentication، credential، login data و full claim map نگه‌داری نمی‌شوند. snapshot در cleanup completion حذف می‌شود.
+
+پشتیبانی فعلی و مسیر توسعه:
+
+```text
+JWT-backed Gateway authentication: supported by this implementation
+SOAP WS-Security/SAML/X.509: extension contract available, adapter not implemented
+MQ broker identity or validated message JWT: extension contract available, adapter not implemented
+```
+
+Operator فقط باید claimهای trace-safe و غیرحساس را انتخاب کند. secret، credential، token، authorization، cookie، password، OTP، PIN، CVV و دادهٔ شخصی حساس نباید به‌عنوان trace attribute configure شوند. version definition همچنان `1` است.
 
 ### ۱۱.۵. Typeهای assertion
 
@@ -513,11 +556,16 @@ request entry
   -> immutable request snapshot
   -> request event
 
+authentication
+  -> read only configured auth.claim names from validated identity
+  -> immutable authenticated-attribute snapshot
+
 onCompletion
   -> immutable final response snapshot
   -> execute all rules
   -> apply attributes to gateway.receive
   -> close gateway span
+  -> clear authentication and authenticated-attribute snapshot
 ```
 
 Snapshot request قبل از تغییر message گرفته می‌شود. `JsonNode` deep-copy، byte array clone و `StreamCache` بعد از copy reset می‌شود.

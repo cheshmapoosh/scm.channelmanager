@@ -14,6 +14,7 @@ import ir.daneshrefah.scm.core.integration.gateway.InboundRouteDefinition;
 import ir.daneshrefah.scm.core.integration.observability.CoreObservationTraceSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
+import ir.daneshrefah.scm.core.integration.security.ExchangeAuthenticationContext;
 import ir.daneshrefah.scm.observation.starter.ElasticFieldType;
 import ir.daneshrefah.scm.observation.starter.ObservationAttributeKey;
 import ir.daneshrefah.scm.observation.starter.ObservationAttributeRegistry;
@@ -39,7 +40,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -68,6 +71,30 @@ public class GatewayObservationEnrichmentSupport {
             "scm.service.version",
             "scm.service.duration_ms",
             "scm.status.duration_ms"
+    );
+    private static final Set<String> UNSAFE_AUTHENTICATED_ATTRIBUTE_NAMES = Set.of(
+            "access_token",
+            "access_tokens",
+            "refresh_token",
+            "refresh_tokens",
+            "bearer_token",
+            "bearer_tokens",
+            "token",
+            "tokens",
+            "authorization",
+            "authorization_value",
+            "password",
+            "password_hash",
+            "secret",
+            "client_secret",
+            "credential",
+            "credentials",
+            "cookie",
+            "otp",
+            "pin",
+            "cvv",
+            "api_key",
+            "apikey"
     );
     private static final Map<String, String> REQUEST_HEADER_EVENT_ATTRIBUTES = Map.ofEntries(
             Map.entry("user-agent", CommonTraceAttributes.HTTP_REQUEST_HEADER_USER_AGENT.name()),
@@ -196,6 +223,22 @@ public class GatewayObservationEnrichmentSupport {
         }
     }
 
+    public Set<String> authenticatedAttributeNames(Exchange exchange) {
+        GatewayObservationDefinition definition = exchange == null
+                ? null
+                : exchange.getProperty(DEFINITION_PROPERTY, GatewayObservationDefinition.class);
+        if (definition == null || definition.trace().isEmpty()) {
+            return Set.of();
+        }
+        Set<String> names = new LinkedHashSet<>();
+        for (GatewayObservationRule rule : definition.trace()) {
+            if (rule.source() == ObservationSource.AUTH_CLAIM) {
+                names.add(rule.path());
+            }
+        }
+        return names.isEmpty() ? Set.of() : Collections.unmodifiableSet(names);
+    }
+
     private List<ChannelServiceDefinition> observationDefinitions(RuntimeServicePlan servicePlan) {
         if (servicePlan == null || servicePlan.routeDefinitions() == null) {
             return List.of();
@@ -269,14 +312,23 @@ public class GatewayObservationEnrichmentSupport {
         if (source == null) {
             invalid(sourceContext, "unsupportedFrom");
         }
+        if (source == ObservationSource.AUTH_CLAIM && !ObservationSource.AUTH_CLAIM.externalName.equals(
+                item.get("from").asText())) {
+            invalid(sourceContext, "unsupportedFrom");
+        }
 
         boolean required = booleanField(item, "required", sourceContext, false);
         boolean overwrite = booleanField(item, "overwrite", sourceContext, false);
-        String path = optionalStringField(item, "path", sourceContext, null);
+        String path = source == ObservationSource.AUTH_CLAIM
+                ? opaquePathField(item, "path", sourceContext)
+                : optionalStringField(item, "path", sourceContext, null);
         JsonNode valueNode = item.get("value");
         DefinitionRegistrationContext ruleContext = sourceContext.withPath(path);
         if (source.requiresPath() && path == null) {
             invalid(ruleContext, "missingPath");
+        }
+        if (source == ObservationSource.AUTH_CLAIM && unsafeAuthenticatedAttributeName(path)) {
+            invalid(ruleContext, "unsafeAuthClaimPath");
         }
         if (source == ObservationSource.CONSTANT && missingNode(valueNode)) {
             invalid(ruleContext, "missingValue");
@@ -401,6 +453,7 @@ public class GatewayObservationEnrichmentSupport {
             case RESPONSE_BODY -> jsonPointerValue(responseSnapshot == null ? null : responseSnapshot.body(), rule.path());
             case RESPONSE_HEADER -> responseSnapshot == null ? null : responseSnapshot.header(ruleKey(rule.path()));
             case EXCHANGE_PROPERTY -> exchange.getProperty(propertyKey(rule.path()));
+            case AUTH_CLAIM -> ExchangeAuthenticationContext.authenticatedAttributes(exchange).value(rule.path());
             case CONSTANT -> rule.constantValue();
         };
     }
@@ -825,6 +878,18 @@ public class GatewayObservationEnrichmentSupport {
         return textOrNull(node.asText());
     }
 
+    private String opaquePathField(JsonNode item, String fieldName, DefinitionRegistrationContext context) {
+        JsonNode node = item.get(fieldName);
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (!node.isTextual()) {
+            invalid(context, "invalidPath");
+        }
+        String value = node.asText();
+        return value == null || value.isBlank() ? null : value;
+    }
+
     private boolean booleanField(
             JsonNode item,
             String fieldName,
@@ -870,6 +935,29 @@ public class GatewayObservationEnrichmentSupport {
     private String normalizeMapKey(String value) {
         String text = textOrNull(value);
         return text == null ? null : text.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean unsafeAuthenticatedAttributeName(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        String normalized = normalizeAuthenticatedAttributeName(path);
+        if (UNSAFE_AUTHENTICATED_ATTRIBUTE_NAMES.contains(normalized)) {
+            return true;
+        }
+        int separator = Math.max(path.lastIndexOf('.'), path.lastIndexOf('/'));
+        return separator >= 0 && UNSAFE_AUTHENTICATED_ATTRIBUTE_NAMES.contains(
+                normalizeAuthenticatedAttributeName(path.substring(separator + 1))
+        );
+    }
+
+    private String normalizeAuthenticatedAttributeName(String value) {
+        return value == null
+                ? ""
+                : value.trim()
+                .replaceAll("([a-z0-9])([A-Z])", "$1_$2")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[\\s./-]+", "_");
     }
 
     private String textOrNull(String value) {
@@ -1107,6 +1195,7 @@ public class GatewayObservationEnrichmentSupport {
         RESPONSE_BODY("response.body", true),
         RESPONSE_HEADER("response.header", false),
         EXCHANGE_PROPERTY("exchange.property", false),
+        AUTH_CLAIM("auth.claim", false),
         CONSTANT("constant", false);
 
         private final String externalName;
@@ -1133,8 +1222,14 @@ public class GatewayObservationEnrichmentSupport {
             if (value == null || value.isBlank()) {
                 return null;
             }
+            if (AUTH_CLAIM.externalName.equals(value)) {
+                return AUTH_CLAIM;
+            }
             String normalized = value.trim().toLowerCase(Locale.ROOT);
             for (ObservationSource source : values()) {
+                if (source == AUTH_CLAIM) {
+                    continue;
+                }
                 if (source.externalName.equals(normalized)) {
                     return source;
                 }

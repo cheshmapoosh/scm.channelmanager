@@ -5,6 +5,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Keeps authenticated SCM business state local to a Camel Exchange and binds it only while one
  * processor is executing on the current thread.
@@ -12,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public final class ExchangeAuthenticationContext {
     public static final String AUTHENTICATION_PROPERTY = "scm.security.authentication";
     public static final String JWT_BUSINESS_CONTEXT_PROPERTY = "scm.security.jwt.business-context";
+    public static final String AUTHENTICATED_ATTRIBUTES_PROPERTY = "scm.security.authenticated-attributes";
 
     private ExchangeAuthenticationContext() {
     }
@@ -45,12 +49,39 @@ public final class ExchangeAuthenticationContext {
                 : exchange.getProperty(AUTHENTICATION_PROPERTY, Authentication.class);
     }
 
+    public static void storeAuthenticatedAttributes(
+            Exchange exchange,
+            Set<String> requestedNames,
+            Map<String, ?> authenticatedAttributes
+    ) {
+        if (exchange == null) {
+            return;
+        }
+        AuthenticatedAttributeSnapshot snapshot = AuthenticatedAttributeSnapshot.requestedValues(
+                requestedNames,
+                authenticatedAttributes
+        );
+        if (snapshot.isEmpty()) {
+            exchange.removeProperty(AUTHENTICATED_ATTRIBUTES_PROPERTY);
+        } else {
+            exchange.setProperty(AUTHENTICATED_ATTRIBUTES_PROPERTY, snapshot);
+        }
+    }
+
+    public static AuthenticatedAttributeSnapshot authenticatedAttributes(Exchange exchange) {
+        AuthenticatedAttributeSnapshot snapshot = exchange == null
+                ? null
+                : exchange.getProperty(AUTHENTICATED_ATTRIBUTES_PROPERTY, AuthenticatedAttributeSnapshot.class);
+        return snapshot == null ? AuthenticatedAttributeSnapshot.empty() : snapshot;
+    }
+
     public static void clear(Exchange exchange) {
         if (exchange == null) {
             return;
         }
         exchange.removeProperty(AUTHENTICATION_PROPERTY);
         exchange.removeProperty(JWT_BUSINESS_CONTEXT_PROPERTY);
+        exchange.removeProperty(AUTHENTICATED_ATTRIBUTES_PROPERTY);
     }
 
     public static ValidatedJwtBusinessContext jwtBusinessContext(Exchange exchange) {
