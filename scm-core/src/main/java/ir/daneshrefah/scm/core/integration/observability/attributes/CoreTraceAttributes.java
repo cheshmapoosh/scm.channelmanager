@@ -118,6 +118,7 @@ public final class CoreTraceAttributes {
     public static final ObservationAttributeKey<String> PLUGIN_LAYER = keyword("plugin.layer", "Plugin layer.");
     public static final ObservationAttributeKey<Long> PLUGIN_DURATION_MS = TraceAttribute.longNumber(
             "plugin.duration_ms", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Plugin duration in milliseconds.");
+    public static final ObservationAttributeKey<String> SERVICE_CLIENT_APP_VERSION = keyword("scm.service.client.app.version", "Client application version");
 
     private CoreTraceAttributes() {
     }
@@ -131,6 +132,7 @@ public final class CoreTraceAttributes {
                 AUTH_SUBJECT_ID, AUTH_SUBJECT_USERNAME, AUTH_ISSUER, AUTH_AUDIENCE, AUTH_SCOPES,
                 AUTH_LOGIN_METHOD, AUTH_TRANSACTION_METHOD,
                 SERVICE_ID, SERVICE_CODE, SERVICE_NAME, SERVICE_VERSION,
+                SERVICE_CLIENT_APP_VERSION,
                 SERVICE_AMOUNT, SERVICE_CURRENCY,
                 SERVICE_SOURCE_CARD, SERVICE_SOURCE_ACCOUNT,
                 SERVICE_DESTINATION_CARD, SERVICE_DESTINATION_ACCOUNT,
