@@ -45,11 +45,11 @@ public class ObsTargetIndexResolver {
         String resolvedChannelCode = normalizeChannelCode(channelCode);
         String streamValue = normalize(stream.value());
         if (resolvedChannelCode == null) {
-            return normalizeRequired("%s-scm-%s-%s-%s".formatted(streamValue, resolvedNamespace, resolvedEnvironment, hour),
+            return normalizeRequired("%s-%s-%s".formatted(streamValue, resolvedEnvironment, resolvedNamespace),
                     "scm.observation.target.index");
         }
-        return normalizeRequired("%s-scm-%s-%s-%s-%s".formatted(
-                        streamValue, resolvedNamespace, resolvedEnvironment, resolvedChannelCode, hour),
+        return normalizeRequired("%s-%s-%s-%s".formatted(
+                        streamValue, resolvedEnvironment, resolvedNamespace, resolvedChannelCode),
                 "scm.observation.target.index");
     }
 
