@@ -64,14 +64,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: SCM_OBS_ROOT_DIR
-              value: /var/obs
             - name: JDWP_OPTS
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
             - name: SCM_ENV
               value: test
-            - name: SCM_APP
-              value: scm-web
+            - name: SCM_GATEWAY_NAME
+              value: channel.nib
             - name: VERSION
               value: 8.3.0
             - name: SERVER_PORT
@@ -93,11 +91,11 @@ spec:
           resources:
             {}
           volumeMounts:
-            - mountPath: /var/obs
+            - mountPath: /var/scm/observation
               name: log-volume
       volumes:
         - hostPath:
-            path: /var/obs
+            path: /var/scm/observation
             type: DirectoryOrCreate
           name: log-volume
       nodeSelector:

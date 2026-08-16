@@ -7,6 +7,7 @@ import java.nio.file.Path;
 @ConfigurationProperties(prefix = "scm.observation")
 public class ObservationProperties {
     private boolean enabled;
+    private FileStorageProperties file = new FileStorageProperties();
     private LogProperties log = new LogProperties();
     private TraceProperties trace = new TraceProperties();
     private AuditProperties audit = new AuditProperties();
@@ -18,6 +19,14 @@ public class ObservationProperties {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public FileStorageProperties getFile() {
+        return file;
+    }
+
+    public void setFile(FileStorageProperties file) {
+        this.file = file == null ? new FileStorageProperties() : file;
     }
 
     public LogProperties getLog() {
@@ -55,9 +64,8 @@ public class ObservationProperties {
     public static class LogProperties {
         private boolean enabled;
         private ConsoleProperties console = new ConsoleProperties();
-        private FileProperties file = new FileProperties();
+        private FileSinkProperties file = new FileSinkProperties();
         private RollingProperties rolling = new RollingProperties();
-        private LevelProperties level = new LevelProperties();
 
         public boolean isEnabled() {
             return enabled;
@@ -75,12 +83,12 @@ public class ObservationProperties {
             this.console = console == null ? new ConsoleProperties() : console;
         }
 
-        public FileProperties getFile() {
+        public FileSinkProperties getFile() {
             return file;
         }
 
-        public void setFile(FileProperties file) {
-            this.file = file == null ? new FileProperties() : file;
+        public void setFile(FileSinkProperties file) {
+            this.file = file == null ? new FileSinkProperties() : file;
         }
 
         public RollingProperties getRolling() {
@@ -91,19 +99,12 @@ public class ObservationProperties {
             this.rolling = rolling == null ? new RollingProperties() : rolling;
         }
 
-        public LevelProperties getLevel() {
-            return level;
-        }
-
-        public void setLevel(LevelProperties level) {
-            this.level = level == null ? new LevelProperties() : level;
-        }
     }
 
     public static class TraceProperties {
         private boolean enabled;
         private ConsoleProperties console = new ConsoleProperties();
-        private FileProperties file = new FileProperties();
+        private FileSinkProperties file = new FileSinkProperties();
         private RollingProperties rolling = new RollingProperties();
         private AsyncProperties async = new AsyncProperties();
 
@@ -123,12 +124,12 @@ public class ObservationProperties {
             this.console = console == null ? new ConsoleProperties() : console;
         }
 
-        public FileProperties getFile() {
+        public FileSinkProperties getFile() {
             return file;
         }
 
-        public void setFile(FileProperties file) {
-            this.file = file == null ? new FileProperties() : file;
+        public void setFile(FileSinkProperties file) {
+            this.file = file == null ? new FileSinkProperties() : file;
         }
 
         public RollingProperties getRolling() {
@@ -151,7 +152,7 @@ public class ObservationProperties {
     public static class AuditProperties {
         private boolean enabled;
         private ConsoleProperties console = new ConsoleProperties();
-        private FileProperties file = new FileProperties();
+        private FileSinkProperties file = new FileSinkProperties();
         private RollingProperties rolling = new RollingProperties();
         private AsyncProperties async = new AsyncProperties();
 
@@ -171,12 +172,12 @@ public class ObservationProperties {
             this.console = console == null ? new ConsoleProperties() : console;
         }
 
-        public FileProperties getFile() {
+        public FileSinkProperties getFile() {
             return file;
         }
 
-        public void setFile(FileProperties file) {
-            this.file = file == null ? new FileProperties() : file;
+        public void setFile(FileSinkProperties file) {
+            this.file = file == null ? new FileSinkProperties() : file;
         }
 
         public RollingProperties getRolling() {
@@ -229,10 +230,8 @@ public class ObservationProperties {
         }
     }
 
-    public static class FileProperties {
+    public static class FileSinkProperties {
         private boolean enabled;
-        private String format = "jsonl";
-        private Path directory;
 
         public boolean isEnabled() {
             return enabled;
@@ -242,20 +241,26 @@ public class ObservationProperties {
             this.enabled = enabled;
         }
 
-        public String getFormat() {
-            return format;
+    }
+
+    public static class FileStorageProperties {
+        private Path rootDirectory;
+        private String archiveDirectoryName;
+
+        public Path getRootDirectory() {
+            return rootDirectory;
         }
 
-        public void setFormat(String format) {
-            this.format = format;
+        public void setRootDirectory(Path rootDirectory) {
+            this.rootDirectory = rootDirectory;
         }
 
-        public Path getDirectory() {
-            return directory;
+        public String getArchiveDirectoryName() {
+            return archiveDirectoryName;
         }
 
-        public void setDirectory(Path directory) {
-            this.directory = directory;
+        public void setArchiveDirectoryName(String archiveDirectoryName) {
+            this.archiveDirectoryName = archiveDirectoryName;
         }
     }
 
@@ -346,51 +351,4 @@ public class ObservationProperties {
         }
     }
 
-    public static class LevelProperties {
-        private String root = "INFO";
-        private String application = "INFO";
-        private String spring = "INFO";
-        private String hibernate = "WARN";
-        private String hazelcast = "INFO";
-
-        public String getRoot() {
-            return root;
-        }
-
-        public void setRoot(String root) {
-            this.root = root;
-        }
-
-        public String getApplication() {
-            return application;
-        }
-
-        public void setApplication(String application) {
-            this.application = application;
-        }
-
-        public String getSpring() {
-            return spring;
-        }
-
-        public void setSpring(String spring) {
-            this.spring = spring;
-        }
-
-        public String getHibernate() {
-            return hibernate;
-        }
-
-        public void setHibernate(String hibernate) {
-            this.hibernate = hibernate;
-        }
-
-        public String getHazelcast() {
-            return hazelcast;
-        }
-
-        public void setHazelcast(String hazelcast) {
-            this.hazelcast = hazelcast;
-        }
-    }
 }

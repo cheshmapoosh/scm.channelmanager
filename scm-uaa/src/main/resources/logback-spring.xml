@@ -3,27 +3,26 @@
     <include resource="META-INF/scm/logback/scm-fallback-console-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-console-simple-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-console-jsonl-appender.xml"/>
-    <include resource="META-INF/scm/logback/scm-file-simple-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-file-jsonl-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-trace-jsonl-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-audit-jsonl-appender.xml"/>
 
     <springProperty scope="context" name="ROOT_LEVEL"
-                    source="scm.observation.log.level.root" defaultValue="INFO"/>
+                    source="logging.level.root" defaultValue="INFO"/>
     <springProperty scope="context" name="APPLICATION_LEVEL"
-                    source="scm.observation.log.level.application" defaultValue="INFO"/>
+                    source="logging.level.ir.daneshrefah" defaultValue="INFO"/>
     <springProperty scope="context" name="SPRING_LEVEL"
-                    source="scm.observation.log.level.spring" defaultValue="INFO"/>
+                    source="logging.level.org.springframework" defaultValue="INFO"/>
     <springProperty scope="context" name="SPRING_SECURITY_LEVEL"
-                    source="scm.uaa.log.level.spring-security" defaultValue="INFO"/>
+                    source="logging.level.org.springframework.security" defaultValue="INFO"/>
     <springProperty scope="context" name="HIBERNATE_LEVEL"
-                    source="scm.observation.log.level.hibernate" defaultValue="WARN"/>
+                    source="logging.level.org.hibernate" defaultValue="WARN"/>
     <springProperty scope="context" name="HAZELCAST_LEVEL"
-                    source="scm.observation.log.level.hazelcast" defaultValue="INFO"/>
+                    source="logging.level.com.hazelcast" defaultValue="INFO"/>
     <springProperty scope="context" name="HIKARI_LEVEL"
-                    source="scm.uaa.log.level.hikari" defaultValue="INFO"/>
+                    source="logging.level.com.zaxxer.hikari" defaultValue="INFO"/>
     <springProperty scope="context" name="IBM_MQ_LEVEL"
-                    source="scm.uaa.log.level.ibm-mq" defaultValue="WARN"/>
+                    source="logging.level.com.ibm.mq" defaultValue="WARN"/>
 
     <logger name="ir.daneshrefah.scm.uaa" level="${APPLICATION_LEVEL}"/>
     <logger name="org.springframework" level="${SPRING_LEVEL}"/>
@@ -41,11 +40,8 @@
         <appender-ref ref="SCM_TRACE_CONSOLE_JSONL"/>
         <appender-ref ref="SCM_AUDIT_CONSOLE_SIMPLE"/>
         <appender-ref ref="SCM_AUDIT_CONSOLE_JSONL"/>
-        <appender-ref ref="SCM_FILE_SIMPLE"/>
         <appender-ref ref="SCM_FILE_JSONL"/>
-        <appender-ref ref="SCM_TRACE_SIMPLE"/>
         <appender-ref ref="SCM_TRACE_JSONL"/>
-        <appender-ref ref="SCM_AUDIT_SIMPLE"/>
         <appender-ref ref="SCM_AUDIT_JSONL"/>
     </root>
 </configuration>

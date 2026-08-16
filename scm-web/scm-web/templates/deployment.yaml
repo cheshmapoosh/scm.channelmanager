@@ -45,8 +45,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: SCM_OBS_ROOT_DIR
-              value: /var/obs
             {{- with .Values.env }}
             {{- toYaml . | nindent 12}}
             {{- end }}

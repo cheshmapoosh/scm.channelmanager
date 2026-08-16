@@ -45,12 +45,10 @@ Starter اصلی قرارداد LOG، TRACE، AUDIT و METRIC را فراهم م
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | `true` در dev |
 | `SCM_OBS_LOG_CONSOLE_FORMAT` | `jsonl` |
 | `SCM_OBS_LOG_FILE_ENABLED` | `true` |
-| `SCM_OBS_LOG_FILE_FORMAT` | `jsonl` |
 | `SCM_OBS_TRACE_ENABLED` | `true` |
 | `SCM_OBS_TRACE_CONSOLE_ENABLED` | `true` در dev |
 | `SCM_OBS_TRACE_CONSOLE_FORMAT` | `jsonl` |
 | `SCM_OBS_TRACE_FILE_ENABLED` | `true` |
-| `SCM_OBS_TRACE_FILE_FORMAT` | `jsonl` |
 | `SCM_OBS_AUDIT_ENABLED` | `false` |
 | `SCM_OBS_AUDIT_CONSOLE_ENABLED` | `true` در dev؛ به‌تنهایی Audit را فعال نمی‌کند |
 | `SCM_OBS_METRIC_ENABLED` | `true` یا `false` |

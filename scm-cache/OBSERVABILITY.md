@@ -42,11 +42,9 @@ Metric مسیر فایل ندارد و از Actuator/Micrometer صادر می‌
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | `true` در dev | console LOG |
 | `SCM_OBS_LOG_CONSOLE_FORMAT` | `jsonl` | فرمت console |
 | `SCM_OBS_LOG_FILE_ENABLED` | `true` | فایل LOG |
-| `SCM_OBS_LOG_FILE_FORMAT` | `jsonl` | قرارداد Filebeat |
 | `SCM_OBS_TRACE_ENABLED` | `true` | TRACE داخلی |
 | `SCM_OBS_TRACE_CONSOLE_ENABLED` | `true` در dev | console TRACE |
 | `SCM_OBS_TRACE_FILE_ENABLED` | `true` | فایل TRACE |
-| `SCM_OBS_TRACE_FILE_FORMAT` | `jsonl` | قرارداد Filebeat |
 | `SCM_OBS_AUDIT_ENABLED` | `false` | Audit به‌صورت پیش‌فرض استفاده نمی‌شود |
 | `SCM_OBS_AUDIT_CONSOLE_ENABLED` | `true` در dev | فقط مقصد console؛ Audit را فعال نمی‌کند |
 | `SCM_OBS_METRIC_ENABLED` | `true` | metricهای Cache |

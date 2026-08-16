@@ -1,8 +1,7 @@
 <included>
     <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
         &amp;&amp; property("LOG_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("LOG_FILE_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("LOG_FILE_FORMAT").equals("jsonl")'>
+        &amp;&amp; property("LOG_FILE_ENABLED").equalsIgnoreCase("true")'>
         <then>
             <appender name="SCM_FILE_JSONL"
                       class="ch.qos.logback.core.rolling.RollingFileAppender">

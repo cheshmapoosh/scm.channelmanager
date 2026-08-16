@@ -2,13 +2,13 @@ spring:
   profiles:
     active: ${SCM_ENV:dev}
   application:
-    name: ${SCM_APP:scm-web}
+    name: scm-web
   config:
     import: ${SCM_CONFIG_SERVER_IMPORT:optional:configserver:${SCM_CONFIG_SERVER_URL:http://localhost:8888/config}}
   cloud:
     config:
       enabled: ${SCM_CONFIG_ENABLED:false}
-      label: ${SCM_LABEL:master}
+      label: ${SCM_GATEWAY_NAME}
       username: ${SCM_CONFIG_USERNAME:${SPRING_CLOUD_CONFIG_USERNAME:}}
       password: ${SCM_CONFIG_PASSWORD:${SPRING_CLOUD_CONFIG_PASSWORD:}}
       fail-fast: ${SCM_CONFIG_FAIL_FAST:false}
@@ -52,12 +52,13 @@ logging:
     root: ${SCM_LOG_LEVEL_ROOT:INFO}
     ir.daneshrefah: ${SCM_LOG_LEVEL_APPLICATION:INFO}
     org.springframework: ${SCM_LOG_LEVEL_SPRING:INFO}
+    org.hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
     org.hibernate.SQL: ${SCM_LOG_LEVEL_HIBERNATE_SQL:WARN}
     org.hibernate.type.descriptor.sql: ${SCM_LOG_LEVEL_HIBERNATE_SQL_TYPE:WARN}
     org.hibernate.orm.jdbc.bind: ${SCM_LOG_LEVEL_HIBERNATE_BIND:WARN}
+    com.hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
 
 scm:
-  app-name: ${SCM_GATEWAY_NAME}
   channels: ${SCM_CHANNELS:${SCM_CHANNEL_CODE}}
   plugins:
     destination-card-bin-block:
@@ -95,7 +96,7 @@ scm:
           engine-type: ${SCM_TASK_PROVIDER_INTERNAL_ENGINE_TYPE:internal}
 
   runtime:
-    gateway-name: ${SCM_GATEWAY_NAME}
+    gateway-name: ${spring.cloud.config.label}
     target:
       kind: ${SCM_RUNTIME_TARGET_KIND:CHANNEL}
       gateway-names: ${SCM_GATEWAY_NAMES:${SCM_GATEWAY_NAME}}
@@ -104,17 +105,30 @@ scm:
       allowed-channel-codes: ${SCM_RUNTIME_ALLOWED_CHANNEL_CODES:*}
 
   observation:
-    http:
-      server:
-        enabled: false
-        mode: channel-only
+    enabled: ${SCM_OBS_ENABLED:true}
+    file:
+      root-directory: ${SCM_OBS_ROOT_DIR:/var/scm/observation}
+      archive-directory-name: ${SCM_OBS_ARCHIVE_DIRECTORY_NAME:archive}
     log:
-      level:
-        root: ${SCM_LOG_LEVEL_ROOT:INFO}
-        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
-        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
-        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
-        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
+      enabled: ${SCM_OBS_LOG_ENABLED:true}
+      console:
+        enabled: ${SCM_OBS_LOG_CONSOLE_ENABLED:false}
+      file:
+        enabled: ${SCM_OBS_LOG_FILE_ENABLED:true}
+    trace:
+      enabled: ${SCM_OBS_TRACE_ENABLED:true}
+      console:
+        enabled: ${SCM_OBS_TRACE_CONSOLE_ENABLED:false}
+      file:
+        enabled: ${SCM_OBS_TRACE_FILE_ENABLED:true}
+    audit:
+      enabled: ${SCM_OBS_AUDIT_ENABLED:false}
+      console:
+        enabled: ${SCM_OBS_AUDIT_CONSOLE_ENABLED:false}
+      file:
+        enabled: ${SCM_OBS_AUDIT_FILE_ENABLED:true}
+    metric:
+      enabled: ${SCM_OBS_METRIC_ENABLED:false}
 
   web:
     observation:

@@ -3,28 +3,11 @@
     <include resource="META-INF/scm/logback/scm-fallback-console-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-console-simple-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-console-jsonl-appender.xml"/>
-    <include resource="META-INF/scm/logback/scm-file-simple-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-file-jsonl-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-trace-jsonl-appender.xml"/>
     <include resource="META-INF/scm/logback/scm-audit-jsonl-appender.xml"/>
 
-    <springProperty scope="context" name="ROOT_LEVEL"
-                    source="scm.observation.log.level.root" defaultValue="INFO"/>
-    <springProperty scope="context" name="APPLICATION_LEVEL"
-                    source="scm.observation.log.level.application" defaultValue="INFO"/>
-    <springProperty scope="context" name="SPRING_LEVEL"
-                    source="scm.observation.log.level.spring" defaultValue="INFO"/>
-    <springProperty scope="context" name="HIBERNATE_LEVEL"
-                    source="scm.observation.log.level.hibernate" defaultValue="WARN"/>
-    <springProperty scope="context" name="HAZELCAST_LEVEL"
-                    source="scm.observation.log.level.hazelcast" defaultValue="INFO"/>
-
-    <logger name="ir.daneshrefah" level="${APPLICATION_LEVEL}"/>
-    <logger name="org.springframework" level="${SPRING_LEVEL}"/>
-    <logger name="org.hibernate" level="${HIBERNATE_LEVEL}"/>
-    <logger name="com.hazelcast" level="${HAZELCAST_LEVEL}"/>
-
-    <root level="${ROOT_LEVEL}">
+    <root>
         <appender-ref ref="SCM_FALLBACK_CONSOLE"/>
         <appender-ref ref="SCM_CONSOLE_SIMPLE"/>
         <appender-ref ref="SCM_CONSOLE_JSONL"/>
@@ -32,11 +15,8 @@
         <appender-ref ref="SCM_TRACE_CONSOLE_JSONL"/>
         <appender-ref ref="SCM_AUDIT_CONSOLE_SIMPLE"/>
         <appender-ref ref="SCM_AUDIT_CONSOLE_JSONL"/>
-        <appender-ref ref="SCM_FILE_SIMPLE"/>
         <appender-ref ref="SCM_FILE_JSONL"/>
-        <appender-ref ref="SCM_TRACE_SIMPLE"/>
         <appender-ref ref="SCM_TRACE_JSONL"/>
-        <appender-ref ref="SCM_AUDIT_SIMPLE"/>
         <appender-ref ref="SCM_AUDIT_JSONL"/>
     </root>
 </configuration>

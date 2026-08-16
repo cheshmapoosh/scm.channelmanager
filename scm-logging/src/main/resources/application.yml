@@ -71,15 +71,6 @@ scm:
 
   runtime: ${SCM_RUNTIME:standalone}
 
-  observation:
-    log:
-      level:
-        root: ${SCM_LOG_LEVEL_ROOT:INFO}
-        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
-        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
-        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
-        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
-
   log:
     transactionLogConverter:
       enabled: ${SCM_LOGGING_TRANSACTION_CONVERTER_ENABLED:true}

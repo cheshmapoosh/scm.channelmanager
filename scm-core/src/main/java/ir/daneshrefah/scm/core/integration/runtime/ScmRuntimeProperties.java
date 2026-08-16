@@ -16,7 +16,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ScmRuntimeProperties {
     public static final String GATEWAY_NAME_PROPERTY = "scm.runtime.gateway-name";
-    public static final String LEGACY_APP_NAME_PROPERTY = "scm.app-name";
     public static final String RUNTIME_TARGET_PROPERTY = "scm.runtime.target";
     public static final String RUNTIME_TARGETS_PROPERTY = "scm.runtime.targets";
 
@@ -27,12 +26,8 @@ public class ScmRuntimeProperties {
         if (gatewayName != null) {
             return gatewayName;
         }
-        String legacyAppName = StringUtils.trimToNull(environment.getProperty(LEGACY_APP_NAME_PROPERTY));
-        if (legacyAppName != null) {
-            return legacyAppName;
-        }
         throw new IllegalStateException("Runtime gateway name is required. Configure "
-                + GATEWAY_NAME_PROPERTY + " or legacy " + LEGACY_APP_NAME_PROPERTY + ".");
+                + GATEWAY_NAME_PROPERTY + ".");
     }
 
     public List<RuntimeTargetProperties> runtimeTargets() {
@@ -46,11 +41,11 @@ public class ScmRuntimeProperties {
             return configuredTargets.targets();
         }
 
-        String legacyGatewayName = gatewayName();
+        String gatewayName = gatewayName();
         return List.of(new RuntimeTargetProperties(
-                targetKindFromGatewayName(legacyGatewayName),
+                targetKindFromGatewayName(gatewayName),
                 true,
-                List.of(legacyGatewayName)));
+                List.of(gatewayName)));
     }
 
     public Map<RuntimeTargetKind, List<String>> gatewayNamesByTargetKind() {

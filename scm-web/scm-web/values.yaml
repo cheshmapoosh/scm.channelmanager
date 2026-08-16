@@ -108,7 +108,7 @@ autoscaling:
 volumes:
   - name: log-volume
     hostPath:
-      path: /var/obs
+      path: /var/scm/observation
       type: DirectoryOrCreate
 # - name: foo
 #   secret:
@@ -118,7 +118,7 @@ volumes:
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
   - name: log-volume
-    mountPath: "/var/obs"
+    mountPath: "/var/scm/observation"
 
 tolerations:
   - key: "daneshrefah.ir/group"
@@ -134,8 +134,8 @@ affinity: {}
 env:
   - name: SCM_ENV
     value: dev
-  - name: SCM_APP
-    value: scm-web
+  - name: SCM_GATEWAY_NAME
+    value: channel.nib
   - name: VERSION
     value: 8.3.0
   - name: SERVER_PORT

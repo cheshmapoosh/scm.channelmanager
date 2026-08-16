@@ -59,6 +59,7 @@ logging:
     org.hibernate.SQL: ${SCM_LOG_LEVEL_HIBERNATE_SQL:WARN}
     org.hibernate.type.descriptor.sql: ${SCM_LOG_LEVEL_HIBERNATE_SQL_BIND:WARN}
     org.hibernate.orm.jdbc.bind: ${SCM_LOG_LEVEL_HIBERNATE_JDBC_BIND:WARN}
+    com.hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
     com.zaxxer.hikari: ${SCM_LOG_LEVEL_HIKARI:INFO}
     com.ibm.mq: ${SCM_LOG_LEVEL_IBM_MQ:WARN}
 
@@ -196,16 +197,6 @@ scm:
       allowed-headers: ${SCM_UAA_CORS_ALLOWED_HEADERS:Authorization,Content-Type,X-Correlation-Id,AppVersion,Appversion,app_version,app-version,APP_VERSION,APPVERSION,x-otp-code,AccessParameter,Signature,RegistryToken}
       exposed-headers: ${SCM_UAA_CORS_EXPOSED_HEADERS:Set-Cookie,X-Correlation-Id}
       path-patterns: ${SCM_UAA_CORS_PATH_PATTERNS:/**}
-    log:
-      level:
-        root: ${SCM_LOG_LEVEL_ROOT:INFO}
-        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
-        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
-        spring-security: ${SCM_LOG_LEVEL_SPRING_SECURITY:INFO}
-        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
-        hikari: ${SCM_LOG_LEVEL_HIKARI:INFO}
-        ibm-mq: ${SCM_LOG_LEVEL_IBM_MQ:WARN}
-
   cache:
     client:
       distributed: ${SCM_CACHE_CLIENT_DISTRIBUTED:${SCM_CACHE_DISTRIBUTED:false}}
@@ -304,13 +295,6 @@ scm:
     http:
       server:
         span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:uaa.http.request}
-    log:
-      level:
-        root: ${SCM_LOG_LEVEL_ROOT:INFO}
-        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
-        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
-        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
-        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}
     trace:
       aspect:
         enabled: ${SCM_UAA_AUTH_TRACE_ASPECT_ENABLED:true}

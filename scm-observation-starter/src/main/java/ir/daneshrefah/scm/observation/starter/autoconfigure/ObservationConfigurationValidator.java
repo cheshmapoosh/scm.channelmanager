@@ -11,14 +11,13 @@ import org.springframework.core.env.Environment;
 
 import java.nio.file.Path;
 import java.time.ZoneId;
-import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 public class ObservationConfigurationValidator implements SmartInitializingSingleton {
     private static final Pattern FILE_SIZE = Pattern.compile("(?i)^\\d+\\s*(B|KB|MB|GB|TB)?$");
     private static final Set<String> ALLOWED_ENVIRONMENTS = Set.of("dev", "test", "pilot", "prod");
-    private static final Set<String> ALLOWED_FORMATS = Set.of("simple", "jsonl");
+    private static final Set<String> ALLOWED_CONSOLE_FORMATS = Set.of("simple", "jsonl");
 
     private final ObservationProperties properties;
     private final ObservationSignalPolicy signalPolicy;
@@ -39,38 +38,33 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
 
     @Override
     public void afterSingletonsInstantiated() {
-        validateFormats();
-        validateScmEnvironment();
-        validateConfigLabel();
-        validateMetadata();
-        validateSharedFileConfiguration();
+        validateConsoleFormats();
+        validateTimeZone();
+        if (fileOutputEnabled()) {
+            validateScmEnvironment();
+            validateMetadata();
+            validateSharedFileConfiguration();
+        }
         validateLogbackAvailability();
         validateLogConfiguration();
         validateTraceConfiguration();
         validateAuditConfiguration();
     }
 
-    private void validateFormats() {
+    private void validateConsoleFormats() {
         ObservationProperties.LogProperties log = properties.getLog();
         ObservationProperties.TraceProperties trace = properties.getTrace();
         ObservationProperties.AuditProperties audit = properties.getAudit();
-
-        validateFormat("scm.observation.log.console.format",
+        validateConsoleFormat("scm.observation.log.console.format",
                 log == null || log.getConsole() == null ? null : log.getConsole().getFormat());
-        validateFormat("scm.observation.log.file.format",
-                log == null || log.getFile() == null ? null : log.getFile().getFormat());
-        validateFormat("scm.observation.trace.console.format",
+        validateConsoleFormat("scm.observation.trace.console.format",
                 trace == null || trace.getConsole() == null ? null : trace.getConsole().getFormat());
-        validateFormat("scm.observation.trace.file.format",
-                trace == null || trace.getFile() == null ? null : trace.getFile().getFormat());
-        validateFormat("scm.observation.audit.console.format",
+        validateConsoleFormat("scm.observation.audit.console.format",
                 audit == null || audit.getConsole() == null ? null : audit.getConsole().getFormat());
-        validateFormat("scm.observation.audit.file.format",
-                audit == null || audit.getFile() == null ? null : audit.getFile().getFormat());
     }
 
-    private void validateFormat(String property, String value) {
-        if (value == null || !ALLOWED_FORMATS.contains(value)) {
+    private void validateConsoleFormat(String property, String value) {
+        if (value == null || !ALLOWED_CONSOLE_FORMATS.contains(value)) {
             throw new IllegalStateException(property + " must be one of: simple, jsonl.");
         }
     }
@@ -89,40 +83,24 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
 
     private void validateLogConfiguration() {
         ObservationProperties.LogProperties log = properties.getLog();
-        if (log == null) {
-            return;
+        if (log != null) {
+            validateRolling("scm.observation.log.rolling", log.getRolling());
         }
-        validateFile("scm.observation.log.file", log.getFile());
-        validateRolling("scm.observation.log.rolling", log.getRolling());
     }
 
     private void validateTraceConfiguration() {
         ObservationProperties.TraceProperties trace = properties.getTrace();
-        if (trace == null) {
-            return;
+        if (trace != null) {
+            validateRolling("scm.observation.trace.rolling", trace.getRolling());
+            validateAsync("scm.observation.trace.async", trace.getAsync());
         }
-        validateFile("scm.observation.trace.file", trace.getFile());
-        validateRolling("scm.observation.trace.rolling", trace.getRolling());
-        validateAsync("scm.observation.trace.async", trace.getAsync());
     }
 
     private void validateAuditConfiguration() {
         ObservationProperties.AuditProperties audit = properties.getAudit();
-        if (audit == null) {
-            return;
-        }
-        validateFile("scm.observation.audit.file", audit.getFile());
-        validateRolling("scm.observation.audit.rolling", audit.getRolling());
-        validateAsync("scm.observation.audit.async", audit.getAsync());
-    }
-
-    private void validateFile(String prefix, ObservationProperties.FileProperties file) {
-        if (file == null) {
-            return;
-        }
-        validateDirectory(prefix + ".directory", file.getDirectory());
-        if (file.isEnabled()) {
-            requireConfigured(prefix + ".directory", file.getDirectory());
+        if (audit != null) {
+            validateRolling("scm.observation.audit.rolling", audit.getRolling());
+            validateAsync("scm.observation.audit.async", audit.getAsync());
         }
     }
 
@@ -158,18 +136,6 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
         }
     }
 
-    private void validateDirectory(String property, Path directory) {
-        if (directory != null && directory.toString().isBlank()) {
-            throw new IllegalStateException(property + " must not be blank when configured.");
-        }
-    }
-
-    private void requireConfigured(String property, Path directory) {
-        if (directory == null || directory.toString().isBlank()) {
-            throw new IllegalStateException(property + " must be configured when file output is enabled.");
-        }
-    }
-
     private void validateFileSize(String property, String value) {
         if (value != null && !value.isBlank() && !FILE_SIZE.matcher(value.trim()).matches()) {
             throw new IllegalStateException(property + " must be a valid file size such as 100MB or 10GB.");
@@ -177,40 +143,34 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
     }
 
     private void validateSharedFileConfiguration() {
-        if (!fileOutputEnabled()) {
-            return;
+        ObservationProperties.FileStorageProperties file = properties.getFile();
+        Path rootDirectory = file == null ? null : file.getRootDirectory();
+        if (rootDirectory == null || rootDirectory.toString().isBlank()) {
+            throw new IllegalStateException(
+                    "scm.observation.file.root-directory must be configured when observation file output is enabled."
+            );
         }
-        String rootDirectory = textOrNull(property("scm.observation.file.root-directory"));
-        if (rootDirectory == null) {
-            throw new IllegalStateException("scm.observation.file.root-directory must be configured when observation file output is enabled.");
-        }
-        String baseNamePattern = textOrNull(property("scm.observation.file.base-name-pattern"));
-        if (baseNamePattern == null) {
-            throw new IllegalStateException("scm.observation.file.base-name-pattern must be configured when observation file output is enabled.");
-        }
-        if (baseNamePattern.contains("/") || baseNamePattern.contains("\\")) {
-            throw new IllegalStateException("scm.observation.file.base-name-pattern must not contain path separators.");
-        }
-        if (baseNamePattern.contains("%d") || baseNamePattern.contains("%i")) {
-            throw new IllegalStateException("scm.observation.file.base-name-pattern must not contain Logback date or roll-index tokens.");
-        }
-        String lowerCaseBaseName = baseNamePattern.toLowerCase(Locale.ROOT);
-        if (lowerCaseBaseName.endsWith(".jsonl")
-                || lowerCaseBaseName.endsWith(".log")
-                || lowerCaseBaseName.endsWith(".gz")
-                || lowerCaseBaseName.endsWith(".zip")) {
-            throw new IllegalStateException("scm.observation.file.base-name-pattern must not include a file extension.");
+        String archiveDirectoryName = file == null ? null : textOrNull(file.getArchiveDirectoryName());
+        if (archiveDirectoryName == null
+                || ".".equals(archiveDirectoryName)
+                || "..".equals(archiveDirectoryName)
+                || Path.of(archiveDirectoryName).isAbsolute()
+                || archiveDirectoryName.contains("/")
+                || archiveDirectoryName.contains("\\")) {
+            throw new IllegalStateException(
+                    "scm.observation.file.archive-directory-name must be a nonblank directory name without path separators."
+            );
         }
     }
 
     private boolean fileOutputEnabled() {
-        return fileEnabled(properties.getLog() == null ? null : properties.getLog().getFile())
-                || fileEnabled(properties.getTrace() == null ? null : properties.getTrace().getFile())
-                || fileEnabled(properties.getAudit() == null ? null : properties.getAudit().getFile());
+        return fileSinkEnabled(ObservationSignal.LOG, properties.getLog() == null ? null : properties.getLog().getFile())
+                || fileSinkEnabled(ObservationSignal.TRACE, properties.getTrace() == null ? null : properties.getTrace().getFile())
+                || fileSinkEnabled(ObservationSignal.AUDIT, properties.getAudit() == null ? null : properties.getAudit().getFile());
     }
 
-    private boolean fileEnabled(ObservationProperties.FileProperties file) {
-        return file != null && file.isEnabled();
+    private boolean fileSinkEnabled(ObservationSignal signal, ObservationProperties.FileSinkProperties file) {
+        return file != null && file.isEnabled() && signalPolicy != null && signalPolicy.isEnabled(signal);
     }
 
     private boolean traceOrAuditEnabled() {
@@ -253,24 +213,6 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
         }
     }
 
-    private void validateConfigLabel() {
-        validateOptionalSingleLabel("SCM_LABEL", property("SCM_LABEL"));
-        validateOptionalSingleLabel("spring.cloud.config.label", property("spring.cloud.config.label"));
-        validateOptionalSingleLabel("spring.cloud.config.server.git.default-label",
-                property("spring.cloud.config.server.git.default-label"));
-        String label = firstText(
-                property("spring.cloud.config.label"),
-                property("spring.cloud.config.server.git.default-label"),
-                "master"
-        );
-        if (label == null || label.isBlank()) {
-            throw new IllegalStateException("SCM_LABEL/spring.cloud.config.label must not be blank.");
-        }
-        if (label.contains(",")) {
-            throw new IllegalStateException("SCM_LABEL/spring.cloud.config.label must contain exactly one label.");
-        }
-    }
-
     private void validateMetadata() {
         String activeProfile = environment == null || environment.getActiveProfiles().length == 0
                 ? "dev"
@@ -287,13 +229,17 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
             rejectNonDevPlaceholder("scm.metadata.namespace", namespace);
             rejectNonDevPlaceholder("scm.metadata.instance-id", instanceId);
         }
+    }
+
+    private void validateTimeZone() {
         String timeZone = textOrNull(property("scm.metadata.time-zone"));
-        if (timeZone != null) {
-            try {
-                ZoneId.of(timeZone);
-            } catch (RuntimeException ex) {
-                throw new IllegalStateException("scm.metadata.time-zone must be a valid Java ZoneId.", ex);
-            }
+        if (timeZone == null) {
+            return;
+        }
+        try {
+            ZoneId.of(timeZone);
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException("scm.metadata.time-zone must be a valid Java ZoneId.", ex);
         }
     }
 
@@ -303,33 +249,11 @@ public class ObservationConfigurationValidator implements SmartInitializingSingl
         }
     }
 
-    private void validateOptionalSingleLabel(String property, String value) {
-        if (value == null) {
-            return;
-        }
-        if (value.isBlank()) {
-            throw new IllegalStateException(property + " must not be blank when configured.");
-        }
-        if (value.contains(",")) {
-            throw new IllegalStateException(property + " must contain exactly one label.");
-        }
-    }
-
     private String property(String key) {
         return environment == null ? null : environment.getProperty(key);
     }
 
     private String textOrNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
-    }
-
-    private String firstText(String... candidates) {
-        for (String candidate : candidates) {
-            String text = textOrNull(candidate);
-            if (text != null) {
-                return text;
-            }
-        }
-        return null;
     }
 }

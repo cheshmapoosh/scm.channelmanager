@@ -45,15 +45,12 @@ Audit جای Log نیست. Log برای عملیات روزمره و خطاها�
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | `true` در dev | خروجی console LOG |
 | `SCM_OBS_LOG_CONSOLE_FORMAT` | `jsonl` | فرمت console |
 | `SCM_OBS_LOG_FILE_ENABLED` | `true` | خروجی فایل LOG |
-| `SCM_OBS_LOG_FILE_FORMAT` | `jsonl` | قرارداد Filebeat |
 | `SCM_OBS_TRACE_ENABLED` | `true` | فعال‌سازی TRACE |
 | `SCM_OBS_TRACE_CONSOLE_ENABLED` | `true` در dev | خروجی console TRACE |
 | `SCM_OBS_TRACE_FILE_ENABLED` | `true` | خروجی فایل TRACE |
-| `SCM_OBS_TRACE_FILE_FORMAT` | `jsonl` | قرارداد Filebeat |
 | `SCM_OBS_AUDIT_ENABLED` | `true` | فعال‌سازی واقعی Audit تغییرات Config |
 | `SCM_OBS_AUDIT_CONSOLE_ENABLED` | `true` در dev | فقط مقصد console؛ signal را فعال نمی‌کند |
 | `SCM_OBS_AUDIT_FILE_ENABLED` | `true` | خروجی فایل Audit |
-| `SCM_OBS_AUDIT_FILE_FORMAT` | `jsonl` | قرارداد Filebeat |
 | `SCM_OBS_METRIC_ENABLED` | `true` یا `false` | فعال‌سازی metricهای ماژول |
 
 ## ۵. Variableهای HTTP observation

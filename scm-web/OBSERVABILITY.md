@@ -34,20 +34,20 @@ Servlet adapter correlation/MDC را فراهم می‌کند؛ مالک busines
 | LOG | فعال |
 | TRACE | فعال برای routeهای business |
 | AUDIT | فقط برای eventهای قابل استناد و با فعال‌سازی صریح |
-| METRIC | از مسیر Actuator/Micrometer |
+| METRIC | signal اختصاصی SCM به‌صورت پیش‌فرض غیرفعال است؛ metricهای Actuator/Micrometer مستقل هستند |
 
 ## ۳. Variableهای مشترک
 
 | Variable | نمونه | کاربرد |
 | --- | --- | --- |
-| `SCM_APP` | `scm-web` | نام application |
 | `SCM_ENV` | `dev` | محیط اجرا |
-| `SCM_LABEL` | `master` | Config label |
+| `SCM_GATEWAY_NAME` | `channel.nib` | ورودی bootstrap برای Config label و هویت runtime Gateway |
 | `SCM_METADATA_NAMESPACE` | `local` | namespace |
 | `SCM_METADATA_INSTANCE_ID` | `local-scm-web` | شناسه instance |
 | `SCM_METADATA_TIME_ZONE` | `Asia/Tehran` | timezone metadata |
 | `SCM_OBS_ENABLED` | `true` | کلید اصلی Observation |
-| `SCM_OBS_ROOT_DIR` | `/mnt/observation` | ریشه فایل‌ها |
+| `SCM_OBS_ROOT_DIR` | `/var/scm/observation` | ریشه فایل‌ها |
+| `SCM_OBS_ARCHIVE_DIRECTORY_NAME` | `archive` | نام پوشه archive زیر هر signal |
 
 ## ۴. Variableهای signal و مقصد
 
@@ -57,34 +57,26 @@ Servlet adapter correlation/MDC را فراهم می‌کند؛ مالک busines
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | `true` در dev |
 | `SCM_OBS_LOG_CONSOLE_FORMAT` | `jsonl` |
 | `SCM_OBS_LOG_FILE_ENABLED` | `true` |
-| `SCM_OBS_LOG_FILE_FORMAT` | `jsonl` |
 | `SCM_OBS_TRACE_ENABLED` | `true` |
 | `SCM_OBS_TRACE_CONSOLE_ENABLED` | `true` در dev |
 | `SCM_OBS_TRACE_CONSOLE_FORMAT` | `jsonl` |
 | `SCM_OBS_TRACE_FILE_ENABLED` | `true` |
-| `SCM_OBS_TRACE_FILE_FORMAT` | `jsonl` |
 | `SCM_OBS_AUDIT_ENABLED` | `false` یا `true` |
 | `SCM_OBS_AUDIT_CONSOLE_ENABLED` | `true` در dev؛ به‌تنهایی Audit را فعال نمی‌کند |
-| `SCM_OBS_METRIC_ENABLED` | `true` یا `false` |
+| `SCM_OBS_AUDIT_FILE_ENABLED` | `true` |
+| `SCM_OBS_METRIC_ENABLED` | `false` |
 
 ## ۵. Variableهای HTTP و Gateway
 
 ### ۵.۱. Servlet adapter
 
-Generic HTTP server span در `scm-web` نباید جایگزین business span شود:
-
-```bash
-export SCM_OBS_HTTP_SERVER_ENABLED=false
-export SCM_OBS_HTTP_SERVER_MODE=channel-only
-```
-
-`HttpGatewayObservationFilter` فقط transport context و correlation را آماده می‌کند و `gateway.receive` نمی‌سازد.
+`HttpGatewayObservationFilter` فقط transport context و correlation را آماده می‌کند و `gateway.receive` نمی‌سازد. `scm-web` generic servlet HTTP configuration block ندارد؛ servlet starter هنگام وجود همین filter، filter عمومی خود را ثبت نمی‌کند.
 
 ### ۵.۲. هویت Gateway
 
 | Variable | نمونه | توضیح |
 | --- | --- | --- |
-| `SCM_GATEWAY_NAME` | `channel.nib` | نام Gateway runtime |
+| `SCM_GATEWAY_NAME` | `channel.nib` | label اجباری Config Server پیش از bootstrap؛ همان مقدار هویت Gateway runtime است |
 | `SCM_CHANNEL_CODE` | `IB` | channel پیش‌فرض |
 | `SCM_CHANNELS` | `IB,MB` | channelهای runtime در صورت پشتیبانی |
 | `SCM_RUNTIME_TARGET_KIND` | `CHANNEL` | نوع target |
@@ -112,7 +104,6 @@ export SCM_OBS_HTTP_SERVER_MODE=channel-only
 ## ۶. نمونهٔ local
 
 ```bash
-export SCM_APP=scm-web
 export SCM_ENV=dev
 export SCM_METADATA_NAMESPACE=local
 export SCM_METADATA_INSTANCE_ID=local-scm-web
@@ -123,14 +114,26 @@ export SCM_OBS_ENABLED=true
 export SCM_OBS_LOG_ENABLED=true
 export SCM_OBS_TRACE_ENABLED=true
 export SCM_OBS_AUDIT_ENABLED=false
+export SCM_OBS_METRIC_ENABLED=false
+export SCM_OBS_ROOT_DIR=/var/scm/observation
+export SCM_OBS_ARCHIVE_DIRECTORY_NAME=archive
 
 export SCM_OBS_LOG_CONSOLE_ENABLED=true
 export SCM_OBS_TRACE_CONSOLE_ENABLED=true
 export SCM_OBS_LOG_CONSOLE_FORMAT=jsonl
 export SCM_OBS_TRACE_CONSOLE_FORMAT=jsonl
 
-export SCM_OBS_HTTP_SERVER_ENABLED=false
-export SCM_OBS_HTTP_SERVER_MODE=channel-only
+```
+
+هویت‌های `scm-web` از هم جدا هستند: `spring.application.name=scm-web` ثابت است، `SCM_ENV` profile محیط را تعیین می‌کند، و `SCM_GATEWAY_NAME` پیش از دریافت Config Server به `spring.cloud.config.label` و سپس `scm.runtime.gateway-name` متصل می‌شود.
+
+خروجی فایل فقط JSONL است. برای `SCM_ENV=prod`، namespace `scm` و instance `scm-web-7fd86c-x2m4` مسیرهای نمونه چنین هستند:
+
+```text
+/var/scm/observation/log-scm-web-prod-scm/log-scm-web-7fd86c-x2m4-prod-scm.jsonl
+/var/scm/observation/trace-scm-web-prod-scm/trace-scm-web-7fd86c-x2m4-prod-scm.jsonl
+/var/scm/observation/audit-scm-web-prod-scm/audit-scm-web-7fd86c-x2m4-prod-scm.jsonl
+/var/scm/observation/trace-scm-web-prod-scm/archive/trace-scm-web-7fd86c-x2m4-prod-scm-20260815-16-0.jsonl
 ```
 
 ## ۷. سلسله‌مراتب span

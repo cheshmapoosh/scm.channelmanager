@@ -1,8 +1,7 @@
 <included>
     <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
         &amp;&amp; property("AUDIT_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("AUDIT_FILE_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("AUDIT_FILE_FORMAT").equals("jsonl")'>
+        &amp;&amp; property("AUDIT_FILE_ENABLED").equalsIgnoreCase("true")'>
         <then>
             <if condition='property("AUDIT_ASYNC_ENABLED").equalsIgnoreCase("true")'>
                 <then>

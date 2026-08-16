@@ -1,8 +1,7 @@
 <included>
     <if condition='property("OBSERVATION_ENABLED").equalsIgnoreCase("true")
         &amp;&amp; property("TRACE_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("TRACE_FILE_ENABLED").equalsIgnoreCase("true")
-        &amp;&amp; property("TRACE_FILE_FORMAT").equals("jsonl")'>
+        &amp;&amp; property("TRACE_FILE_ENABLED").equalsIgnoreCase("true")'>
         <then>
             <if condition='property("TRACE_ASYNC_ENABLED").equalsIgnoreCase("true")'>
                 <then>

@@ -58,12 +58,14 @@ Policy پیش‌فرض starter:
 
 | Signal | پیش‌فرض |
 | --- | --- |
-| LOG | فعال |
-| TRACE | فعال |
+| LOG | غیرفعال |
+| TRACE | غیرفعال |
 | AUDIT | غیرفعال |
 | METRIC | غیرفعال |
 
 فعال‌کردن console یا file، signal والد را فعال نمی‌کند. برای مثال `SCM_OBS_AUDIT_CONSOLE_ENABLED=true` بدون `SCM_OBS_AUDIT_ENABLED=true` باعث تولید Audit نمی‌شود.
+
+starter فقط مکانیک فنی مشترک و defaultهای passive را دارد. هر میزبان باید policy فعال‌سازی signal و مقصدهای خود را در `application.yml` تعیین کند.
 
 ## ۳. قرارداد تنظیمات بیرونی
 
@@ -81,7 +83,6 @@ SCM_OBS_<SIGNAL>_<AREA>_<SETTING>
 
 ```text
 SCM_OBS_TRACE_ENABLED
-SCM_OBS_TRACE_FILE_FORMAT
 SCM_OBS_TRACE_MAX_FILE_SIZE
 SCM_OBS_AUDIT_ASYNC_QUEUE_SIZE
 ```
@@ -89,9 +90,7 @@ SCM_OBS_AUDIT_ASYNC_QUEUE_SIZE
 Variableهای هویتی مشترک خارج از prefix بالا هستند:
 
 ```text
-SCM_APP
 SCM_ENV
-SCM_LABEL
 SCM_METADATA_NAMESPACE
 SCM_METADATA_INSTANCE_ID
 SCM_METADATA_TIME_ZONE
@@ -118,9 +117,7 @@ SCM_METADATA_TIME_ZONE
 
 | Variable | نمونه | توضیح |
 | --- | --- | --- |
-| `SCM_APP` | `payment-service` | نام application و مقدار `service.name` |
 | `SCM_ENV` | `prod` | profile محیط؛ یکی از `dev`, `test`, `pilot`, `prod` |
-| `SCM_LABEL` | `release-8.6` | label مربوط به Config Server |
 | `SCM_METADATA_NAMESPACE` | `payments` | namespace استقرار |
 | `SCM_METADATA_INSTANCE_ID` | `payment-service-7f9c` | شناسهٔ instance یا Pod |
 | `SCM_METADATA_TIME_ZONE` | `Asia/Tehran` | timezone مربوط به metadata فایل؛ خالی یعنی timezone JVM |
@@ -143,19 +140,18 @@ env:
 
 | Variable | Default | کاربرد |
 | --- | --- | --- |
-| `SCM_OBS_ENABLED` | `true` | کلید اصلی Observation |
-| `SCM_OBS_ROOT_DIR` | `${user.home}/scm/obs` | ریشهٔ فایل‌ها |
+| `SCM_OBS_ENABLED` | `false` | کلید اصلی Observation |
+| `SCM_OBS_ROOT_DIR` | `/var/scm/observation` | ریشهٔ فایل‌ها |
+| `SCM_OBS_ARCHIVE_DIRECTORY_NAME` | `archive` | فقط نام پوشه archive زیر هر signal |
 
 ### ۳.۵. Variableهای LOG
 
 | Variable | Default |
 | --- | --- |
-| `SCM_OBS_LOG_ENABLED` | `true` |
+| `SCM_OBS_LOG_ENABLED` | `false` |
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | `false` |
 | `SCM_OBS_LOG_CONSOLE_FORMAT` | `simple` |
-| `SCM_OBS_LOG_FILE_ENABLED` | `true` |
-| `SCM_OBS_LOG_FILE_FORMAT` | `jsonl` |
-| `SCM_OBS_LOG_DIR` | مسیر مشتق‌شده از root و metadata |
+| `SCM_OBS_LOG_FILE_ENABLED` | `false` |
 | `SCM_OBS_LOG_MAX_FILE_SIZE` | `100MB` |
 | `SCM_OBS_LOG_MAX_HISTORY` | `30` |
 | `SCM_OBS_LOG_TOTAL_SIZE_CAP` | `10GB` |
@@ -165,12 +161,10 @@ env:
 
 | Variable | Default |
 | --- | --- |
-| `SCM_OBS_TRACE_ENABLED` | `true` |
+| `SCM_OBS_TRACE_ENABLED` | `false` |
 | `SCM_OBS_TRACE_CONSOLE_ENABLED` | `false` |
 | `SCM_OBS_TRACE_CONSOLE_FORMAT` | `simple` |
-| `SCM_OBS_TRACE_FILE_ENABLED` | `true` |
-| `SCM_OBS_TRACE_FILE_FORMAT` | `jsonl` |
-| `SCM_OBS_TRACE_DIR` | مسیر مشتق‌شده از root و metadata |
+| `SCM_OBS_TRACE_FILE_ENABLED` | `false` |
 | `SCM_OBS_TRACE_MAX_FILE_SIZE` | `100MB` |
 | `SCM_OBS_TRACE_MAX_HISTORY` | `30` |
 | `SCM_OBS_TRACE_TOTAL_SIZE_CAP` | `10GB` |
@@ -188,9 +182,7 @@ env:
 | `SCM_OBS_AUDIT_ENABLED` | `false` |
 | `SCM_OBS_AUDIT_CONSOLE_ENABLED` | `false` |
 | `SCM_OBS_AUDIT_CONSOLE_FORMAT` | `simple` |
-| `SCM_OBS_AUDIT_FILE_ENABLED` | `true` |
-| `SCM_OBS_AUDIT_FILE_FORMAT` | `jsonl` |
-| `SCM_OBS_AUDIT_DIR` | مسیر مشتق‌شده از root و metadata |
+| `SCM_OBS_AUDIT_FILE_ENABLED` | `false` |
 | `SCM_OBS_AUDIT_MAX_FILE_SIZE` | `100MB` |
 | `SCM_OBS_AUDIT_MAX_HISTORY` | `90` |
 | `SCM_OBS_AUDIT_TOTAL_SIZE_CAP` | `20GB` |
@@ -209,30 +201,25 @@ env:
 
 ### ۳.۹. Format
 
-مقادیر format فقط این دو مقدار lowercase را می‌پذیرند:
+مقادیر format console فقط این دو مقدار lowercase را می‌پذیرند:
 
 ```text
 simple
 jsonl
 ```
 
-مقدار نامعتبر، uppercase یا خالی باید startup را fail کند. `jsonl` قرارداد استاندارد ingestion است؛ `simple` برای مشاهدهٔ انسانی است.
+مقدار نامعتبر، uppercase یا خالی باید startup را fail کند. فایل‌های LOG، TRACE و AUDIT همواره JSONL هستند و format قابل تنظیم ندارند؛ `simple` فقط برای console است.
 
 ## ۴. فایل و target index
 
 نام فایل از application، environment، namespace و instance ساخته می‌شود و channel در نام فایل قرار نمی‌گیرد.
 
 ```text
-{root}/{app}/{env}/{namespace}/{stream}/
+{root}/{stream}-{spring.application.name}-{spring.profiles.active}-{scm.metadata.namespace}/
 ```
 
-نمونهٔ نام فعال TRACE:
-
-```text
-trace-scm-payment-service-prod-payments-payment-service-7f9c.jsonl
-```
-
-فایل rolled ساعت و index رول را اضافه می‌کند.
+نام فعال: `{stream}-{scm.metadata.instance-id}-{spring.profiles.active}-{scm.metadata.namespace}.jsonl`.
+فایل rolled زیر `{signal-directory}/{archive-directory-name}/` با suffix ساعت و index رول ساخته می‌شود.
 
 `scm.observation.target.index` مستقل از نام فایل است و برای routing در Elasticsearch ساخته می‌شود:
 
@@ -448,7 +435,7 @@ unrestricted request/response payload
 ## ۱۲. چک‌لیست اتصال یک میزبان جدید
 
 - dependency هسته اضافه شده است؛
-- `SCM_APP`, `SCM_ENV`, namespace و instance id تعیین شده‌اند؛
+- application name میزبان، `SCM_ENV`، namespace و instance id تعیین شده‌اند؛
 - signalها فقط با variable فعال شده‌اند؛
 - مقصد console/file مشخص است؛
 - attributeهای اختصاصی register شده‌اند؛

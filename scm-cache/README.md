@@ -149,8 +149,6 @@ export SCM_OBS_METRIC_ENABLED=true
 
 export SCM_OBS_LOG_FILE_ENABLED=true
 export SCM_OBS_TRACE_FILE_ENABLED=true
-export SCM_OBS_LOG_FILE_FORMAT=jsonl
-export SCM_OBS_TRACE_FILE_FORMAT=jsonl
 ```
 
 برای جزئیات lifecycle، eventها، attributeها و مسیر توسعه به `OBSERVABILITY.md` مراجعه شود.

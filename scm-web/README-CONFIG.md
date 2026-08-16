@@ -31,13 +31,13 @@
 
 | کلید | عنوان | توضیحات |
 |---|---|---|
+| `spring.application.name` | هویت application | در `scm-web` literal و برابر `scm-web` است و از environment خوانده نمی‌شود. |
 | `SCM_ENV` | نام محیط | محیط اجرای سرویس است. اگر اشتباه باشد labelهای لاگ و trace و رفتارهای محیطی اشتباه ثبت میشوند. |
-| `SCM_APP` | نام برنامه | نام Spring application است و معمولاً باید `scm-web` باشد. |
 | `SCM_METADATA_NAMESPACE` | namespace اجرا | در Kubernetes از metadata.namespace میآید و در dev مقدار local دارد. |
 | `SCM_METADATA_INSTANCE_ID` | شناسه نمونه | شناسه node یا pod است. اگر تکراری باشد تشخیص مشکل در لاگ و trace سخت میشود. |
 | `SCM_METADATA_TIME_ZONE` | timezone فایل | اگر خالی باشد timezone سیستم JVM استفاده میشود و فقط برای نام فایلهای observation است. |
 | `SCM_CHANNEL_CODE` | کد کانال | کد کانال فعال را مشخص میکند. مقدار اشتباه باعث route شدن درخواستها به کانال نادرست میشود. |
-| `SCM_GATEWAY_NAME` | نام gateway | نام عملیاتی gateway است. اگر اشتباه باشد هویت سرویس در runtime و گزارشها اشتباه میشود. |
+| `SCM_GATEWAY_NAME` | نام gateway و Config label | باید پیش از bootstrap موجود باشد. همان مقدار به `spring.cloud.config.label` و سپس `scm.runtime.gateway-name` متصل میشود. |
 | `SCM_DB_URL` | آدرس دیتابیس | آدرس JDBC دیتابیس اصلی است. اگر اشتباه باشد سرویس بالا نمیآید یا داده نمیخواند. |
 | `SCM_DB_USERNAME` | کاربر دیتابیس | نام کاربری دیتابیس است و مقدار حساس محسوب میشود. نباید در ticket، screenshot یا chat ارسال شود. |
 | `SCM_DB_PASSWORD` | رمز دیتابیس | رمز دیتابیس است و کاملاً حساس است. در pilot/prod باید از Secret Management تأمین شود. |
@@ -45,6 +45,15 @@
 | `SCM_UAA_BASE_URL` | آدرس UAA | آدرس پایه UAA است. اگر اشتباه باشد اعتبارسنجی token و عملیات OTP دچار مشکل میشود. |
 | `SCM_CACHE_CLUSTER_NAME` | نام کلاستر کش | نام کلاستر Hazelcast است و باید با محیط هماهنگ باشد، مثل `scm-cache-test`. |
 | `SCM_CACHE_ADDRESS` | آدرس کش | آدرس node یا service کش است. مقدار اشتباه باعث قطع cache distributed میشود. |
+
+## 4.1. مسئولیت Observation و bootstrap
+
+| مالک | مسئولیت |
+|---|---|
+| `scm-observation-starter` | defaultهای passive signal و مکانیک مشترک JSONL/rolling را فراهم می‌کند. |
+| `scm-web/application.yml` | policy پایهٔ LOG، TRACE، AUDIT، METRIC و destinationهای console/file را تعیین می‌کند. |
+| profileها و environment | فقط override عمدی همان محیط را اعمال می‌کنند؛ profileهای `scm-web` policy پایه را تکرار نمی‌کنند. |
+| deployment | `SCM_GATEWAY_NAME` را پیش از Config Server و metadata/filesystem را در محیط container تأمین می‌کند. |
 
 ## 5. متغیرهای اختصاصی همین سرویس
 
@@ -67,6 +76,7 @@
 | کلید | عنوان | توضیحات |
 |---|---|---|
 | `SCM_OBS_ROOT_DIR` | مسیر اصلی observation | مسیر پایه فایلهای log، trace و audit است. اگر اشتباه باشد فایلها در مسیر نادرست نوشته میشوند یا نوشته نمیشوند. |
+| `SCM_OBS_ARCHIVE_DIRECTORY_NAME` | نام پوشه archive | فقط نام پوشه زیر هر signal است؛ مقدار پیشفرض `archive` است و نباید path باشد. |
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | لاگ کنسول | فقط در profile `dev` باید روشن باشد. در test، pilot و prod خاموش است. |
 | `SCM_OBS_LOG_FILE_ENABLED` | لاگ فایل | روشن یا خاموش بودن فایل log را مشخص میکند. خاموش بودن اشتباه باعث از دست رفتن لاگ عملیاتی میشود. |
 | `SCM_OBS_TRACE_ENABLED` | trace برنامه | به صورت پیشفرض `true` است. اگر `false` شود trace کلی خاموش میشود. |
@@ -78,7 +88,7 @@
 | کلید | عنوان | توضیحات |
 |---|---|---|
 | `SCM_CONFIG_SERVER_URL` | آدرس Config Server | آدرس Config Server است. در test/pilot/prod اگر اشتباه باشد سرویس config را دریافت نمیکند. |
-| `SCM_LABEL` | label کانفیگ | label مربوط به Spring Cloud Config است و میتواند branch، tag یا commit باشد. |
+| `SCM_GATEWAY_NAME` | label کانفیگ | ورودی bootstrap اجباری Config Server است؛ برای test/pilot/prod fallback ندارد. |
 | `SCM_CONFIG_USERNAME` | کاربر Config Server | نام کاربری Config Server است و حساس محسوب میشود. نباید در ticket، screenshot یا chat ارسال شود. |
 | `SCM_CONFIG_PASSWORD` | رمز Config Server | رمز Config Server است و حساس است. در pilot/prod باید از Secret Management تأمین شود. |
 | `SCM_CONFIG_FAIL_FAST` | توقف هنگام خطا | در pilot/prod باید باعث توقف سرویس هنگام نبود Config Server شود تا برنامه با config ناقص بالا نیاید. |
@@ -91,6 +101,10 @@
 | `متغیر جداگانه issuer` | متغیر حذف شده | نباید در profileها تعریف شود. issuer از `SCM_UAA_BASE_URL` ساخته میشود. |
 | `متغیر جداگانه JWK` | متغیر حذف شده | نباید در profileها تعریف شود. JWK از `SCM_UAA_BASE_URL` و مسیر `/oauth2/jwks` ساخته میشود. |
 | `scm.log.app.*` | تنظیم قدیمی logback | مسیرهای log باید از `scm.observation.*` و `SCM_OBS_ROOT_DIR` بیایند. |
+| aliasهای قدیمی application و Config label | تنظیم هویت حذف‌شده | `spring.application.name` ثابت و برابر `scm-web` است؛ label و gateway runtime فقط از `SCM_GATEWAY_NAME` مشتق می‌شوند. |
+| tree قدیمی سطح log Observation | سطح log حذف‌شده | سطوح log فقط از `logging.level.*` خوانده می‌شوند. |
+| overrideهای قدیمی directory/format فایل هر signal | layout حذف‌شده | layout فایل JSONL قطعی و از root، application، environment، namespace و instance ساخته می‌شود. |
+| تنظیم تکراری HTTP servlet | تنظیم حذف‌شده | `scm-web` از `HttpGatewayObservationFilter` خود استفاده می‌کند. |
 | `scm.logging.datasource.*` | دیتابیس logging مستقیم | این سرویس نباید مستقیم به دیتابیس legacy logging وصل شود. log، trace و audit باید از مسیر observation بروند. |
 | `scm.datasource.secondary.*` | دیتابیس ثانویه | نباید برای `scm-web` تعریف شود مگر قرارداد جدید و مستند اضافه شود. |
 

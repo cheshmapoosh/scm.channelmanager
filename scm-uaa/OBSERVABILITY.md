@@ -43,12 +43,10 @@ Startup، bean initialization، Swagger، Actuator و endpointهای مدیری�
 | `SCM_OBS_LOG_CONSOLE_ENABLED` | `true` در dev | console LOG |
 | `SCM_OBS_LOG_CONSOLE_FORMAT` | `jsonl` | فرمت console |
 | `SCM_OBS_LOG_FILE_ENABLED` | `true` | فایل LOG |
-| `SCM_OBS_LOG_FILE_FORMAT` | `jsonl` | قرارداد Filebeat |
 | `SCM_OBS_TRACE_ENABLED` | `true` | TRACE |
 | `SCM_OBS_TRACE_CONSOLE_ENABLED` | `true` در dev | console TRACE |
 | `SCM_OBS_TRACE_CONSOLE_FORMAT` | `jsonl` | فرمت console TRACE |
 | `SCM_OBS_TRACE_FILE_ENABLED` | `true` | فایل TRACE |
-| `SCM_OBS_TRACE_FILE_FORMAT` | `jsonl` | قرارداد Filebeat |
 | `SCM_OBS_AUDIT_ENABLED` | `false` یا `true` | فعال‌سازی واقعی Audit |
 | `SCM_OBS_AUDIT_CONSOLE_ENABLED` | `true` در dev | مقصد console؛ signal را فعال نمی‌کند |
 | `SCM_OBS_METRIC_ENABLED` | `true` یا `false` | Metric |

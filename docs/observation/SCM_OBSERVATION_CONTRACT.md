@@ -1,26 +1,21 @@
 # SCM Observation Contract
 
-SCM observability writes LOG, TRACE, and AUDIT as JSONL files by default. JSONL is the structured Filebeat ingestion contract; optional simple `.log` output is human-readable and is not ingested by the current JSONL pipeline. Metrics stay on the Actuator and Micrometer path.
+SCM observability writes LOG, TRACE, and AUDIT as JSONL files. JSONL is the structured Filebeat ingestion contract. Simple output is console-only. Metrics stay on the Actuator and Micrometer path.
 
 ## External Contract
 
 | Variable | Spring property |
 | --- | --- |
-| `SCM_APP` | `spring.application.name` |
 | `SCM_ENV` | `spring.profiles.active` |
-| `SCM_LABEL` | `spring.cloud.config.label` for Config Clients |
-| `SCM_LABEL` | `spring.cloud.config.server.git.default-label` for `scm-config` |
 | `SCM_METADATA_NAMESPACE` | `scm.metadata.namespace` |
 | `SCM_METADATA_INSTANCE_ID` | `scm.metadata.instance-id` |
 | `SCM_METADATA_TIME_ZONE` | `scm.metadata.time-zone` |
 
 `SCM_ENV` must be exactly one of `dev`, `test`, `pilot`, or `prod`. It is lowercase and case-sensitive. Comma-separated profiles are not part of the SCM contract.
 
-`SCM_LABEL` is the Spring Cloud Config label and may be a branch, tag, or commit. It must be nonblank and must contain exactly one label. The default is `master`.
-
 ## Configuration Ownership
 
-`scm-observation-starter` owns transport-neutral technical defaults in `META-INF/scm/observation-defaults.yml`. It loads that resource as a lowest-precedence property source; hosts must not import it with `spring.config.import`. Transport adapters own and load their own defaults by the same low-precedence mechanism.
+`scm-observation-starter` owns transport-neutral technical mechanics and passive defaults in `META-INF/scm/observation-defaults.yml`. It does not own application identity or Spring Cloud Config labels. Hosts own their baseline signal and sink policy in `application.yml`; deployments supply bootstrap and filesystem inputs.
 
 Effective precedence, highest first:
 
@@ -43,8 +38,8 @@ Default signal policy:
 
 | Signal | Enabled |
 | --- | --- |
-| LOG | `true` |
-| TRACE | `true` |
+| LOG | `false` |
+| TRACE | `false` |
 | AUDIT | `false` |
 | METRIC | `false` |
 
@@ -52,11 +47,11 @@ Default destinations:
 
 | Stream | Console enabled | Console format | File enabled | File format |
 | --- | --- | --- | --- | --- |
-| LOG | `false` | `simple` | `true` | `jsonl` |
-| TRACE | `false` | `simple` | `true` | `jsonl` |
-| AUDIT | `false` | `simple` | `true` | `jsonl` |
+| LOG | `false` | `simple` | `false` | fixed `jsonl` |
+| TRACE | `false` | `simple` | `false` | fixed `jsonl` |
+| AUDIT | `false` | `simple` | `false` | fixed `jsonl` |
 
-All six `scm.observation.{log,trace,audit}.{console,file}.format` properties accept exactly lowercase, case-sensitive `simple` or `jsonl`. Blank, uppercase, comma-separated, and other values fail startup even if the destination is disabled. If the starter defaults resource is unavailable, hard Java and structured Logback enablement fallbacks are `false`; the ordinary diagnostic fallback console consequently remains available.
+Only `scm.observation.{log,trace,audit}.console.format` accepts lowercase, case-sensitive `simple` or `jsonl`. File format is fixed to JSONL. If the starter defaults resource is unavailable, hard Java and structured Logback enablement fallbacks are `false`; the ordinary diagnostic fallback console consequently remains available.
 
 The starter README contains the canonical compact host-policy and `dev` profile examples. The `dev` profile enables all three console destinations without enabling the AUDIT signal.
 
@@ -158,47 +153,29 @@ The index hour is always UTC.
 
 ## File Names
 
-The starter owns the default root directory, base identity pattern, and stream-directory derivation:
+The starter owns the deterministic root directory and stream-directory derivation:
 
 ```text
-root directory:    ${SCM_OBS_ROOT_DIR:${user.home}/scm/obs}
-base-name pattern: scm-${spring.application.name}-${spring.profiles.active}-${scm.metadata.namespace}-${scm.metadata.instance-id}
+root directory: ${SCM_OBS_ROOT_DIR:/var/scm/observation}
+archive name:   ${SCM_OBS_ARCHIVE_DIRECTORY_NAME:archive}
 ```
 
-Hosts override these only for an actual deployment requirement.
-
-`scm.observation.file.root-directory` controls the shared physical root directory. The stream directory properties `scm.observation.log.file.directory`, `scm.observation.trace.file.directory`, and `scm.observation.audit.file.directory` are optional per-stream overrides. Directory resolution is:
+`scm.observation.file.archive-directory-name` is a directory name only. Blank values, `.`, `..`, absolute paths, and values containing `/` or `\\` are rejected. Signal directories and file names are fixed:
 
 ```text
-stream-specific directory override -> shared observation root directory -> ${user.home}/scm/obs
-```
-
-`scm.observation.file.base-name-pattern` controls only the stable identity part of the filename. The active TRACE filename is stable, while its rollover pattern owns the hour token and roll index:
-
-```text
-active simple: trace-scm-{appName}-{env}-{namespace}-{instanceId}.log
-rolled simple: trace-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.log
-active jsonl:  trace-scm-{appName}-{env}-{namespace}-{instanceId}.jsonl
-rolled jsonl:  trace-scm-{appName}-{env}-{namespace}-{instanceId}-{yyyyMMdd-HH}-{rollIndex}.jsonl
-```
-
-Directory layout:
-
-```text
-{root}/{appName}/{env}/{namespace}/{stream}/
+signal directory: {root}/{stream}-{appName}-{env}-{namespace}/
+active JSONL:     {stream}-{instanceId}-{env}-{namespace}.jsonl
+rolled JSONL:     {signal-directory}/{archive-name}/{stream}-{instanceId}-{env}-{namespace}-{yyyyMMdd-HH}-{rollIndex}.jsonl
 ```
 
 Examples:
 
 ```text
-log-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
-trace-scm-scm-web-prod-payment-scm-web-7d98c9.jsonl
-trace-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
-audit-scm-scm-web-prod-payment-scm-web-7d98c9-20260711-10-0.jsonl
-log-scm-scm-web-dev-local-local-scm-web-20260711-10-0.log
+/var/scm/observation/log-scm-web-prod-scm/log-scm-web-7fd86c-x2m4-prod-scm.jsonl
+/var/scm/observation/trace-scm-web-prod-scm/archive/trace-scm-web-7fd86c-x2m4-prod-scm-20260815-16-0.jsonl
 ```
 
-File names never include channel code or Config label. Observation files are not gzipped and do not use a separate archive directory. The active TRACE filename contains neither `%d` nor `%i`; only the rolled TRACE patterns retain those tokens. Active and rolled JSONL files use final names while Filebeat reads them.
+File names never include channel code or Config label. Observation files are not gzipped. The active file contains neither `%d` nor `%i`; only rolled patterns retain those tokens. Active and rolled files use final JSONL names while Filebeat reads them.
 
 ## Structured LOG Event Identity
 
@@ -210,7 +187,7 @@ Every simple line is UTF-8, exactly one physical line, and contains exactly one 
 
 If structured simple LOG rendering fails, the encoder emits a sanitized, primitive-only single line containing `stream=log` and `encoding.error=true` instead of empty output. That failure path does not reprocess structured arguments or emit a stack trace.
 
-JSONL files remain the default machine-ingestion format. Simple `.log` files are optional debugging output and must not be added to the current Filebeat JSON parser inputs.
+JSONL files are the machine-ingestion format. Simple console output is optional debugging output and is not part of the Filebeat JSON parser inputs.
 
 ## Legacy Projection
 

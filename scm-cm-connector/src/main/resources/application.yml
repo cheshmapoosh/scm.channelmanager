@@ -94,10 +94,3 @@ scm:
     http:
       server:
         span-name: ${SCM_OBS_HTTP_SERVER_SPAN_NAME:cm-connector.http.request}
-    log:
-      level:
-        root: ${SCM_LOG_LEVEL_ROOT:INFO}
-        application: ${SCM_LOG_LEVEL_APPLICATION:INFO}
-        spring: ${SCM_LOG_LEVEL_SPRING:INFO}
-        hibernate: ${SCM_LOG_LEVEL_HIBERNATE:WARN}
-        hazelcast: ${SCM_LOG_LEVEL_HAZELCAST:INFO}

@@ -8,10 +8,9 @@
     <springProperty scope="context" name="OBS_INSTANCE_ID"
                     source="scm.metadata.instance-id" defaultValue="local-application"/>
     <springProperty scope="context" name="OBS_ROOT_DIRECTORY"
-                    source="scm.observation.file.root-directory" defaultValue="${user.home}/scm/obs"/>
-    <springProperty scope="context" name="OBS_FILE_BASE_NAME"
-                    source="scm.observation.file.base-name-pattern"
-                    defaultValue="scm-${OBS_APP_NAME}-${OBS_ENV}-${OBS_NAMESPACE}-${OBS_INSTANCE_ID}"/>
+                    source="scm.observation.file.root-directory" defaultValue="/var/scm/observation"/>
+    <springProperty scope="context" name="OBS_ARCHIVE_DIRECTORY_NAME"
+                    source="scm.observation.file.archive-directory-name" defaultValue="archive"/>
     <springProperty scope="context" name="OBSERVATION_ENABLED"
                     source="scm.observation.enabled" defaultValue="false"/>
     <springProperty scope="context" name="OBS_CONFIGURED_TIME_ZONE"
@@ -35,10 +34,6 @@
                     source="scm.observation.log.console.format" defaultValue="simple"/>
     <springProperty scope="context" name="LOG_FILE_ENABLED"
                     source="scm.observation.log.file.enabled" defaultValue="false"/>
-    <springProperty scope="context" name="LOG_FILE_FORMAT"
-                    source="scm.observation.log.file.format" defaultValue="jsonl"/>
-    <springProperty scope="context" name="LOG_FILE_DIRECTORY"
-                    source="scm.observation.log.file.directory" defaultValue="${OBS_ROOT_DIRECTORY}/${OBS_APP_NAME}/${OBS_ENV}/${OBS_NAMESPACE}/log"/>
     <springProperty scope="context" name="LOG_MAX_FILE_SIZE"
                     source="scm.observation.log.rolling.max-file-size" defaultValue="100MB"/>
     <springProperty scope="context" name="LOG_MAX_HISTORY"
@@ -47,15 +42,9 @@
                     source="scm.observation.log.rolling.total-size-cap" defaultValue="10GB"/>
     <springProperty scope="context" name="LOG_CLEAN_HISTORY_ON_START"
                     source="scm.observation.log.rolling.clean-history-on-start" defaultValue="false"/>
-
-    <property name="LOG_JSONL_CURRENT_FILE"
-              value="${LOG_FILE_DIRECTORY}/log-${OBS_FILE_BASE_NAME}.jsonl"/>
-    <property name="LOG_JSONL_ROLLED_FILE_PATTERN"
-              value="${LOG_FILE_DIRECTORY}/archive/log-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
-    <property name="LOG_SIMPLE_CURRENT_FILE"
-              value="${LOG_FILE_DIRECTORY}/log-${OBS_FILE_BASE_NAME}.log"/>
-    <property name="LOG_SIMPLE_ROLLED_FILE_PATTERN"
-              value="${LOG_FILE_DIRECTORY}/archive/log-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
+    <property name="LOG_SIGNAL_DIRECTORY" value="${OBS_ROOT_DIRECTORY}/log-${OBS_APP_NAME}-${OBS_ENV}-${OBS_NAMESPACE}"/>
+    <property name="LOG_JSONL_CURRENT_FILE" value="${LOG_SIGNAL_DIRECTORY}/log-${OBS_INSTANCE_ID}-${OBS_ENV}-${OBS_NAMESPACE}.jsonl"/>
+    <property name="LOG_JSONL_ROLLED_FILE_PATTERN" value="${LOG_SIGNAL_DIRECTORY}/${OBS_ARCHIVE_DIRECTORY_NAME}/log-${OBS_INSTANCE_ID}-${OBS_ENV}-${OBS_NAMESPACE}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
 
     <springProperty scope="context" name="TRACE_ENABLED"
                     source="scm.observation.trace.enabled" defaultValue="false"/>
@@ -65,10 +54,6 @@
                     source="scm.observation.trace.console.format" defaultValue="simple"/>
     <springProperty scope="context" name="TRACE_FILE_ENABLED"
                     source="scm.observation.trace.file.enabled" defaultValue="false"/>
-    <springProperty scope="context" name="TRACE_FILE_FORMAT"
-                    source="scm.observation.trace.file.format" defaultValue="jsonl"/>
-    <springProperty scope="context" name="TRACE_FILE_DIRECTORY"
-                    source="scm.observation.trace.file.directory" defaultValue="${OBS_ROOT_DIRECTORY}/${OBS_APP_NAME}/${OBS_ENV}/${OBS_NAMESPACE}/trace"/>
     <springProperty scope="context" name="TRACE_MAX_FILE_SIZE"
                     source="scm.observation.trace.rolling.max-file-size" defaultValue="100MB"/>
     <springProperty scope="context" name="TRACE_MAX_HISTORY"
@@ -87,15 +72,9 @@
                     source="scm.observation.trace.async.never-block" defaultValue="false"/>
     <springProperty scope="context" name="TRACE_ASYNC_MAX_FLUSH_TIME"
                     source="scm.observation.trace.async.max-flush-time" defaultValue="1000"/>
-
-    <property name="TRACE_JSONL_CURRENT_FILE"
-              value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}.jsonl"/>
-    <property name="TRACE_JSONL_ROLLED_FILE_PATTERN"
-              value="${TRACE_FILE_DIRECTORY}/archive/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
-    <property name="TRACE_SIMPLE_CURRENT_FILE"
-              value="${TRACE_FILE_DIRECTORY}/trace-${OBS_FILE_BASE_NAME}.log"/>
-    <property name="TRACE_SIMPLE_ROLLED_FILE_PATTERN"
-              value="${TRACE_FILE_DIRECTORY}/archive/trace-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
+    <property name="TRACE_SIGNAL_DIRECTORY" value="${OBS_ROOT_DIRECTORY}/trace-${OBS_APP_NAME}-${OBS_ENV}-${OBS_NAMESPACE}"/>
+    <property name="TRACE_JSONL_CURRENT_FILE" value="${TRACE_SIGNAL_DIRECTORY}/trace-${OBS_INSTANCE_ID}-${OBS_ENV}-${OBS_NAMESPACE}.jsonl"/>
+    <property name="TRACE_JSONL_ROLLED_FILE_PATTERN" value="${TRACE_SIGNAL_DIRECTORY}/${OBS_ARCHIVE_DIRECTORY_NAME}/trace-${OBS_INSTANCE_ID}-${OBS_ENV}-${OBS_NAMESPACE}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
 
     <springProperty scope="context" name="AUDIT_ENABLED"
                     source="scm.observation.audit.enabled" defaultValue="false"/>
@@ -105,10 +84,6 @@
                     source="scm.observation.audit.console.format" defaultValue="simple"/>
     <springProperty scope="context" name="AUDIT_FILE_ENABLED"
                     source="scm.observation.audit.file.enabled" defaultValue="false"/>
-    <springProperty scope="context" name="AUDIT_FILE_FORMAT"
-                    source="scm.observation.audit.file.format" defaultValue="jsonl"/>
-    <springProperty scope="context" name="AUDIT_FILE_DIRECTORY"
-                    source="scm.observation.audit.file.directory" defaultValue="${OBS_ROOT_DIRECTORY}/${OBS_APP_NAME}/${OBS_ENV}/${OBS_NAMESPACE}/audit"/>
     <springProperty scope="context" name="AUDIT_MAX_FILE_SIZE"
                     source="scm.observation.audit.rolling.max-file-size" defaultValue="100MB"/>
     <springProperty scope="context" name="AUDIT_MAX_HISTORY"
@@ -127,13 +102,7 @@
                     source="scm.observation.audit.async.never-block" defaultValue="false"/>
     <springProperty scope="context" name="AUDIT_ASYNC_MAX_FLUSH_TIME"
                     source="scm.observation.audit.async.max-flush-time" defaultValue="1000"/>
-
-    <property name="AUDIT_JSONL_CURRENT_FILE"
-              value="${AUDIT_FILE_DIRECTORY}/audit-${OBS_FILE_BASE_NAME}.jsonl"/>
-    <property name="AUDIT_JSONL_ROLLED_FILE_PATTERN"
-              value="${AUDIT_FILE_DIRECTORY}/archive/audit-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
-    <property name="AUDIT_SIMPLE_CURRENT_FILE"
-              value="${AUDIT_FILE_DIRECTORY}/audit-${OBS_FILE_BASE_NAME}.log"/>
-    <property name="AUDIT_SIMPLE_ROLLED_FILE_PATTERN"
-              value="${AUDIT_FILE_DIRECTORY}/archive/audit-${OBS_FILE_BASE_NAME}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.log"/>
+    <property name="AUDIT_SIGNAL_DIRECTORY" value="${OBS_ROOT_DIRECTORY}/audit-${OBS_APP_NAME}-${OBS_ENV}-${OBS_NAMESPACE}"/>
+    <property name="AUDIT_JSONL_CURRENT_FILE" value="${AUDIT_SIGNAL_DIRECTORY}/audit-${OBS_INSTANCE_ID}-${OBS_ENV}-${OBS_NAMESPACE}.jsonl"/>
+    <property name="AUDIT_JSONL_ROLLED_FILE_PATTERN" value="${AUDIT_SIGNAL_DIRECTORY}/${OBS_ARCHIVE_DIRECTORY_NAME}/audit-${OBS_INSTANCE_ID}-${OBS_ENV}-${OBS_NAMESPACE}-%d{yyyyMMdd-HH,${OBS_FILE_TIME_ZONE}}-%i.jsonl"/>
 </included>
