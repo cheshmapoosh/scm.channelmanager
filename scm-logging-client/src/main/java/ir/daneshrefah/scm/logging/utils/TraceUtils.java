@@ -17,11 +17,13 @@ import ir.daneshrefah.scm.utils.constant.Constants;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
@@ -29,7 +31,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TraceUtils {
@@ -112,31 +114,67 @@ public class TraceUtils {
         span.setAttribute(LogAttribute.MESSAGE_REQUEST.getAttributeName(), exchange.getIn() != null ? maskSensitiveRequestValues(exchange.getIn().getBody(String.class)) : "");
         span.setAttribute(LogAttribute.TRANSACTION_TYPE_REQUEST.getAttributeName(), TRANSACTION_TYPE_REQUEST);
         trace(exchange, service, span);
-        span.setAttribute(
-                LogAttribute.ACCESS_PARAMETERS.getAttributeName(),
-                getAccessParameter()
-        );
+
         legacyGatewayLogSpanEnricher.enrichGatewayRequest(exchange, service, span, messageId);
         putTraceMdc(span);
     }
-    private String getAccessParameter() {
+
+    String getAccessParameter() {
         Authentication authentication = AuthenticationUtils.getAuthentication();
 
         if (authentication == null) {
+            log.warn("[ACCESS_PARAMETER] Authentication is NULL");
             return "";
         }
 
         Object principal = authentication.getPrincipal();
-        Object accessParameters;
 
+
+        // 1. User
         if (principal instanceof User user) {
-            accessParameters = user.getAccessParameters();
-        } else if (principal instanceof Jwt jwt) {
-            accessParameters = jwt.getClaims().get("acp");
-        } else {
-            return "";
+
+
+            String accessParameter = firstAccessParameter(user.getAccessParameters());
+
+            if (StringUtils.isNotBlank(accessParameter)) {
+
+                return accessParameter;
+            }
+
         }
 
+        // 2. UserAuthentication
+        if (authentication instanceof UserAuthentication userAuthentication) {
+
+
+            if (userAuthentication.getDetails() == null) {
+                log.warn("[ACCESS_PARAMETER] UserAuthentication.details is NULL");
+            } else {
+                String loginAccessParameter = userAuthentication.getDetails().getLoginAccessParameter();
+
+                if (StringUtils.isNotBlank(loginAccessParameter)) {
+                    return loginAccessParameter;
+                }
+            }
+        }
+
+        // 3. JWT
+        if (principal instanceof Jwt jwt) {
+            Object acp = jwt.getClaims().get("acp");
+
+            String accessParameter = firstAccessParameter(acp);
+
+            if (StringUtils.isNotBlank(accessParameter)) {
+                return accessParameter;
+            }
+
+        }
+
+        log.warn("[ACCESS_PARAMETER] NOT RESOLVED authenticationType={}, principalType={}", authentication.getClass().getName(), principal != null ? principal.getClass().getName() : "null");
+        return "";
+    }
+
+    private String firstAccessParameter(Object accessParameters) {
         if (accessParameters instanceof Collection<?> collection) {
             return collection.stream()
                     .filter(Objects::nonNull)
@@ -154,6 +192,7 @@ public class TraceUtils {
         apply(exchange, localSpan, (span) -> {
             span.setStatus(StatusCode.OK);
             trace(exchange, service, span);
+            span.setAttribute(LogAttribute.ACCESS_PARAMETERS.getAttributeName(), getAccessParameter());
             legacyGatewayLogSpanEnricher.enrichGatewayResponse(exchange, service, span);
         },true);
 
