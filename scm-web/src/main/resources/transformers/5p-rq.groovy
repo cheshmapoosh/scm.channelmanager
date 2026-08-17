@@ -143,7 +143,7 @@ def nabRequest = [
                         ["name": "pageNumber", "length": 4, "required": true],
                         ["name": "manualDesc", "length": 200, "required": false],
                         ["name": "sourceCardNumber", "length": 20, "required": false],
-                        ["name": "destinationAccountNumber", "length": 18, "required": false],
+                        ["name": "destinationAccountNumber", "length": 20, "required": false],
                         ["name": "iban", "length": 26, "required": false],
                         ["name": "billId", "length": 18, "required": false],
                         ["name": "paymentId", "length": 18, "required": false],
