@@ -35,16 +35,28 @@ public class VelocityBodyProcessor extends NotificationBodyProcessor {
     }
 
     @Override
-    protected String processInternal(MessageTemplate template, NotificationRequest request) {
+    protected String processInternal(
+            MessageTemplate template,
+            NotificationRequest request) {
+        if (template == null || request == null) {
+            return null;
+        }
         Template velocityTemplate = findTemplate(template);
-        if (Objects.isNull(velocityTemplate)) {
+        if (velocityTemplate == null) {
             return null;
         }
         List<String> parameters = extractParameterNames(template);
         Map<String, Object> data = new HashMap<>();
-        parameters.forEach(parameter -> data.put(parameter, extractRequestValue(request, parameter)));
-        StringWriter writer = new StringWriter();
+
+        for (String parameter : parameters) {
+
+            Object value = extractRequestValue(request, parameter);
+            if (value != null) {
+                data.put(parameter, value);
+            }
+        }
         VelocityContext context = new VelocityContext(data);
+        StringWriter writer = new StringWriter();
         velocityTemplate.merge(context, writer);
         return writer.toString();
     }
