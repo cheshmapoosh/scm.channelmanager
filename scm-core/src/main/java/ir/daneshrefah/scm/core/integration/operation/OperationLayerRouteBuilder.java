@@ -281,17 +281,6 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     }
 
     private record ProviderReference(String scheme, String providerCode, String providerUri) {
-        routePlan.servicePlans()
-                .stream()
-                .forEach(runtimeServicePlan -> {
-                    runtimeServicePlan.service().getServiceOperations().stream()
-                            .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
-                            .map(ServiceOperation -> getOperationName(runtimeServicePlan.service(), ServiceOperation))
-                            .flatMap(Collection::stream)
-                            .map(StringUtils::trimToNull)
-                            .filter(Objects::nonNull)
-                            .forEach(requiredOperationNames::add);
-                });
     }
 
     private List<String> getOperationName(Service service, ServiceOperation serviceOperation) {
