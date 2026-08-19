@@ -119,6 +119,7 @@ public final class CoreTraceAttributes {
     public static final ObservationAttributeKey<Long> PLUGIN_DURATION_MS = TraceAttribute.longNumber(
             "plugin.duration_ms", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Plugin duration in milliseconds.");
     public static final ObservationAttributeKey<String> SERVICE_CLIENT_APP_VERSION = keyword("scm.service.client.app.version", "Client application version");
+    public static final ObservationAttributeKey<Boolean> INTER_BANK = TraceAttribute.booleanValue("scm.service.inter.bank", OWNER, ObservationAttributePresence.EVENT_OPTIONAL, "Whether the transaction is inter-bank or intra-bank");
 
     private CoreTraceAttributes() {
     }
@@ -145,7 +146,8 @@ public final class CoreTraceAttributes {
                 ROUTING_DECISION, ROUTING_RETRYABLE, OPERATION_NORMALIZED_OUTCOME,
                 OPERATION_DURATION_MS, SERVICE_DURATION_MS,
                 EXCHANGE_ID, TARGET_KIND,
-                PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_PHASE, PLUGIN_LAYER, PLUGIN_DURATION_MS
+                PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_PHASE, PLUGIN_LAYER, PLUGIN_DURATION_MS,
+                INTER_BANK
         );
     }
 

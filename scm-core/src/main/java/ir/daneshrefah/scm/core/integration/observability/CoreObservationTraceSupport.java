@@ -187,6 +187,7 @@ public class CoreObservationTraceSupport {
         try {
             if (scope != null) {
                 enrichGatewayMessageId(exchange, scope);
+                logInterbankRequestStatus(exchange, scope);
                 finishScope(scope, failed ? failure : null, failureDetails, 0L, null);
             }
         } finally {
@@ -783,10 +784,7 @@ public class CoreObservationTraceSupport {
     private String clientAddress(Exchange exchange, HttpServletRequest request) {
         return firstText(
                 stringAttribute(request, CoreTraceAttributes.CLIENT_ADDRESS.name()),
-                stringAttribute(request, CommonTraceAttributes.CLIENT_IP.name()),
                 clientIp(request),
-                firstForwardedAddress(exchange.getMessage().getHeader("X-Forwarded-For", String.class)),
-                exchange.getMessage().getHeader("X-Real-IP", String.class),
                 exchange.getMessage().getHeader(Constants.CAMEL_PARAMETER_HTTP_REMOTE_ADDRESS, String.class)
         );
     }
@@ -961,6 +959,14 @@ public class CoreObservationTraceSupport {
         }
 
         gatewayScope.attribute(CommonTraceAttributes.SCM_MESSAGE_ID, messageId);
+    }
+
+    private void logInterbankRequestStatus(Exchange exchange, ObservationScope gatewayScope) {
+        if (exchange == null || gatewayScope == null) {
+            return;
+        }
+
+        gatewayScope.attribute(CoreTraceAttributes.INTER_BANK, (Boolean) exchange.getProperty("scm.service.inter.bank"));
     }
 
     private Integer serviceId(Service service) {
