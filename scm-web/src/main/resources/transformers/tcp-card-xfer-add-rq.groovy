@@ -12,6 +12,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 def log = LoggerFactory.getLogger("CardXferAddRqGroovyTransformer")
+def channelCode = exchange.getProperty("scmChannelCode")
 
 def safeLog = { msg ->
     try {
@@ -103,7 +104,6 @@ def stan = sprintf("%06d", System.currentTimeMillis() % 1_000_000)
 def rrn = sprintf("%012d", System.currentTimeMillis() % 1_000_000_000_000L)
 
 def preparePointOfServiceData = {
-    def channelCode = exchange.getProperty("scmChannelCode")
     safeLog("channelCode : " + channelCode)
 
     if (TerminalType.MB.getTerminalCode().equalsIgnoreCase(String.valueOf(channelCode))) {
@@ -239,7 +239,10 @@ field.put(ISOField.ACQUIRER_INSTITUTION_ID.getPosition(), CardConstant.DEFAULT_A
 field.put(ISOField.FORWARDING_INSTITUTION_ID.getPosition(), getForwardingInstitutionId())
 field.put(ISOField.RETRIEVAL_REFERENCE_NO.getPosition(), rrn)
 field.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID)
-field.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_ID_CODE)
+log.info("channel code : " +channelCode)
+def code = CardConstant.getCardAcceptorIdCode(channelCode)
+log.info("Card Acceptor ID Code: " + code)
+field.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), code)
 field.put(ISOField.CARD_ACCEPT_NAME_LOCATION.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_NAME_LOCATION)
 
 if (!isBlank(additionalData)) {

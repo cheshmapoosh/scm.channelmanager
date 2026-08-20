@@ -5,10 +5,10 @@ kind: ServiceAccount
 metadata:
   name: scm-uaa
   labels:
-    helm.sh/chart: scm-uaa-8.5.4
+    helm.sh/chart: scm-uaa-9.0.1
     app.kubernetes.io/name: scm-uaa
     app.kubernetes.io/instance: scm-uaa
-    app.kubernetes.io/version: "9.0.1"
+    app.kubernetes.io/version: ""
     app.kubernetes.io/managed-by: Helm
 automountServiceAccountToken: true
 ---
@@ -27,10 +27,10 @@ kind: Service
 metadata:
   name: scm-uaa
   labels:
-    helm.sh/chart: scm-uaa-8.5.4
+    helm.sh/chart: scm-uaa-9.0.1
     app.kubernetes.io/name: scm-uaa
     app.kubernetes.io/instance: scm-uaa
-    app.kubernetes.io/version: "8.5.4"
+    app.kubernetes.io/version: "9.0.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: LoadBalancer
@@ -51,10 +51,10 @@ kind: Deployment
 metadata:
   name: scm-uaa
   labels:
-    helm.sh/chart: scm-uaa-8.5.4
+    helm.sh/chart: scm-uaa-9.0.1
     app.kubernetes.io/name: scm-uaa
     app.kubernetes.io/instance: scm-uaa
-    app.kubernetes.io/version: "8.5.4"
+    app.kubernetes.io/version: "9.0.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -65,10 +65,10 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: scm-uaa-8.5.4
+        helm.sh/chart: scm-uaa-9.0.1
         app.kubernetes.io/name: scm-uaa
         app.kubernetes.io/instance: scm-uaa
-        app.kubernetes.io/version: "8.5.4"
+        app.kubernetes.io/version: "9.0.1"
         app.kubernetes.io/managed-by: Helm
     spec:
       imagePullSecrets:
@@ -80,7 +80,7 @@ spec:
         - name: scm-uaa
           securityContext:
             {}
-          image: "reg.daneshrefah.ir/modern-banking/scm-app:9.0.1"
+          image: "reg.daneshrefah.ir/modern-banking/scm-app:"
           imagePullPolicy: IfNotPresent
           env:
             - name: SCM_METADATA_NAMESPACE
@@ -100,7 +100,7 @@ spec:
             - name: SCM_APP
               value: scm-uaa
             - name: VERSION
-              value: 9.0.1
+              value:
             - name: SERVER_PORT
               value: "8000"
             - name: SCM_CONFIG_SERVER_URL

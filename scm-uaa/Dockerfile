@@ -1,6 +1,6 @@
 FROM reg.daneshrefah.ir/modern-banking/openjdk:latest
 
-ARG VERSION='9.0.1'
+ARG VERSION=''
 ENV VERSION=$VERSION
 ENV JAVA_OPTS="-Xms4096m -Xmx8192m"
 ENV JDWP_OPTS=""

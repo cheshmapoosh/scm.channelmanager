@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.uaa.controller.token;
 
+import ir.daneshrefah.scm.uaa.common.utils.Constants;
 import ir.daneshrefah.scm.uaa.domain.pwa.ActivationRequestDto;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.common.PwaOauthResponseMapper;
 import ir.daneshrefah.scm.uaa.service.activation.pwa.model.ActivationRequest;
@@ -115,16 +116,16 @@ public class ActivationController {
 
     @SneakyThrows
     private List<Cookie> createActivationCookies(ActivationResponse response) {
-        final String REGISTRY_TOKEN = "Registrytoken";
+
         return Optional.ofNullable(response.getData())
                 .map(token->{
                     String registryToken = URLEncoder.encode(response.getData(), StandardCharsets.UTF_8);
-                    Cookie cookie = new Cookie(REGISTRY_TOKEN, registryToken);
+                    Cookie cookie = new Cookie(  Constants.REGISTRY_TOKEN_HEADER, registryToken);
                     cookie.setHttpOnly(true);
                     cookie.setSecure(true);
                     cookie.setPath("/");
                     cookie.setMaxAge(Integer.MAX_VALUE);
-                    cookie.setAttribute("SameSite", "Strict");
+                    cookie.setAttribute("SameSite", "Lax");
                     return Collections.singletonList(cookie);
                 }).orElse(Collections.emptyList());
     }

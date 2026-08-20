@@ -1149,6 +1149,23 @@ VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US', 'ex::default', 'unknown exception');
 
 INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('SCM', 'SCM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'en-US',
+        'ex::ir.daneshrefah.scm.core.integration.plugin.specific.DestinationCardBinNotAllowedException',
+        'The destination card bank is not allowed for this operation.');
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('SCM', 'SCM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fa-IR',
+        'ex::ir.daneshrefah.scm.core.integration.plugin.specific.DestinationCardBinNotAllowedException',
+        'انجام این عملیات برای بانک مقصد انتخاب‌شده مجاز نیست.');
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('SCM', 'SCM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'en-US',
+        'ex::ir.daneshrefah.scm.core.integration.plugin.specific.DestinationIbanBankNotAllowedException',
+        'The destination IBAN bank is not allowed for this operation.');
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
+VALUES ('SCM', 'SCM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'fa-IR',
+        'ex::ir.daneshrefah.scm.core.integration.plugin.specific.DestinationIbanBankNotAllowedException',
+        'انجام این عملیات برای بانک مقصد شبای انتخاب‌شده مجاز نیست.');
+
+INSERT INTO REF.TBL_SCM_RESOURCE_BUNDLE (CREATOR, LAST_EDITOR, CREATE_DATE, LAST_EDIT_DATE, LOCALE_CODE, KEY, VALUE)
 VALUES ('Dariush Abdolahi', 'Dariush Abdolahi', '2024-06-02 12:45:49.000000',
         '2024-06-02 12:45:43.000000', 'en-US',
         'ex::ir.daneshrefah.scm.common.exception.TerminalServiceNotFoundException',

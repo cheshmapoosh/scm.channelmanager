@@ -79,6 +79,9 @@ public class UserEntity extends AbstractEntity<Integer> { //TODO MUST ADD versio
     @Column(name = "LAST_REACTION_DATE_TO_PASSWORD")
     private LocalDate lastReactionDateToFirstPasswordChange;
 
+    @Column(name = "ABORT_PASS")
+    private boolean abortPass;
+
     @PrePersist
     public void prePersist() {
         if (Objects.isNull(lastDateOfFirstPasswordChange)) {

@@ -1,9 +1,11 @@
 package ir.daneshrefah.scm.web;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,10 +27,10 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    @Order(2)
+    @Order(0)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/**")
+                .securityMatcher(SecurityConfig::isGatewayRequest)
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(h->h.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
@@ -37,39 +39,28 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain actuatorSecurityFilterChain(
-            HttpSecurity http,
-            ObjectProvider<JwtDecoder> jwtDecoders
-    ) throws Exception {
-        http
-                .securityMatcher("/actuator/**")
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/actuator/health/liveness",
-                                "/actuator/health/readiness"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                );
-        JwtDecoder jwtDecoder = jwtDecoders.getIfUnique();
-        if (jwtDecoder != null) {
-            http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder)));
+    private static boolean isGatewayRequest(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        if (contextPath != null && !contextPath.isBlank() && path.startsWith(contextPath)) {
+            path = path.substring(contextPath.length());
         }
-        return http.build();
+        return "/error".equals(path) || isApiPath(path);
     }
 
-
-    @Bean
-    public FilterRegistrationBean<CorsFilter> corsFilterRegistration(CorsConfigurationSource corsConfigurationSource) {
-        FilterRegistrationBean<CorsFilter> registration = new FilterRegistrationBean<>(
-                new CorsFilter(corsConfigurationSource)
-        );
-        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
-        registration.addUrlPatterns("/*");
-        return registration;
+    private static boolean isApiPath(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        if ("/api".equals(path) || path.startsWith("/api/")) {
+            return true;
+        }
+        int secondSlash = path.indexOf('/', 1);
+        if (secondSlash < 0) {
+            return false;
+        }
+        String pathAfterChannel = path.substring(secondSlash);
+        return "/api".equals(pathAfterChannel) || pathAfterChannel.startsWith("/api/");
     }
 
     @Bean

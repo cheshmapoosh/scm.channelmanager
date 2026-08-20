@@ -11,6 +11,7 @@ public enum LogAttribute {
     CHANNEL_CODE("channelCode"),
     CHANNEL_ID("channelId"),
     CLIENT_ID("clientId"),
+    CLIENT_CODE("clientCode"),
     CORRELATION_ID("correlationId"),
     CLIENT_CORRELATION_ID("clientCorrelationId"),
     FLOW_ID("flowId"),
@@ -47,6 +48,8 @@ public enum LogAttribute {
     TRANSACTION_STATE_ID("transactionStateId"),
     DUPLICATE("duplicate"),
     CSP_CHANNEL_ID("cspChannelId"),
+    CSP_USERNAME("cspUsername"),
+    CSP_CHANNEL_CODE("cspChannelCode"),
     DESCRIPTION("description"),
     DOC_NO("docNo"),
     TERMINAL_TYPE("terminalType"),
@@ -60,7 +63,8 @@ public enum LogAttribute {
     MESSAGE_RESPONSE("messageResponse"),
     TRANSACTION_TYPE("transactionType"),
     TRANSACTION_TYPE_REQUEST("transactionTypeRequest"),
-    TRANSACTION_TYPE_RESPONSE("transactionTypeResponse");
+    TRANSACTION_TYPE_RESPONSE("transactionTypeResponse"),
+    ACCESS_PARAMETERS ("accessParameter") ;
     private final String attributeName;
 }
 

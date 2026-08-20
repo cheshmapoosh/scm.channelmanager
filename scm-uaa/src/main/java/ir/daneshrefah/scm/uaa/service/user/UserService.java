@@ -54,6 +54,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -171,6 +172,7 @@ public class UserService {
             }
         }
         userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(request.getNewPassword()));
+        userEntity.setLastDateOfFirstPasswordChange(LocalDate.now());
         userEntity.setLastEditDate(LocalDateTime.now());
         userRepository.save(userEntity);
         UserAuthentication currentAuthentication = AuthenticationUtils.getLoggedInUserAuthentication();
@@ -743,8 +745,9 @@ public class UserService {
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getOtpSerialNumber(), userEntity::setOtpSerialNumber);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(
                 request.getLoginStaticPassword(),
-                rawPassword -> userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(rawPassword))
-        );
+                rawPassword -> {userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(rawPassword))
+                userEntity.setLastDateOfFirstPasswordChange(LocalDate.now());
+       });
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(
                 request.getTransactionStaticPassword(),
                 rawPassword -> userEntity.setTransactionStaticPassword(passwordHashService.encodeNewPassword(rawPassword))
@@ -1015,6 +1018,7 @@ public class UserService {
             }
 
             userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(generatedPassword));
+            userEntity.setLastDateOfFirstPasswordChange(LocalDate.now());
         } else {
             if (userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.OTP) || userEntity.getLoginAuthenticationMethod().equals(AuthenticationMethod.PUBLIC_KEY)) {
                 throw new UnsupportedOperationException();

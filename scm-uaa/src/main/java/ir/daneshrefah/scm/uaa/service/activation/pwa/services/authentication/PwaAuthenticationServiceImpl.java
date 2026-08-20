@@ -6,7 +6,6 @@ import ir.daneshrefah.scm.common.model.message.TokenType;
 import ir.daneshrefah.scm.uaa.common.constants.AuthStatus;
 import ir.daneshrefah.scm.uaa.common.constants.PwaOauthMessage;
 import ir.daneshrefah.scm.uaa.common.utils.ErrorUtils;
-import ir.daneshrefah.scm.uaa.config.PwaAuthenticationConfigProperties;
 import ir.daneshrefah.scm.uaa.domain.pwa.PwaLogin;
 import ir.daneshrefah.scm.uaa.domain.role.Role;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
@@ -29,7 +28,6 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,7 +51,7 @@ public class PwaAuthenticationServiceImpl implements PwaAuthenticationService {
     private final UserActivationService userActivationService;
     private final UserService userService;
     private final UPersonService uPersonService;
-    private final PwaAuthenticationConfigProperties properties;
+    private final PasswordChangeWarningService passwordChangeWarningService;
     private final JwtDecoder jwtDecoder;
 
 
@@ -150,18 +148,13 @@ public class PwaAuthenticationServiceImpl implements PwaAuthenticationService {
                         resp.setRealUsername(realPerson.getUsername());
                     }
                     resp.setSecondAuthenticationMethod(user.getTransactionAuthenticationMethod());
-                    resp.setLastChangePassword(DateUtils.ShamsiCalendarConvertor.convertToShamsiDateString(user.getLastEditDate(), "yyyy/MM/dd HH:MM"));
-//                    resp.setWarnUserToChangePassword(checkUserChangePasswordWarn(user.getLastEditDate()));
-                    resp.setWarnUserToChangePassword( Boolean.FALSE.toString().toLowerCase());//todo for now disable password change warning
+                    if (user.getLastDateOfFirstPasswordChange() != null) {
+                        resp.setLastChangePassword(DateUtils.ShamsiCalendarConvertor.convertToShamsiDateString(
+                                user.getLastDateOfFirstPasswordChange().atStartOfDay(), "yyyy/MM/dd HH:MM"));
+                    }
+                    boolean warnUser = passwordChangeWarningService.shouldWarn(user);
+                    resp.setWarnUserToChangePassword(Boolean.toString(warnUser));
                     resp.setGrn(GRN_CLAIM_VALUE);
                 });
-    }
-
-    private String checkUserChangePasswordWarn(LocalDateTime lastEditDate) {
-        Integer warnPeriodDays = properties.getLogin().tokenChangeWarnPeriodDays();
-        if (lastEditDate.plusDays(warnPeriodDays).isBefore(LocalDateTime.now())) {
-            return Boolean.TRUE.toString().toLowerCase();
-        }
-        return Boolean.FALSE.toString().toLowerCase();
     }
 }

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory
 
 
 def log = LoggerFactory.getLogger("tcp-card-inq-rq")
+def channelCode = exchange.getProperty("scmChannelCode")
 def body = exchange.in.body
 def fundTransfer = body.fundTransfer
 def trk2EquivData = body.trk2EquivData
@@ -72,7 +73,10 @@ field.put(ISOField.ACQUIRER_INSTITUTION_ID.getPosition(), CardConstant.DEFAULT_A
 field.put(ISOField.FORWARDING_INSTITUTION_ID.getPosition(), destCard[0..5]);
 field.put(ISOField.RETRIEVAL_REFERENCE_NO.getPosition(), rrn);
 field.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID);
-field.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_ID_CODE);
+log.info("channel code : " +channelCode)
+def code = CardConstant.getCardAcceptorIdCode(channelCode)
+log.info("Card Acceptor ID Code: " + code)
+field.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), code)
 field.put(ISOField.CARD_ACCEPT_NAME_LOCATION.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_NAME_LOCATION);
 field.put(ISOField.ADDITIONAL_PRIVATE_DATA.getPosition(), field48);
 field.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE);

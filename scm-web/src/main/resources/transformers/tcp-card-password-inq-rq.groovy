@@ -315,8 +315,10 @@ if (isNBKChannel && "BILL_PAYMENT".equals(reqType)) {
 } else {
     field.put(ISOField.CARD_ACCEPT_TERMINAL_ID.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_TERMINAL_ID)
 }
-
-field.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_ID_CODE)
+log.info("channel code : " +channelCode)
+def code = CardConstant.getCardAcceptorIdCode(channelCode)
+log.info("Card Acceptor ID Code: " + code)
+field.put(ISOField.CARD_ACCEPT_ID_CODE.getPosition(), code)
 field.put(ISOField.CARD_ACCEPT_NAME_LOCATION.getPosition(), CardConstant.DEFAULT_CARD_ACCEPT_NAME_LOCATION)
 field.put(ISOField.ACQUIRE_INSTITUTE_CODE.getPosition(), CardConstant.DEFAULT_ACQUIRER_INSTITUTION_ID)
 field.put(ISOField.TRANSACTION_CURRENCY_CODE.getPosition(), CardConstant.DEFAULT_CURRENCY_CODE)
