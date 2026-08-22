@@ -36,10 +36,11 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
         route.process(exchange -> {
             exchange.getMessage().setHeader(OPERATION_PROVIDER_NAME, operation.getProvider().getName());
             exchange.getMessage().setHeader(OPERATION_PROVIDER_URI, targetUri);
-            Object body = exchange.getMessage().getBody();
+            Object body = exchange.getMessage().getBody(JsonNode.class);
             if (body instanceof Message message) {
                 body = message.getPayload();
             }
+
             exchange.getMessage().setBody(toMap(body));
         });
 
@@ -72,6 +73,12 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
                 } catch (Exception e) {
                     throw new IllegalArgumentException("Provider operation body must be a JSON object", e);
                 }
+            }
+            case JsonNode jsonNode -> {
+                if (jsonNode.isNull() || jsonNode.isEmpty()) {
+                    return Map.of();
+                }
+                return objectMapper.convertValue(jsonNode, MAP_TYPE);
             }
             default -> {
             }

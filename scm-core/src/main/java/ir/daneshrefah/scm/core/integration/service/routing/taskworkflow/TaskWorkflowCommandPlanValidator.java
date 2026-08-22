@@ -55,6 +55,7 @@ public class TaskWorkflowCommandPlanValidator {
             case FIND_PROCUREMENT_BY_ACCOUNT -> TaskWorkflowStepType.BUSINESS_OPERATION;//FIND_PROCUREMENT_BY_ACCOUNT;
             case FIND_PROCUREMENT_BY_NATIONAL -> TaskWorkflowStepType.BUSINESS_OPERATION;//FIND_PROCUREMENT_BY_NATIONAL;
             case PROCUREMENT_STATEMENT_INQUIRY -> TaskWorkflowStepType.BUSINESS_OPERATION;//PROCUREMENT_STATEMENT_INQUIRY;
+            case WITHDRAW -> TaskWorkflowStepType.BUSINESS_OPERATION;
             case UPDATE_DESCRIPTION ->
                     TaskWorkflowStepType.UPDATE_DESCRIPTION;
             case APPROVE_AND_EXECUTE,DELETE_PROCUREMENT -> throw new IllegalArgumentException(

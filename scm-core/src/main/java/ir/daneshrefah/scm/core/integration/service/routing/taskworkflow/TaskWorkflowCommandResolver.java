@@ -39,6 +39,7 @@ public class TaskWorkflowCommandResolver {
             case "FIND_PROCUREMENT_BY_ACCOUNT" -> TaskWorkflowCommand.FIND_PROCUREMENT_BY_ACCOUNT;
             case "FIND_PROCUREMENT_BY_NATIONAL" -> TaskWorkflowCommand.FIND_PROCUREMENT_BY_NATIONAL;
             case "PROCUREMENT_STATEMENT_INQUIRY" -> TaskWorkflowCommand.PROCUREMENT_STATEMENT_INQUIRY;
+            case "WITHDRAW" -> TaskWorkflowCommand.WITHDRAW;
             default -> throw new IllegalStateException(
                     "Unsupported TASK_WORKFLOW inboundAction=" + inboundAction);
         };

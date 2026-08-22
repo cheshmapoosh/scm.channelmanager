@@ -159,20 +159,36 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         }
 
         RuntimeRoutePlan routePlan = runtimeRoutePlanProvider.provide(gatewayChannel);
-        routePlan.servicePlans().forEach(servicePlan -> {
-            String serviceCode = servicePlan != null && servicePlan.service() != null
-                    ? StringUtils.trimToNull(servicePlan.service().getCode())
-                    : null;
-            serviceOperations(servicePlan)
-                    .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
-                    .filter(serviceOperation -> !ServiceOperationDefinitionClassifier.isActionPlan(serviceOperation))
-                    .map(ServiceOperation::getOperationName)
-                    .map(StringUtils::trimToNull)
-                    .filter(Objects::nonNull)
-                    .forEach(operationName -> requiredOperationServices
-                            .computeIfAbsent(operationName, ignored -> new LinkedHashSet<>())
-                            .add(serviceCode == null ? "<unknown>" : serviceCode));
-        });
+        routePlan.servicePlans()
+                .stream()
+                .forEach(runtimeServicePlan -> {
+                    String serviceCode = runtimeServicePlan != null && runtimeServicePlan.service() != null
+                            ? StringUtils.trimToNull(runtimeServicePlan.service().getCode())
+                            : null;
+                    runtimeServicePlan.service().getServiceOperations().stream()
+                            .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
+                            .map(ServiceOperation -> getOperationName(runtimeServicePlan.service(), ServiceOperation))
+                            .flatMap(Collection::stream)
+                            .map(StringUtils::trimToNull)
+                            .filter(Objects::nonNull)
+                            .forEach(operationName -> requiredOperationServices
+                                    .computeIfAbsent(operationName, ignored -> new LinkedHashSet<>())
+                                    .add(serviceCode == null ? "<unknown>" : serviceCode));
+                });
+//        routePlan.servicePlans().forEach(servicePlan -> {
+//            String serviceCode = servicePlan != null && servicePlan.service() != null
+//                    ? StringUtils.trimToNull(servicePlan.service().getCode())
+//                    : null;
+//            serviceOperations(servicePlan)
+//                    .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
+//                    .filter(serviceOperation -> !ServiceOperationDefinitionClassifier.isActionPlan(serviceOperation))
+//                    .map(ServiceOperation::getOperationName)
+//                    .map(StringUtils::trimToNull)
+//                    .filter(Objects::nonNull)
+//                    .forEach(operationName -> requiredOperationServices
+//                            .computeIfAbsent(operationName, ignored -> new LinkedHashSet<>())
+//                            .add(serviceCode == null ? "<unknown>" : serviceCode));
+//        });
     }
 
     private void registerEffectiveProviderRuntimes(
