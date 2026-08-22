@@ -745,9 +745,10 @@ public class UserService {
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(request.getOtpSerialNumber(), userEntity::setOtpSerialNumber);
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(
                 request.getLoginStaticPassword(),
-                rawPassword -> {userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(rawPassword))
-                userEntity.setLastDateOfFirstPasswordChange(LocalDate.now());
-       });
+                rawPassword -> {
+                    userEntity.setLoginStaticPassword(passwordHashService.encodeNewPassword(rawPassword));
+                    userEntity.setLastDateOfFirstPasswordChange(LocalDate.now());
+                });
         DynamicUpdateUtils.applyChangesIfNotBlankOrNull(
                 request.getTransactionStaticPassword(),
                 rawPassword -> userEntity.setTransactionStaticPassword(passwordHashService.encodeNewPassword(rawPassword))

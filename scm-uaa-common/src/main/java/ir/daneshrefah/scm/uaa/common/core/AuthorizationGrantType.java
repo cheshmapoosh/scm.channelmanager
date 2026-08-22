@@ -14,6 +14,7 @@ public enum AuthorizationGrantType {
     CLIENT_CREDENTIALS("client_credentials", false, true, false),
     FIRST_PASSWORD("first_password", true, true, true),
     SECOND_PASSWORD("second_password", false, false, false),
+    SMS_OTP("sms_otp", false, false, false),
     SHAHKAR("ext_shk", false, false, false),
     DEFAULT("default", true, true, true);
 

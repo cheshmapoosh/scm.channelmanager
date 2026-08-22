@@ -1,6 +1,7 @@
 package ir.daneshrefah.scm.uaa.config;
 
 import ir.daneshrefah.scm.uaa.common.service.LogoutService;
+import ir.daneshrefah.scm.uaa.security.HeaderOrCookieBearerTokenResolver;
 import ir.daneshrefah.scm.uaa.security.TerminalUrlAuthenticationFailureHandler;
 import ir.daneshrefah.scm.uaa.security.filter.CaptchaVerifyFilter;
 import ir.daneshrefah.scm.uaa.security.form.UaaFormLoginAuthenticationProvider;
@@ -46,6 +47,7 @@ public class ResourceServerSecurityConfig {
 
     private final LogoutSuccessHandler LogoutSuccessHandlerConfiguration;
     private final LogoutService logoutService;
+    private final HeaderOrCookieBearerTokenResolver bearerTokenResolver;
     private final CacheManager cacheManager;
     private final UserService userService;
 
@@ -128,6 +130,7 @@ public class ResourceServerSecurityConfig {
                 (AuthenticationManagerResolver<jakarta.servlet.http.HttpServletRequest>)
                         context -> http.getSharedObject(AuthenticationManager.class)
         );
+        filter.setBearerTokenResolver(bearerTokenResolver);
         filter.setAuthenticationDetailsSource(new TerminalAuthenticationDetailsSource());
         return filter;
     }
