@@ -264,13 +264,13 @@ public class RestGatewayInboundRouteFactory implements GatewayInboundRouteFactor
                 TaskWorkflowCategoryDefinition category =
                         new TaskWorkflowCategoryDefinition(plan, inbound, version);
                 TaskWorkflowCategoryDefinition previous = unique.putIfAbsent(key, category);
-//                if (previous != null) {
-//                    throw new IllegalStateException(
-//                            "Duplicate shared TASK_WORKFLOW REST category method/path/version="
-//                                    + key + " on serviceCode="
-//                                    + previous.servicePlan().service().getCode()
-//                                    + " and serviceCode=" + plan.service().getCode());
-//                }
+                if (previous != null) {
+                    throw new IllegalStateException(
+                            "Duplicate shared TASK_WORKFLOW REST category method/path/version="
+                                    + key + " on serviceCode="
+                                    + previous.servicePlan().service().getCode()
+                                    + " and serviceCode=" + plan.service().getCode());
+                }
             }
         }
         return List.copyOf(unique.values());
