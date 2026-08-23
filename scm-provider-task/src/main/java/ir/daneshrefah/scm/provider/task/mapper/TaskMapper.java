@@ -92,7 +92,7 @@ public abstract class TaskMapper {
         } else if (person instanceof GeneralLegalPerson legalPerson) {
             issuerModel.setNationalId(legalPerson.getNationalId());
             issuerModel.setFirstName(legalPerson.getTitle());
-            issuerModel.setLastName(legalPerson.getTitleEnglish());
+            issuerModel.setLastName("");
         }
         issuerModel.setPersonType(person.getPersonType());
         return issuerModel;
