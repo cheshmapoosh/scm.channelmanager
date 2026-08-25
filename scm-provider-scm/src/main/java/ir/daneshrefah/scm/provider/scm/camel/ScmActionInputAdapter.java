@@ -1,11 +1,15 @@
 package ir.daneshrefah.scm.provider.scm.camel;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.provider.scm.exception.ScmResourceProviderException;
 import ir.daneshrefah.scm.provider.scm.registry.ScmResourceActionDescriptor;
 import org.springframework.util.ClassUtils;
+
+import java.lang.reflect.Array;
+import java.util.Map;
 
 final class ScmActionInputAdapter {
 
@@ -20,7 +24,7 @@ final class ScmActionInputAdapter {
             return body;
         }
 
-        Class<?> inputType = action.inputType();
+        JavaType inputType = action.inputType();
         if (body instanceof ir.daneshrefah.scm.common.model.message.Message message) {
             body = message.getPayload();
         }
@@ -34,8 +38,7 @@ final class ScmActionInputAdapter {
             return null;
         }
 
-        Class<?> assignableInputType = ClassUtils.resolvePrimitiveIfNecessary(inputType);
-        if (assignableInputType.isInstance(body)) {
+        if (isCompatible(inputType, body)) {
             return body;
         }
 
@@ -50,5 +53,45 @@ final class ScmActionInputAdapter {
         } catch (JsonProcessingException | IllegalArgumentException exception) {
             throw ScmResourceProviderException.invalidActionInput();
         }
+    }
+
+    private boolean isCompatible(JavaType expectedType, Object value) {
+        if (value == null) {
+            return !expectedType.isPrimitive();
+        }
+
+        Class<?> rawType = ClassUtils.resolvePrimitiveIfNecessary(expectedType.getRawClass());
+        if (!rawType.isInstance(value)) {
+            return false;
+        }
+        if (!expectedType.hasGenericTypes()) {
+            return true;
+        }
+        if (expectedType.isMapLikeType() && value instanceof Map<?, ?> map) {
+            JavaType keyType = expectedType.getKeyType();
+            JavaType valueType = expectedType.getContentType();
+            return map.entrySet().stream().allMatch(entry ->
+                    isCompatible(keyType, entry.getKey())
+                            && isCompatible(valueType, entry.getValue()));
+        }
+        if (expectedType.isCollectionLikeType() && value instanceof Iterable<?> iterable) {
+            JavaType elementType = expectedType.getContentType();
+            for (Object element : iterable) {
+                if (!isCompatible(elementType, element)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        if (expectedType.isArrayType() && value.getClass().isArray()) {
+            JavaType elementType = expectedType.getContentType();
+            for (int index = 0; index < Array.getLength(value); index++) {
+                if (!isCompatible(elementType, Array.get(value, index))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }

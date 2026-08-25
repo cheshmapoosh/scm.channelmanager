@@ -57,9 +57,12 @@ endpoint creation, or per-request Java method resolution is used.
 
 The `scm` scheme has a focused payload hook in the existing provider handler so
 typed bodies are not converted through the legacy generic `Map` path. An
-already compatible body remains unchanged. JSON text, a `JsonNode`, a `Map`,
-or another incompatible body is converted once to the startup-resolved input
-type before Camel Bean binding invokes the action.
+already compatible non-generic body remains unchanged. For parameterized
+collections, arrays, and maps, compatible nested runtime values are also
+preserved. JSON text, a `JsonNode`, an untyped `Map` or `List`, or a body whose
+nested types cannot be proven compatible is converted once with the complete
+startup-resolved Jackson `JavaType` before Camel Bean binding invokes the
+action.
 
 ### Plugin path
 
@@ -150,9 +153,32 @@ public class DefaultUaaResource implements UaaResource {
 ```
 
 `@ResourceAction` may be placed on the public implementation method or its
-typed interface method. Only methods carrying this annotation through Spring's
-merged-annotation model enter the Operation registry. Other public methods on
-the bean are inaccessible through `scm:`.
+typed interface method. Generic and inherited interfaces are supported. For
+example, the annotation below is associated at startup with
+`ConcreteResource.execute(Command)` even though the interface method is erased
+to `execute(Object)` in bytecode:
+
+```java
+public interface Resource<I, O> {
+    @ResourceAction("execute")
+    O execute(I input);
+}
+
+@ScmResource("command")
+public class ConcreteResource implements Resource<Command, Result> {
+    @Override
+    public Result execute(Command input) {
+        return commandService.execute(input);
+    }
+}
+```
+
+Spring bridge-method and generic type-resolution APIs map the originating
+interface method to the concrete method. If implementation and interface
+annotations specify different Action names, startup fails. Only methods
+carrying this annotation through the implementation or a mapped interface
+enter the Operation registry. Other public methods on the bean are inaccessible
+through `scm:`.
 
 ## 7. Naming rules
 
@@ -189,6 +215,23 @@ Output action(Input input)
 Output action()
 ```
 
+The input and output may be concrete parameterized types, including:
+
+```java
+Result action(List<OtpCommand> input)
+Result action(Map<String, OtpCommand> input)
+Result action(Envelope<OtpCommand> input)
+Result action(Envelope<List<OtpCommand>> input)
+```
+
+All nested type arguments must resolve to concrete types for the Resource
+implementation. Raw generic signatures such as `List` or `Envelope`, wildcard
+signatures such as `List<?>` or `List<? extends Command>`, and unresolved class
+or method type variables are deliberately unsupported and fail startup. A type
+variable supplied by a concrete implementation, such as `Resource<Command,
+Result>`, is resolved and supported. Supported converted inputs must also follow
+the application's normal Jackson data-binding conventions.
+
 An Action method must be public, non-static, non-varargs, non-overloaded, and
 return a non-`void` value. It may accept zero or one parameter. Resource methods
 must not accept or return Camel `Exchange`/`Message`/`CamelContext`, Spring
@@ -209,14 +252,19 @@ At application startup the registry:
 3. obtains the target class with `AopUtils.getTargetClass` while retaining the
    original proxied bean instance;
 4. resolves merged `@ResourceAction` metadata with Spring method
-   introspection, including interface annotations and bridge methods;
-5. validates signatures, names, overloads, and proxy invocability;
-6. builds immutable Resource and `(resourceName, actionName)` maps; and
-7. creates and caches one Camel Bean invocation delegate per Action.
+   introspection, including generic, inherited, and parent-interface methods;
+5. maps bridge methods to their concrete implementation methods while retaining
+   the actual Spring proxy as the invocation target;
+6. resolves and caches complete input/output `JavaType` metadata, rejecting raw,
+   wildcard, unresolved, or ambiguous generic declarations;
+7. validates signatures, names, overloads, and proxy invocability;
+8. builds immutable Resource and `(resourceName, actionName)` maps; and
+9. creates and caches one Camel Bean invocation delegate per Action.
 
 Startup fails for invalid or blank names, non-singleton Resources, duplicate
 Resources or Actions, Resources without valid Actions, non-public/static/
-varargs/overloaded methods, unsupported signatures, or actions that cannot be
+varargs/overloaded methods, unsupported or unresolved generic signatures,
+conflicting implementation/interface annotations, or actions that cannot be
 called through the Spring proxy.
 
 During existing effective provider runtime registration, an active `scm`
@@ -227,7 +275,8 @@ instead of waiting for a request.
 ## 10. Performance and caching model
 
 - Resource annotations are scanned once when the registry bean is built.
-- Method metadata and Java method names are resolved once.
+- Method metadata, bridge/interface mappings, complete generic types, and Java
+  method names are resolved once.
 - Resource beans must be Spring singletons.
 - Registry maps are immutable after construction.
 - A Camel `BeanProcessor` holding the Spring proxy and fixed Java method name is
@@ -237,7 +286,9 @@ instead of waiting for a request.
 - No request calls `ApplicationContext.getBean`, scans annotations, resolves a
   Java method, evaluates SpEL, calls application `Method.invoke`, or uses
   `toD()`.
-- Compatible typed bodies are preserved; required conversion happens once.
+- Compatible typed bodies are preserved. Parameterized collection/map/array
+  contents are checked without annotation scanning; when compatibility cannot
+  be proven, required conversion happens once with the cached `JavaType`.
 
 Camel may perform its own cached Bean introspection and binding internally.
 That is the supported invocation mechanism for the Operation path.
@@ -281,15 +332,20 @@ alter the `scm:{resource}` contract.
 ## 13. Error mapping
 
 Existing `ScmException` failures raised by a Resource or its client are
-preserved. Technical failures are translated at the provider boundary to an
-SCM exception with one of these stable codes:
+preserved and continue through the existing resolver chain. Only failures
+created at this provider boundary use `ScmResourceProviderException`.
 
-| Condition | Stable code |
-| --- | --- |
-| Resource missing | `SCM_RESOURCE_NOT_FOUND` |
-| Action missing | `SCM_RESOURCE_ACTION_NOT_FOUND` |
-| Action input invalid | `SCM_RESOURCE_INVALID_INPUT` |
-| Technical invocation failure | `SCM_RESOURCE_INVOCATION_FAILED` |
+`scm-provider-scm` registers an exact-type exception resolver. It creates the
+SCM `Error` directly, before the generic database-backed resolver can replace
+the per-instance code with a class mapping. The four codes therefore remain
+distinct even when there are no database error mappings:
+
+| Condition | `Error.errorCode` | `Error.status` |
+| --- | --- | --- |
+| Resource missing | `SCM_RESOURCE_NOT_FOUND` | `SC_NOT_FOUND` |
+| Action missing | `SCM_RESOURCE_ACTION_NOT_FOUND` | `SC_NOT_FOUND` |
+| Action input invalid | `SCM_RESOURCE_INVALID_INPUT` | `SC_ERROR_VALIDATION` |
+| Technical invocation failure | `SCM_RESOURCE_INVOCATION_FAILED` | `SC_ERROR_SYSTEM` |
 
 The standard flow remains:
 
@@ -297,9 +353,11 @@ The standard flow remains:
 Resource/client error -> ScmException -> ScmFault -> caller/protocol formatter
 ```
 
-Provider errors use fixed safe messages. Request values and lower-level Spring,
-reflection, Camel, or client exception messages are not copied into those
-messages. Existing correlation properties stay on the same Exchange.
+All statuses are deterministic non-success statuses. Provider errors use fixed,
+locale-neutral safe messages; the resolver does not copy request values or
+lower-level Spring, reflection, Camel, or client exception messages. Existing
+correlation properties stay on the same Exchange and the normal global handler
+copies the resolved `Error` and status into `ScmFault`.
 
 ## 14. Observability and sensitive data
 
@@ -347,7 +405,9 @@ singleton, and `OperationProvider.uri` uses the exact same name.
 
 Confirm that `Operation.path` exactly matches `@ResourceAction.value`, the
 method is public, and the annotation is on the implementation or matching typed
-interface method. A public unannotated method is intentionally invisible.
+interface method. For a generic or parent interface, confirm that its type
+arguments resolve to the concrete implementation method. A public unannotated
+method is intentionally invisible.
 
 ### Duplicate Resource or Action
 
@@ -360,7 +420,9 @@ duplicate Resource.
 Reduce the method to one supported signature, remove varargs and overloads,
 return a non-`void` business type, and remove framework/infrastructure
 parameters. For JDK proxies, expose the method through the injected Resource
-interface.
+interface. Replace raw generic types, wildcards, and unresolved type variables
+with concrete parameterized types. Conflicting Action values on an
+implementation and any mapped interface must be made identical.
 
 ### Inactive provider
 

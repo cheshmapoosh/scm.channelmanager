@@ -2,6 +2,7 @@ package ir.daneshrefah.scm.provider.scm.autoconfigure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.provider.scm.camel.ScmComponent;
+import ir.daneshrefah.scm.provider.scm.exception.ScmResourceProviderExceptionResolver;
 import ir.daneshrefah.scm.provider.scm.operation.ScmProviderOperationPayloadStrategy;
 import ir.daneshrefah.scm.provider.scm.registry.ScmResourceRegistry;
 import org.apache.camel.CamelContext;
@@ -21,9 +22,16 @@ public class ScmProviderAutoConfiguration {
     @ConditionalOnMissingBean
     public ScmResourceRegistry scmResourceRegistry(
             ApplicationContext applicationContext,
-            CamelContext camelContext
+            CamelContext camelContext,
+            ObjectMapper objectMapper
     ) {
-        return new ScmResourceRegistry(applicationContext, camelContext);
+        return new ScmResourceRegistry(applicationContext, camelContext, objectMapper);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ScmResourceProviderExceptionResolver scmResourceProviderExceptionResolver() {
+        return new ScmResourceProviderExceptionResolver();
     }
 
     @Bean

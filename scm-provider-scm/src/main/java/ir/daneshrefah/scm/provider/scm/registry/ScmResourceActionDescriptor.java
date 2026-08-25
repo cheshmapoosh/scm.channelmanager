@@ -1,5 +1,6 @@
 package ir.daneshrefah.scm.provider.scm.registry;
 
+import com.fasterxml.jackson.databind.JavaType;
 import org.apache.camel.Processor;
 
 import java.util.Objects;
@@ -9,8 +10,8 @@ public record ScmResourceActionDescriptor(
         String springBeanName,
         String actionName,
         String javaMethodName,
-        Class<?> inputType,
-        Class<?> outputType,
+        JavaType inputType,
+        JavaType outputType,
         Processor invocationDelegate
 ) {
     public ScmResourceActionDescriptor {

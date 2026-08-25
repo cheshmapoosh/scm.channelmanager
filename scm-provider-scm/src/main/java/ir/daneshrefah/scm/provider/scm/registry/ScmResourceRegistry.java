@@ -1,5 +1,7 @@
 package ir.daneshrefah.scm.provider.scm.registry;
 
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationProvider;
 import ir.daneshrefah.scm.common.provider.runtime.ProviderRuntimeLifecycle;
@@ -15,14 +17,20 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.BridgeMethodResolver;
+import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -44,8 +52,12 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
     private final Map<String, ScmResourceDescriptor> resources;
     private final Map<ScmResourceActionKey, ScmResourceActionDescriptor> actions;
 
-    public ScmResourceRegistry(ApplicationContext applicationContext, CamelContext camelContext) {
-        DiscoveryResult result = discover(applicationContext, camelContext);
+    public ScmResourceRegistry(
+            ApplicationContext applicationContext,
+            CamelContext camelContext,
+            ObjectMapper objectMapper
+    ) {
+        DiscoveryResult result = discover(applicationContext, camelContext, objectMapper);
         this.resources = immutableCopy(result.resources());
         this.actions = immutableCopy(result.actions());
     }
@@ -104,7 +116,11 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
         requireRegisteredAction(resourceName, actionName, usage.operationName());
     }
 
-    private DiscoveryResult discover(ApplicationContext applicationContext, CamelContext camelContext) {
+    private DiscoveryResult discover(
+            ApplicationContext applicationContext,
+            CamelContext camelContext,
+            ObjectMapper objectMapper
+    ) {
         Map<String, Object> candidates = applicationContext.getBeansWithAnnotation(ScmResource.class);
         List<Map.Entry<String, Object>> orderedCandidates = candidates.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
@@ -116,6 +132,7 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
             ScmResourceDescriptor resource = describeResource(
                     applicationContext,
                     camelContext,
+                    objectMapper,
                     candidate.getKey(),
                     candidate.getValue()
             );
@@ -140,6 +157,7 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
     private ScmResourceDescriptor describeResource(
             ApplicationContext applicationContext,
             CamelContext camelContext,
+            ObjectMapper objectMapper,
             String beanName,
             Object springBean
     ) {
@@ -166,6 +184,7 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
 
         Map<String, ScmResourceActionDescriptor> resourceActions = describeActions(
                 camelContext,
+                objectMapper,
                 resourceName,
                 beanName,
                 targetType,
@@ -180,6 +199,7 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
 
     private Map<String, ScmResourceActionDescriptor> describeActions(
             CamelContext camelContext,
+            ObjectMapper objectMapper,
             String resourceName,
             String beanName,
             Class<?> targetType,
@@ -209,16 +229,33 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
                             entry.getValue(),
                             "@ResourceAction value on " + targetType.getName() + "#" + method.getName()
                     );
-                    validateMethod(targetType, springBean, method, resourceName);
+                    JavaType inputType = method.getParameterCount() == 0
+                            ? null
+                            : resolveActionType(
+                                    objectMapper,
+                                    targetType,
+                                    method.getGenericParameterTypes()[0],
+                                    resourceName,
+                                    method,
+                                    "input"
+                            );
+                    JavaType outputType = resolveActionType(
+                            objectMapper,
+                            targetType,
+                            method.getGenericReturnType(),
+                            resourceName,
+                            method,
+                            "output"
+                    );
+                    validateMethod(targetType, springBean, method, resourceName, inputType, outputType);
                     BeanProcessor delegate = createDelegate(camelContext, springBean, method, resourceName, actionName);
-                    Class<?> inputType = method.getParameterCount() == 0 ? null : method.getParameterTypes()[0];
                     ScmResourceActionDescriptor descriptor = new ScmResourceActionDescriptor(
                             resourceName,
                             beanName,
                             actionName,
                             method.getName(),
                             inputType,
-                            method.getReturnType(),
+                            outputType,
                             delegate
                     );
                     ScmResourceActionDescriptor duplicate = descriptors.putIfAbsent(actionName, descriptor);
@@ -235,13 +272,13 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
         Set<String> names = new LinkedHashSet<>();
         addActionName(names, AnnotatedElementUtils.findMergedAnnotation(method, ResourceAction.class));
         for (Class<?> resourceInterface : ClassUtils.getAllInterfacesForClassAsSet(targetType)) {
-            Method interfaceMethod = ReflectionUtils.findMethod(
-                    resourceInterface,
-                    method.getName(),
-                    method.getParameterTypes()
-            );
-            if (interfaceMethod != null) {
-                addActionName(names, AnnotatedElementUtils.findMergedAnnotation(interfaceMethod, ResourceAction.class));
+            for (Method interfaceMethod : resourceInterface.getMethods()) {
+                if (mapsToActionMethod(targetType, interfaceMethod, method)) {
+                    addActionName(
+                            names,
+                            AnnotatedElementUtils.findMergedAnnotation(interfaceMethod, ResourceAction.class)
+                    );
+                }
             }
         }
         if (names.size() > 1) {
@@ -251,13 +288,29 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
         return names.stream().findFirst().orElse(null);
     }
 
+    private boolean mapsToActionMethod(Class<?> targetType, Method interfaceMethod, Method actionMethod) {
+        if (!interfaceMethod.getName().equals(actionMethod.getName())
+                || interfaceMethod.getParameterCount() != actionMethod.getParameterCount()) {
+            return false;
+        }
+        Method mostSpecific = BridgeMethodResolver.getMostSpecificMethod(interfaceMethod, targetType);
+        return BridgeMethodResolver.findBridgedMethod(mostSpecific).equals(actionMethod);
+    }
+
     private void addActionName(Set<String> names, ResourceAction annotation) {
         if (annotation != null) {
             names.add(annotation.value());
         }
     }
 
-    private void validateMethod(Class<?> targetType, Object springBean, Method method, String resourceName) {
+    private void validateMethod(
+            Class<?> targetType,
+            Object springBean,
+            Method method,
+            String resourceName,
+            JavaType inputType,
+            JavaType outputType
+    ) {
         if (!Modifier.isPublic(method.getModifiers())) {
             throw invalidMethod(resourceName, method, "must be public");
         }
@@ -276,17 +329,125 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
         if (hasOverload(targetType, method.getName())) {
             throw invalidMethod(resourceName, method, "must not be overloaded");
         }
-        if (method.getParameterCount() == 1 && isInfrastructureType(method.getParameterTypes()[0])) {
+        if (inputType != null && isInfrastructureType(inputType)) {
             throw invalidMethod(resourceName, method, "must not accept provider infrastructure");
         }
-        if (isInfrastructureType(method.getReturnType())) {
+        if (isInfrastructureType(outputType)) {
             throw invalidMethod(resourceName, method, "must not return provider infrastructure");
         }
-        try {
-            MethodIntrospector.selectInvocableMethod(method, springBean.getClass());
-        } catch (IllegalStateException exception) {
+        if (!isInvocableThroughProxy(targetType, springBean, method)) {
             throw invalidMethod(resourceName, method, "is not invocable through the Spring proxy");
         }
+    }
+
+    private boolean isInvocableThroughProxy(Class<?> targetType, Object springBean, Method actionMethod) {
+        try {
+            MethodIntrospector.selectInvocableMethod(actionMethod, springBean.getClass());
+            return true;
+        } catch (IllegalStateException ignored) {
+            for (Class<?> resourceInterface : ClassUtils.getAllInterfacesForClassAsSet(targetType)) {
+                for (Method interfaceMethod : resourceInterface.getMethods()) {
+                    if (!mapsToActionMethod(targetType, interfaceMethod, actionMethod)) {
+                        continue;
+                    }
+                    try {
+                        MethodIntrospector.selectInvocableMethod(interfaceMethod, springBean.getClass());
+                        return true;
+                    } catch (IllegalStateException ignoredInterfaceMethod) {
+                        // Try the next originating interface method.
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    private JavaType resolveActionType(
+            ObjectMapper objectMapper,
+            Class<?> targetType,
+            Type declaredType,
+            String resourceName,
+            Method method,
+            String role
+    ) {
+        Map<TypeVariable, Type> typeVariables = GenericTypeResolver.getTypeVariableMap(targetType);
+        if (containsUnsupportedGeneric(declaredType, typeVariables, new LinkedHashSet<>())) {
+            throw invalidMethod(resourceName, method,
+                    "has an unresolved or wildcard " + role + " generic type");
+        }
+
+        Type resolvedType = GenericTypeResolver.resolveType(declaredType, targetType);
+        if (containsUnsupportedGeneric(resolvedType, Map.of(), new LinkedHashSet<>())) {
+            throw invalidMethod(resourceName, method,
+                    "has an unresolved or wildcard " + role + " generic type");
+        }
+        if (containsRawGeneric(resolvedType)) {
+            throw invalidMethod(resourceName, method,
+                    "must not use a raw generic " + role + " type");
+        }
+
+        try {
+            return objectMapper.getTypeFactory().constructType(resolvedType);
+        } catch (IllegalArgumentException exception) {
+            throw invalidMethod(resourceName, method,
+                    "has an unsupported " + role + " type");
+        }
+    }
+
+    private boolean containsUnsupportedGeneric(
+            Type type,
+            Map<TypeVariable, Type> typeVariables,
+            Set<TypeVariable> visiting
+    ) {
+        if (type instanceof TypeVariable<?> variable) {
+            if (!typeVariables.containsKey(variable) || !visiting.add(variable)) {
+                return true;
+            }
+            boolean unsupported = containsUnsupportedGeneric(typeVariables.get(variable), typeVariables, visiting);
+            visiting.remove(variable);
+            return unsupported;
+        }
+        if (type instanceof WildcardType) {
+            return true;
+        }
+        if (type instanceof GenericArrayType arrayType) {
+            return containsUnsupportedGeneric(arrayType.getGenericComponentType(), typeVariables, visiting);
+        }
+        if (type instanceof ParameterizedType parameterizedType) {
+            if (ownerTypeContributesGenerics(parameterizedType)
+                    && containsUnsupportedGeneric(parameterizedType.getOwnerType(), typeVariables, visiting)) {
+                return true;
+            }
+            return Arrays.stream(parameterizedType.getActualTypeArguments())
+                    .anyMatch(argument -> containsUnsupportedGeneric(argument, typeVariables, visiting));
+        }
+        return false;
+    }
+
+    private boolean containsRawGeneric(Type type) {
+        if (type instanceof Class<?> typeClass) {
+            return typeClass.getTypeParameters().length > 0;
+        }
+        if (type instanceof GenericArrayType arrayType) {
+            return containsRawGeneric(arrayType.getGenericComponentType());
+        }
+        if (type instanceof ParameterizedType parameterizedType) {
+            if (ownerTypeContributesGenerics(parameterizedType)
+                    && containsRawGeneric(parameterizedType.getOwnerType())) {
+                return true;
+            }
+            return Arrays.stream(parameterizedType.getActualTypeArguments())
+                    .anyMatch(this::containsRawGeneric);
+        }
+        return false;
+    }
+
+    private boolean ownerTypeContributesGenerics(ParameterizedType type) {
+        if (type.getOwnerType() == null) {
+            return false;
+        }
+        return !(type.getRawType() instanceof Class<?> rawClass)
+                || !Modifier.isStatic(rawClass.getModifiers());
     }
 
     private boolean hasOverload(Class<?> targetType, String methodName) {
@@ -312,6 +473,19 @@ public final class ScmResourceRegistry implements ProviderRuntimeLifecycle {
                 || AccessibleObject.class.isAssignableFrom(type)
                 || type == Class.class
                 || type.getName().startsWith("ir.daneshrefah.scm.provider.scm.");
+    }
+
+    private boolean isInfrastructureType(JavaType type) {
+        if (isInfrastructureType(type.getRawClass())) {
+            return true;
+        }
+        for (int index = 0; index < type.containedTypeCount(); index++) {
+            JavaType nestedType = type.containedType(index);
+            if (nestedType != null && isInfrastructureType(nestedType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private BeanProcessor createDelegate(

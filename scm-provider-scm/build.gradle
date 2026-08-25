@@ -6,6 +6,7 @@ dependencies {
     api 'org.apache.camel:camel-core'
 
     implementation project(':scm-common')
+    implementation project(':scm-common-error')
     implementation project(':scm-plugin-api')
     implementation 'org.apache.camel:camel-bean'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
