@@ -143,9 +143,6 @@ public class RestProviderConfigResolver {
         if (Boolean.FALSE.equals(instance.getEnabled())) {
             throw new IllegalArgumentException("REST provider " + providerName + " is disabled");
         }
-        if (StringUtils.isBlank(first(instance.getBaseUrl(), instance.getEndpoint()))) {
-            throw new IllegalArgumentException("REST provider " + providerName + " must define base-url");
-        }
     }
 
     private RegistryEntry findProvider(String providerName, String scheme) {

@@ -13,7 +13,10 @@ import ir.daneshrefah.scm.common.provider.message.ProviderResponse;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderConfigResolver;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderEndpointOverrides;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderHeaders;
+import ir.daneshrefah.scm.provider.rest.config.RestProviderOperationTargetRegistry;
+import ir.daneshrefah.scm.provider.rest.config.RestProviderOperationTargetRegistry.OperationTarget;
 import ir.daneshrefah.scm.provider.rest.config.RestProviderResolvedConfig;
+import ir.daneshrefah.scm.provider.rest.config.RestProviderUriResolver;
 import ir.daneshrefah.scm.provider.rest.http.RestProviderClientRegistry;
 import ir.daneshrefah.scm.provider.rest.log.RestProviderLogSanitizer;
 import ir.daneshrefah.scm.provider.rest.metrics.RestProviderMetrics;
@@ -29,11 +32,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -80,6 +81,8 @@ public class RestProviderProducer extends DefaultProducer {
     private RestProviderRateLimiter rateLimiter;
     private RestProviderTraceSupport traceSupport;
     private RestProviderLogSanitizer logSanitizer;
+    private RestProviderOperationTargetRegistry operationTargetRegistry;
+    private RestProviderUriResolver uriResolver;
     private ObjectMapper objectMapper;
 
     public RestProviderProducer(RestProviderEndpoint endpoint) {
@@ -96,13 +99,21 @@ public class RestProviderProducer extends DefaultProducer {
         rateLimiter = bean(RestProviderRateLimiter.class);
         traceSupport = bean(RestProviderTraceSupport.class);
         logSanitizer = bean(RestProviderLogSanitizer.class);
+        operationTargetRegistry = bean(RestProviderOperationTargetRegistry.class);
+        uriResolver = bean(RestProviderUriResolver.class);
         objectMapper = bean(ObjectMapper.class);
     }
 
     @Override
     public void process(Exchange exchange) {
         traceSupport.enrichLogMdc(exchange);
-        String provider = resolveProvider(exchange);
+        Operation operation = exchange.getProperty(Message.OPERATION, Operation.class);
+        OperationTarget operationTarget = operation == null
+                ? null
+                : operationTargetRegistry.requireTarget(operation.getName());
+        String provider = operationTarget == null
+                ? resolveProvider(exchange)
+                : operationTarget.providerUri();
         String operationName = resolveOperationName(exchange);
         RestProviderResolvedConfig config;
         try {
@@ -111,7 +122,8 @@ public class RestProviderProducer extends DefaultProducer {
             logProviderResolutionFailed(exchange, provider, operationName, e);
             throw e;
         }
-        ProviderRequest providerRequest = buildProviderRequest(exchange, config);
+        ProviderRequest providerRequest = buildProviderRequest(exchange, config, operationTarget);
+        URI immutableOperationTarget = operationTarget == null ? null : providerRequest.uri();
         ProviderMessageCustomizerContext customizerContext = customizerContext(exchange, config, operationName);
         ProviderExchange providerExchange = new ProviderExchange(providerRequest, customizerContext);
         ProviderMessageCustomizerPipeline customizerPipeline = config.messageCustomizerPipeline();
@@ -124,7 +136,11 @@ public class RestProviderProducer extends DefaultProducer {
         try {
             executeCustomizers(exchange, providerExchange, customizerPipeline, true);
             rateLimiter.acquire(config, operationName);
-            RestProviderRequestSpec requestSpec = toRestRequestSpec(providerExchange, config);
+            RestProviderRequestSpec requestSpec = toRestRequestSpec(
+                    providerExchange,
+                    config,
+                    immutableOperationTarget
+            );
             logRequest(config, operationName, requestSpec);
             ResponseEntity<String> response = traceSupport.clientSpan(
                     exchange,
@@ -259,7 +275,11 @@ public class RestProviderProducer extends DefaultProducer {
         );
     }
 
-    private ProviderRequest buildProviderRequest(Exchange exchange, RestProviderResolvedConfig config) {
+    private ProviderRequest buildProviderRequest(
+            Exchange exchange,
+            RestProviderResolvedConfig config,
+            OperationTarget operationTarget
+    ) {
         Object body = exchange.getMessage().getBody();
         RestProviderRequestEnvelope envelope = toEnvelope(body);
 
@@ -269,16 +289,7 @@ public class RestProviderProducer extends DefaultProducer {
         );
         HttpMethod method = resolveMethod(methodValue);
 
-        String absoluteUrl = first(
-                exchange.getMessage().getHeader(RestProviderHeaders.URL, String.class),
-                envelope.getUrl()
-        );
-        String path = first(
-                exchange.getMessage().getHeader(RestProviderHeaders.PATH, String.class),
-                envelope.getPath()
-        );
-
-        URI uri = resolveUri(config.baseUrl(), absoluteUrl, path, envelope.getQuery());
+        URI uri = resolveRequestUri(exchange, config, envelope, operationTarget);
 
         Map<String, String> headers = new LinkedHashMap<>();
         headers.putAll(config.defaultHeaders());
@@ -298,9 +309,37 @@ public class RestProviderProducer extends DefaultProducer {
         return new ProviderRequest(method.name(), uri, headers, requestBody);
     }
 
-    private RestProviderRequestSpec toRestRequestSpec(ProviderExchange providerExchange, RestProviderResolvedConfig config) {
+    private URI resolveRequestUri(
+            Exchange exchange,
+            RestProviderResolvedConfig config,
+            RestProviderRequestEnvelope envelope,
+            OperationTarget operationTarget
+    ) {
+        if (operationTarget != null) {
+            return uriResolver.appendQuery(operationTarget.uri(), envelope.getQuery());
+        }
+
+        String absoluteUrl = first(
+                exchange.getMessage().getHeader(RestProviderHeaders.URL, String.class),
+                envelope.getUrl()
+        );
+        String path = first(
+                exchange.getMessage().getHeader(RestProviderHeaders.PATH, String.class),
+                envelope.getPath()
+        );
+        return uriResolver.resolveDirectTarget(config.baseUrl(), absoluteUrl, path, envelope.getQuery());
+    }
+
+    private RestProviderRequestSpec toRestRequestSpec(
+            ProviderExchange providerExchange,
+            RestProviderResolvedConfig config,
+            URI immutableOperationTarget
+    ) {
         ProviderRequest request = providerExchange.request();
-        URI uri = appendCustomizerQueryParameters(request.uri(), request.queryParameters());
+        URI requestTarget = immutableOperationTarget == null
+                ? request.uri()
+                : immutableOperationTarget;
+        URI uri = appendCustomizerQueryParameters(requestTarget, request.queryParameters());
         HttpMethod method = resolveMethod(request.method());
         return new RestProviderRequestSpec(method, uri, Map.copyOf(request.headers()), request.body());
     }
@@ -309,9 +348,7 @@ public class RestProviderProducer extends DefaultProducer {
         if (queryParameters == null || queryParameters.isEmpty()) {
             return uri;
         }
-        UriComponentsBuilder builder = UriComponentsBuilder.fromUri(uri);
-        queryParameters.forEach((key, value) -> appendQuery(builder, key, value));
-        return builder.build().encode().toUri();
+        return uriResolver.appendQuery(uri, queryParameters);
     }
 
     private ProviderMessageCustomizerContext customizerContext(
@@ -390,38 +427,6 @@ public class RestProviderProducer extends DefaultProducer {
                 throw e;
             }
         }
-    }
-
-    private URI resolveUri(String baseUrl, String absoluteUrl, String path, Map<String, Object> query) {
-        UriComponentsBuilder builder;
-        String resolvedAbsolute = StringUtils.trimToNull(absoluteUrl);
-        if (resolvedAbsolute != null) {
-            builder = UriComponentsBuilder.fromUriString(resolvedAbsolute);
-        } else {
-            builder = UriComponentsBuilder.fromUriString(baseUrl);
-            String normalizedPath = StringUtils.trimToNull(path);
-            if (normalizedPath != null) {
-                if (!normalizedPath.startsWith("/")) {
-                    normalizedPath = "/" + normalizedPath;
-                }
-                builder.path(normalizedPath);
-            }
-        }
-
-        Map<String, Object> queryMap = query == null ? Map.of() : query;
-        queryMap.forEach((key, value) -> appendQuery(builder, key, value));
-        return builder.build().encode().toUri();
-    }
-
-    private void appendQuery(UriComponentsBuilder builder, String key, Object value) {
-        if (StringUtils.isBlank(key) || value == null) {
-            return;
-        }
-        if (value instanceof Collection<?> collection) {
-            collection.forEach(item -> builder.queryParam(key, item));
-            return;
-        }
-        builder.queryParam(key, value);
     }
 
     private Map<String, Object> buildResponseBody(ResponseEntity<String> response) {

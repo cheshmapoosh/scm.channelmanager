@@ -85,8 +85,133 @@ Rules:
 - No customizer is enabled by default.
 - Provider-level auth/token/cache/lock/apply settings are not part of the primary model.
 - REST authentication must be configured through `message-customizers`.
+- `base-url` (and its legacy `endpoint` alias) is optional only when every
+  effective Operation for that provider uses an absolute HTTP(S)
+  `Operation.path`.
+
+## Operation Destination Contract
+
+Every effective SCM REST Operation owns exactly one immutable HTTP(S) target.
+It is resolved during Operation-layer route construction using this matrix:
+
+| Provider `base-url` | `Operation.path` | Startup result |
+| --- | --- | --- |
+| Present | Safe relative path | Join base URL and path |
+| Absent | Absolute HTTP(S) URL | Use `Operation.path` directly |
+| Present | Absolute URL | Fail: conflicting configuration |
+| Absent | Relative path | Fail: no base URL |
+| Any | Missing or blank | Fail: path is required |
+| Any | Invalid final URI | Fail: invalid configuration |
+
+Blank `base-url` is treated as absent. The legacy provider `endpoint` property
+continues to be an alias for `base-url`.
+
+### Base URL plus relative path
+
+The usual configuration keeps provider authority in configuration and the
+endpoint-specific suffix in the Operation:
+
+```yaml
+scm:
+  providers:
+    hps-rest:
+      scheme: scm-rest
+      enabled: true
+      base-url: https://provider.example/root/
+```
+
+```text
+OperationProvider:
+  name   = HPS_REST
+  uri    = scm-rest:hps-rest
+  active = true
+
+Operation:
+  name     = CARD_INQUIRY
+  type     = PROVIDER
+  provider = HPS_REST
+  path     = /v1/card/inquiry
+  active   = true
+```
+
+The resolved target is:
+
+```text
+https://provider.example/root/v1/card/inquiry
+```
+
+The relative path may have a leading slash. Joining preserves an existing base
+path and inserts exactly one slash at the boundary.
+
+### No base URL plus absolute Operation path
+
+A provider may omit both `base-url` and its `endpoint` alias when its effective
+Operations each contain their complete destination:
+
+```yaml
+scm:
+  providers:
+    hps-rest:
+      scheme: scm-rest
+      enabled: true
+```
+
+```text
+Operation:
+  name     = CARD_INQUIRY
+  type     = PROVIDER
+  provider = HPS_REST
+  path     = https://provider.example/root/v1/card/inquiry
+  active   = true
+```
+
+This resolves exactly to the absolute `Operation.path`; no base URL is
+prepended, appended, or inferred.
+
+### Validation and conflicting configuration
+
+Base URLs and absolute Operation paths must use HTTP or HTTPS, contain a valid
+host and explicit port when one is configured, and contain no user information,
+query, or fragment. Paths reject backslashes, duplicate separators, literal or
+encoded traversal segments, and encoded slash or backslash separators.
+
+These configurations are invalid:
+
+```text
+base-url = https://provider.example/root
+path     = https://other.example/v1/card/inquiry
+
+base-url = <absent>
+path     = /v1/card/inquiry
+
+base-url = https://provider.example/root
+path     = <blank>
+```
+
+The provider runtime lifecycle resolves every effective target before request
+serving, stores it by stable Operation name, and publishes an immutable registry
+when registration completes. Invalid configuration emits one structured ERROR
+event named `rest_provider_operation_target_validation_failed` with bounded
+service, Operation, provider, path-type, and reason fields, followed by startup
+failure. Raw malformed URLs, credentials, query values, bodies, and headers are
+not included in that event.
+
+For Operation invocations, request envelope/header `url` and `path` values are
+not destination inputs and cannot override the startup-resolved scheme, host,
+port, or path. Request and customizer query parameters may be appended to the
+fixed target but cannot replace those components. Runtime processing performs
+no database lookup, base URL/path parsing, joining, or replacement target
+construction.
+
+A direct `scm-rest:` component call with no `Message.OPERATION` retains the
+legacy envelope/header URL and path behavior. With no provider base URL, such a
+direct call must provide an absolute HTTP(S) request `url`.
 
 ## Request And Response
+
+The `url` and `path` fields shown below apply to direct component calls. When
+the call originates from an SCM Operation, `Operation.path` is authoritative
+and these two fields are ignored.
 
 Request body can be a direct payload or an envelope:
 
@@ -297,6 +422,22 @@ Never log or trace tokens, username/password, client secret, PIN, PIN block, MAC
 
 ## Troubleshooting
 
+- `MISSING_OPERATION_PATH`: configure either a relative path with provider
+  `base-url` or an absolute HTTP(S) `Operation.path` without `base-url`.
+- `BASE_URL_AND_ABSOLUTE_PATH_CONFLICT`: remove `base-url`/`endpoint`, or change
+  `Operation.path` to a relative path.
+- `RELATIVE_PATH_WITHOUT_BASE_URL`: configure provider `base-url`, or replace the
+  path with an absolute HTTP(S) URL.
+- `INVALID_BASE_URL`, `INVALID_ABSOLUTE_OPERATION_URL`, or
+  `INVALID_RELATIVE_OPERATION_PATH`: correct the indicated URI form according to
+  the validation rules above. The startup ERROR event identifies the affected
+  service, Operation, and provider without printing the raw URI.
+- Unexpected REST destination after migration: move the endpoint-specific
+  suffix out of `base-url` and into a relative `Operation.path`, or remove
+  `base-url` and use one absolute `Operation.path`.
+- Request `url` or `path` has no effect: SCM Operation calls intentionally use
+  the startup-resolved Provider base URL plus `Operation.path`. Request-level
+  destination overrides remain available only to direct component calls.
 - Customizer not executed: verify it appears in `scm.providers.<code>.message-customizers` and the `type` matches a registered factory.
 - Unknown customizer type: add the factory Spring bean or fix the YAML `type`.
 - Wrong order: set `message-customizers[].order` or adjust factory `defaultOrder()`.
