@@ -488,6 +488,18 @@ ActionPlan structure, decision policies, durable recovery, and
 
 ---
 
+## ACTION_DISPATCH routing strategy
+
+The stateless, one-action-to-one-Operation contract is documented in:
+
+[Defining ACTION_DISPATCH services](docs/action-dispatch-service.md)
+
+The guide owns the action naming, Gateway binding, service-operation mapping,
+startup validation, immutable lookup, errors, observability, schema change, and
+complete `scm:uaa` OTP example.
+
+---
+
 ## CMNEW-119 Runtime Clarifications
 
 - New deployments should use `scm.runtime.gateway-name` as the runtime key. `scm.app-name` is still read only as a legacy fallback.

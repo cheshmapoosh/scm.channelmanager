@@ -16,5 +16,7 @@ public class ServiceOperation extends AbstractAuditableModel<String> {
     private Boolean active;
     @Size(max = 50)
     private String operationName;
+    @Size(max = 100)
+    private String actionName;
     private Definition definition;
 }

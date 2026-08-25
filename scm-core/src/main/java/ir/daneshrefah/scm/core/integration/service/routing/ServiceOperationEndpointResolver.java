@@ -11,6 +11,13 @@ public class ServiceOperationEndpointResolver {
         if (StringUtils.contains(operationName, ':')) {
             return operationName;
         }
+        return resolveRegisteredOperation(operationName);
+    }
+
+    /**
+     * Resolves only the fixed route registered by the Operation layer.
+     */
+    public String resolveRegisteredOperation(String operationName) {
         return "direct:" + RouteIdSupport.operationRouteId(operationName);
     }
 }

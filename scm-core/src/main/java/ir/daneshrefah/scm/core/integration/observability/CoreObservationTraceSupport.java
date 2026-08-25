@@ -409,7 +409,14 @@ public class CoreObservationTraceSupport {
                     .attribute(CoreTraceAttributes.ROUTING_STEP_INDEX, (long) stepIndex)
                     .attribute(CoreTraceAttributes.ROUTING_EXECUTION_ID,
                             exchange.getProperty(Message.EXECUTION_ID, String.class))
-                    .attribute(CoreTraceAttributes.TASK_INBOUND_ACTION, inboundAction)
+                    .attribute(CoreTraceAttributes.SERVICE_ACTION,
+                            routingStrategy == RoutingStrategy.ACTION_DISPATCH
+                                    ? inboundAction
+                                    : null)
+                    .attribute(CoreTraceAttributes.TASK_INBOUND_ACTION,
+                            routingStrategy == RoutingStrategy.ACTION_DISPATCH
+                                    ? null
+                                    : inboundAction)
                     .attribute(
                             CoreTraceAttributes.TASK_ACTION_PLAN_NAME,
                             exchange.getProperty(

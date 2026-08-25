@@ -90,6 +90,8 @@ public final class CoreTraceAttributes {
             "scm.routing.step.id", "Stable routing step identifier.");
     public static final ObservationAttributeKey<String> ROUTING_EXECUTION_ID = keyword(
             "scm.routing.execution.id", "Task workflow execution identifier.");
+    public static final ObservationAttributeKey<String> SERVICE_ACTION = keyword(
+            "scm.service.action_name", "Canonical service action selected for routing.");
     public static final ObservationAttributeKey<String> TASK_INBOUND_ACTION = keyword(
             "scm.task.inbound_action", "Task workflow inbound action.");
     public static final ObservationAttributeKey<String> TASK_ACTION_PLAN_NAME = keyword(
@@ -141,7 +143,7 @@ public final class CoreTraceAttributes {
                 STATUS_CODE, STATUS_OUTCOME, STATUS_MESSAGE, STATUS_DESCRIPTION,
                 OPERATION_CODE, OPERATION_NAME, OPERATION_TYPE,
                 ROUTING_STRATEGY, ROUTING_STEP_ID, ROUTING_STEP_INDEX,
-                ROUTING_EXECUTION_ID, TASK_INBOUND_ACTION,
+                ROUTING_EXECUTION_ID, SERVICE_ACTION, TASK_INBOUND_ACTION,
                 TASK_ACTION_PLAN_NAME, TASK_WORKFLOW_STEP_TYPE,
                 ROUTING_DECISION, ROUTING_RETRYABLE, OPERATION_NORMALIZED_OUTCOME,
                 OPERATION_DURATION_MS, SERVICE_DURATION_MS,

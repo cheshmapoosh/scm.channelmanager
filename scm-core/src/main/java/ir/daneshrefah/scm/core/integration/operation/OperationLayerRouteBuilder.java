@@ -2,10 +2,8 @@ package ir.daneshrefah.scm.core.integration.operation;
 
 import ir.daneshrefah.scm.common.constant.Routes;
 import ir.daneshrefah.scm.common.handler.PluginHandler;
-import ir.daneshrefah.scm.common.model.definition.DefinitionType;
 import ir.daneshrefah.scm.common.model.gateway.GatewayChannel;
 import ir.daneshrefah.scm.common.model.gateway.Service;
-import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import ir.daneshrefah.scm.common.model.message.Message;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationProvider;
@@ -27,16 +25,10 @@ import ir.daneshrefah.scm.core.integration.runtime.RouteIdSupport;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRouteActivation;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeRoutePlanProvider;
-import ir.daneshrefah.scm.core.integration.runtime.RuntimeServicePlan;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetKind;
 import ir.daneshrefah.scm.core.integration.runtime.RuntimeTargetProperties;
-import ir.daneshrefah.scm.core.integration.service.metrics.ServicePluginMetrics;
-import ir.daneshrefah.scm.core.integration.service.routing.ServiceOperationDefinitionClassifier;
 import ir.daneshrefah.scm.common.service.operation.OperationService;
 import ir.daneshrefah.scm.common.service.plugin.PluginResolverService;
-import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowActionPlanConfig;
-import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowActionPlanParser;
-import ir.daneshrefah.scm.core.integration.service.routing.taskworkflow.TaskWorkflowCommand;
 import ir.daneshrefah.scm.observation.starter.ObservationContext;
 import ir.daneshrefah.scm.observation.starter.ScmObservation;
 import ir.daneshrefah.scm.core.integration.observability.attributes.CoreMetricTags;
@@ -73,7 +65,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     private final ScmExchangeMdc exchangeMdc;
     private final ObjectProvider<ScmObservation> observationProvider;
     private final ObjectProvider<ObservationContext> observationContextProvider;
-    private final TaskWorkflowActionPlanParser actionPlanParser;
+    private final RequiredOperationNameResolver requiredOperationNameResolver;
     private final ProviderRegistryProperties providerRegistryProperties;
     private final List<ProviderRuntimeLifecycle> providerRuntimeLifecycles;
 
@@ -159,36 +151,18 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
         }
 
         RuntimeRoutePlan routePlan = runtimeRoutePlanProvider.provide(gatewayChannel);
-        routePlan.servicePlans()
-                .stream()
-                .forEach(runtimeServicePlan -> {
-                    String serviceCode = runtimeServicePlan != null && runtimeServicePlan.service() != null
-                            ? StringUtils.trimToNull(runtimeServicePlan.service().getCode())
-                            : null;
-                    runtimeServicePlan.service().getServiceOperations().stream()
-                            .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
-                            .map(ServiceOperation -> getOperationName(runtimeServicePlan.service(), ServiceOperation))
-                            .flatMap(Collection::stream)
-                            .map(StringUtils::trimToNull)
-                            .filter(Objects::nonNull)
-                            .forEach(operationName -> requiredOperationServices
-                                    .computeIfAbsent(operationName, ignored -> new LinkedHashSet<>())
-                                    .add(serviceCode == null ? "<unknown>" : serviceCode));
-                });
-//        routePlan.servicePlans().forEach(servicePlan -> {
-//            String serviceCode = servicePlan != null && servicePlan.service() != null
-//                    ? StringUtils.trimToNull(servicePlan.service().getCode())
-//                    : null;
-//            serviceOperations(servicePlan)
-//                    .filter(serviceOperation -> Boolean.TRUE.equals(serviceOperation.getActive()))
-//                    .filter(serviceOperation -> !ServiceOperationDefinitionClassifier.isActionPlan(serviceOperation))
-//                    .map(ServiceOperation::getOperationName)
-//                    .map(StringUtils::trimToNull)
-//                    .filter(Objects::nonNull)
-//                    .forEach(operationName -> requiredOperationServices
-//                            .computeIfAbsent(operationName, ignored -> new LinkedHashSet<>())
-//                            .add(serviceCode == null ? "<unknown>" : serviceCode));
-//        });
+        routePlan.servicePlans().forEach(runtimeServicePlan -> {
+            Service service = runtimeServicePlan == null ? null : runtimeServicePlan.service();
+            String serviceCode = service == null
+                    ? null
+                    : StringUtils.trimToNull(service.getCode());
+            requiredOperationNameResolver.resolve(service).stream()
+                    .map(StringUtils::trimToNull)
+                    .filter(Objects::nonNull)
+                    .forEach(operationName -> requiredOperationServices
+                            .computeIfAbsent(operationName, ignored -> new LinkedHashSet<>())
+                            .add(serviceCode == null ? "<unknown>" : serviceCode));
+        });
     }
 
     private void registerEffectiveProviderRuntimes(
@@ -298,33 +272,6 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
     }
 
     private record ProviderReference(String scheme, String providerCode, String providerUri) {
-    }
-
-    private List<String> getOperationName(Service service, ServiceOperation serviceOperation) {
-        if (serviceOperation.getDefinition().getType() != DefinitionType.ACTION_PLAN) {
-            return List.of(serviceOperation.getOperationName());
-        }
-        TaskWorkflowActionPlanConfig actionPlanConfig = actionPlanParser.parse(service, serviceOperation);
-        String inboundAction = normalizeAction(actionPlanConfig.inboundAction());
-        if (inboundAction.equals(TaskWorkflowCommand.APPROVE_AND_EXECUTE.name())) {
-            return actionPlanConfig.steps().stream().map(step -> step.operationName()).toList();
-        } else {
-            return List.of(serviceOperation.getOperationName());
-        }
-    }
-
-    private String normalizeAction(String action) {
-        return action.toUpperCase(Locale.ROOT)
-                .replace('-', '_')
-                .replace(' ', '_');
-    }
-
-    private java.util.stream.Stream<ServiceOperation> serviceOperations(RuntimeServicePlan servicePlan) {
-        if (servicePlan == null || servicePlan.service() == null
-                || servicePlan.service().getServiceOperations() == null) {
-            return java.util.stream.Stream.empty();
-        }
-        return servicePlan.service().getServiceOperations().stream();
     }
 
     private void buildOperationRoute(Operation operation) {

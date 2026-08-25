@@ -25,12 +25,15 @@ public record RoutingPlan(
         Objects.requireNonNull(routingStrategy, "routingStrategy must not be null");
         steps = List.copyOf(Objects.requireNonNull(steps, "steps must not be null"));
         if (routingStrategy != RoutingStrategy.FIRST
-                && routingStrategy != RoutingStrategy.CHAIN_ON_APPROVE) {
+                && routingStrategy != RoutingStrategy.CHAIN_ON_APPROVE
+                && routingStrategy != RoutingStrategy.ACTION_DISPATCH) {
             throw new IllegalStateException("Routing plan=" + planId
                     + " requires an execution-engine strategy; found " + routingStrategy);
         }
-        if (routingStrategy == RoutingStrategy.FIRST && steps.size() != 1) {
-            throw new IllegalStateException("FIRST routing plan=" + planId
+        if ((routingStrategy == RoutingStrategy.FIRST
+                || routingStrategy == RoutingStrategy.ACTION_DISPATCH)
+                && steps.size() != 1) {
+            throw new IllegalStateException(routingStrategy + " routing plan=" + planId
                     + " requires exactly one step; found " + steps.size());
         }
         if (routingStrategy == RoutingStrategy.CHAIN_ON_APPROVE && steps.isEmpty()) {

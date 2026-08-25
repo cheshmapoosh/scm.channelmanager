@@ -1,8 +1,13 @@
 package ir.daneshrefah.scm.core.integration.gateway.inbound;
 
 import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
+import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
+import ir.daneshrefah.scm.common.model.gateway.ServiceActionNamePolicy;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.integration.gateway.GatewayInboundRouteContext;
+import ir.daneshrefah.scm.core.integration.service.routing.ActionDispatchPlan;
+import ir.daneshrefah.scm.core.integration.service.routing.ActionDispatchPlanCatalog;
+import ir.daneshrefah.scm.core.integration.service.routing.ServiceActionException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -16,9 +21,14 @@ import java.util.Set;
 @Component
 public class InboundRouteDefinitionValidator {
     private final InboundRouteActionConfigExtractor actionConfigExtractor;
+    private final ActionDispatchPlanCatalog actionDispatchPlanCatalog;
 
-    public InboundRouteDefinitionValidator(InboundRouteActionConfigExtractor actionConfigExtractor) {
+    public InboundRouteDefinitionValidator(
+            InboundRouteActionConfigExtractor actionConfigExtractor,
+            ActionDispatchPlanCatalog actionDispatchPlanCatalog
+    ) {
         this.actionConfigExtractor = actionConfigExtractor;
+        this.actionDispatchPlanCatalog = actionDispatchPlanCatalog;
     }
 
     public Map<InboundChannelServiceDefinition, InboundRouteActionConfig> validate(
@@ -28,18 +38,66 @@ public class InboundRouteDefinitionValidator {
         Set<String> methodPaths = new HashSet<>();
         Set<String> definitionIds = new HashSet<>();
         Map<InboundChannelServiceDefinition, InboundRouteActionConfig> configs = new IdentityHashMap<>();
+        boolean actionDispatch = context.servicePlan().service() != null
+                && context.servicePlan().service().getRoutingStrategy()
+                == RoutingStrategy.ACTION_DISPATCH;
+        ActionDispatchPlan dispatchPlan = actionDispatch
+                ? actionDispatchPlanCatalog.planFor(context.servicePlan().service())
+                : null;
 
         for (InboundChannelServiceDefinition definition : definitions) {
             validatePath(context, definition);
             validateMethodPath(context, definition, methodPaths);
             validateDefinitionId(context, definition, definitionIds);
-            InboundRouteActionConfig config = actionConfigExtractor.extract(definition);
+            InboundRouteActionConfig config;
+            try {
+                config = actionConfigExtractor.extract(definition);
+            } catch (RuntimeException exception) {
+                if (actionDispatch) {
+                    throw invalidAction(context, definition,
+                            "field=inboundAction configuration is invalid", exception);
+                }
+                throw exception;
+            }
             if (config.configured() && config.inboundAction() == null) {
-                throw invalid(context, definition, "field=inboundAction must not be blank");
+                if (actionDispatch) {
+                    throw invalidAction(context, definition,
+                            "field=inboundAction must not be blank");
+                }
+                throw invalid(context, definition,
+                        "field=inboundAction must not be blank");
+            }
+            if (actionDispatch) {
+                config = validateActionDispatchConfig(
+                        context, definition, config, dispatchPlan);
             }
             configs.put(definition, config);
         }
         return configs;
+    }
+
+    private InboundRouteActionConfig validateActionDispatchConfig(
+            GatewayInboundRouteContext context,
+            InboundChannelServiceDefinition definition,
+            InboundRouteActionConfig config,
+            ActionDispatchPlan dispatchPlan
+    ) {
+        if (!config.configured() || config.inboundAction() == null) {
+            throw invalidAction(context, definition,
+                    "field=inboundAction is required for ACTION_DISPATCH");
+        }
+        String canonical;
+        try {
+            canonical = ServiceActionNamePolicy.canonicalize(config.inboundAction());
+        } catch (IllegalArgumentException exception) {
+            throw invalidAction(context, definition,
+                    "field=inboundAction is invalid", exception);
+        }
+        if (!dispatchPlan.containsAction(canonical)) {
+            throw invalidAction(context, definition,
+                    "field=inboundAction does not reference a configured service action");
+        }
+        return new InboundRouteActionConfig(true, canonical);
     }
 
     private void validatePath(
@@ -93,5 +151,33 @@ public class InboundRouteDefinitionValidator {
                 + ", channelServiceDefinitionId="
                 + (definition == null ? "<null>" : String.valueOf(definition.getId()))
                 + ": " + message);
+    }
+
+    private ServiceActionException invalidAction(
+            GatewayInboundRouteContext context,
+            InboundChannelServiceDefinition definition,
+            String message
+    ) {
+        return invalidAction(context, definition, message, null);
+    }
+
+    private ServiceActionException invalidAction(
+            GatewayInboundRouteContext context,
+            InboundChannelServiceDefinition definition,
+            String message,
+            Throwable cause
+    ) {
+        String serviceCode = context.servicePlan().service() == null
+                ? "<null>"
+                : String.valueOf(context.servicePlan().service().getCode());
+        return ServiceActionException.configurationInvalid(
+                "Invalid ACTION_DISPATCH inbound route for gateway="
+                        + context.gatewayChannel().getName()
+                        + ", service=" + serviceCode
+                        + ", channelServiceDefinitionId="
+                        + (definition == null ? "<null>" : String.valueOf(definition.getId()))
+                        + ": " + message,
+                cause
+        );
     }
 }
