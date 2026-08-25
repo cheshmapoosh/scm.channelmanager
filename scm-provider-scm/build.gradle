@@ -1,0 +1,15 @@
+plugins {
+    id 'ir.daneshrefah.scm.java-library-conventions'
+}
+
+dependencies {
+    api 'org.apache.camel:camel-core'
+
+    implementation project(':scm-common')
+    implementation project(':scm-plugin-api')
+    implementation 'org.apache.camel:camel-bean'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'org.springframework:spring-aop'
+    implementation 'org.springframework:spring-context'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+}

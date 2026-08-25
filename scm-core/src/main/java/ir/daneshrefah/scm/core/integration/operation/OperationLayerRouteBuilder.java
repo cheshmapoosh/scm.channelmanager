@@ -223,6 +223,7 @@ public class OperationLayerRouteBuilder extends RouteBuilder {
                 lifecycle.registerEffectiveUsage(new EffectiveProviderUsage(
                         serviceCode,
                         operation.getName(),
+                        operation.getPath(),
                         reference.providerCode(),
                         reference.providerUri(),
                         reference.scheme()

@@ -48,6 +48,7 @@ dependencies {
     implementation project(':scm-common-data')
     implementation project(':scm-provider-shetab')
     implementation project(':scm-provider-rest')
+    implementation project(':scm-provider-scm')
     implementation project(':scm-provider-task')
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'

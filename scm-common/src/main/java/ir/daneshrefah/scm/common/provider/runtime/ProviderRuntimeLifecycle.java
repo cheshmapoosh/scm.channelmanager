@@ -16,9 +16,19 @@ public interface ProviderRuntimeLifecycle {
     record EffectiveProviderUsage(
             String serviceCode,
             String operationName,
+            String operationPath,
             String providerCode,
             String providerUri,
             String scheme
     ) {
+        public EffectiveProviderUsage(
+                String serviceCode,
+                String operationName,
+                String providerCode,
+                String providerUri,
+                String scheme
+        ) {
+            this(serviceCode, operationName, null, providerCode, providerUri, scheme);
+        }
     }
 }

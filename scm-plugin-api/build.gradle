@@ -9,6 +9,7 @@ plugins {
 }
 
 dependencies {
+    api 'org.springframework:spring-context'
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
     compileOnly "org.springframework:spring-webmvc"
 //    implementation 'com.fasterxml.jackson.module:jackson-module-jsonSchema:2.14.2'

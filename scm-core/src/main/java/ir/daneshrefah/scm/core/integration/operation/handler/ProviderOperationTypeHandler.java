@@ -6,11 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.daneshrefah.scm.common.model.operation.Operation;
 import ir.daneshrefah.scm.common.model.operation.OperationType;
 import ir.daneshrefah.scm.common.model.message.Message;
+import ir.daneshrefah.scm.common.provider.operation.ProviderOperationPayloadStrategy;
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -23,6 +25,7 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
     };
 
     private final ObjectMapper objectMapper;
+    private final List<ProviderOperationPayloadStrategy> payloadStrategies;
 
     @Override
     public OperationType getOperationType() {
@@ -33,9 +36,19 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
     public void config(RouteDefinition route, Operation operation) {
         validateProvider(operation);
         String targetUri = resolveTargetUri(operation);
+        ProviderOperationPayloadStrategy payloadStrategy = resolvePayloadStrategy(targetUri);
+        if (payloadStrategy != null) {
+            payloadStrategy.validate(operation);
+        }
         route.process(exchange -> {
             exchange.getMessage().setHeader(OPERATION_PROVIDER_NAME, operation.getProvider().getName());
             exchange.getMessage().setHeader(OPERATION_PROVIDER_URI, targetUri);
+            if (payloadStrategy != null) {
+                Object body = exchange.getMessage().getBody();
+                exchange.getMessage().setBody(payloadStrategy.prepareBody(body, operation));
+                return;
+            }
+
             Object body = exchange.getMessage().getBody(JsonNode.class);
             if (body instanceof Message message) {
                 body = message.getPayload();
@@ -45,6 +58,17 @@ public class ProviderOperationTypeHandler implements OperationTypeHandler {
         });
 
         route.to(targetUri);
+    }
+
+    private ProviderOperationPayloadStrategy resolvePayloadStrategy(String targetUri) {
+        String scheme = targetUri.substring(0, targetUri.indexOf(':'));
+        List<ProviderOperationPayloadStrategy> supportingStrategies = payloadStrategies.stream()
+                .filter(strategy -> strategy.supports(scheme))
+                .toList();
+        if (supportingStrategies.size() > 1) {
+            throw new IllegalStateException("Multiple provider payload strategies support scheme '" + scheme + "'");
+        }
+        return supportingStrategies.isEmpty() ? null : supportingStrategies.getFirst();
     }
 
     private void validateProvider(Operation operation) {
