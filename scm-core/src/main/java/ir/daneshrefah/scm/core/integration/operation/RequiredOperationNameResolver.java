@@ -29,7 +29,7 @@ public class RequiredOperationNameResolver {
         }
         if (service.getRoutingStrategy() == RoutingStrategy.ACTION_DISPATCH) {
             return actionDispatchPlanCatalog.planFor(service)
-                    .actionPlans()
+                    .plansByInboundAction()
                     .values()
                     .stream()
                     .map(plan -> plan.steps().getFirst().serviceOperation().getOperationName())

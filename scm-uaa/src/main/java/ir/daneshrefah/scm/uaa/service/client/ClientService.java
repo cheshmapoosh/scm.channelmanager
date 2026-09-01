@@ -205,6 +205,8 @@ public class ClientService {
         dbEntity.setClientAuthenticationMethodSecretPost(entity.isClientAuthenticationMethodSecretPost());
         dbEntity.setClientAuthenticationMethodSecretJwt(entity.isClientAuthenticationMethodSecretJwt());
         dbEntity.setClientAuthenticationMethodKeyJwt(entity.isClientAuthenticationMethodKeyJwt());
+        dbEntity.setJwkSetUri(entity.getJwkSetUri());
+        dbEntity.setTokenAuthenticationSigningAlgorithm(entity.getTokenAuthenticationSigningAlgorithm());
         dbEntity.setClientAuthenticationMethodNone(entity.isClientAuthenticationMethodNone());
         dbEntity.setRedirectUris(entity.getRedirectUris());
         dbEntity.setRequireAuthorizationConsent(entity.isRequireAuthorizationConsent());

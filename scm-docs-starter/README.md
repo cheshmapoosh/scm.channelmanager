@@ -1,5 +1,7 @@
 # راهنمای استفاده از `scm-docs-starter`
 
+طراحی فعال‌سازی امن Markdown، OpenAPI و Swagger در `scm-uaa` و `scm-web` در [`UAA_WEB_DOCS_ACTIVATION_DESIGN.md`](UAA_WEB_DOCS_ACTIVATION_DESIGN.md) مستند شده است.
+
 ## هدف
 
 ماژول `scm-docs-starter` یک کتابخانه‌ی مشترک برای انتشار مستندات داخلی SCM است. هر ماژول می‌تواند با اضافه‌کردن این dependency، مستندات خود را از طریق endpointهای استاندارد `/docs` و `/docs/api` منتشر کند.

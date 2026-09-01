@@ -2,7 +2,7 @@ package ir.daneshrefah.scm.core.integration.gateway.inbound;
 
 import ir.daneshrefah.scm.common.model.gateway.InboundChannelServiceDefinition;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
-import ir.daneshrefah.scm.common.model.gateway.ServiceActionNamePolicy;
+import ir.daneshrefah.scm.common.model.gateway.InboundActionPolicy;
 import ir.daneshrefah.scm.common.model.service.HttpMethod;
 import ir.daneshrefah.scm.core.integration.gateway.GatewayInboundRouteContext;
 import ir.daneshrefah.scm.core.integration.service.routing.ActionDispatchPlan;
@@ -88,7 +88,7 @@ public class InboundRouteDefinitionValidator {
         }
         String canonical;
         try {
-            canonical = ServiceActionNamePolicy.canonicalize(config.inboundAction());
+            canonical = InboundActionPolicy.canonicalize(config.inboundAction());
         } catch (IllegalArgumentException exception) {
             throw invalidAction(context, definition,
                     "field=inboundAction is invalid", exception);

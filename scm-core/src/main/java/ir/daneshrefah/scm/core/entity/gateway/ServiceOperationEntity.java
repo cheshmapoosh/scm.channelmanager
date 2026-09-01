@@ -39,10 +39,6 @@ public class ServiceOperationEntity extends AbstractAuditableEntity<String> {
     @Column(length = 50, nullable = false)
     private String operationName;
 
-    @Size(max = 100)
-    @Column(name = "ACTION_NAME", length = 100)
-    private String actionName;
-
     @ManyToOne
     @JoinColumn(name = "DEFINITION_ID", foreignKey = @ForeignKey(name = "FK_GTW_OPT_ON_DEF"))
     private DefinitionEntity definition;

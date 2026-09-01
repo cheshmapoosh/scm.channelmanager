@@ -69,6 +69,8 @@
 
 # راهنمای عملی راه‌اندازی سرویس در `scm-web`
 
+طراحی سرویس تولید رسید بانکی فرارفاه با NAB/ATPS در [`BANK_RECEIPT_SERVICE_DESIGN.md`](BANK_RECEIPT_SERVICE_DESIGN.md) مستند شده است.
+
 > برای نمایش صحیح فونت در پیش‌نمایش Markdown در IntelliJ:
 > `Settings -> Languages & Frameworks -> Markdown -> Custom CSS -> Load from`
 > و فایل `scm-web/readme-preview.css` را انتخاب کن.

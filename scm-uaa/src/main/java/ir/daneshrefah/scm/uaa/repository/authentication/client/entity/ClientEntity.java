@@ -4,10 +4,13 @@ import ir.daneshrefah.scm.common.data.converter.StringSetConverter;
 import ir.daneshrefah.scm.common.data.entity.AbstractEntity;
 import ir.daneshrefah.scm.common.data.entity.person.GeneralLegalPersonEntity;
 import ir.daneshrefah.scm.uaa.repository.authentication.UserEntity;
+import ir.daneshrefah.scm.uaa.repository.converter.UriAttributeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 
+import java.net.URI;
 import java.util.Set;
 
 /**
@@ -36,6 +39,12 @@ public class ClientEntity extends AbstractEntity<Long> {
     private boolean clientAuthenticationMethodSecretJwt;
     @Column(name = "CLIENT_AUTH_METHOD_KEY_JWT")
     private boolean clientAuthenticationMethodKeyJwt;
+    @Column(name = "JWK_SET_URI", length = 512)
+    @Convert(converter = UriAttributeConverter.class)
+    private URI jwkSetUri;
+    @Column(name = "TOKEN_AUTH_SIGN_ALG", length = 32)
+    @Enumerated(EnumType.STRING)
+    private SignatureAlgorithm tokenAuthenticationSigningAlgorithm;
     @Column(name = "CLIENT_AUTH_METHOD_NONE")
     private boolean clientAuthenticationMethodNone;
     @Column(name = "REDIRECT_URIS")

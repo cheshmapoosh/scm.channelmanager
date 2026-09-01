@@ -1,8 +1,12 @@
 package ir.daneshrefah.scm.core.integration.service.routing;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.daneshrefah.scm.common.model.definition.Definition;
+import ir.daneshrefah.scm.common.model.gateway.InboundActionPolicy;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
 import ir.daneshrefah.scm.common.model.gateway.Service;
-import ir.daneshrefah.scm.common.model.gateway.ServiceActionNamePolicy;
 import ir.daneshrefah.scm.common.model.gateway.ServiceOperation;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -18,9 +22,12 @@ import java.util.HashSet;
 @Component
 @RequiredArgsConstructor
 public class ActionDispatchRoutePlanFactory {
+    private static final String INBOUND_ACTION = "inboundAction";
+
     private final ServiceOperationSelector operationSelector;
     private final ServiceOperationEndpointResolver endpointResolver;
     private final RoutingOperationMetadataResolver operationMetadataResolver;
+    private final ObjectMapper objectMapper;
 
     public ActionDispatchPlan create(Service service) {
         String serviceCode = requireService(service);
@@ -30,7 +37,7 @@ public class ActionDispatchRoutePlanFactory {
                     "must have at least one active executable action binding.");
         }
 
-        Map<String, RoutingPlan> actionPlans = new LinkedHashMap<>();
+        Map<String, RoutingPlan> plansByInboundAction = new LinkedHashMap<>();
         Set<String> operationNames = new HashSet<>();
         for (ServiceOperation serviceOperation : activeOperations) {
             if (ServiceOperationDefinitionClassifier.isActionPlan(serviceOperation)) {
@@ -41,12 +48,11 @@ public class ActionDispatchRoutePlanFactory {
             if (operationName == null) {
                 throw invalid(serviceCode, "an active action binding has a blank operationName.");
             }
-            String actionName = canonicalAction(serviceCode, serviceOperation.getActionName());
+            String inboundAction = resolveInboundAction(serviceCode, serviceOperation);
             serviceOperation.setOperationName(operationName);
-            serviceOperation.setActionName(actionName);
-            if (actionPlans.containsKey(actionName)) {
+            if (plansByInboundAction.containsKey(inboundAction)) {
                 throw invalid(serviceCode,
-                        "duplicate canonical actionName=" + actionName + ".");
+                        "duplicate Definition.details.inboundAction=" + inboundAction + ".");
             }
             if (!operationNames.add(operationName.toLowerCase(Locale.ROOT))) {
                 throw invalid(serviceCode,
@@ -62,7 +68,7 @@ public class ActionDispatchRoutePlanFactory {
                                 + operationName + ".", exception);
             }
             RoutingPlan childPlan = new RoutingPlan(
-                    serviceCode + ":" + actionName,
+                    serviceCode + ":" + inboundAction,
                     RoutingStrategy.ACTION_DISPATCH,
                     List.of(new RoutingStepPlan(
                             operationName,
@@ -73,7 +79,7 @@ public class ActionDispatchRoutePlanFactory {
                             null,
                             new RoutingStepObservationContext(
                                     serviceCode,
-                                    actionName,
+                                    inboundAction,
                                     null,
                                     operationName,
                                     0,
@@ -81,9 +87,9 @@ public class ActionDispatchRoutePlanFactory {
                             )
                     ))
             );
-            actionPlans.put(actionName, childPlan);
+            plansByInboundAction.put(inboundAction, childPlan);
         }
-        return new ActionDispatchPlan(serviceCode, actionPlans);
+        return new ActionDispatchPlan(serviceCode, plansByInboundAction);
     }
 
     private String requireService(Service service) {
@@ -99,12 +105,47 @@ public class ActionDispatchRoutePlanFactory {
         return serviceCode;
     }
 
-    private String canonicalAction(String serviceCode, String actionName) {
+    private String resolveInboundAction(
+            String serviceCode,
+            ServiceOperation serviceOperation
+    ) {
+        Definition definition = serviceOperation.getDefinition();
+        if (definition == null) {
+            throw invalid(serviceCode,
+                    "active service operation=" + serviceOperation.getOperationName()
+                            + " must reference a Definition.");
+        }
+        if (StringUtils.isBlank(definition.getDetails())) {
+            throw invalid(serviceCode,
+                    "Definition.details is required for operationName="
+                            + serviceOperation.getOperationName() + ".");
+        }
+
+        JsonNode details;
         try {
-            return ServiceActionNamePolicy.canonicalize(actionName);
+            details = objectMapper.readTree(definition.getDetails());
+        } catch (JsonProcessingException exception) {
+            throw invalid(serviceCode,
+                    "Definition.details must contain valid JSON for operationName="
+                            + serviceOperation.getOperationName() + ".", exception);
+        }
+        if (!details.isObject()) {
+            throw invalid(serviceCode,
+                    "Definition.details must be a JSON object for operationName="
+                            + serviceOperation.getOperationName() + ".");
+        }
+        JsonNode configuredAction = details.get(INBOUND_ACTION);
+        if (configuredAction == null || !configuredAction.isTextual()) {
+            throw invalid(serviceCode,
+                    "Definition.details.inboundAction must be a string for operationName="
+                            + serviceOperation.getOperationName() + ".");
+        }
+        try {
+            return InboundActionPolicy.canonicalize(configuredAction.asText());
         } catch (IllegalArgumentException exception) {
             throw invalid(serviceCode,
-                    "an active binding has a missing or invalid actionName.", exception);
+                    "Definition.details.inboundAction is invalid for operationName="
+                            + serviceOperation.getOperationName() + ".", exception);
         }
     }
 

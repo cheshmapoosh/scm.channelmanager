@@ -12,7 +12,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +58,8 @@ public class ClientEditRequest implements RequestData {
     private Boolean checkIpAddress;
     @NotNull
     private List<ClientAuthenticationMethod> authenticationMethods;
+    private URI jwkSetUri;
+    private SignatureAlgorithm tokenAuthenticationSigningAlgorithm;
     @NotNull
     private List<AuthorizationGrantType> authorizationGrantTypes;
     @NotNull

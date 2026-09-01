@@ -167,6 +167,8 @@ public interface ClientMapper {
         Client client = new Client();
         client.setTerminalCode(request.getTerminalCode());
         client.setAuthenticationMethods(request.getAuthenticationMethods());
+        client.setJwkSetUri(request.getJwkSetUri());
+        client.setTokenAuthenticationSigningAlgorithm(request.getTokenAuthenticationSigningAlgorithm());
         client.setRedirectUris(request.getRedirectUris());
         client.setRequireAuthorizationConsent(request.getRequireAuthorizationConsent());
         client.setRequireProofKey(request.getRequireProofKey());
@@ -184,6 +186,8 @@ public interface ClientMapper {
         Client model = new Client();
         model.setTerminalCode(request.getTerminalCode());
         model.setAuthenticationMethods(request.getAuthenticationMethods());
+        model.setJwkSetUri(request.getJwkSetUri());
+        model.setTokenAuthenticationSigningAlgorithm(request.getTokenAuthenticationSigningAlgorithm());
         model.setRedirectUris(request.getRedirectUris());
         model.setRequireAuthorizationConsent(request.getRequireAuthorizationConsent());
         model.setRequireProofKey(request.getRequireProofKey());

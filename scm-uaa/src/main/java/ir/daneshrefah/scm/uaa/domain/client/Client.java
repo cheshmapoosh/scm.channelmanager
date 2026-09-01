@@ -5,7 +5,9 @@ import ir.daneshrefah.scm.common.AbstractStringAuditableModel;
 import ir.daneshrefah.scm.uaa.common.model.user.User;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
@@ -23,6 +25,8 @@ public class Client extends AbstractStringAuditableModel<Long> {
     private Long id;
     private String terminalCode;
     private List<ClientAuthenticationMethod> authenticationMethods;
+    private URI jwkSetUri;
+    private SignatureAlgorithm tokenAuthenticationSigningAlgorithm;
     private Set<ClientAuthorizationGrantType> clientAuthorizationGrantTypes;
     private List<String> redirectUris;
     private boolean requireAuthorizationConsent;

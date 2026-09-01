@@ -23,7 +23,7 @@ public class ActionDispatchServiceTargetRoutingHandler implements ServiceTargetR
         log.debug("Building ACTION_DISPATCH service target routeId={} serviceCode={} actionCount={}",
                 context.route().getRouteId(),
                 context.service().getCode(),
-                dispatchPlan.actionPlans().size());
+                dispatchPlan.plansByInboundAction().size());
         context.route().process(exchange -> {
             RoutingPlan selected = dispatchPlan.requireAction(exchange);
             Object response = engineRegistry.getRequired(strategy())

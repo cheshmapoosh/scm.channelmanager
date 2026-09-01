@@ -1,7 +1,7 @@
 package ir.daneshrefah.scm.core.integration.service.routing;
 
+import ir.daneshrefah.scm.common.model.gateway.InboundActionPolicy;
 import ir.daneshrefah.scm.common.model.gateway.RoutingStrategy;
-import ir.daneshrefah.scm.common.model.gateway.ServiceActionNamePolicy;
 import ir.daneshrefah.scm.common.model.message.Message;
 import org.apache.camel.Exchange;
 
@@ -14,29 +14,29 @@ import java.util.Map;
  */
 public record ActionDispatchPlan(
         String serviceCode,
-        Map<String, RoutingPlan> actionPlans
+        Map<String, RoutingPlan> plansByInboundAction
 ) {
     public ActionDispatchPlan {
         if (serviceCode == null || serviceCode.isBlank()) {
             throw ServiceActionException.configurationInvalid(
                     "ACTION_DISPATCH service code must not be blank.");
         }
-        if (actionPlans == null || actionPlans.isEmpty()) {
+        if (plansByInboundAction == null || plansByInboundAction.isEmpty()) {
             throw ServiceActionException.configurationInvalid(
                     "ACTION_DISPATCH service=" + serviceCode
                             + " must have at least one active executable action binding.");
         }
         Map<String, RoutingPlan> immutable = new LinkedHashMap<>();
-        actionPlans.forEach((actionName, childPlan) -> {
+        plansByInboundAction.forEach((inboundAction, childPlan) -> {
             String canonical;
             try {
-                canonical = ServiceActionNamePolicy.canonicalize(actionName);
+                canonical = InboundActionPolicy.canonicalize(inboundAction);
             } catch (IllegalArgumentException exception) {
                 throw ServiceActionException.configurationInvalid(
                         "ACTION_DISPATCH service=" + serviceCode
                                 + " generated an invalid action key.", exception);
             }
-            if (!canonical.equals(actionName)) {
+            if (!canonical.equals(inboundAction)) {
                 throw ServiceActionException.configurationInvalid(
                         "ACTION_DISPATCH service=" + serviceCode
                                 + " generated a non-canonical action key.");
@@ -48,7 +48,7 @@ public record ActionDispatchPlan(
                                 + " generated duplicate canonical action=" + canonical + ".");
             }
         });
-        actionPlans = Collections.unmodifiableMap(immutable);
+        plansByInboundAction = Collections.unmodifiableMap(immutable);
     }
 
     public RoutingPlan requireAction(Exchange exchange) {
@@ -56,16 +56,16 @@ public record ActionDispatchPlan(
             throw ServiceActionException.actionRequired();
         }
         Object configuredAction = exchange.getProperty(Message.INBOUND_ROUTE_ACTION);
-        if (!(configuredAction instanceof String actionName) || actionName.isBlank()) {
+        if (!(configuredAction instanceof String inboundAction) || inboundAction.isBlank()) {
             throw ServiceActionException.actionRequired();
         }
         String canonical;
         try {
-            canonical = ServiceActionNamePolicy.canonicalize(actionName);
+            canonical = InboundActionPolicy.canonicalize(inboundAction);
         } catch (IllegalArgumentException exception) {
             throw ServiceActionException.actionNotFound();
         }
-        RoutingPlan selected = actionPlans.get(canonical);
+        RoutingPlan selected = plansByInboundAction.get(canonical);
         if (selected == null) {
             throw ServiceActionException.actionNotFound();
         }
@@ -73,9 +73,10 @@ public record ActionDispatchPlan(
         return selected;
     }
 
-    public boolean containsAction(String actionName) {
+    public boolean containsAction(String inboundAction) {
         try {
-            return actionPlans.containsKey(ServiceActionNamePolicy.canonicalize(actionName));
+            return plansByInboundAction.containsKey(
+                    InboundActionPolicy.canonicalize(inboundAction));
         } catch (IllegalArgumentException exception) {
             return false;
         }
@@ -83,14 +84,14 @@ public record ActionDispatchPlan(
 
     private static void validateChildPlan(
             String serviceCode,
-            String actionName,
+            String inboundAction,
             RoutingPlan childPlan
     ) {
         if (childPlan == null
                 || childPlan.routingStrategy() != RoutingStrategy.ACTION_DISPATCH
                 || childPlan.steps().size() != 1) {
             throw ServiceActionException.configurationInvalid(
-                    "ACTION_DISPATCH service=" + serviceCode + ", action=" + actionName
+                    "ACTION_DISPATCH service=" + serviceCode + ", inboundAction=" + inboundAction
                             + " must produce exactly one executable ACTION_DISPATCH step.");
         }
         RoutingStepPlan step = childPlan.steps().getFirst();
@@ -100,7 +101,7 @@ public record ActionDispatchPlan(
                 || step.endpointUri() == null
                 || step.endpointUri().isBlank()) {
             throw ServiceActionException.configurationInvalid(
-                    "ACTION_DISPATCH service=" + serviceCode + ", action=" + actionName
+                    "ACTION_DISPATCH service=" + serviceCode + ", inboundAction=" + inboundAction
                             + " generated an invalid executable step.");
         }
     }

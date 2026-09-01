@@ -17,8 +17,10 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import static ir.daneshrefah.scm.uaa.common.utils.Constants.*;
@@ -81,14 +83,15 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
                 .accessTokenTimeToLive(accessTokenTimeToLive)
                 .refreshTokenTimeToLive(accessTokenTimeToLive)
                 .build();
-        ClientSettings clientSetting = ClientSettings.builder()
+        ClientSettings.Builder clientSettingsBuilder = ClientSettings.builder()
                 .requireAuthorizationConsent(client.isRequireAuthorizationConsent())
                 .setting(CLIENT_SETTING_KEY_TERMINAL_CODE, client.getTerminalCode())
                 .setting(CLIENT_SETTING_KEY_CHECK_VERSION, client.isCheckVersion())
                 .setting(CLIENT_SETTING_KEY_CHECK_ACTIVATION, client.isCheckActivation())
                 .setting(CLIENT_SETTING_KEY_CHECK_IP_ADDRESS, client.isCheckIpAddress())
-                .setting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES, client.getAllowIpAddresses())
-                .build();
+                .setting(CLIENT_SETTING_KEY_ALLOW_IP_ADDRESSES, client.getAllowIpAddresses());
+        configureClientAssertionTrust(client, clientSettingsBuilder);
+        ClientSettings clientSetting = clientSettingsBuilder.build();
         RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(client.getId()))
                 .clientId(client.getUser().getNickname())
                 .tokenSettings(tokenSettings)
@@ -129,6 +132,28 @@ public class DynamicRegisteredClientRepository implements RegisteredClientReposi
         }
         clientBuilder.scope("session");
         return clientBuilder.build();
+    }
+
+    private void configureClientAssertionTrust(Client client, ClientSettings.Builder clientSettingsBuilder) {
+        URI jwkSetUri = client.getJwkSetUri();
+        if (isRemoteHttpUri(jwkSetUri)) {
+            // Spring Authorization Server deliberately names this framework boundary as a URL.
+            clientSettingsBuilder.jwkSetUrl(jwkSetUri.toString());
+        }
+        if (client.getTokenAuthenticationSigningAlgorithm() != null) {
+            clientSettingsBuilder.tokenEndpointAuthenticationSigningAlgorithm(
+                    client.getTokenAuthenticationSigningAlgorithm());
+        }
+    }
+
+    private boolean isRemoteHttpUri(URI uri) {
+        if (uri == null || uri.getScheme() == null) {
+            return false;
+        }
+        return switch (uri.getScheme().toLowerCase(Locale.ROOT)) {
+            case "http", "https" -> true;
+            default -> false;
+        };
     }
 
     private List<Client> findAll() {

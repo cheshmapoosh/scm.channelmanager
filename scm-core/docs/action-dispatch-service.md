@@ -23,15 +23,17 @@ action's own idempotency contract.
 ```text
 Gateway path + method
   -> configured inboundAction
-  -> ACTION_DISPATCH Service action map
+  -> matching service-operation Definition
+  -> associated ServiceOperation
   -> selected Operation
   -> Operation's existing Provider
 ```
 
 - Gateway owns the external path/method to `inboundAction` mapping. It does not
   name an Operation.
-- Service owns `actionName` to `operationName` through
-  `REF.TBL_SCM_SERVICE_OPERATION`.
+- Definition owns `inboundAction` routing metadata.
+- ServiceOperation owns executable `operationName` configuration and uses its
+  existing Definition relationship; it owns no routing selector.
 - Operation owns plugins, path, type, provider identity, and provider lifecycle.
 - Provider owns invocation of its target. `ACTION_DISPATCH` does not change
   REST or internal `scm:` provider behavior.
@@ -56,18 +58,27 @@ Create one active service-operation binding per action:
 ServiceOperation:
   service       = OTP
   active        = true
-  actionName    = otp.verify
   operationName = UAA_OTP_VERIFY
+  definition    = OTP_VERIFY
 
 ServiceOperation:
   service       = OTP
   active        = true
-  actionName    = otp.resend
   operationName = UAA_OTP_RESEND
+  definition    = OTP_RESEND
 ```
 
-`actionName` is nullable for existing strategies. `FIRST`, `FAIL_OVER`,
-`CHAIN_ON_APPROVE`, and `TASK_WORKFLOW` neither require nor use it.
+Each referenced Definition supplies the selector in `details`:
+
+```json
+{
+  "inboundAction": "otp.verify"
+}
+```
+
+This is the same ownership pattern used by TASK_WORKFLOW: an active
+ServiceOperation associates a Definition with a runtime target, and
+`Definition.details.inboundAction` supplies the external routing identity.
 
 An `INBOUND` definition keeps `method` and `path` in their existing first-class
 fields. Its `Definition.details` supplies the fixed action:
@@ -86,7 +97,7 @@ versions, or gateways may intentionally bind to the same service action.
 Actions not exposed by one gateway remain valid for another gateway or a
 trusted internal caller.
 
-## Action-name rules
+## Inbound-action rules
 
 Configured names are trimmed and lower-cased with `Locale.ROOT`, then must
 match:
@@ -109,7 +120,9 @@ During route construction, `ActionDispatchRoutePlanFactory` validates every
 active binding and builds an immutable `ActionDispatchPlan`:
 
 ```text
-canonical actionName -> one-step RoutingPlan(ACTION_DISPATCH)
+canonical Definition.details.inboundAction
+  -> ServiceOperation
+  -> one-step RoutingPlan(ACTION_DISPATCH)
 ```
 
 `ActionDispatchPlanCatalog` shares the compiled plan between gateway, service,
@@ -120,7 +133,9 @@ lookup must find an active Operation before startup can continue.
 Startup fails with `SCM_SERVICE_ACTION_CONFIGURATION_INVALID` when:
 
 - no active executable binding exists;
-- an active binding has a blank, invalid, or over-length action name;
+- an active ServiceOperation has no referenced Definition;
+- its Definition has missing, malformed, blank, invalid, or over-length
+  `inboundAction`;
 - canonical actions are duplicated;
 - two actions reference the same Operation;
 - `operationName` is blank, missing, or inactive;
@@ -131,13 +146,11 @@ Startup fails with `SCM_SERVICE_ACTION_CONFIGURATION_INVALID` when:
 All referenced action Operations are collected by the Operation layer. It does
 not register only the first binding.
 
-The database migration in `scm-core/src/main/resources/ddl.sql` adds nullable
-`ACTION_NAME VARCHAR(100)` to `REF.TBL_SCM_SERVICE_OPERATION`. The existing
-unique service/Operation constraint remains the database enforcement for the
-no-alias rule. On DB2, the added `EXCLUDE NULL KEYS` unique index enforces one
-non-null action value per service without breaking legacy rows whose action is
-null. Canonical, case-insensitive duplicate validation remains mandatory at
-startup.
+No dispatch selector is stored in `REF.TBL_SCM_SERVICE_OPERATION`. The existing
+`DEFINITION_ID` relationship supplies the Definition-owned selector, and the
+existing unique service/Operation constraint continues to enforce the
+no-alias rule. Canonical, case-insensitive duplicate validation remains
+mandatory at startup.
 
 ## Runtime flow and performance
 
@@ -187,8 +200,8 @@ The external and service configuration is:
 POST /otp/verify
   -> INBOUND Definition.details.inboundAction = otp.verify
   -> Service OTP, routingStrategy = ACTION_DISPATCH
-  -> ServiceOperation(actionName = otp.verify,
-                      operationName = UAA_OTP_VERIFY,
+  -> Definition.details.inboundAction = otp.verify
+  -> ServiceOperation(operationName = UAA_OTP_VERIFY,
                       active = true)
 ```
 

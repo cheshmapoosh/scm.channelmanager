@@ -494,9 +494,9 @@ The stateless, one-action-to-one-Operation contract is documented in:
 
 [Defining ACTION_DISPATCH services](docs/action-dispatch-service.md)
 
-The guide owns the action naming, Gateway binding, service-operation mapping,
-startup validation, immutable lookup, errors, observability, schema change, and
-complete `scm:uaa` OTP example.
+The guide owns Definition-based inbound-action naming, Gateway binding,
+service-operation mapping, startup validation, immutable lookup, errors,
+observability, schema relationships, and the complete `scm:uaa` OTP example.
 
 ---
 

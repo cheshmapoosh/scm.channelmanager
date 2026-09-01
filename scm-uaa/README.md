@@ -1,5 +1,10 @@
 # راهنمای Authentication در `scm-uaa`
 
+طراحی‌های مرتبط:
+
+- مدل توسعه‌پذیر Client، Grant، Client Authentication و DPoP: [`CLIENT_OAUTH_CAPABILITY_DATA_MODEL_DESIGN.md`](CLIENT_OAUTH_CAPABILITY_DATA_MODEL_DESIGN.md)
+- اتصال Trusted فرارفاه و صدور توکن کاربر با RFC 7523: [`FARAREFAH_UAA_DESIGN.md`](FARAREFAH_UAA_DESIGN.md)
+
 ## Runtime configuration
 
 - `application.yml` contains shared defaults and is the no-profile local fallback. `application-dev.yml` is the local developer template; neither connects to `scm-config`.
@@ -10,6 +15,37 @@
 - UAA security explicitly selects `uaaCorsConfigurationSource`; it does not use `@Primary` to resolve CORS beans. Credentialed CORS rejects a wildcard, and the Kubernetes profiles also reject an empty origin list.
 - The dev profile supports HTTPS through `SCM_UAA_SSL_*`. Realistic cross-site cookie tests normally require `SameSite=None; Secure`; `Secure` requires HTTPS except for browser localhost exceptions. A `__Host-` cookie also requires `Path=/` and no `Domain` attribute.
 - Log, trace, and audit use separate files. JSONL is the default structured ingestion format; optional simple `.log` output is human-readable and is not consumed by the current Filebeat pipeline. Only the `dev` profile enables the three observation console destinations. Kubernetes profiles write files under `/var/obs/{appName}/{env}/{namespace}/{stream}`; the local fallback uses `${user.home}/scm/obs/{appName}/{env}/default/{stream}`.
+
+## Client JWKS source configuration
+
+محل JWKS مورد اعتماد هر Client در همان `TBL_SUA_CLIENT` و فقط با فیلد زیر ذخیره می‌شود:
+
+```text
+JWK_SET_URI          VARCHAR(512)
+TOKEN_AUTH_SIGN_ALG  VARCHAR(32)
+```
+
+در مدل Java مقدار `jwkSetUri` از نوع `java.net.URI` است. این URI محل منبع کلید را مشخص می‌کند، نه روش انتقال آن. نمونه‌های معتبر برای ذخیره‌سازی عبارت‌اند از:
+
+```text
+https://identity.example.com/.well-known/jwks.json
+file:/etc/scm/jwks/fararefah.json
+classpath:/jwks/fararefah.json
+ftp://trusted-server.example.com/security/fararefah-jwks.json
+```
+
+Resolver فعلی schemeهای `http`، `https`، `file` و `classpath` را پشتیبانی می‌کند. صرف قابل نمایش بودن یک URI در مدل Client به معنی فعال یا پشتیبانی شدن scheme آن در Runtime نیست؛ برای مثال `ftp` قابل ذخیره است، اما Resolver فعلی آن را با خطای صریح unsupported scheme رد می‌کند. هیچ fallback به transport دیگری انجام نمی‌شود.
+
+برای Kubernetes نیازی به scheme اختصاصی `configmap:` یا Kubernetes client در UAA نیست. ConfigMap به‌صورت فایل mount می‌شود و Client به آن با URI فایل اشاره می‌کند:
+
+```text
+ConfigMap -> volume mount -> /etc/scm/jwks/fararefah.json
+JWK_SET_URI = file:/etc/scm/jwks/fararefah.json
+```
+
+`JWK_SET_URI` پیکربندی مورد اعتماد سمت Server است. Token request، پارامترهای OAuth، headerها، claimها و `client_assertion` اجازه تعیین یا override کردن آن را ندارند. `TOKEN_AUTH_SIGN_ALG` نیز مستقل از URI نگهداری می‌شود و الگوریتم پذیرفته‌شده را pin می‌کند؛ مقدار `alg` ورودی به‌تنهایی منبع Policy نیست.
+
+در مرز Spring Authorization Server فقط URIهای `http` و `https` با `toString()` به API موجود `ClientSettings.jwkSetUrl(...)` تطبیق داده می‌شوند تا رفتار remote JWKS، cache، rotation و TLS استاندارد Framework حفظ شود. URIهای `file` و `classpath` با `ResourceLoader` Spring خوانده می‌شوند و به API HTTP-only فوق تحمیل نمی‌شوند.
 
 هدف این است که بدانید هر مسیر لاگین از کجا وارد می‌شود، کدام کلاس‌ها مسئول چه کاری هستند، کجا باید کد اضافه کنید، و چطور خروجی‌های observation برای LOG و TRACE تولید می‌شوند؛ فایل پیش‌فرض JSONL است و `simple` فقط خروجی اختیاری انسانی است.
 
